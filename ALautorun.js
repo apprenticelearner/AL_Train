@@ -24,6 +24,9 @@ var CTAT_INCORRECT = null;
 
 var verbosity = 0;
 
+var relative_pos_cache={};
+var HTML_PATH = null;
+
 
 function create_agent(callback,agent_name, agent_type){
 	$.ajax({
@@ -180,7 +183,7 @@ function query_apprentice() {
     var data = {
         'state': state
     }
-    // console.log("STATE",state);
+    console.log("STATE",state);
 
     // console.log("QUERY!");
 
@@ -206,6 +209,7 @@ function query_apprentice() {
                 	console.log("Element " +resp.selection +" does not exist, providing example instead.");
                     alert("THIS HAPPENED... SO WE NEED TO ACTUALLY IMPLEMENT THIS.");
                 }else{
+                    console.log("STATE",state)
                     currentElement.addEventListener(CTAT_CORRECT, handle_correct);
                     currentElement.addEventListener(CTAT_INCORRECT, handle_incorrect);
                     apply_sai(resp);    
@@ -230,7 +234,7 @@ function checkTypes(element, types){
 }
 
 
-function get_state(){
+function get_state(encode_relative=true,strip_offsets=true){
     var state_array = iframe_content.$('div').toArray();
     // state_array.push({current_task: current_task});
 
@@ -243,14 +247,16 @@ function get_state(){
     		obj["className"] = element.classList[0];
     		obj["offsetParent"] = element.offsetParent.dataset.silexId;
     		obj["offsetLeft"] = element.offsetLeft;
-    		obj["offsetTop"] = element.offsetTop;
+            obj["offsetTop"] = element.offsetTop;
+            obj["offsetWidth"] = element.offsetWidth;
+    		obj["offsetHeight"] = element.offsetHeight;
 
 
     		obj["id"] = element.id;
 
     		if(checkTypes(element, ["CTATTextInput","CTATComboBox"])){
     			obj["value"] = element.firstElementChild.value;
-    			obj["contentEditable"] = element.firstElementChild.contentEditable;
+    			obj["contentEditable"] = (element.firstElementChild.contentEditable == 'true');
     		}
     		// if(checkTypes(element, ["CTATTextField", "CTATComboBox"])){
     		// 	obj["textContent"] = element.textContent;
@@ -269,7 +275,7 @@ function get_state(){
     			// }
     			
     		}
-    		state_json["?ele-" + count] = obj;
+    		state_json["?ele-" + element.id] = obj;
 	        count++;
     	}
         // add question marks for apprentice
@@ -297,6 +303,85 @@ function get_state(){
 
     });
 
+
+    
+    // Gets lists of elements that are to the left, right and above the current element
+    if(encode_relative){
+        elm_list = Object.entries(state_json);
+        console.log(elm_list.length);
+
+        if(! (HTML_PATH in relative_pos_cache) ){
+            var rel_objs = {};
+            for (var i = 0; i < elm_list.length; i++) {
+                rel_objs[elm_list[i][0]] = {
+                    "to_left" : [],
+                    "to_right" : [],
+                    "above" : [],
+                    "below" : []
+                }
+            }
+
+            for (var i = 0; i < elm_list.length; i++) {
+                for (var j = 0; j < elm_list.length; j++) {
+                    if(i != j){
+                        var [a_n, a_obj] = elm_list[i];
+                        var [b_n, b_obj] = elm_list[j];
+                        if(a_obj.offsetTop > b_obj.offsetTop 
+                            && a_obj.offsetLeft < b_obj.offsetLeft + b_obj.offsetWidth
+                            && a_obj.offsetLeft + a_obj.offsetWidth > b_obj.offsetLeft){
+
+                            var dist = a_obj.offsetTop-b_obj.offsetTop;
+                            rel_objs[a_n]["above"].push([b_n, dist]);
+                            rel_objs[b_n]["below"].push([a_n, dist]);
+                        }
+                        if(a_obj.offsetLeft < b_obj.offsetLeft 
+                            && a_obj.offsetTop + a_obj.offsetHeight > b_obj.offsetTop
+                            && a_obj.offsetTop < b_obj.offsetTop + b_obj.offsetHeight){
+
+                            var dist = b_obj.offsetLeft-a_obj.offsetLeft;
+                            rel_objs[a_n]["to_right"].push([b_n, dist]);
+                            rel_objs[b_n]["to_left"].push([a_n, dist]);
+
+                        }
+                    }
+                }
+            }
+
+            var grab1st = function(x){return x[0];};
+            var compare2nd = function(x,y){return x[1] > y[1];};
+            for (var i = 0; i < elm_list.length; i++) {
+                var rel_obj = rel_objs[elm_list[i][0]];
+                rel_obj["below"] = rel_obj["below"].sort(compare2nd).map(grab1st).join(' '); 
+                rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st).join(' '); 
+                rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st).join(' '); 
+                rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st).join(' '); 
+            }
+            
+
+            relative_pos_cache[HTML_PATH] = rel_objs;
+        }else{
+            for (var i = 0; i < elm_list.length; i++) {
+                var obj = state_json[elm_list[i][0]];
+                var rel_obj = relative_pos_cache[HTML_PATH][elm_list[i][0]];
+                obj["below"] = rel_obj["below"];
+                obj["above"] = rel_obj["above"];
+                obj["to_right"] = rel_obj["to_right"];
+                obj["to_left"] = rel_obj["to_left"];
+                if(strip_offsets){
+                    delete obj["offsetTop"];
+                    delete obj["offsetLeft"];
+                    delete obj["offsetWidth"];
+                    delete obj["offsetHeight"];
+                }
+
+                state_json[elm_list[i][0]] = obj;
+            }
+        }
+
+
+    }
+
+    console.log(state_json);
     return state_json;
 
 }
@@ -364,6 +449,8 @@ function serve_next_problem(){
 
         iframe_content.CTAT = null;
         iframe_content.CTATCommShell = null;
+
+        HTML_PATH = prob_obj["HTML"];
 
         iframe.src = prob_obj["HTML"] + "?question_file=" + prob_obj["question_file"] + "&nofrm=1";
         
