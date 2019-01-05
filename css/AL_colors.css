@@ -1,0 +1,23 @@
+/*-------------------------------------------------------*\
+	#CTAT--example
+\*-------------------------------------------------------*/
+
+.CTAT--example { /* general example highlighting */
+	box-shadow: 0px 0px 15px 5px dodgerblue;
+}
+textarea.CTAT--example,
+input.CTAT--example[type="text"] { /* font color change for text components */
+	box-shadow: none;
+	color: dodgerblue;
+}
+label.CTAT--example { /* labels for checkboxes and radio buttons */
+	box-shadow: none;
+	text-shadow: 0px 0px 5px dodgerblue;
+}
+input.CTAT--example[type="checkbox"],
+input.CTAT--example[type="radio"] {
+	box-shadow: 0px 0px 5px 0px dodgerblue;
+}
+.CTATNumberLine--point.CTAT--example {
+	fill: dodgerblue;
+}

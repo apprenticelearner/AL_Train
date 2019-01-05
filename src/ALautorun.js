@@ -27,34 +27,113 @@ var verbosity = 0;
 var relative_pos_cache={};
 var HTML_PATH = null;
 
+var AL_TIMEOUT = 2000;
+var AL_RETRY_LIMIT = 3;
+
+var loggingLibrary = null;
+
+var session_id = null;
+var user_guid = null;
+
+var HTML_name = null;
+var BRD_name = null
+
+
+CTATGuid = {s4:function s4() {
+  return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
+}, guid:function guid() {
+  return this.s4() + this.s4() + "-" + this.s4() + "-" + this.s4() + "-" + this.s4() + "-" + this.s4() + this.s4() + this.s4();
+}};
+
+// Special REST call to killable_server.py server
+function kill_this(data){
+    // ''' Sends a request to kill the server where this is running.'''
+    $.ajax({
+        type: "QUIT",
+        url: window.location.origin,
+        data: data,
+        dataType: "text",
+    });
+}
+
+function term_print(data){
+    // ''' Prints back to the terminal that this was started in.'''
+    $.ajax({
+        type: "PRINT",
+        url: window.location.origin,
+        data: data,
+        dataType: "text",
+    });
+}
+
+// https://stackoverflow.com/questions/10024469/whats-the-best-way-to-retry-an-ajax-request-on-failure-using-jquery
+function ajax_retry_on_error(xhr, textStatus, errorThrown) {
+    // ''' An error handler that retries a few times to talk to the AL server before giving up.'''
+    // if(xhr.status != 200){
+        // var error = "AL failed with code " + xhr.status +" (" + textStatus + ").";
+        // console.error(error);
+
+        // kill_this(null, error);    
+    // }else{
+    // if (textStatus == 'timeout') {
+        console.log("ISSUE OCCURED" ,this.tryCount, this.retryLimit);
+        // alert("ISSUE OCCURED" ,this.tryCount, this.retryLimit);
+        this.tryCount++;
+        if (this.tryCount <= this.retryLimit) {
+            //try again
+            $.ajax(this);
+            return;
+        }
+        var error = "AL failed with code " + xhr.status +" (" + textStatus + ").";
+        console.error(error);
+
+        kill_this(error);            
+        return;
+    // }
+    
+}
+
 
 function create_agent(callback,agent_name, agent_type){
-	$.ajax({
-            type: "POST",
-            url: AL_URL + '/create/',
-            dataType: "json",
-            contentType: "application/json; charset=utf-8",
-            data: JSON.stringify({
-                'name': agent_name,
-                'agent_type': agent_type,
-                'project_id': project_id
-            }),
-            success: function(resp) {
-                if(callback){
-                	callback(resp);
-                }
+    $.ajax({
+        type: "POST",
+        url: AL_URL + '/create/',
+        dataType: "json",
+        contentType: "application/json; charset=utf-8",
+        data: JSON.stringify({
+            'name': agent_name,
+            'agent_type': agent_type,
+            'project_id': project_id
+        }),
+
+        // async: true,
+        // timeout: AL_TIMEOUT,
+        retryLimit : AL_RETRY_LIMIT,
+        tryCount : 0,
+        error: ajax_retry_on_error,
+
+        success: function(resp) {
+            if(callback){
+            	callback(resp);
             }
-        });
+        },
+        
+    });
 }
 
 function post_next_example(){
 	
 	// console.log(graph);
+
+    apply_hint()
 	
 	//SELECT SAI AMONG OPTIONS
 	var sai = graph.getExampleTracer().getBestNextLink().getDefaultSAI();
 
+
     console.log("%cEXAMPLE: " + sai.getSelection() + " -> " + sai.getInput(), 'color: #2222bb; background: #DDDDDD;');
+    term_print('\x1b[0;33;44m' + "EXAMPLE: " + sai.getSelection() + " -> " + sai.getInput() + '\x1b[0m')
+    
 
 
 	sai_data = {
@@ -66,6 +145,12 @@ function post_next_example(){
 	};
 
 	apply_sai(sai_data);
+
+    var elm = iframe_content.document.getElementById(sai.getSelection())
+    console.log(elm.firstElementChild);
+    elm.firstElementChild.setAttribute("class", "CTAT--example");
+    console.log(elm.firstElementChild);
+
 
 	// console.log(sai_data);
 	send_training_data(sai_data);
@@ -85,10 +170,23 @@ function apply_sai(sai){
 	commLibrary.sendXML(message); 	
 }
 
+function apply_hint(){
+
+    message = "<message><properties>" +
+                    "<MessageType>InterfaceAction</MessageType>" +
+                    "<Selection><value>hint</value></Selection>" +
+                    "<Action><value>ButtonPressed</value></Action>" +
+                    "<Input><value><![CDATA[hint request]]></value></Input>" +
+                "</properties></message>";
+    // console.log("MESSAGE",message);
+    commLibrary.sendXML(message);   
+}
+
 // Cr1Str1.addEventListener(CTAT.Component.Base.Tutorable.EventType.action, function(){ alert("Hello World!");});
 
 function handle_correct(evt){
 	console.log("%cCORRECT:" + last_action.selection + " -> " + last_action.inputs.value, "color: #009922; background: #DDDDDD;");
+    term_print('\x1b[0;30;42m' + "CORRECT:" + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
 	currentElement.removeEventListener(CTAT_CORRECT, handle_correct);
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
@@ -97,6 +195,7 @@ function handle_correct(evt){
 
 function handle_incorrect(evt){
 	console.log("%cINCORRECT: " + last_action.selection + " -> " + last_action.inputs.value, "color: #bb2222; background: #DDDDDD;");
+    term_print('\x1b[0;30;41m' + "INCORRECT: " + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
 	currentElement.removeEventListener(CTAT_CORRECT, handle_correct);
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
@@ -122,11 +221,22 @@ function send_feeback(reward){
 }
 
 function send_training_data(sai_data) {
+
+
+    // loggingLibrary.logResponse (transactionID,"textinput1","UpdateTextField","Hello World","RESULT","CORRECT","You got it!");
+
 	$.ajax({
         type: 'POST',
         url: AL_URL + '/train/' + agent_id + '/',
         data: JSON.stringify(sai_data),
         contentType: "application/json; charset=utf-8",
+
+        // async: true,
+        // timeout: AL_TIMEOUT,
+        retryLimit : AL_RETRY_LIMIT,
+        tryCount : 0,
+        error: ajax_retry_on_error,
+
         success: function(resp) {
             if(verbosity > 0) console.log('training received.');
             // console.log(sai_data);
@@ -195,6 +305,13 @@ function query_apprentice() {
         data: JSON.stringify(data),
         contentType: "application/json; charset=utf-8",
         dataType: 'json',
+
+        // async: true,
+        // timeout: AL_TIMEOUT,
+        retryLimit : AL_RETRY_LIMIT,
+        tryCount : 0,
+        error: ajax_retry_on_error,
+
         success: function(resp) {
             if (jQuery.isEmptyObject(resp)) {
                 post_next_example();
@@ -386,6 +503,54 @@ function get_state(encode_relative=true,strip_offsets=true){
 
 }
 
+// function initLogging(){
+//     var conf = iframe_content.CTATConfiguration;
+
+//     if(session_id == null){
+//         session_id = conf.get("session_id");
+//         user_guid = "Stu_" + iframe_content.CTATGuid.guid();
+//     }
+
+    
+//     conf.set("session_id", session_id);
+//     conf.set("log_service_url", window.location.origin);
+//     conf.set("SessionLog", "true");
+//     conf.set("Logging", "ClientToLogServer");
+//     // conf.set("dataset_name", "HTML5LoggingTest");
+//     conf.set("dataset_level_name1", HTML_name);
+//     conf.set("dataset_level_type1", "Domain");
+//     // conf.set("dataset_level_name1", "Unit1.0");
+//     // conf.set("dataset_level_type1", "unit");
+//     // // conf.set("dataset_level_name2", "Section1.0");
+//     // conf.set("dataset_level_type2", "section");
+//     conf.set("problem_name", HTML_name + " " + BRD_name);
+//     // conf.set("school_name", "CMU");
+//     // conf.set("instructor_name", "A Teacher Name");
+//     conf.set("user_guid", user_guid);
+//     // conf.set("class_name", "22-512");
+    
+   
+//     loggingLibrary = iframe_content.CTATCommShell.commShell.getLoggingLibrary();//new iframe_content.CTATLoggingLibrary (true);
+//     var cl = loggingLibrary.getLoggingCommLibrary();
+//     cl.setFixedURL(window.location.origin);
+
+//     loggingLibrary.setUseDebugging(true);
+//     // loggingLibrary.setProblemName("THE PROBLEM NAME")
+        
+//     loggingLibrary.start();
+//     term_print("\n --- HERE --- \n");
+    
+//     // loggingLibrary.startProblem();
+
+//     term_print("\n --- DONE --- \n");
+
+//     console.log("LOGGING LIB", loggingLibrary);    
+
+
+
+    
+// }
+
 function runWhenReady(){
     // console.log("DEEEE", CTAT);
     if(typeof iframe_content.CTAT == "undefined" || iframe_content.CTAT == null){
@@ -393,8 +558,25 @@ function runWhenReady(){
         return;       
     }
 	graph = iframe_content.CTAT.ToolTutor.tutor.getGraph();
-	commLibrary = iframe_content.CTATCommShell.commShell.getCommLibrary();
-	if(graph && commLibrary){
+    commLibrary = iframe_content.CTATCommShell.commShell.getCommLibrary();
+	hasConfig = iframe_content.CTATConfiguration != undefined
+	if(graph && commLibrary && hasConfig){
+
+        //Initialize session
+        // if(session_id == null){
+        //     var conf = iframe_content.CTATConfiguration;
+        //     session_id = conf.get("session_id");
+        //     // user_guid = "Stu_" + iframe_content.CTATGuid.guid();
+        //     conf.set("user_guid", user_guid);
+        // }
+        // conf.set("session_id", session_id);
+
+        // ADD CSS FOR EXAMPLES
+        var link = iframe_content.document.createElement('link');
+        link.setAttribute('rel', 'stylesheet');
+        link.setAttribute('type', 'text/css');
+        link.setAttribute('href', '../../css/AL_colors.css');
+        iframe_content.document.getElementsByTagName('head')[0].appendChild(link);
 
         //Gets rid of annyoing sai printout on every call to sendXML
         iframe_content.flashVars.setParams({"deliverymode" : "bleehhhh"})
@@ -412,7 +594,7 @@ function runWhenReady(){
 
 
 function serve_next_training_set(){
-    console.log(training_iterator);
+    console.log("TRAINING ITERATOR", training_iterator.length);
     if(training_iterator.length > 0){
         var out = training_iterator.shift();
         var name = out[0];
@@ -421,12 +603,17 @@ function serve_next_training_set(){
         serve_next_agent();
     }else{
         console.log("ITS ALL DONE!");
+        kill_this("\n TRAINING FINISHED SUCCESSFULLY! \n");
     }
 }
 
 function serve_next_agent(){
-    console.log(agent_iterator);
+    console.log("AGENT ITERATOR", agent_iterator.length);
     if(agent_iterator.length > 0){
+
+        session_id = null;
+        user_guid = null;
+
         var agent_obj = agent_iterator.shift();
         console.log("CREATING AGENT", agent_obj["agent_name"]);
         var callback = function(resp){
@@ -442,8 +629,13 @@ function serve_next_agent(){
 }
 
 function serve_next_problem(){
+    console.log("PROBLEM ITERATOR", problem_iterator.length);
+
     if(problem_iterator.length > 0){
         var prob_obj = problem_iterator.shift();
+
+        HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
+        BRD_name = prob_obj["question_file"].substring(prob_obj["question_file"].lastIndexOf('/')+1).replace(".brd", "").replace(".nools", "");  
 
         // Point the iframe to the HTML and question_file (brd or nools) for the next problem
 
@@ -452,8 +644,40 @@ function serve_next_problem(){
 
         HTML_PATH = prob_obj["HTML"];
 
-        iframe.src = prob_obj["HTML"] + "?question_file=" + prob_obj["question_file"] + "&nofrm=1";
-        
+        if(session_id == null){
+            user_guid = "Stu_" + CTATGuid.guid();
+            session_id = CTATGuid.guid();
+        }
+
+        params = {
+            "question_file" : prob_obj["question_file"],
+
+            "problem_name": BRD_name,
+            "dataset_level_name1" : HTML_name,
+            "dataset_level_type1" : "Domain",
+            // "session_id" : "Domain",
+            "SessionLog" : "true",
+            "Logging" : "ClientToLogServer",
+            "log_service_url" : window.location.origin,
+            "user_guid" : user_guid,
+            "session_id" : session_id
+        }
+        // iframe.onload = function() { alert("loaded", iframe_content.CTAT); iframe.ctatOnload = runWhenReady; };
+        iframe.src = prob_obj["HTML"] + "?" + jQuery.param( params );
+            // + "?question_file=" + prob_obj["question_file"] 
+            // + "&nofrm=1"
+            // + "&dataset_level_name1=" + HTML_name
+            // + "&dataset_level_type1=" + "Domain";
+        // iframe_content.addEventListener("DOMContentLoaded", function() { iframe_content.ctatOnLoad = runWhenReady; });
+        // iframe_content.ctatOnLoad = runWhenReady;
+        // var iFrameHead = iframe.document.getElementsByTagName("head")[0];         
+        // var myscript = document.createElement('script');
+        // myscript.type = 'text/javascript';
+        // myscript.text = ''; // replace this with your SCRIPT
+        // iFrameHead.appendChild(myscript);
+
+
+        // iframe_content.ctatOnload = runWhenReady;
 
         runWhenReady();
     }else{
@@ -465,14 +689,14 @@ function load_training_file(){
     iframe = document.getElementById("tutor_iframe")
     iframe_content = iframe.contentWindow
 
+    // Grab the the path to the training .json file and the url for the AL server from the query string
     var urlParams = new URLSearchParams(window.location.search);
     var training_file = urlParams.get('training');
     AL_URL = urlParams.get('al_url');
-
-    if(!training_file){console.log('training must be set in url query <CTAT URL>?training=<myfile>.json');return;};
-    if(!AL_URL){console.log('al_url must be set in url query <CTAT URL>?al_url=<url of AL server>'); return;};
-
     verbosity = urlParams.get('verbosity') || 0;
+
+    if(!training_file){console.error('training must be set in url query <CTAT URL>?training=<myfile>.json');return;};
+    if(!AL_URL){console.error('al_url must be set in url query <CTAT URL>?al_url=<url of AL server>'); return;};
 
     console.log("Connecting to AL at: " + AL_URL);
 
@@ -496,9 +720,12 @@ function load_training_file(){
 
     })
     .fail(function(jqXHR,textStatus,errorThrown) {
-        // console.log(training_file + " not valid json.");
+        var error  = training_file + " not valid json.";
+
+        console.log(error);
         console.log(textStatus);
         console.log(errorThrown);
+        kill_this(error);
     });
 
 
@@ -514,6 +741,10 @@ function main() {
     load_training_file()
 }
 
+
+
+
+// START IT
 $( window ).on("load", main);
 
 

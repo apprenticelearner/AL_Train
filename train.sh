@@ -9,7 +9,7 @@ do
     if echo $line | grep -F = &>/dev/null
     then
         varname=$(echo "$line" | cut -d '=' -f 1) 
-        eval $varname=$(echo "$line" | cut -d '=' -f 2-)
+        eval $varname=$(echo "$line" | cut -d '=' -f 2-) 
     fi
 done < net.conf
 
@@ -49,6 +49,14 @@ while test $# -gt 0; do
 				BROWSER=$2
 				shift 2
 				;;
+			-l|--log-dir)
+				LOGDIR=$2
+				shift 2
+				;;
+			-o|--output)
+				BROWSER=$2
+				shift 2
+				;;
 			*)
 				TRAINING=$1
             	shift
@@ -56,10 +64,18 @@ while test $# -gt 0; do
 		esac
 done;
 
+
+
 if [ -z "$TRAINING" ]; then
 	echo "Must specify training .json file as first arguement." 
 	exit
 fi
+
+if [ ! -f "$TRAINING" ]; then
+    echo "No such file $TRAINING"
+    exit
+fi
+
 
 ###########################################################
 
@@ -67,6 +83,14 @@ fi
 if [ -z "$AL_PORT" ] || [ -z "$CTAT_PORT" ] || [ -z "$BROWSER" ] || [ -z "$AL_DIR" ] ; then
 	echo Variables AL_PORT, CTAT_PORT ,BROWSER or AL_DIR not set in net.conf >&2;
 	exit;
+fi
+
+if [ -z "$LOGDIR" ] ; then
+	LOGDIR="log";
+fi
+
+if [ -z "$OUTPUT" ] ; then
+	OUTPUT="$LOGDIR/${TRAINING%.*}Log-$(date +%Y-%m-%d-%H:%M:%S).txt";
 fi
 
 
@@ -123,7 +147,7 @@ fi
 
 #If no conflicts start the CTAT server
 if [ -z "$CTAT_CONFLICT" ]; then
-	python3 -m http.server $CTAT_PORT  & #> CTAT_server.log &
+	python3 src/host_server.py $CTAT_PORT $OUTPUT 2>&1 & #> CTAT_server.log &
 	CTAT_SERVER_PID=$! #Stash its PID so we can kill it
 	echo Started CTAT process: $CTAT_SERVER_PID
 else
@@ -136,9 +160,10 @@ fi
 # $BROWSER "http://0.0.0.0:$CTAT_PORT/indexAdd.html?training=blehh&al_url=http://0.0.0.0:$AL_PORT";
 $BROWSER "http://localhost:$CTAT_PORT/?training=$TRAINING&al_url=http://localhost:$AL_PORT";
 
+wait $CTAT_SERVER_PID
 
-while true; do
-sleep 1;
-done
+# while true; do
+# sleep 1;
+# done
 #Kill servers
 kill_servers;
