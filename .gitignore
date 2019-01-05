@@ -1,3 +1,4 @@
 # exclude everything
 log/*
 .~lock.*
+net.conf
