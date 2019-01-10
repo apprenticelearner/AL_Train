@@ -3,6 +3,7 @@
 <head> 
     <script src="https://cdn.ctat.cs.cmu.edu/releases/latest/jquery.min.js"></script>
     <script type="text/javascript" src="src/ALautorun.js"></script>
+    <link href="css/AL_colors.css" rel="stylesheet">
 </head> 
 <body> 
 <!-- <script> 
@@ -13,6 +14,11 @@
 <iframe id="tutor_iframe" src=""
           height="650px" width="100%" scrolling="yes" frameborder="1">
 </iframe>
+<div id="prompt_text" class="hidden"></div>
+<div style="text-align:center">
+	<button type="button" id="yes_button" class="hidden" > yes</button>
+	<button type="button" id="no_button" class="hidden" > no </button>
+</div>
 
 <!-- <script> 
 var iframe = document.getElementById("tutor_iframe");

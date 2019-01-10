@@ -21,3 +21,46 @@ input.CTAT--example[type="radio"] {
 .CTATNumberLine--point.CTAT--example {
 	fill: dodgerblue;
 }
+
+
+
+
+.CTAT--AL_highlight {
+	box-shadow: 0px 0px 15px 5px darkorchid;
+}
+label.CTAT--AL_highlight {
+	box-shadow: none;
+	text-shadow: 0px 0px 5px darkorchid;
+}
+textarea.CTAT--AL_highlight,
+input.CTAT--AL_highlight[type="text"] {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	color: darkorchid;
+}
+input.CTAT--AL_highlight[type="checkbox"],
+input.CTAT--AL_highlight[type="radio"] {
+	box-shadow: 0px 0px 5px 0px darkorchid;
+}
+
+.hidden {
+	visibility: hidden;
+}
+
+.yes_button{
+	width:100px;
+	font-size:40px;
+	background-color: #4CAF50;
+}
+
+.no_button{
+	width:100px;
+	font-size:40px;
+	background-color: #f44336;
+}
+
+.prompt_text{
+	text-align:center;
+	height:40px;
+	font-size:25px;
+}
