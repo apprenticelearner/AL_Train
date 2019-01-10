@@ -38,6 +38,8 @@ var user_guid = null;
 var HTML_name = null;
 var BRD_name = null
 
+var interactive = null;
+
 
 CTATGuid = {s4:function s4() {
   return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
@@ -157,17 +159,27 @@ function post_next_example(){
 	
 }
 
+function propose_sai(sai){
+    var comp = iframe_content.CTATShellTools.findComponent(sai.selection)[0];
+    var elm = iframe_content.document.getElementById(sai.selection);
+    console.log(comp);
+    var sai_obj =  new iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
+    comp.executeSAI(sai_obj);
+    comp.setEnabled(false);
+
+    elm.firstElementChild.setAttribute("class", "CTAT--AL_highlight");
+}
 
 function apply_sai(sai){
-
-	message = "<message><properties>" +
-					"<MessageType>InterfaceAction</MessageType>" +
-					"<Selection><value>"+ sai.selection + "</value></Selection>" +
-					"<Action><value>" + sai.action + "</value></Action>" +
-					"<Input><value><![CDATA["+ sai.inputs["value"] +"]]></value></Input>" +
-				"</properties></message>";
-	// console.log("MESSAGE",message);
-	commLibrary.sendXML(message); 	
+        message = "<message><properties>" +
+                    "<MessageType>InterfaceAction</MessageType>" +
+                    "<Selection><value>"+ sai.selection + "</value></Selection>" +
+                    "<Action><value>" + sai.action + "</value></Action>" +
+                    "<Input><value><![CDATA["+ sai.inputs["value"] +"]]></value></Input>" +
+                "</properties></message>";
+    // console.log("MESSAGE",message);
+        commLibrary.sendXML(message);   
+	
 }
 
 function apply_hint(){
@@ -184,13 +196,73 @@ function apply_hint(){
 
 // Cr1Str1.addEventListener(CTAT.Component.Base.Tutorable.EventType.action, function(){ alert("Hello World!");});
 
+
+function handle_user_example(evt){
+    var sai = evt.detail.sai
+
+    console.log("%cUSER_EXAMPLE: " + sai.getSelection() + " -> " + sai.getInput(), 'color: #2222bb; background: #DDDDDD;');
+    term_print('\x1b[0;33;44m' + "USER_EXAMPLE:" + sai.getSelection() + " -> " + sai.getInput() + '\x1b[0m')
+    iframe_content.document.removeEventListener(CTAT_ACTION, handle_user_example);
+    iframe_content.document.getElementById("done").removeEventListener("click", _done_clicked); 
+
+    sai_data = {
+        selection: sai.getSelection(),
+        action: sai.getAction(),
+        inputs: {value: sai.getInput()},
+        state: state,
+        reward: 1
+    };
+
+    // apply_sai(sai_data);
+    var elm = iframe_content.document.getElementById(sai.getSelection())
+    var comp = iframe_content.CTATShellTools.findComponent(sai.getSelection())[0];
+    comp.setEnabled(false);
+    // elm.contentEditable = "false";
+    console.log(elm.firstElementChild);
+    elm.firstElementChild.setAttribute("class", "CTAT--example");
+    console.log(elm.firstElementChild);
+
+
+    // console.log(sai_data);
+    send_training_data(sai_data);
+}
+
+function handle_user_feedback_correct(evt){
+    console.log("%cCORRECT:" + last_action.selection + " -> " + last_action.inputs.value, "color: #009922; background: #DDDDDD;");
+    term_print('\x1b[0;30;42m' + "CORRECT:" + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
+    document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
+    document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
+
+    var elm = iframe_content.document.getElementById(last_action.selection)
+    elm.firstElementChild.setAttribute("class", "CTAT--correct");
+    var comp = iframe_content.CTATShellTools.findComponent(last_action.selection)[0];
+    comp.setEnabled(false);
+
+    send_feedback(1);
+}
+
+function handle_user_feedback_incorrect(evt){
+    console.log("%cINCORRECT: " + last_action.selection + " -> " + last_action.inputs.value, "color: #bb2222; background: #DDDDDD;");
+    term_print('\x1b[0;30;41m' + "INCORRECT: " + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
+    document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
+    document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
+
+    var elm = iframe_content.document.getElementById(last_action.selection)
+    elm.firstElementChild.setAttribute("class", "CTAT--incorrect");
+    var comp = iframe_content.CTATShellTools.findComponent(last_action.selection)[0];
+    comp.setEnabled(true);
+
+
+    send_feedback(-1);
+}
+
 function handle_correct(evt){
 	console.log("%cCORRECT:" + last_action.selection + " -> " + last_action.inputs.value, "color: #009922; background: #DDDDDD;");
     term_print('\x1b[0;30;42m' + "CORRECT:" + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
 	currentElement.removeEventListener(CTAT_CORRECT, handle_correct);
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
-	send_feeback(1);
+	send_feedback(1);
 }
 
 function handle_incorrect(evt){
@@ -199,7 +271,7 @@ function handle_incorrect(evt){
 	currentElement.removeEventListener(CTAT_CORRECT, handle_correct);
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
-	send_feeback(-1);
+	send_feedback(-1);
 }
 
 function singal_done(){
@@ -209,7 +281,7 @@ function singal_done(){
 
 
 
-function send_feeback(reward){
+function send_feedback(reward){
 	if (last_action === null) {
         console.log('error. cannot give feedback on no action.');
     }
@@ -251,7 +323,34 @@ function send_training_data(sai_data) {
     });
 }
 
+function query_user_feedback(){
+    document.getElementById("prompt_text").innerHTML = "Is the <span style='color: #9932CC'>highlighted</span> input correct for the next step?"
+    document.getElementById("yes_button").setAttribute("class", "yes_button");
+    document.getElementById("no_button").setAttribute("class", "no_button");
+    document.getElementById("yes_button").addEventListener("click", handle_user_feedback_correct);
+    document.getElementById("no_button").addEventListener("click", handle_user_feedback_incorrect);
+}
 
+//I REALLY SHOULD"T NEED THIS BECAUSE DONE SHOULD BE PROPAGATED W/ CTAT_ACTION
+function _done_clicked(evt){
+    handle_user_example({detail:{sai:new iframe_content.CTATSAI("done", "ButtonPressed", "-1")}})
+}
+
+function query_user_example(){
+    document.getElementById("prompt_text").innerHTML = "Demonstrate the next step."
+    document.getElementById("yes_button").setAttribute("class", "hidden");
+    document.getElementById("no_button").setAttribute("class", "hidden");
+
+    iframe_content.document.addEventListener(CTAT_ACTION, handle_user_example); 
+    iframe_content.document.getElementById("done").addEventListener("click", _done_clicked); 
+       
+//     iframe_content.CTATCommShell.commShell.addGlobalEventListener({processDone: function (anEvent, aMessage) { if (anEvent=="DonePressed"){}
+//     {
+//       alert ("Start state finished, tutor ready for input");
+//     }
+//   }
+// };);   
+}
 
 // // https://stackoverflow.com/questions/11616630/json-stringify-avoid-typeerror-converting-circular-structure-to-json/11616993
 // function customReplacer(key, value) {
@@ -314,7 +413,12 @@ function query_apprentice() {
 
         success: function(resp) {
             if (jQuery.isEmptyObject(resp)) {
-                post_next_example();
+                if(interactive){
+                    query_user_example();
+                }else{
+                    post_next_example();    
+                }
+                
             } else {
             	last_action = resp;
 
@@ -327,9 +431,17 @@ function query_apprentice() {
                     alert("THIS HAPPENED... SO WE NEED TO ACTUALLY IMPLEMENT THIS.");
                 }else{
                     console.log("STATE",state)
-                    currentElement.addEventListener(CTAT_CORRECT, handle_correct);
-                    currentElement.addEventListener(CTAT_INCORRECT, handle_incorrect);
-                    apply_sai(resp);    
+
+                    if(interactive){
+                        query_user_feedback()
+                        propose_sai(resp) 
+                    }else{
+                        currentElement.addEventListener(CTAT_CORRECT, handle_correct);
+                        currentElement.addEventListener(CTAT_INCORRECT, handle_incorrect);    
+                        apply_sai(resp);    
+                    }
+                    
+                    
                 }
                 
                 // query_user_feedback(resp);
@@ -498,7 +610,7 @@ function get_state(encode_relative=true,strip_offsets=true){
 
     }
 
-    console.log(state_json);
+    // console.log(state_json);
     return state_json;
 
 }
@@ -562,6 +674,9 @@ function runWhenReady(){
 	hasConfig = iframe_content.CTATConfiguration != undefined
 	if(graph && commLibrary && hasConfig){
 
+        // if(interactive){
+        //     graph.hideAllFeedback();
+        // }
         //Initialize session
         // if(session_id == null){
         //     var conf = iframe_content.CTATConfiguration;
@@ -583,7 +698,8 @@ function runWhenReady(){
 
         //Grab these event constants from CTAT
         CTAT_CORRECT = iframe_content.CTAT.Component.Base.Tutorable.EventType.correct;
-        CTAT_INCORRECT = iframe_content.CTAT.Component.Base.Tutorable.EventType.incorrect;    
+        CTAT_INCORRECT = iframe_content.CTAT.Component.Base.Tutorable.EventType.incorrect;
+        CTAT_ACTION = iframe_content.CTAT.Component.Base.Tutorable.EventType.action;    
 
 		query_apprentice();
 	}else{
@@ -635,7 +751,7 @@ function serve_next_problem(){
         var prob_obj = problem_iterator.shift();
 
         HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
-        BRD_name = prob_obj["question_file"].substring(prob_obj["question_file"].lastIndexOf('/')+1).replace(".brd", "").replace(".nools", "");  
+        
 
         // Point the iframe to the HTML and question_file (brd or nools) for the next problem
 
@@ -649,35 +765,28 @@ function serve_next_problem(){
             session_id = CTATGuid.guid();
         }
 
-        params = {
-            "question_file" : prob_obj["question_file"],
+        qf_exists = prob_obj["question_file"] != undefined && prob_obj["question_file"].toUpperCase() != "INTERACTIVE";
+        if(qf_exists){
+            BRD_name = prob_obj["question_file"].substring(prob_obj["question_file"].lastIndexOf('/')+1).replace(".brd", "").replace(".nools", "");  
+        }else{
+            BRD_name = "INTERACTIVE"
+        }
 
+        qf = qf_exists  ? {"question_file" : prob_obj["question_file"]} : {}//{"question_file" : "src/empty.nools"} ;
+        logging_params = {
             "problem_name": BRD_name,
             "dataset_level_name1" : HTML_name,
             "dataset_level_type1" : "Domain",
-            // "session_id" : "Domain",
             "SessionLog" : "true",
             "Logging" : "ClientToLogServer",
             "log_service_url" : window.location.origin,
             "user_guid" : user_guid,
             "session_id" : session_id
-        }
-        // iframe.onload = function() { alert("loaded", iframe_content.CTAT); iframe.ctatOnload = runWhenReady; };
+        };
+        params = Object.assign({},qf,logging_params) //Merge dictionaries
+        
         iframe.src = prob_obj["HTML"] + "?" + jQuery.param( params );
-            // + "?question_file=" + prob_obj["question_file"] 
-            // + "&nofrm=1"
-            // + "&dataset_level_name1=" + HTML_name
-            // + "&dataset_level_type1=" + "Domain";
-        // iframe_content.addEventListener("DOMContentLoaded", function() { iframe_content.ctatOnLoad = runWhenReady; });
-        // iframe_content.ctatOnLoad = runWhenReady;
-        // var iFrameHead = iframe.document.getElementsByTagName("head")[0];         
-        // var myscript = document.createElement('script');
-        // myscript.type = 'text/javascript';
-        // myscript.text = ''; // replace this with your SCRIPT
-        // iFrameHead.appendChild(myscript);
 
-
-        // iframe_content.ctatOnload = runWhenReady;
 
         runWhenReady();
     }else{
@@ -685,20 +794,9 @@ function serve_next_problem(){
     }
 }
 
-function load_training_file(){
-    iframe = document.getElementById("tutor_iframe")
-    iframe_content = iframe.contentWindow
-
-    // Grab the the path to the training .json file and the url for the AL server from the query string
-    var urlParams = new URLSearchParams(window.location.search);
-    var training_file = urlParams.get('training');
-    AL_URL = urlParams.get('al_url');
-    verbosity = urlParams.get('verbosity') || 0;
-
-    if(!training_file){console.error('training must be set in url query <CTAT URL>?training=<myfile>.json');return;};
-    if(!AL_URL){console.error('al_url must be set in url query <CTAT URL>?al_url=<url of AL server>'); return;};
-
-    console.log("Connecting to AL at: " + AL_URL);
+function load_training_file(training_file){
+    
+    
 
     $.getJSON(training_file, function(tj) {
         console.log("Succssfully loaded " + training_file);
@@ -738,7 +836,30 @@ function load_training_file(){
 }
 
 function main() {
-    load_training_file()
+    iframe = document.getElementById("tutor_iframe")
+    iframe_content = iframe.contentWindow
+
+    // Grab the the path to the training .json file and the url for the AL server from the query string
+    var urlParams = new URLSearchParams(window.location.search);
+    var training_file = urlParams.get('training');
+    var tutor_interface = urlParams.get('tutor_interface');
+    interactive = urlParams.get('interactive') == "true";
+
+    if(interactive){
+        document.getElementById("prompt_text").setAttribute("class", "prompt_text");
+    }
+
+    console.log("INTERACTIVE:",interactive)
+
+    AL_URL = urlParams.get('al_url');
+    verbosity = urlParams.get('verbosity') || 0;
+
+    if(!training_file){console.error('training must be set in url query <CTAT URL>?training=<myfile>.json');return;};
+    if(!AL_URL){console.error('al_url must be set in url query <CTAT URL>?al_url=<url of AL server>'); return;};
+
+    console.log("Connecting to AL at: " + AL_URL);
+
+    load_training_file(training_file)
 }
 
 
