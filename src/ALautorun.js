@@ -1,3 +1,5 @@
+var working_dir = null;
+
 var agent_id = null;
 var state = null;
 var current_task = null;
@@ -744,6 +746,21 @@ function serve_next_agent(){
     }
 }
 
+//https://stackoverflow.com/questions/21698906/how-to-check-if-a-path-is-absolute-or-relative
+function isAbsPath(path){
+    if (navigator.appVersion.indexOf("Win")!=-1){
+        var splitDeviceRe =
+    /^([a-zA-Z]:|[\\\/]{2}[^\\\/]+[\\\/]+[^\\\/]+)?([\\\/])?([\s\S]*?)$/;
+        var result = splitDeviceRe.exec(path),
+        device = result[1] || '',
+        isUnc = device && device.charAt(1) !== ':';
+        // UNC paths are always absolute
+        return !!result[2] || isUnc;
+    }else{
+        return path.charAt(0) === '/';
+    }
+}
+
 function serve_next_problem(){
     console.log("PROBLEM ITERATOR", problem_iterator.length);
 
@@ -758,7 +775,15 @@ function serve_next_problem(){
         iframe_content.CTAT = null;
         iframe_content.CTATCommShell = null;
 
+
+
         HTML_PATH = prob_obj["HTML"];
+        if(!isAbsPath(HTML_PATH)){
+            HTML_PATH = working_dir + "/" + HTML_PATH  
+        }
+        console.log("working_dir: ", working_dir)
+        console.log("HTML_PATH: ", HTML_PATH)
+
 
         if(session_id == null){
             user_guid = "Stu_" + CTATGuid.guid();
@@ -785,7 +810,7 @@ function serve_next_problem(){
         };
         params = Object.assign({},qf,logging_params) //Merge dictionaries
         
-        iframe.src = prob_obj["HTML"] + "?" + jQuery.param( params );
+        iframe.src = HTML_PATH + "?" + jQuery.param( params );
 
 
         runWhenReady();
@@ -844,6 +869,11 @@ function main() {
     var training_file = urlParams.get('training');
     var tutor_interface = urlParams.get('tutor_interface');
     interactive = urlParams.get('interactive') == "true";
+    working_dir = urlParams.get('wd');
+
+    if(working_dir == null){
+        working_dir = training_file.match(/(.*)[\/\\]/)[1]||'';
+    }
 
     if(interactive){
         document.getElementById("prompt_text").setAttribute("class", "prompt_text");
