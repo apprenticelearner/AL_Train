@@ -871,8 +871,15 @@ function main() {
     interactive = urlParams.get('interactive') == "true";
     working_dir = urlParams.get('wd');
 
+    AL_URL = urlParams.get('al_url');
+    verbosity = urlParams.get('verbosity') || 0;
+
+    if(!training_file){console.error('training must be set in url query <CTAT URL>?training=<myfile>.json');return;};
+    if(!AL_URL){console.error('al_url must be set in url query <CTAT URL>?al_url=<url of AL server>'); return;};
+
     if(working_dir == null){
-        working_dir = training_file.match(/(.*)[\/\\]/)[1]||'';
+        match = training_file.match(/(.*)[\/\\]/)
+        working_dir =  !!match ? match[1] : ''; //The directory of the training.json
     }
 
     if(interactive){
@@ -881,11 +888,7 @@ function main() {
 
     console.log("INTERACTIVE:",interactive)
 
-    AL_URL = urlParams.get('al_url');
-    verbosity = urlParams.get('verbosity') || 0;
-
-    if(!training_file){console.error('training must be set in url query <CTAT URL>?training=<myfile>.json');return;};
-    if(!AL_URL){console.error('al_url must be set in url query <CTAT URL>?al_url=<url of AL server>'); return;};
+    
 
     console.log("Connecting to AL at: " + AL_URL);
 
