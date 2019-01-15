@@ -1,11 +1,12 @@
 from http.server import HTTPServer, SimpleHTTPRequestHandler
-import sys, time
+import os, sys, time
 from datetime import datetime
 from xml.etree import ElementTree
 from xml.etree.ElementTree import ElementTree as ETree
 from xml.dom import minidom 
 from urllib.parse import unquote
 import uuid, csv
+import errno
 # 
 def _read_data(handler):
     content_length = int(handler.headers['Content-Length']) # <--- Gets the size of data
@@ -176,6 +177,16 @@ assert sys.argv[1].isdigit(), "invalid port %r" % sys.argv[1]
 port = int(sys.argv[1])
 if (len(sys.argv) > 2):
     output_file_path = sys.argv[2]
+
+    # Make path if not exist
+    if not os.path.exists(os.path.dirname(output_file_path)):
+        try:
+            os.makedirs(os.path.dirname(output_file_path))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+
+
     with open(output_file_path, 'w') as f: 
         csv_writer = csv.DictWriter(f, LOG_HEADERS.values(),delimiter="\t")
         csv_writer.writeheader()
