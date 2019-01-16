@@ -42,6 +42,8 @@ var BRD_name = null
 
 var interactive = null;
 
+var EXAMPLES_ONLY = false;
+
 
 CTATGuid = {s4:function s4() {
   return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
@@ -398,61 +400,69 @@ function query_apprentice() {
 
     // console.log("QUERY!");
 
+    if(EXAMPLES_ONLY){
+        if(interactive){
+            query_user_example();
+        }else{
+            post_next_example();    
+        }
+    }else{
 
-    $.ajax({
-        type: 'POST',
-        url: AL_URL + '/request/' + agent_id + '/',
-        crossdomain : true,
-        data: JSON.stringify(data),
-        contentType: "application/json; charset=utf-8",
-        dataType: 'json',
+        $.ajax({
+            type: 'POST',
+            url: AL_URL + '/request/' + agent_id + '/',
+            crossdomain : true,
+            data: JSON.stringify(data),
+            contentType: "application/json; charset=utf-8",
+            dataType: 'json',
 
-        // async: true,
-        // timeout: AL_TIMEOUT,
-        retryLimit : AL_RETRY_LIMIT,
-        tryCount : 0,
-        error: ajax_retry_on_error,
+            // async: true,
+            // timeout: AL_TIMEOUT,
+            retryLimit : AL_RETRY_LIMIT,
+            tryCount : 0,
+            error: ajax_retry_on_error,
 
-        success: function(resp) {
-            if (jQuery.isEmptyObject(resp)) {
-                if(interactive){
-                    query_user_example();
-                }else{
-                    post_next_example();    
-                }
-                
-            } else {
-            	last_action = resp;
-
-                if(verbosity > 0) console.log('action to take!');
-                // console.log("RESPONSE: ", resp);
-                currentElement = iframe_content.document.getElementById(resp.selection);
-                // console.log(resp)
-                if(!currentElement){
-                	console.log("Element " +resp.selection +" does not exist, providing example instead.");
-                    alert("THIS HAPPENED... SO WE NEED TO ACTUALLY IMPLEMENT THIS.");
-                }else{
-                    console.log("STATE",state)
-
+            success: function(resp) {
+                if (jQuery.isEmptyObject(resp)) {
                     if(interactive){
-                        query_user_feedback()
-                        propose_sai(resp) 
+                        query_user_example();
                     }else{
-                        currentElement.addEventListener(CTAT_CORRECT, handle_correct);
-                        currentElement.addEventListener(CTAT_INCORRECT, handle_incorrect);    
-                        apply_sai(resp);    
+                        post_next_example();    
                     }
                     
+                } else {
+                	last_action = resp;
+
+                    if(verbosity > 0) console.log('action to take!');
+                    // console.log("RESPONSE: ", resp);
+                    currentElement = iframe_content.document.getElementById(resp.selection);
+                    // console.log(resp)
+                    if(!currentElement){
+                    	console.log("Element " +resp.selection +" does not exist, providing example instead.");
+                        alert("THIS HAPPENED... SO WE NEED TO ACTUALLY IMPLEMENT THIS.");
+                    }else{
+                        console.log("STATE",state)
+
+                        if(interactive){
+                            query_user_feedback()
+                            propose_sai(resp) 
+                        }else{
+                            currentElement.addEventListener(CTAT_CORRECT, handle_correct);
+                            currentElement.addEventListener(CTAT_INCORRECT, handle_incorrect);    
+                            apply_sai(resp);    
+                        }
+                        
+                        
+                    }
                     
+                    // query_user_feedback(resp);
                 }
-                
-                // query_user_feedback(resp);
-            }
-        },
-        // error: function (resp){
-        // 	create_agent(query_apprentice);
-        // }
-    });
+            },
+            // error: function (resp){
+            // 	create_agent(query_apprentice);
+            // }
+        });
+    }
 }
 
 function checkTypes(element, types){
@@ -768,6 +778,8 @@ function serve_next_problem(){
         var prob_obj = problem_iterator.shift();
 
         HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
+
+        EXAMPLES_ONLY = prob_obj["examples_only"] || false;
         
 
         // Point the iframe to the HTML and question_file (brd or nools) for the next problem

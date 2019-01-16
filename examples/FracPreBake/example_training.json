@@ -1,0 +1,97 @@
+{
+	"training_set1" : [
+	{
+		"agent_name":"Treatment_IntegerAddition",
+		"agent_type":"WhereWhenHowNoFoa",
+		"output_dir":"out/myAgent1",
+		"problem_set" : [
+
+			{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
+	 		"question_file" : "../FinalBRDs/1+1.brd",
+	 		"examples_only" : true},
+
+	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
+	 		"question_file" : "../FinalBRDs/2+1.brd",
+	 		"examples_only" : true},
+
+	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
+	 		"question_file" : "../FinalBRDs/2+2.brd",
+	 		"examples_only" : true},
+
+	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
+	 		"question_file" : "../FinalBRDs/3+4.brd",
+	 		"examples_only" : true},
+
+	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
+	 		"question_file" : "../FinalBRDs/3+5.brd",
+	 		"examples_only" : true},
+
+	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
+	 		"question_file" : "../FinalBRDs/4+3.brd",
+	 		"examples_only" : true},
+
+	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
+	 		"question_file" : "../FinalBRDs/6+9.brd",
+	 		"examples_only" : true},
+
+	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
+	 		"question_file" : "../FinalBRDs/8+7.brd",
+	 		"examples_only" : true},
+
+	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
+	 		"question_file" : "../FinalBRDs/9+2.brd",
+	 		"examples_only" : true},
+
+			
+
+
+			{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+	 		"question_file" : "../training/1-3_plus_4-9.brd"},
+
+	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+	 		"question_file" : "../training/1-4_plus_2-5.brd"},
+
+	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+	 		"question_file" : "../training/1-4_plus_2-6.brd"},
+
+	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+	 		"question_file" : "../training/1-4_plus_2-7.brd"},
+
+	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+	 		"question_file" : "../training/1-5_plus_4-6.brd"},
+
+	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+	 		"question_file" : "../training/1-6_plus_2-6.brd"}
+
+		]
+	},
+
+	{
+
+		"agent_name":"Control",
+		"agent_type":"WhereWhenHowNoFoa",
+		"output_dir":"out/myAgent1",
+		"problem_set" : [
+			{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+	 		"question_file" : "../training/1-3_plus_4-9.brd"},
+
+	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+	 		"question_file" : "../training/1-4_plus_2-5.brd"},
+
+	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+	 		"question_file" : "../training/1-4_plus_2-6.brd"},
+
+	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+	 		"question_file" : "../training/1-4_plus_2-7.brd"},
+
+	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+	 		"question_file" : "../training/1-5_plus_4-6.brd"},
+
+	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+	 		"question_file" : "../training/1-6_plus_2-6.brd"}
+
+		]
+	}
+
+]
+}
