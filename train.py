@@ -178,7 +178,7 @@ def parse_args(argv):
     assert args.log_dir != None, "LOG_DIR not specified or set in %s" % args.config 
 
     if(args.output == None):
-        args.output = "%s/%sLog-%s.txt" % (args.log_dir , os.path.basename(args.training).split(".")[0], datetime.now().strftime("%Y-%m-%d-%H:%M:%S"))
+        args.output = "%s/%sLog-%s.txt" % (args.log_dir , os.path.basename(args.training).split(".")[0], datetime.now().strftime("%Y-%m-%d-%H_%M_%S"))
 
     
     args.output = os.path.abspath(apply_wd(args.output))
