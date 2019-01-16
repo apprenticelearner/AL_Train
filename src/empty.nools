@@ -1,0 +1,11 @@
+import("types.nools");
+
+rule bootstrap {
+	when {
+		b: Boolean b === true from true;
+	}
+	then {
+		setProblemAttribute("use_backtracking", true);
+		halt();
+	}
+}
