@@ -1,4 +1,0 @@
-Anon Student Id	Session Id	Time	Time Zone	Student Response Type	Tutor Response Type	Level (Domain)	ProblemName	Step Name	Selection	Action	Input	Feedback Text	Outcome
-Stu_76c3c999-9313-2cb2-888b-9f630c1e5c2a	6a52d5e8-4871-69bb-9957-72e98530e775	2019-01-15 07:40:26.642	UTC	HINT_REQUEST	HINT_MSG	fraction_arithmetic	1-3_plus_4-9	1	JCommTable4.R1C0	UpdateTextArea	9	Please enter '9' in the highlighted cell.	HINT
-Stu_76c3c999-9313-2cb2-888b-9f630c1e5c2a	6a52d5e8-4871-69bb-9957-72e98530e775	2019-01-15 07:40:26.672	UTC	ATTEMPT	RESULT	fraction_arithmetic	1-3_plus_4-9	1	JCommTable4.R1C0	UpdateTextArea	9		CORRECT
-Stu_76c3c999-9313-2cb2-888b-9f630c1e5c2a	6a52d5e8-4871-69bb-9957-72e98530e775	2019-01-15 07:40:27.537	UTC	ATTEMPT	RESULT	fraction_arithmetic	1-3_plus_4-9	5	JCommTable4.R0C0	UpdateTextArea	3	Instead of the step you are working on, please work on the highlighted step.	INCORRECT
