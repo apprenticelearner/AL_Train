@@ -1,5 +1,4 @@
 # exclude everything
 .~lock.*
-net.conf
 ubprocess
 log/
