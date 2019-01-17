@@ -2,3 +2,4 @@
 .~lock.*
 net.conf
 ubprocess
+log/

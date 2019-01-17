@@ -1,7 +1,7 @@
 # Used to start training an Apprentice Learner agent interactively or via example/model tracing. 
 # 
 
-import argparse,sys,os, atexit
+import argparse,sys,os, atexit,re 
 import subprocess, threading
 from subprocess import check_output
 import socket, errno
@@ -10,8 +10,9 @@ from datetime import datetime
 
 al_process = None
 ctat_process = None
-al_thread = None
-ctat_thread = None
+browser_process = None
+# al_thread = None
+# ctat_thread = None
 calling_dir = None
 CONFIG_DEFAULT = "net.conf"
 
@@ -25,12 +26,18 @@ def read_conf(ns, path):
             if(len(x) > 1 and getattr(ns,x[0],None) == None):
                 key = x[0].lower();
                 val = x[1].strip('\"\'\n \t\f\r');
+                if(val == ""):
+                    continue
                 if("port" in key): 
                     try:
                         val  = int(val)
                     except ValueError as e:
-                        print("Invalid port %s for %s." % (val,key), file=sys.stderr)
-                        sys.exit()
+                        if(val.strip() != ""):
+                            print("Invalid port %s for %s." % (val,key), file=sys.stderr)
+                            sys.exit()
+                elif("args" in key):
+                    val= list(filter(None,re.split(';|,| |\t|\n', val))) # turn into a list of args
+                
 
                 setattr(ns, key, val); #Strip quotes and whitespace
     return ns
@@ -95,8 +102,8 @@ def kill_group(p):
     os.killpg(pgid, signal.SIGTERM) 
 
 def kill_all():
-    global al_process,ctat_process
-    print("KILL ALL", al_process.pid,ctat_process.pid)
+    global al_process,ctat_process, browser_process
+    print("KILL ALL")
     # al_process.stderr = None
     # ctat_process.stderr = None
     # al_process.stdout = None
@@ -106,11 +113,12 @@ def kill_all():
     # temp_stderr = sys.stderr
     # sys.stderr = None 
     # sys.stdout = None 
-    if(hasattr(os, "killpg")):
-        os.killpg(os.getpgid(), signal.SIGTERM) 
-    else:
-        if(al_process != None): al_process.terminate()
-        if(ctat_process != None): ctat_process.terminate()    
+    # if(hasattr(os, "killpg")):
+    #     os.killpg(os.getpgid(), signal.SIGTERM) 
+    # else:
+    if(al_process != None): al_process.terminate()
+    if(ctat_process != None): ctat_process.terminate()    
+    if(browser_process != None): browser_process.terminate()    
     # sys.stderr = temp_stderr
     # if(al_process != None): kill_group(al_process)
     # if(ctat_process != None): kill_group(ctat_process)
@@ -122,6 +130,14 @@ def apply_wd(path):
     if(not os.path.isabs(path)):
         path = os.path.join(calling_dir,path)
     return path
+
+def get_open_port():
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("",0))
+        s.listen(1)
+        port = s.getsockname()[1]
+        s.close()
+        return port
 
 
 def parse_args(argv):
@@ -145,12 +161,17 @@ def parse_args(argv):
 
     parser.add_argument('-d', '--al-dir' ,  default=None, dest = "al_dir",      metavar="<AL_dir>",
         help="The directory where the apprentice learner API can be found.")
+
     parser.add_argument('-b', '--broswer' , default=None, dest = "browser",     metavar="<browser>",
         help="The browser executable to run CTAT on.")
+    parser.add_argument('--broswer-args' , default='', dest = "browser_args",     metavar="<browser_args>",
+        help="Shell arguements to pass to the browser."
+        )
     parser.add_argument('-l', '--log-dir' , default=None, dest = "log_dir",     metavar="<log_dir>",
         help="The directory where tab deliminated logging files are written. Overridden by -o/--output.")
     parser.add_argument('-o', '--output' ,  default=None, dest = "output",      metavar="<output>",
-        help="The tab deliminated logging file for the session should go to. By default can be found in /log directory")
+        help="The tab deliminated logging file for the session should go to. By default will be generated with a timestamp in the /log directory")
+
     parser.add_argument('--config' ,  default=CONFIG_DEFAULT, dest = "config",      metavar="<config>.conf",
         help="Bash style configuration file used for setting default variables. ")
     parser.add_argument('-w' , "--working-directory",  default=None, dest = "wd",      metavar="<working-directory>",
@@ -166,6 +187,9 @@ def parse_args(argv):
 
     read_conf(args, args.config)
 
+    print(args.browser_args)
+
+    args.browser_args = list(filter(None,re.split(';|,| |\t|\n', args.browser_args)))
 
     args.log_dir = os.path.abspath(apply_wd(args.log_dir))
     args.al_dir = os.path.abspath(apply_wd(args.al_dir))
@@ -174,10 +198,10 @@ def parse_args(argv):
 
 
     assert os.path.isfile(args.training), "No such file %r" % args.training
-    assert args.al_port != None, "AL_PORT not specified or set in %s" % args.config
-    assert args.ctat_port != None, "CTAT_PORT not specified or set in %s" % args.config 
+    # assert args.al_port != None, "AL_PORT not specified or set in %s" % args.config
+    # assert args.ctat_port != None, "CTAT_PORT not specified or set in %s" % args.config 
     assert args.al_dir != None, "AL_DIR not specified or set in %s" % args.config
-    assert args.browser != None, "BROWSER not specified or set in %s" % args.config 
+    # assert args.browser != None, "BROWSER not specified or set in %s" % args.config 
     assert args.log_dir != None, "LOG_DIR not specified or set in %s" % args.config 
 
     if(args.output == None):
@@ -201,10 +225,10 @@ def parse_args(argv):
 
 
 
-
 def main(args):
-    global al_process,ctat_process
+    global al_process,ctat_process, browser_process
 
+    if(not args.al_port): args.al_port = get_open_port()
     if(check_port(args.al_host, args.al_port, args.force)):
         al_process =  subprocess.Popen([sys.executable, args.al_dir + "/manage.py", "runserver", str(args.al_host) + ":" + str(args.al_port)])
         # al_thread = threading.Thread(target=waitAndExit, args=(al_process, kill_all))
@@ -212,6 +236,7 @@ def main(args):
     else:
         port_error("AL", args.al_port)
 
+    if(not args.ctat_port): args.ctat_port = get_open_port()
     if(check_port(args.ctat_host, args.ctat_port, args.force)):
         ctat_process = subprocess.Popen([sys.executable, "src/host_server.py", str(args.ctat_port), args.output])
         # ctat_thread = threading.Thread(target=waitAndExit, args=(ctat_process, kill_all))
@@ -223,7 +248,12 @@ def main(args):
     ctat_url = "http://localhost:%s/?training=%s&al_url=http://localhost:%s" %(args.ctat_port, args.training,args.al_port)
     if(args.wd != None): ctat_url += "&wd=" + args.wd
 
-    browser_process = subprocess.Popen([args.browser, ctat_url])
+    if(args.browser != None):
+        browser_process = subprocess.Popen([args.browser, ctat_url] + args.browser_args)
+    else:
+        #use defualt browser
+        import webbrowser
+        webbrowser.get().open(ctat_url)
 
     # al_process.wait()
     print("AL PROCESS")
