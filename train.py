@@ -38,7 +38,7 @@ def read_conf(ns, path):
 
 def force_kill_port(port):
     print("Attempting force kill...")
-
+    tokill = []
     if("linux" in sys.platform):
         try:
             tokill =  [int(x) for x in check_output(["lsof", "-Pi", ":" + str(port), "-sTCP:LISTEN", "-t"]).splitlines()]
@@ -96,7 +96,7 @@ def kill_group(p):
 
 def kill_all():
     global al_process,ctat_process
-    print("KILL ALL", al_process.pid,ctat_process)
+    print("KILL ALL", al_process.pid,ctat_process.pid)
     # al_process.stderr = None
     # ctat_process.stderr = None
     # al_process.stdout = None
@@ -106,12 +106,15 @@ def kill_all():
     # temp_stderr = sys.stderr
     # sys.stderr = None 
     # sys.stdout = None 
-    os.killpg(os.getpgid(), signal.SIGTERM) 
+    if(hasattr(os, "killpg")):
+        os.killpg(os.getpgid(), signal.SIGTERM) 
+    else:
+        if(al_process != None): al_process.terminate()
+        if(ctat_process != None): ctat_process.terminate()    
     # sys.stderr = temp_stderr
     # if(al_process != None): kill_group(al_process)
     # if(ctat_process != None): kill_group(ctat_process)
-    # if(al_process != None): al_process.terminate()
-    # if(ctat_process != None): ctat_process.terminate()
+    
 
 
 def apply_wd(path):
@@ -197,11 +200,12 @@ def parse_args(argv):
 # signal.signal(signal.SIGINT, stop)
 
 
+
+
 def main(args):
     global al_process,ctat_process
 
     if(check_port(args.al_host, args.al_port, args.force)):
-        # pass
         al_process =  subprocess.Popen([sys.executable, args.al_dir + "/manage.py", "runserver", str(args.al_host) + ":" + str(args.al_port)])
         # al_thread = threading.Thread(target=waitAndExit, args=(al_process, kill_all))
         # al_thread.start()
@@ -209,7 +213,6 @@ def main(args):
         port_error("AL", args.al_port)
 
     if(check_port(args.ctat_host, args.ctat_port, args.force)):
-        pass
         ctat_process = subprocess.Popen([sys.executable, "src/host_server.py", str(args.ctat_port), args.output])
         # ctat_thread = threading.Thread(target=waitAndExit, args=(ctat_process, kill_all))
         # ctat_thread.start()
@@ -247,7 +250,7 @@ if __name__ == "__main__":
     dname = os.path.dirname(abspath)
     os.chdir(dname)
 
-    # atexit.register(kill_all);
+    atexit.register(kill_all);
     args = parse_args(sys.argv[1:])
     # print(args, type(args))
     main(args)
