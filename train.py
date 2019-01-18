@@ -103,7 +103,6 @@ def kill_group(p):
 
 def kill_all():
     global al_process,ctat_process, browser_process
-    print("KILL ALL")
     # al_process.stderr = None
     # ctat_process.stderr = None
     # al_process.stdout = None
@@ -256,7 +255,7 @@ def main(args):
         webbrowser.get().open(ctat_url)
 
     # al_process.wait()
-    print("AL PROCESS")
+    # print("AL PROCESS")
     while True:
         if(al_process.poll() != None or ctat_process.poll() != None):
             break
@@ -271,14 +270,38 @@ def main(args):
     kill_all()
     sys.exit()
 
+def setup_net_conf():
+    i = sys.argv.index("--al-dir") if "--al-dir" in sys.argv else None
+    if(i == None): i = sys.argv.index("-d") if "-d" in sys.argv else None
+    if(i == None):
+        al_dir = input("Enter the directory where you cloned the apprentice_learner_api \
+         otherwise press enter to exit and set AL_DIR in net.conf. For example. \
+         \n AL_DIR=$HOME/Projects/apprentice_learner_api \n AL_DIR: ")
+    else:
+        al_dir = sys.argv[i+1]
+
+    with open("src/defaults.conf", 'r') as f:
+        content = f.read()
+
+    if(al_dir != ""):
+        content = re.sub(r"AL_DIR=[^\n\r]*", "AL_DIR=" + al_dir,content)
+
+    with open("net.conf", 'w') as f:
+        content = f.write(content)
+
+    if(al_dir == ""): sys.exit()
+
+
 if __name__ == "__main__":
     calling_dir = os.getcwd()
 
     #Always run this script from the directory where it lives
     abspath = os.path.abspath(__file__)
-    print("ABSPATH", abspath)
     dname = os.path.dirname(abspath)
     os.chdir(dname)
+
+    if(not os.path.isfile("net.conf")):
+        setup_net_conf()
 
     atexit.register(kill_all);
     args = parse_args(sys.argv[1:])
