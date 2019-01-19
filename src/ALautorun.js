@@ -101,7 +101,7 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
 }
 
 
-function create_agent(callback,agent_name, agent_type){
+function create_agent(callback,agent_name, agent_type, try_num=0){
     $.ajax({
         type: "POST",
         url: AL_URL + '/create/',

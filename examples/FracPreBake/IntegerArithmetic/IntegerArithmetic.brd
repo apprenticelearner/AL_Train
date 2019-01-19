@@ -6,7 +6,7 @@
             <verb>SendNoteProperty</verb>
             <properties>
                 <MessageType>StartProblem</MessageType>
-                <ProblemName>1+1</ProblemName>
+                <ProblemName>%(left_operand)%%(operator)%%(right_operand)%</ProblemName>
             </properties>
         </message>
         <message>
@@ -21,7 +21,7 @@
                     <value>UpdateTextField</value>
                 </Action>
                 <Input>
-                    <value>1</value>
+                    <value>%(left_operand)%</value>
                 </Input>
             </properties>
         </message>
@@ -37,7 +37,7 @@
                     <value>UpdateTextField</value>
                 </Action>
                 <Input>
-                    <value>+</value>
+                    <value>%(operator)%</value>
                 </Input>
             </properties>
         </message>
@@ -53,7 +53,7 @@
                     <value>UpdateTextField</value>
                 </Action>
                 <Input>
-                    <value>1</value>
+                    <value>%(right_operand)%</value>
                 </Input>
             </properties>
         </message>
