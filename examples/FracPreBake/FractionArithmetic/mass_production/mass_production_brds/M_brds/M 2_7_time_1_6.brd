@@ -1,12 +1,12 @@
 <?xml version="1.0" standalone="yes"?>
 
-<stateGraph firstCheckAllStates="true" caseInsensitive="true" unordered="false" lockWidget="true" hintPolicy="Use Both Kinds of Bias" version="4.0" suppressStudentFeedback="Show All Feedback" highlightRightSelection="true" startStateNodeName="%(startStateNodeName)%" tutorType="Example-tracing Tutor">
+<stateGraph firstCheckAllStates="true" caseInsensitive="true" unordered="false" lockWidget="true" hintPolicy="Use Both Kinds of Bias" version="4.0" suppressStudentFeedback="Show All Feedback" highlightRightSelection="true" startStateNodeName="" tutorType="Example-tracing Tutor">
     <startNodeMessages>
         <message>
             <verb>SendNoteProperty</verb>
             <properties>
                 <MessageType>StartProblem</MessageType>
-                <ProblemName>%(left_numerator)%%(left_denominator)%%(right_numerator)%%(right_denominator)%</ProblemName>
+                <ProblemName>M 2_7_time_1_6</ProblemName>
             </properties>
         </message>
         <message>
@@ -365,7 +365,7 @@
                     <value>UpdateTextArea</value>
                 </Action>
                 <Input>
-                    <value>%(left_numerator)%</value>
+                    <value>2</value>
                 </Input>
                 <transaction_id>T2323ac0e-89d0-4571-ba61-4769cc98a640</transaction_id>
             </properties>
@@ -381,7 +381,7 @@
                     <value>UpdateTextArea</value>
                 </Action>
                 <Input>
-                    <value>%(left_denominator)%</value>
+                    <value>7</value>
                 </Input>
                 <transaction_id>T6f193ded-ac75-435a-8c62-cb135060bbc8</transaction_id>
             </properties>
@@ -397,7 +397,7 @@
                     <value>UpdateTextArea</value>
                 </Action>
                 <Input>
-                    <value>%(right_numerator)%</value>
+                    <value>1</value>
                 </Input>
                 <transaction_id>Td3f5aa7c-fea1-4bf3-8177-c269cc498e87</transaction_id>
             </properties>
@@ -413,7 +413,7 @@
                     <value>UpdateTextArea</value>
                 </Action>
                 <Input>
-                    <value>%(right_denominator)%</value>
+                    <value>6</value>
                 </Input>
                 <transaction_id>T7150e101-c392-494f-8200-b8d7a1c52bca</transaction_id>
             </properties>
@@ -429,7 +429,7 @@
                     <value>UpdateTextArea</value>
                 </Action>
                 <Input>
-                    <value>%(operator)%</value>
+                    <value>*</value>
                 </Input>
                 <transaction_id>T7f6f4e84-01fd-4e94-80d4-adb4ec0af6b5</transaction_id>
             </properties>
@@ -445,7 +445,7 @@
                     <value>UpdateTextArea</value>
                 </Action>
                 <Input>
-                    <value>%(operator)%</value>
+                    <value>*</value>
                 </Input>
                 <transaction_id>Tfce3ac2b-e5d0-4c1b-a843-2a16d94e24a9</transaction_id>
             </properties>
@@ -458,7 +458,7 @@
         </message>
     </startNodeMessages>
     <node locked="false" doneState="false">
-        <text>%(left_numerator)%%(left_denominator)%%(right_numerator)%%(right_denominator)%</text>
+        <text>M 2_7_time_1_6</text>
         <uniqueID>1</uniqueID>
         <dimension>
             <x>452</x>
@@ -542,7 +542,7 @@
                 <Input>
                     <matcher>
                         <matcherType>ExactMatcher</matcherType>
-                        <matcherParameter name="single">%(result_numerator)%</matcherParameter>
+                        <matcherParameter name="single">2</matcherParameter>
                     </matcher>
                 </Input>
                 <Actor linkTriggered="false">Student</Actor>
@@ -602,7 +602,7 @@
                 <Input>
                     <matcher>
                         <matcherType>ExactMatcher</matcherType>
-                        <matcherParameter name="single">%(result_denominator)%</matcherParameter>
+                        <matcherParameter name="single">42</matcherParameter>
                     </matcher>
                 </Input>
                 <Actor linkTriggered="false">Student</Actor>
@@ -722,7 +722,7 @@
                 <Input>
                     <matcher>
                         <matcherType>ExactMatcher</matcherType>
-                        <matcherParameter name="single">%(result_denominator)%</matcherParameter>
+                        <matcherParameter name="single">42</matcherParameter>
                     </matcher>
                 </Input>
                 <Actor linkTriggered="false">Student</Actor>
@@ -782,7 +782,7 @@
                 <Input>
                     <matcher>
                         <matcherType>ExactMatcher</matcherType>
-                        <matcherParameter name="single">%(result_numerator)%</matcherParameter>
+                        <matcherParameter name="single">2</matcherParameter>
                     </matcher>
                 </Input>
                 <Actor linkTriggered="false">Student</Actor>
