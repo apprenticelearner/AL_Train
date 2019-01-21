@@ -37,7 +37,7 @@
                     <value>UpdateTextField</value>
                 </Action>
                 <Input>
-                    <value>+</value>
+                    <value>-</value>
                 </Input>
             </properties>
         </message>
