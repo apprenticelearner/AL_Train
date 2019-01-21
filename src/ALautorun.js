@@ -85,7 +85,8 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
         // kill_this(null, error);    
     // }else{
     // if (textStatus == 'timeout') {
-        console.log("ISSUE OCCURED" ,this.tryCount, this.retryLimit);
+        console.log("REQUEST " + this.url + " FAILED. Attempt: " 
+                     + this.tryCount + "/" + this.retryLimit);
         // alert("ISSUE OCCURED" ,this.tryCount, this.retryLimit);
         this.tryCount++;
         if (this.tryCount <= this.retryLimit) {
@@ -117,7 +118,7 @@ function create_agent(callback,agent_name, agent_type){
 
         // async: true,
         // timeout: AL_TIMEOUT,
-        retryLimit : AL_RETRY_LIMIT,
+        retryLimit : AL_RETRY_LIMIT*20,
         tryCount : 0,
         error: ajax_retry_on_error,
 
