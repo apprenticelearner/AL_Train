@@ -229,7 +229,7 @@ def main(args):
 
     if(not args.al_port): args.al_port = get_open_port()
     if(check_port(args.al_host, args.al_port, args.force)):
-        al_process =  subprocess.Popen([sys.executable, args.al_dir + "/manage.py", "runserver", str(args.al_host) + ":" + str(args.al_port)])
+        al_process =  subprocess.Popen([sys.executable, os.path.join(args.al_dir, "manage.py"), "runserver", str(args.al_host) + ":" + str(args.al_port)])
         # al_thread = threading.Thread(target=waitAndExit, args=(al_process, kill_all))
         # al_thread.start()
     else:
@@ -237,7 +237,7 @@ def main(args):
 
     if(not args.ctat_port): args.ctat_port = get_open_port()
     if(check_port(args.ctat_host, args.ctat_port, args.force)):
-        ctat_process = subprocess.Popen([sys.executable, "src/host_server.py", str(args.ctat_port), args.output])
+        ctat_process = subprocess.Popen([sys.executable, os.path.join("src", "host_server.py") , str(args.ctat_port), args.output])
         # ctat_thread = threading.Thread(target=waitAndExit, args=(ctat_process, kill_all))
         # ctat_thread.start()
         
