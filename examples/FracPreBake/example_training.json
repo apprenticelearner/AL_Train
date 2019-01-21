@@ -1,4 +1,6 @@
 {
+	"set_params" : {"README" : "You can set parameters at the file level. These will stick around while this .json is running except for when they are overriden"},
+
 	"training_set1" : [
 	{
 		"agent_name":"Treatment_IntegerAddition",
@@ -6,62 +8,37 @@
 		"output_dir":"out/myAgent1",
 		"problem_set" : [
 
-			{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
-	 		"question_file" : "../FinalBRDs/1+1.brd",
-	 		"examples_only" : true},
+			{"set_params" : 
+				{"README" : "You can also set parameters at the agent level. These will stick around for just this agent. And override file level parameters.",
+				"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
+				"examples_only" : true}
+			},
 
-	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
-	 		"question_file" : "../FinalBRDs/2+1.brd",
-	 		"examples_only" : true},
+	 		{"README" : "Problem level parameters will override everything else. But only apply to this problem.",
+	 		"question_file" : "../FinalBRDs/1+1.brd"},
+	 		{"question_file" : "../FinalBRDs/2+1.brd"},
+	 		{"question_file" : "../FinalBRDs/2+2.brd"},
+	 		{"question_file" : "../FinalBRDs/3+4.brd"},
+	 		{"question_file" : "../FinalBRDs/3+5.brd"},
+	 		{"question_file" : "../FinalBRDs/4+3.brd"},
+	 		{"question_file" : "../FinalBRDs/6+9.brd"},
+	 		{"question_file" : "../FinalBRDs/8+7.brd"},
 
-	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
-	 		"question_file" : "../FinalBRDs/2+2.brd",
-	 		"examples_only" : true},
-
-	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
-	 		"question_file" : "../FinalBRDs/3+4.brd",
-	 		"examples_only" : true},
-
-	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
-	 		"question_file" : "../FinalBRDs/3+5.brd",
-	 		"examples_only" : true},
-
-	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
-	 		"question_file" : "../FinalBRDs/4+3.brd",
-	 		"examples_only" : true},
-
-	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
-	 		"question_file" : "../FinalBRDs/6+9.brd",
-	 		"examples_only" : true},
-
-	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
-	 		"question_file" : "../FinalBRDs/8+7.brd",
-	 		"examples_only" : true},
-
-	 		{"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
+	 		{"README" : "We can also set the number of repetitions for a problem. Default 1. <= 0, nothing happens",
 	 		"question_file" : "../FinalBRDs/9+2.brd",
-	 		"examples_only" : true},
+	 		"repetitions":7},
 
-			
+	 		{"set_params" : 
+				{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+				"examples_only" : false}
+			},
 
-
-			{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-3_plus_4-9.brd"},
-
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-4_plus_2-5.brd"},
-
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-4_plus_2-6.brd"},
-
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-4_plus_2-7.brd"},
-
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-5_plus_4-6.brd"},
-
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-6_plus_2-6.brd"}
+	 		{"question_file" : "../training/1-3_plus_4-9.brd"},
+	 		{"question_file" : "../training/1-4_plus_2-5.brd"},
+	 		{"question_file" : "../training/1-4_plus_2-6.brd"},
+	 		{"question_file" : "../training/1-4_plus_2-7.brd"},
+	 		{"question_file" : "../training/1-5_plus_4-6.brd"},
+	 		{"question_file" : "../training/1-6_plus_2-6.brd"}
 
 		]
 	},
@@ -72,7 +49,10 @@
 		"agent_type":"WhereWhenHowNoFoa",
 		"output_dir":"out/myAgent1",
 		"problem_set" : [
-			{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+
+			{"README" : "If you want to explictly name the HTML each time that's fine too.",
+				
+			"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
 	 		"question_file" : "../training/1-3_plus_4-9.brd"},
 
 	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",

@@ -44,6 +44,9 @@ var interactive = null;
 
 var EXAMPLES_ONLY = false;
 
+var file_params = {};
+var agent_params = {};
+
 
 CTATGuid = {s4:function s4() {
   return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
@@ -100,7 +103,7 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
 }
 
 
-function create_agent(callback,agent_name, agent_type, try_num=0){
+function create_agent(callback,agent_name, agent_type){
     $.ajax({
         type: "POST",
         url: AL_URL + '/create/',
@@ -726,8 +729,15 @@ function serve_next_training_set(){
     if(training_iterator.length > 0){
         var out = training_iterator.shift();
         var name = out[0];
+
+        while(name == "set_params"){
+            file_params = {...file_params, ...out[1]} //join and prefer new one
+            out = training_iterator.shift();
+            name = out[0];
+        }
+
         console.log("START TRAINING SET: ", name);
-        agent_iterator = out[1];
+        agent_iterator = out[1];        
         serve_next_agent();
     }else{
         console.log("ITS ALL DONE!");
@@ -743,6 +753,9 @@ function serve_next_agent(){
         user_guid = null;
 
         var agent_obj = agent_iterator.shift();
+        agent_params = agent_obj["set_params"] || {}
+
+
         console.log("CREATING AGENT", agent_obj["agent_name"]);
         var callback = function(resp){
             agent_id = resp["agent_id"];
@@ -771,11 +784,35 @@ function isAbsPath(path){
     }
 }
 
+function _next_prob_obj(){
+    var prob_obj = problem_iterator.shift();
+
+    while("set_params" in prob_obj){
+        agent_params = {...agent_params,...prob_obj['set_params']};
+        prob_obj = problem_iterator.shift();
+    }
+    console.log(prob_obj)
+
+    prob_obj = {...file_params,...agent_params,...prob_obj}
+    return prob_obj
+}
+
 function serve_next_problem(){
     console.log("PROBLEM ITERATOR", problem_iterator.length);
 
     if(problem_iterator.length > 0){
-        var prob_obj = problem_iterator.shift();
+        prob_obj = _next_prob_obj()
+
+        if("repetitions" in prob_obj){
+            if(prob_obj["repetitions"] <= 0){
+                prob_obj = _next_prob_obj()                
+            }else if(prob_obj["repetitions"] >= 2){
+                prob_obj["repetitions"] -= 1
+                problem_iterator.unshift({...prob_obj})
+            }
+        }
+
+        console.log(prob_obj)
 
         HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
 
