@@ -91,7 +91,10 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
         this.tryCount++;
         if (this.tryCount <= this.retryLimit) {
             //try again
-            $.ajax(this);
+            var ajax_contents = this;
+            setTimeout(function(){
+                $.ajax(ajax_contents);
+            }, 1000);
             return;
         }
         var error = "AL failed with code " + xhr.status +" (" + textStatus + ").";
