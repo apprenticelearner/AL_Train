@@ -4,3 +4,8 @@ ubprocess
 log/
 net.conf
 *.cprof
+
+# vim-generated files
+*.DS_Store
+*.swp
+*.swo
