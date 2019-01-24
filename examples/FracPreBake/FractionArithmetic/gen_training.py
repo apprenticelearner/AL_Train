@@ -61,7 +61,7 @@ def gen_training(transactions,
     with open('control_training.json', 'w') as out:
         json.dump(control, out)
 
-    pre_test = [{'agent_name': 'Control_' + agent,
+    pre_test = [{'agent_name': 'Pretest_' + agent,
                  'agent_type': agent_type,
                  'output_dir': join_path(output_root, 'pretest', agent),
                  'problem_set':
@@ -135,5 +135,3 @@ if __name__ == '__main__':
                  prepost_brds=args.prepost_brds,
                  prepost_html=args.prepost_html,
                  num_pretest=args.num_pretest)
-
-
