@@ -85,7 +85,9 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
         // kill_this(null, error);    
     // }else{
     // if (textStatus == 'timeout') {
-        console.log("REQUEST " + this.url + " FAILED. Attempt: " 
+        console.log("REQUEST " + this.url + "\n" +
+                    "DATA:" + this.data + "\n" + 
+                    "FAILED. Attempt: " 
                      + this.tryCount + "/" + this.retryLimit);
         // alert("ISSUE OCCURED" ,this.tryCount, this.retryLimit);
         this.tryCount++;
@@ -107,17 +109,20 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
 }
 
 
-function create_agent(callback,agent_name, agent_type){
+function create_agent(callback,agent_name, agent_type, otherdata={}){
+    data_dict = {
+            'name': agent_name,
+            'agent_type': agent_type,
+            'project_id': project_id
+        }
+    data_dict = {...otherdata, ...data_dict}
+
     $.ajax({
         type: "POST",
         url: AL_URL + '/create/',
         dataType: "json",
         contentType: "application/json; charset=utf-8",
-        data: JSON.stringify({
-            'name': agent_name,
-            'agent_type': agent_type,
-            'project_id': project_id
-        }),
+        data: JSON.stringify(data_dict),
 
         // async: true,
         // timeout: AL_TIMEOUT,
@@ -482,7 +487,7 @@ function checkTypes(element, types){
 }
 
 
-function get_state(encode_relative=true,strip_offsets=true){
+function get_state(encode_relative=false,strip_offsets=true){
     var state_array = iframe_content.$('div').toArray();
     // state_array.push({current_task: current_task});
 
@@ -502,7 +507,7 @@ function get_state(encode_relative=true,strip_offsets=true){
 
     		obj["id"] = element.id;
 
-    		if(checkTypes(element, ["CTATTextInput","CTATComboBox"])){
+    		if(checkTypes(element, ["CTATTextInput","CTATComboBox","CTATTable--cell"])){
     			obj["value"] = element.firstElementChild.value;
     			obj["contentEditable"] = (element.firstElementChild.contentEditable == 'true');
     		}
@@ -709,7 +714,7 @@ function runWhenReady(){
         var link = iframe_content.document.createElement('link');
         link.setAttribute('rel', 'stylesheet');
         link.setAttribute('type', 'text/css');
-        link.setAttribute('href', '../../css/AL_colors.css');
+        link.setAttribute('href', "../".repeat(working_dir.split('/').length+1) + 'css/AL_colors.css');
         iframe_content.document.getElementsByTagName('head')[0].appendChild(link);
 
         //Gets rid of annyoing sai printout on every call to sendXML
@@ -766,7 +771,13 @@ function serve_next_agent(){
             serve_next_problem();
         }
         problem_iterator = agent_obj["problem_set"];
-        create_agent(callback, agent_obj["agent_name"], agent_obj["agent_type"]);
+
+        other_data = {...agent_obj}
+        delete other_data["problem_set"];
+        delete other_data["agent_name"];
+        delete other_data["agent_type"];
+
+        create_agent(callback, agent_obj["agent_name"], agent_obj["agent_type"], other_data);
 
     }else{
         serve_next_training_set();
