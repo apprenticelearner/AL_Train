@@ -6,7 +6,7 @@
             <verb>SendNoteProperty</verb>
             <properties>
                 <MessageType>StartProblem</MessageType>
-                <ProblemName>%(left_numerator)%%(denominator)%%(right_numerator)%%(denominator)%</ProblemName>
+                <ProblemName>%(left_numerator)%%(left_denominator)%%(right_numerator)%%(right_denominator)%</ProblemName>
             </properties>
         </message>
         <message>
@@ -381,7 +381,7 @@
                     <value>UpdateTextArea</value>
                 </Action>
                 <Input>
-                    <value>%(denominator)%</value>
+                    <value>%(left_denominator)%</value>
                 </Input>
                 <transaction_id>Tc1106cb7-a0c9-49d4-b8b6-9f0002ebc39c</transaction_id>
             </properties>
@@ -413,7 +413,7 @@
                     <value>UpdateTextArea</value>
                 </Action>
                 <Input>
-                    <value>%(denominator)%</value>
+                    <value>%(right_denominator)%</value>
                 </Input>
                 <transaction_id>T155acb8b-c4bc-4bdb-9346-96415e8fb5cb</transaction_id>
             </properties>
@@ -458,7 +458,7 @@
         </message>
     </startNodeMessages>
     <node locked="false" doneState="false">
-        <text>%(left_numerator)%%(denominator)%%(right_numerator)%%(denominator)%</text>
+        <text>%(left_numerator)%%(left_denominator)%%(right_numerator)%%(right_denominator)%</text>
         <uniqueID>1</uniqueID>
         <dimension>
             <x>396</x>
@@ -542,7 +542,7 @@
                 <Input>
                     <matcher>
                         <matcherType>ExactMatcher</matcherType>
-                        <matcherParameter name="single">%(denominator)%</matcherParameter>
+                        <matcherParameter name="single">%(result_denominator)%</matcherParameter>
                     </matcher>
                 </Input>
                 <Actor linkTriggered="false">Student</Actor>
@@ -722,7 +722,7 @@
                 <Input>
                     <matcher>
                         <matcherType>ExactMatcher</matcherType>
-                        <matcherParameter name="single">%(denominator)%</matcherParameter>
+                        <matcherParameter name="single">%(result_denominator)%</matcherParameter>
                     </matcher>
                 </Input>
                 <Actor linkTriggered="false">Student</Actor>
