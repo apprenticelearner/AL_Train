@@ -5,17 +5,18 @@ set_template = '{ \n \
 	%s \n\
 	] \n\
 	} \n'
-agent_template = '\t\t {"agent_name":"%s", \n \
-		"agent_type":"WhereWhenHowNoFoa", \n \
-		"output_dir":"out/myAgent1", \n \
-		"problem_set" : [ \n\
+agent_template = ('\t\t {"agent_name":"%s", \n \
+		"agent_type":"WhereWhenHowNoFoa", \n' + 
+		# '"function_set": "tutor knowledge", \n' +
+		# '"feature_set": "tutor knowledge", \n' +
+		'"problem_set" : [ \n\
 			{"set_params" : \n\
 				{"HTML": "HTML/fraction_arithmetic.html", \n\
 				"examples_only" : false} \n\
 			}, \n\
 		 \n %s \n  \
 		\t] \n \
-		}'
+		}')
 		
 
 problem_template = '\t\t\t{"question_file" : \"%s\"}'
