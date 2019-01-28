@@ -148,12 +148,6 @@ function post_next_example(){
 	//SELECT SAI AMONG OPTIONS
 	var sai = graph.getExampleTracer().getBestNextLink().getDefaultSAI();
 
-
-    console.log("%cEXAMPLE: " + sai.getSelection() + " -> " + sai.getInput(), 'color: #2222bb; background: #DDDDDD;');
-    term_print('\x1b[0;33;44m' + "EXAMPLE: " + sai.getSelection() + " -> " + sai.getInput() + '\x1b[0m')
-    
-
-
 	sai_data = {
 		selection: sai.getSelection(),
 		action: sai.getAction(),
@@ -161,6 +155,16 @@ function post_next_example(){
 		state: get_state(),
 		reward: 1
 	};
+
+    // @1 SHOULD BE READDED LATER
+    if(sai_data.action == "ButtonPressed"){
+        sai_data.inputs = {}
+    }
+
+    inps = sai_data.inputs['value'] || ""
+    console.log("%cEXAMPLE: " + sai_data.selection + " -> " + inps, 'color: #2222bb; background: #DDDDDD;');
+    term_print('\x1b[0;33;44m' + "EXAMPLE: " + sai_data.selection + " -> " + inps + '\x1b[0m')
+    
 
 	apply_sai(sai_data);
 
@@ -187,6 +191,17 @@ function propose_sai(sai){
 }
 
 function apply_sai(sai){
+        sel_elm = iframe_content.document.getElementById(sai.selection)
+        if(sel_elm["data-ctat-enabled"] || 'true' == 'false'){
+            var incorrect_event = new CustomEvent(CTAT_INCORRECT, {detail:{'sai':sai, 'component':sel_elm}, bubbles:true, cancelable:true});
+            sel_elm.dispatchEvent(incorrect_event);
+        }
+
+
+        if(sai.action == "ButtonPressed"){
+            sai.inputs = {"value" : -1}
+        }
+
         message = "<message><properties>" +
                     "<MessageType>InterfaceAction</MessageType>" +
                     "<Selection><value>"+ sai.selection + "</value></Selection>" +
@@ -310,6 +325,7 @@ function send_feedback(reward){
 
 function send_training_data(sai_data) {
 
+    // console.log("SAI: ", sai_data)
 
     // loggingLibrary.logResponse (transactionID,"textinput1","UpdateTextField","Hello World","RESULT","CORRECT","You got it!");
 
@@ -487,7 +503,7 @@ function checkTypes(element, types){
 }
 
 
-function get_state(encode_relative=false,strip_offsets=true){
+function get_state(encode_relative=false,strip_offsets=true, use_offsets=false, use_class=false, use_id=false){
     var state_array = iframe_content.$('div').toArray();
     // state_array.push({current_task: current_task});
 
@@ -496,16 +512,20 @@ function get_state(encode_relative=false,strip_offsets=true){
     $.each(state_array, function(idx, element){
 
     	obj = {}
-    	if(element.classList.contains("CTATComponent")) {
-    		obj["className"] = element.classList[0];
-    		obj["offsetParent"] = element.offsetParent.dataset.silexId;
-    		obj["offsetLeft"] = element.offsetLeft;
-            obj["offsetTop"] = element.offsetTop;
-            obj["offsetWidth"] = element.offsetWidth;
-    		obj["offsetHeight"] = element.offsetHeight;
+    	if(element.classList.contains("CTATComponent")
+             && !element.classList.contains("CTATTable")) {
+            // if(obj["className"] == "CTATTable") {continue;} //Skip table objects and just use cells
+    		if(use_class){obj["className"] = element.classList[0];}
+            if(use_offsets){
+        		obj["offsetParent"] = element.offsetParent.dataset.silexId;
+        		obj["offsetLeft"] = element.offsetLeft;
+                obj["offsetTop"] = element.offsetTop;
+                obj["offsetWidth"] = element.offsetWidth;
+        		obj["offsetHeight"] = element.offsetHeight;
+            }
 
 
-    		obj["id"] = element.id;
+    		if(use_id){obj["id"] = element.id;}
 
     		if(checkTypes(element, ["CTATTextInput","CTATComboBox","CTATTable--cell"])){
     			obj["value"] = element.firstElementChild.value;
@@ -776,6 +796,8 @@ function serve_next_agent(){
         delete other_data["problem_set"];
         delete other_data["agent_name"];
         delete other_data["agent_type"];
+
+        console.log("OTHERDATA: ", other_data)
 
         create_agent(callback, agent_obj["agent_name"], agent_obj["agent_type"], other_data);
 
