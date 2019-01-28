@@ -2,7 +2,13 @@
  	"training_set1" : [ 
 			 {"agent_name":"rony_training/Stu_7bb06a8cb80b4b050daf82fcb874e2b0", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -60,7 +66,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_9141f03631da3c164b089790e7f61e01", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -118,7 +130,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_c0322ff35f8e31f1bf0c5f038ce72357", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -176,7 +194,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_ac20b1461f870f58d9f9f513ca4f224b", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -234,7 +258,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_9ba0657fa633f471b94e47db91607b77", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -292,7 +322,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_786c5c09059802fa86f48bec19fd0c24", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -350,7 +386,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_a6b6afe2e29ff5764887853fe30209d0", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -408,7 +450,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_d6dae10954a6e7198bc6ed304985e27c", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -448,7 +496,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_d0c458dbc886ad447c79a6194046ac63", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -506,7 +560,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_4011b187a70de7cceec569215aaaf349", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -564,7 +624,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_a855a6deb3e5b1d37aea267b6e1cfb83", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -622,7 +688,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_0495714cd367008f18dcb8ea3e996547", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -680,7 +752,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_44473d098c938a6acd510af985da8c09", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -738,7 +816,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_4ef62b88ccb918f166cabf0729e4dd43", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -796,7 +880,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_995df8faacf9d9563ec63b48cc1b2dfe", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -854,7 +944,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_813270e73557b81053c247611977a3a2", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -912,7 +1008,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_ea160e32cbf8b1dce3535619234826c6", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -970,7 +1072,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_da89493794fcadea32a104a400a601d0", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1028,7 +1136,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_25f5affc678d6175d8a5220a9c1b851b", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1086,7 +1200,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_cdcbe7a6d6148d20d290494c830c3df0", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1144,7 +1264,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_b632f815717f157db00f578ad3b48690", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1202,7 +1328,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_54d14ca109866d98767437cd67beb2ed", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1260,7 +1392,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_233a7a6d8b61685c743650325a2f7add", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1318,7 +1456,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_1a4c8ed372b8a79d35c2710295c93129", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1376,7 +1520,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_1095831603c572ae800eaf23cb8cbc56", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1434,7 +1584,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_27699b9746520e2279ba9a9f5a3f645f", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1492,7 +1648,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_4c59f254b9636c8868d47589e3fe7bed", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1550,7 +1712,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_732ee0f1834543cb9633e7e488237522", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1596,7 +1764,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_4b7a38c5c8c6c3be703b5209c9328537", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1654,7 +1828,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_d5c9c9882d7fafc23fe0d3519028c73d", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1676,7 +1856,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_0aacf73e66331579c013beff5683d5e2", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1734,7 +1920,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_a612dfca2c247a86f829b45d33ac0e36", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1792,7 +1984,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_7cbc9140ed08a7c3c8e8278fdc7cef52", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1850,7 +2048,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_c169ab1aa2e3c81534954848348934bb", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1908,7 +2112,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_bb65bcef8dc53d0f4799ba15f08a6701", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -1966,7 +2176,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_711f76c33cd66ea9923b8a7c7d47ec77", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2024,7 +2240,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_30916b4e5ac652e4013a9d3146674330", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2082,7 +2304,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_d50fc0fd3f51e5ff3d0d53dff502a242", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2140,7 +2368,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_bafb9ff02da279a219fa9e80525b0b0e", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2198,7 +2432,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_249a61626812d9ce6298cc628a0285ed", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2256,7 +2496,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_71cfd0e01957580d8f6b5cdbf588910b", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2314,7 +2560,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_df93f2bf27fbd5ca8c6473d322aa21d4", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2372,7 +2624,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_be87de63414b97c3b3176938f5676054", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2430,7 +2688,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_26825c31ff5c37f3b5f151e563083161", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2488,7 +2752,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_89ae74d5d146a31945bd2a66fc0df306", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2546,7 +2816,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_9b322c6c96b618a0ae09690b04bca85c", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2604,7 +2880,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_07f4c745e4d86d57da38f36317c286ae", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2662,7 +2944,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_e084d18d4c148e93648b127d06935fb7", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2720,7 +3008,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_4fd76e28788bbeadef09f0908c493daf", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2778,7 +3072,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_4a3ef135bbe2c2caa59247795f44f843", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2836,7 +3136,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_5f1ba76dd2da792faaba6c5f396fd96e", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2869,7 +3175,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_9c564c2cae9a4f7a3a8fe5857c7ead24", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2912,7 +3224,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_75ddeff8a59dfcfb52bea555efdb2a20", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -2970,7 +3288,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_68dafb32bad48815374a56c476490d55", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3028,7 +3352,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_48d6541ae328cd6f0a7d8508b7f4c2ff", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3086,7 +3416,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_ad0a01172368ce16ad080bd647746b57", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3144,7 +3480,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_26bdbe95265a986497459bbc936a2d94", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3202,7 +3544,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_ada20dc75e0259449f6753670128772c", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3260,7 +3608,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_67b8c5d44a251f3d2e3eb90c56ce7409", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3318,7 +3672,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_d77eccbc636aebefb5eae4657c10d895", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3376,7 +3736,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_042c4b5851700a33a99dcf57043d0ed4", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3434,7 +3800,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_2bd87029c015486bc32a15bcbc0e0cf9", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3492,7 +3864,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_43a3130ce11534b00f7e53043ffb1827", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3550,7 +3928,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_8c46de996d2269e68f42677b2b705d42", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3585,7 +3969,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_e08a8497fa072582100f169fbd923fd0", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3643,7 +4033,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_408391fd3829dc7845e5e36a9c9c5a00", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3701,7 +4097,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_41b97b5ad619f2949d8cbaa60a33880f", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3759,7 +4161,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_30c985b8bb49d1bdb5c7e8d0f87cb881", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3817,7 +4225,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_10e4f1d248d99d4ee76a1e22dc4d0ca7", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3875,7 +4289,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_81a593939ace4567cc9502471aedc42e", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3933,7 +4353,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_7644513df4b69108e87e5426da302ed4", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -3959,7 +4385,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_8ca54e7076e7f85bd2ddc58ae3e11d43", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -4017,7 +4449,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_92cb475ee1595e62eeefcc56868da00f", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -4075,7 +4513,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_61537c177642e2db03cb80cc5a4c8de9", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -4133,7 +4577,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_3ee585583f158b9a785c6d83d043cd77", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -4191,7 +4641,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_96bee4a348a05aee775fd92c63611f2a", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -4249,7 +4705,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_488139ba565654f3ae0817c9dfd521d8", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -4307,7 +4769,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_995bc0c2d4c5091fa9b22d1184fcc934", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 
@@ -4341,7 +4809,13 @@
  		},
 		 {"agent_name":"rony_training/Stu_c2112576eeec01bee9205827514312a0", 
  		"agent_type":"WhereWhenHowNoFoa", 
-"problem_set" : [ 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "cobweb", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
 			{"set_params" : 
 				{"HTML": "HTML/fraction_arithmetic.html", 
 				"examples_only" : false} 

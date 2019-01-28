@@ -7,9 +7,15 @@ set_template = '{ \n \
 	} \n'
 agent_template = ('\t\t {"agent_name":"%s", \n \
 		"agent_type":"WhereWhenHowNoFoa", \n' + 
+		'\t\t"stay_active": true, \n' +
+		'\t\t"dont_save": true, \n' +
+		'\t\t"args" : {\n' +
+			'\t\t\t"when_learner": "cobweb", \n' +
+			'\t\t\t"where_learner": "MostSpecific" \n' +
+		'\t\t},\n' +
 		# '"function_set": "tutor knowledge", \n' +
 		# '"feature_set": "tutor knowledge", \n' +
-		'"problem_set" : [ \n\
+		'\t\t"problem_set" : [ \n\
 			{"set_params" : \n\
 				{"HTML": "HTML/fraction_arithmetic.html", \n\
 				"examples_only" : false} \n\
