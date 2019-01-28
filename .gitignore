@@ -9,3 +9,5 @@ net.conf
 *.DS_Store
 *.swp
 *.swo
+
+*.DS_Store
