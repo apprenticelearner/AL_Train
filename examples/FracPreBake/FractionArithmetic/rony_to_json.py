@@ -1,22 +1,31 @@
 import glob
 
 set_template = '{ \n \
-    "training_set1" : [ \n\
-    %s \n\
-    ] \n\
-    } \n'
-agent_template = '\t\t {"agent_name":"%s", \n \
-        "agent_type":"WhereWhenHowNoFoa", \n \
-        "output_dir":"out/myAgent1", \n \
-        "problem_set" : [ \n\
-            {"set_params" : \n\
-                {"HTML": "HTML/fraction_arithmetic.html", \n\
-                "examples_only" : false} \n\
-            }, \n\
-         \n %s \n  \
-        \t] \n \
-        }'
-        
+	"training_set1" : [ \n\
+	%s \n\
+	] \n\
+	} \n'
+agent_template = ('\t\t {"agent_name":"%s", \n \
+		"agent_type":"WhereWhenHowNoFoa", \n' + 
+		'\t\t"stay_active": true, \n' +
+		'\t\t"dont_save": true, \n' +
+		'\t\t"args" : {\n' +
+			'\t\t\t"when_learner": "trestle", \n' +
+			'\t\t\t"where_learner": "MostSpecific" \n' +
+			# '\t\t\t"where_learner": "stateresponselearner" \n' +
+			# '\t\t\t"where_learner": "specifictogeneral" \n' +
+			# '\t\t\t"where_learner": "relationallearner" \n' +
+		'\t\t},\n' +
+		# '"function_set": "tutor knowledge", \n' +
+		# '"feature_set": "tutor knowledge", \n' +
+		'\t\t"problem_set" : [ \n\
+			{"set_params" : \n\
+				{"HTML": "HTML/fraction_arithmetic.html", \n\
+				"examples_only" : false} \n\
+			}, \n\
+		 \n %s \n  \
+		\t] \n \
+		}')
 
 problem_template = '\t\t\t{"question_file" : \"%s\"}'
             # '\t\t\t{"HTML": \"%s\", \n \
