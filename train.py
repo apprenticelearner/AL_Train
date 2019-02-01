@@ -246,6 +246,7 @@ def main(args):
 
     ctat_url = "http://localhost:%s/?training=%s&al_url=http://localhost:%s" %(args.ctat_port, args.training,args.al_port)
     if(args.wd != None): ctat_url += "&wd=" + args.wd
+    if(args.interactive): ctat_url += "&interactive=true"
 
     if(args.browser != None):
         browser_process = subprocess.Popen([args.browser, ctat_url] + args.browser_args)
