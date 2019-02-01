@@ -10,8 +10,11 @@ agent_template = ('\t\t {"agent_name":"%s", \n \
 		'\t\t"stay_active": true, \n' +
 		'\t\t"dont_save": true, \n' +
 		'\t\t"args" : {\n' +
-			'\t\t\t"when_learner": "cobweb", \n' +
+			'\t\t\t"when_learner": "trestle", \n' +
 			'\t\t\t"where_learner": "MostSpecific" \n' +
+			# '\t\t\t"where_learner": "stateresponselearner" \n' +
+			# '\t\t\t"where_learner": "specifictogeneral" \n' +
+			# '\t\t\t"where_learner": "relationallearner" \n' +
 		'\t\t},\n' +
 		# '"function_set": "tutor knowledge", \n' +
 		# '"feature_set": "tutor knowledge", \n' +
