@@ -5,9 +5,9 @@ log/
 net.conf
 *.cprof
 
-# vim-generated files
 *.DS_Store
+__pycache__/
+# vim-generated files
 *.swp
 *.swo
 
-*.DS_Store
