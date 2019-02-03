@@ -2,7 +2,9 @@ import argparse
 import csv
 import json
 from operator import itemgetter
+from os import listdir
 from os.path import join as join_path
+from isomorphic import gen_iso_brds
 
 
 def parse_file(filename):
@@ -51,7 +53,8 @@ def gen_training(transactions,
                  problem_html="FractionArithmetic/HTML/fraction_arithmetic.html",
                  prepost_brds="mass_production/mass_production_brds/",
                  prepost_html="mass_production/HTML/pretest.html",
-                 num_pretest=8):
+                 num_pretest=8,
+                 iso_brds="iso"):
 
     sequences = get_problem_orders(transactions)
 
@@ -105,6 +108,32 @@ def gen_training(transactions,
         json.dump(pre_test, out)
 
 
+    isomorphic = [{'agent_name': 'Iso_' + agent,
+                 'agent_type': agent_type,
+
+                "stay_active": True, 
+                "dont_save": True, 
+                "args" : {
+                    "when_learner": "trestle",
+                    "where_learner": "MostSpecific" 
+                },
+
+                 # 'output_dir': join_path(output_root, 'pretest', agent),
+                 'problem_set':
+                     [{"set_params": {"HTML": problem_html,
+                                      "examples_only": True}}] +
+                     [{'question_file': join_path(iso_brds, agent, 'brds', n)}
+                      for n in lisdir(join_path(iso_brds, agent, 'brds'))] +
+                     [{"set_params": {"HTML": problem_html,
+                                      "examples_only": False}}] +
+                     [{'question_file': join_path(problem_brds, prob + '.brd')}
+                      for prob in sequences[agent]]}
+                for agent in sequences]
+    isomorphic = {'training_set1': pre_test}
+    with open('iso_training.json', 'w') as out:
+        json.dump(isomorphic, out)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='A utility to generate training jsons based on datashop'
@@ -148,9 +177,19 @@ if __name__ == '__main__':
                         help="The HTML file to use for the relevant substep"
                              "problems. I don't currently use this yet.")
 
+    parser.add_argument('-model_file',
+                        help="The datashop model value file to use.")
+    parser.add_argument('-iso_brds',
+                        default='iso/',
+                        help="The directory location of brds for pik problems for each student.")
+    parser.add_argument('-mass_production_templates',
+                        default='mass_production/',
+                        help="The directory location of AS, AD, and M brd templates.")
+
     args = parser.parse_args()
     data = parse_file(args.trans_file)
 
+    gen_iso_brds(args.model_file, args.iso_brds, args.mass_production_templates)
     gen_training(data,
                  agent_type=args.agent_type,
                  output_root=args.output_root,
@@ -158,4 +197,7 @@ if __name__ == '__main__':
                  problem_html=args.problem_html,
                  prepost_brds=args.prepost_brds,
                  prepost_html=args.prepost_html,
-                 num_pretest=args.num_pretest)
+                 num_pretest=args.num_pretest,
+                 iso_brds=args.iso_brds
+    )
+
