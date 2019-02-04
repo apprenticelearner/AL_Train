@@ -191,25 +191,28 @@ function propose_sai(sai){
 }
 
 function apply_sai(sai){
-        sel_elm = iframe_content.document.getElementById(sai.selection)
-        if(sel_elm["data-ctat-enabled"] || 'true' == 'false'){
-            var incorrect_event = new CustomEvent(CTAT_INCORRECT, {detail:{'sai':sai, 'component':sel_elm}, bubbles:true, cancelable:true});
-            sel_elm.dispatchEvent(incorrect_event);
-        }
+    sel_elm = iframe_content.document.getElementById(sai.selection)
+    if(sel_elm["data-ctat-enabled"] || 'true' == 'false'){
+        var incorrect_event = new CustomEvent(CTAT_INCORRECT, {detail:{'sai':sai, 'component':sel_elm}, bubbles:true, cancelable:true});
+        sel_elm.dispatchEvent(incorrect_event);
+    }
 
 
-        if(sai.action == "ButtonPressed"){
-            sai.inputs = {"value" : -1}
-        }
+    if(sai.action == "ButtonPressed"){
+        sai.inputs = {"value" : -1}
+    }
 
-        message = "<message><properties>" +
-                    "<MessageType>InterfaceAction</MessageType>" +
-                    "<Selection><value>"+ sai.selection + "</value></Selection>" +
-                    "<Action><value>" + sai.action + "</value></Action>" +
-                    "<Input><value><![CDATA["+ sai.inputs["value"] +"]]></value></Input>" +
-                "</properties></message>";
-    // console.log("MESSAGE",message);
-        commLibrary.sendXML(message);   
+    sai_obj = new iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
+
+    //     message = "<message><properties>" +
+    //                 "<MessageType>InterfaceAction</MessageType>" +
+    //                 "<Selection><value>"+ sai.selection + "</value></Selection>" +
+    //                 "<Action><value>" + sai.action + "</value></Action>" +
+    //                 "<Input><value><![CDATA["+ sai.inputs["value"] +"]]></value></Input>" +
+    //             "</properties></message>";
+    // // console.log("MESSAGE",message);
+    //     commLibrary.sendXML(message);   
+    iframe_content.CTATCommShell.commShell.processComponentAction(sai_obj,true)
 	
 }
 
@@ -495,7 +498,7 @@ function query_apprentice() {
 
 function checkTypes(element, types){
 	var ok = false;
-	for (var i = types.length - 1; i >= 0; i--) {
+    for (var i = types.length - 1; i >= 0; i--) {
 		var type = types[i];
 		if(element.classList.contains(type)) ok = true;
 	}
