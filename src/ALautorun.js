@@ -506,7 +506,7 @@ function checkTypes(element, types){
 }
 
 
-function get_state(encode_relative=false,strip_offsets=true, use_offsets=false, use_class=false, use_id=false){
+function get_state(encode_relative=false,strip_offsets=true, use_offsets=false, use_class=false, use_id=true){
     var state_array = iframe_content.$('div').toArray();
     // state_array.push({current_task: current_task});
 
@@ -533,6 +533,7 @@ function get_state(encode_relative=false,strip_offsets=true, use_offsets=false, 
     		if(checkTypes(element, ["CTATTextInput","CTATComboBox","CTATTable--cell"])){
     			obj["value"] = element.firstElementChild.value;
     			obj["contentEditable"] = (element.firstElementChild.contentEditable == 'true');
+    			// obj["name"] = element.id
     		}
     		// if(checkTypes(element, ["CTATTextField", "CTATComboBox"])){
     		// 	obj["textContent"] = element.textContent;

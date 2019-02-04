@@ -99,7 +99,7 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
         global output_file_path
         global tool_dict
 
-        print("POST")
+        # print("POST")
 
         if(output_file_path == None):
             print("Received log message, but no output_file specifed.")
@@ -127,7 +127,7 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
             if(x.tag == "log_action"):
                 payload = ElementTree.fromstring(unquote(x.text))
 
-                print(minidom.parseString(ElementTree.tostring(payload, encoding='utf8', method='xml')).toprettyxml())
+                # print(minidom.parseString(ElementTree.tostring(payload, encoding='utf8', method='xml')).toprettyxml())
 
                 for msg in payload.iter("context_message"):
                     # print("Message Type: ", "context_message")
@@ -161,7 +161,7 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
                     #     print(key, ":", val)
                     # print("-------------------")
 
-                    if(tool_dict[LOG_HEADERS['transaction_id']] == log_dict[LOG_HEADERS['transaction_id']]):
+                    if(tool_dict.get(LOG_HEADERS['transaction_id'],"bleep") == log_dict.get(LOG_HEADERS['transaction_id'],"bloop")):
                         log_dict = {**log_dict, **tool_dict}
                         tool_dict = {}
 
