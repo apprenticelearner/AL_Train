@@ -4,6 +4,7 @@ var agent_id = null;
 var state = null;
 var current_task = null;
 var last_action = null;
+var last_correct = true;
 var lastButtonList = null;
 var AL_URL = null;//'http://localhost:8000';
 var graph = null;
@@ -141,7 +142,7 @@ function create_agent(callback,agent_name, agent_type, otherdata={}){
 
 function post_next_example(){
 	
-	// console.log(graph);
+    // console.log(graph);
 
     apply_hint()
 	
@@ -152,9 +153,11 @@ function post_next_example(){
 		selection: sai.getSelection(),
 		action: sai.getAction(),
 		inputs: {value: sai.getInput()},
-		state: get_state(),
+        state: state, //get_state(),
 		reward: 1
 	};
+
+    last_correct = true;
 
     // @1 SHOULD BE READDED LATER
     if(sai_data.action == "ButtonPressed"){
@@ -256,6 +259,7 @@ function handle_user_example(evt){
     elm.firstElementChild.setAttribute("class", "CTAT--example");
     console.log(elm.firstElementChild);
 
+    last_correct = true;
 
     // console.log(sai_data);
     send_training_data(sai_data);
@@ -272,6 +276,7 @@ function handle_user_feedback_correct(evt){
     var comp = iframe_content.CTATShellTools.findComponent(last_action.selection)[0];
     comp.setEnabled(false);
 
+    last_correct = true;
     send_feedback(1);
 }
 
@@ -286,7 +291,7 @@ function handle_user_feedback_incorrect(evt){
     var comp = iframe_content.CTATShellTools.findComponent(last_action.selection)[0];
     comp.setEnabled(true);
 
-
+    last_correct = false;
     send_feedback(-1);
 }
 
@@ -296,6 +301,7 @@ function handle_correct(evt){
 	currentElement.removeEventListener(CTAT_CORRECT, handle_correct);
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
+    last_correct = true;
 	send_feedback(1);
 }
 
@@ -305,6 +311,8 @@ function handle_incorrect(evt){
 	currentElement.removeEventListener(CTAT_CORRECT, handle_correct);
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
+
+    last_correct = false;
 	send_feedback(-1);
 }
 
@@ -422,7 +430,11 @@ function query_apprentice() {
 
     if(verbosity > 0) console.log('querying agent');
 
-    state = get_state();
+    if (last_correct){
+        console.log("SETTING STATE!");
+        console.log(last_correct);
+        state = get_state();
+    }
 
     var data = {
         'state': state
