@@ -41,7 +41,7 @@ LOG_HEADERS = {"user_guid"              :"Anon Student Id",
 
 session_default_dict =  {key: None for key in LOG_HEADERS.values()}
 output_file_path = None
-tool_dict = None
+tool_dict = {}
 
 def _fill_from_elm(log_dict, elm):
     if(elm.tag == "custom_field"):
@@ -127,7 +127,7 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
             if(x.tag == "log_action"):
                 payload = ElementTree.fromstring(unquote(x.text))
 
-                # print(minidom.parseString(ElementTree.tostring(payload, encoding='utf8', method='xml')).toprettyxml())
+                print(minidom.parseString(ElementTree.tostring(payload, encoding='utf8', method='xml')).toprettyxml())
 
                 for msg in payload.iter("context_message"):
                     # print("Message Type: ", "context_message")
@@ -161,7 +161,9 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
                     #     print(key, ":", val)
                     # print("-------------------")
 
-                    if(tool_dict.get(LOG_HEADERS['transaction_id'],"bleep") == log_dict.get(LOG_HEADERS['transaction_id'],"bloop")):
+                    if(tool_dict != None and log_dict != None and 
+                        tool_dict.get(LOG_HEADERS['transaction_id'],"bleep") == log_dict.get(LOG_HEADERS['transaction_id'],"bloop")):
+
                         log_dict = {**log_dict, **tool_dict}
                         tool_dict = {}
 
