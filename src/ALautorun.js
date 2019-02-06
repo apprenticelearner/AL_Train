@@ -4,6 +4,7 @@ var agent_id = null;
 var state = null;
 var current_task = null;
 var last_action = null;
+var last_correct = true;
 var lastButtonList = null;
 var AL_URL = null;//'http://localhost:8000';
 var graph = null;
@@ -85,13 +86,18 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
         // kill_this(null, error);    
     // }else{
     // if (textStatus == 'timeout') {
-        console.log("REQUEST " + this.url + " FAILED. Attempt: " 
+        console.log("REQUEST " + this.url + "\n" +
+                    "DATA:" + this.data + "\n" + 
+                    "FAILED. Attempt: " 
                      + this.tryCount + "/" + this.retryLimit);
         // alert("ISSUE OCCURED" ,this.tryCount, this.retryLimit);
         this.tryCount++;
         if (this.tryCount <= this.retryLimit) {
             //try again
-            $.ajax(this);
+            var ajax_contents = this;
+            setTimeout(function(){
+                $.ajax(ajax_contents);
+            }, 1000);
             return;
         }
         var error = "AL failed with code " + xhr.status +" (" + textStatus + ").";
@@ -104,17 +110,20 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
 }
 
 
-function create_agent(callback,agent_name, agent_type){
+function create_agent(callback,agent_name, agent_type, otherdata={}){
+    data_dict = {
+            'name': agent_name,
+            'agent_type': agent_type,
+            'project_id': project_id
+        }
+    data_dict = {...otherdata, ...data_dict}
+
     $.ajax({
         type: "POST",
         url: AL_URL + '/create/',
         dataType: "json",
         contentType: "application/json; charset=utf-8",
-        data: JSON.stringify({
-            'name': agent_name,
-            'agent_type': agent_type,
-            'project_id': project_id
-        }),
+        data: JSON.stringify(data_dict),
 
         // async: true,
         // timeout: AL_TIMEOUT,
@@ -133,26 +142,32 @@ function create_agent(callback,agent_name, agent_type){
 
 function post_next_example(){
 	
-	// console.log(graph);
+    // console.log(graph);
 
     apply_hint()
 	
 	//SELECT SAI AMONG OPTIONS
 	var sai = graph.getExampleTracer().getBestNextLink().getDefaultSAI();
 
-
-    console.log("%cEXAMPLE: " + sai.getSelection() + " -> " + sai.getInput(), 'color: #2222bb; background: #DDDDDD;');
-    term_print('\x1b[0;33;44m' + "EXAMPLE: " + sai.getSelection() + " -> " + sai.getInput() + '\x1b[0m')
-    
-
-
 	sai_data = {
 		selection: sai.getSelection(),
 		action: sai.getAction(),
 		inputs: {value: sai.getInput()},
-		state: get_state(),
+        state: state, //get_state(),
 		reward: 1
 	};
+
+    last_correct = true;
+
+    // @1 SHOULD BE READDED LATER
+    if(sai_data.action == "ButtonPressed"){
+        sai_data.inputs = {}
+    }
+
+    inps = sai_data.inputs['value'] || ""
+    console.log("%cEXAMPLE: " + sai_data.selection + " -> " + inps, 'color: #2222bb; background: #DDDDDD;');
+    term_print('\x1b[0;33;44m' + "EXAMPLE: " + sai_data.selection + " -> " + inps + '\x1b[0m')
+    
 
 	apply_sai(sai_data);
 
@@ -179,14 +194,28 @@ function propose_sai(sai){
 }
 
 function apply_sai(sai){
-        message = "<message><properties>" +
-                    "<MessageType>InterfaceAction</MessageType>" +
-                    "<Selection><value>"+ sai.selection + "</value></Selection>" +
-                    "<Action><value>" + sai.action + "</value></Action>" +
-                    "<Input><value><![CDATA["+ sai.inputs["value"] +"]]></value></Input>" +
-                "</properties></message>";
-    // console.log("MESSAGE",message);
-        commLibrary.sendXML(message);   
+    sel_elm = iframe_content.document.getElementById(sai.selection)
+    if(sel_elm["data-ctat-enabled"] || 'true' == 'false'){
+        var incorrect_event = new CustomEvent(CTAT_INCORRECT, {detail:{'sai':sai, 'component':sel_elm}, bubbles:true, cancelable:true});
+        sel_elm.dispatchEvent(incorrect_event);
+    }
+
+
+    if(sai.action == "ButtonPressed"){
+        sai.inputs = {"value" : -1}
+    }
+
+    sai_obj = new iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
+
+    //     message = "<message><properties>" +
+    //                 "<MessageType>InterfaceAction</MessageType>" +
+    //                 "<Selection><value>"+ sai.selection + "</value></Selection>" +
+    //                 "<Action><value>" + sai.action + "</value></Action>" +
+    //                 "<Input><value><![CDATA["+ sai.inputs["value"] +"]]></value></Input>" +
+    //             "</properties></message>";
+    // // console.log("MESSAGE",message);
+    //     commLibrary.sendXML(message);   
+    iframe_content.CTATCommShell.commShell.processComponentAction(sai_obj,true)
 	
 }
 
@@ -230,6 +259,7 @@ function handle_user_example(evt){
     elm.firstElementChild.setAttribute("class", "CTAT--example");
     console.log(elm.firstElementChild);
 
+    last_correct = true;
 
     // console.log(sai_data);
     send_training_data(sai_data);
@@ -246,6 +276,7 @@ function handle_user_feedback_correct(evt){
     var comp = iframe_content.CTATShellTools.findComponent(last_action.selection)[0];
     comp.setEnabled(false);
 
+    last_correct = true;
     send_feedback(1);
 }
 
@@ -260,7 +291,7 @@ function handle_user_feedback_incorrect(evt){
     var comp = iframe_content.CTATShellTools.findComponent(last_action.selection)[0];
     comp.setEnabled(true);
 
-
+    last_correct = false;
     send_feedback(-1);
 }
 
@@ -270,6 +301,7 @@ function handle_correct(evt){
 	currentElement.removeEventListener(CTAT_CORRECT, handle_correct);
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
+    last_correct = true;
 	send_feedback(1);
 }
 
@@ -279,6 +311,8 @@ function handle_incorrect(evt){
 	currentElement.removeEventListener(CTAT_CORRECT, handle_correct);
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
+
+    last_correct = false;
 	send_feedback(-1);
 }
 
@@ -302,6 +336,7 @@ function send_feedback(reward){
 
 function send_training_data(sai_data) {
 
+    // console.log("SAI: ", sai_data)
 
     // loggingLibrary.logResponse (transactionID,"textinput1","UpdateTextField","Hello World","RESULT","CORRECT","You got it!");
 
@@ -395,7 +430,11 @@ function query_apprentice() {
 
     if(verbosity > 0) console.log('querying agent');
 
-    state = get_state();
+    if (last_correct){
+        console.log("SETTING STATE!");
+        console.log(last_correct);
+        state = get_state();
+    }
 
     var data = {
         'state': state
@@ -471,7 +510,7 @@ function query_apprentice() {
 
 function checkTypes(element, types){
 	var ok = false;
-	for (var i = types.length - 1; i >= 0; i--) {
+    for (var i = types.length - 1; i >= 0; i--) {
 		var type = types[i];
 		if(element.classList.contains(type)) ok = true;
 	}
@@ -479,7 +518,7 @@ function checkTypes(element, types){
 }
 
 
-function get_state(encode_relative=true,strip_offsets=true){
+function get_state(encode_relative=false,strip_offsets=true, use_offsets=false, use_class=false, use_id=true){
     var state_array = iframe_content.$('div').toArray();
     // state_array.push({current_task: current_task});
 
@@ -488,20 +527,25 @@ function get_state(encode_relative=true,strip_offsets=true){
     $.each(state_array, function(idx, element){
 
     	obj = {}
-    	if(element.classList.contains("CTATComponent")) {
-    		obj["className"] = element.classList[0];
-    		obj["offsetParent"] = element.offsetParent.dataset.silexId;
-    		obj["offsetLeft"] = element.offsetLeft;
-            obj["offsetTop"] = element.offsetTop;
-            obj["offsetWidth"] = element.offsetWidth;
-    		obj["offsetHeight"] = element.offsetHeight;
+    	if(element.classList.contains("CTATComponent")
+             && !element.classList.contains("CTATTable")) {
+            // if(obj["className"] == "CTATTable") {continue;} //Skip table objects and just use cells
+    		if(use_class){obj["className"] = element.classList[0];}
+            if(use_offsets){
+        		obj["offsetParent"] = element.offsetParent.dataset.silexId;
+        		obj["offsetLeft"] = element.offsetLeft;
+                obj["offsetTop"] = element.offsetTop;
+                obj["offsetWidth"] = element.offsetWidth;
+        		obj["offsetHeight"] = element.offsetHeight;
+            }
 
 
-    		obj["id"] = element.id;
+    		if(use_id){obj["id"] = element.id;}
 
-    		if(checkTypes(element, ["CTATTextInput","CTATComboBox"])){
+    		if(checkTypes(element, ["CTATTextInput","CTATComboBox","CTATTable--cell"])){
     			obj["value"] = element.firstElementChild.value;
     			obj["contentEditable"] = (element.firstElementChild.contentEditable == 'true');
+    			// obj["name"] = element.id
     		}
     		// if(checkTypes(element, ["CTATTextField", "CTATComboBox"])){
     		// 	obj["textContent"] = element.textContent;
@@ -706,7 +750,7 @@ function runWhenReady(){
         var link = iframe_content.document.createElement('link');
         link.setAttribute('rel', 'stylesheet');
         link.setAttribute('type', 'text/css');
-        link.setAttribute('href', '../../css/AL_colors.css');
+        link.setAttribute('href', "../".repeat(working_dir.split('/').length+1) + 'css/AL_colors.css');
         iframe_content.document.getElementsByTagName('head')[0].appendChild(link);
 
         //Gets rid of annyoing sai printout on every call to sendXML
@@ -763,7 +807,15 @@ function serve_next_agent(){
             serve_next_problem();
         }
         problem_iterator = agent_obj["problem_set"];
-        create_agent(callback, agent_obj["agent_name"], agent_obj["agent_type"]);
+
+        other_data = {...agent_obj}
+        delete other_data["problem_set"];
+        delete other_data["agent_name"];
+        delete other_data["agent_type"];
+
+        console.log("OTHERDATA: ", other_data)
+
+        create_agent(callback, agent_obj["agent_name"], agent_obj["agent_type"], other_data);
 
     }else{
         serve_next_training_set();

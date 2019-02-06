@@ -3,3 +3,4 @@
 ubprocess
 log/
 net.conf
+*.cprof

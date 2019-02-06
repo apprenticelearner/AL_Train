@@ -1,0 +1,49 @@
+{ 
+ 	"training_set1" : [ 
+			 {"agent_name":"rony_training/Stu_7bb06a8cb80b4b050daf82fcb874e2b0", 
+ 		"agent_type":"WhereWhenHowNoFoa", 
+		"stay_active": true, 
+		"dont_save": true, 
+		"args" : {
+			"when_learner": "trestle", 
+			"where_learner": "MostSpecific" 
+		},
+		"problem_set" : [ 
+			{"set_params" : 
+				{"HTML": "HTML/IntegerArithmetic.html", 
+				"examples_only" : false} 
+			}, 
+		 
+ 			{"question_file" : "../FinalBRDs/9+2.brd"},
+			{"question_file" : "../FinalBRDs/4+3.brd"},
+			{"question_file" : "../FinalBRDs/2+1.brd"},
+			{"question_file" : "../FinalBRDs/8+7.brd"},
+			{"question_file" : "../FinalBRDs/6+9.brd"},
+			{"question_file" : "../FinalBRDs/3+4.brd"},
+			{"question_file" : "../FinalBRDs/2+2.brd"},
+			{"question_file" : "../FinalBRDs/3+5.brd"},
+			{"question_file" : "../FinalBRDs/1+1.brd"},
+			{"question_file" : "../FinalBRDs/3-4.brd"},
+			{"question_file" : "../FinalBRDs/4-3.brd"},
+			{"question_file" : "../FinalBRDs/2-2.brd"},
+			{"question_file" : "../FinalBRDs/1-1.brd"},
+			{"question_file" : "../FinalBRDs/3-5.brd"},
+			{"question_file" : "../FinalBRDs/2-1.brd"},
+			{"question_file" : "../FinalBRDs/6-9.brd"},
+			{"question_file" : "../FinalBRDs/9-2.brd"},
+			{"question_file" : "../FinalBRDs/8-7.brd"},
+			{"question_file" : "../FinalBRDs/3t4.brd"},
+			{"question_file" : "../FinalBRDs/3t5.brd"},
+			{"question_file" : "../FinalBRDs/1t1.brd"},
+			{"question_file" : "../FinalBRDs/4t3.brd"},
+			{"question_file" : "../FinalBRDs/2t1.brd"},
+			{"question_file" : "../FinalBRDs/2t2.brd"},
+			{"question_file" : "../FinalBRDs/6t9.brd"},
+			{"question_file" : "../FinalBRDs/8t7.brd"},
+			{"question_file" : "../FinalBRDs/9t2.brd"}
+
+
+  			] 
+ 		}
+ 	]
+ }

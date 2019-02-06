@@ -24,6 +24,7 @@ def _print_and_resp(handler,outmode=sys.stdout):
 # output.write("Anon Student Id\tSession Id\tTime\tStudent Response Type\tTutor Response Type\tLevel (Unit)\tProblemName\tStep Name\tSelection\tAction\tInput\tFeedback Text\tOutcome\n");
 LOG_HEADERS = {"user_guid"              :"Anon Student Id",
                "session_id"             :"Session Id",
+               "transaction_id"         :"Transaction Id",
                "tutor_event_time"       :"Time",
                "timezone"               :"Time Zone",
                "student_resp_type"      :"Student Response Type",
@@ -35,10 +36,12 @@ LOG_HEADERS = {"user_guid"              :"Anon Student Id",
                "action"                 :"Action",
                "input"                  :"Input",
                "tutor_advice"           :"Feedback Text",
-               "action_evaluation"      :"Outcome"}
+               "action_evaluation"      :"Outcome",
+               }
 
 session_default_dict =  {key: None for key in LOG_HEADERS.values()}
 output_file_path = None
+tool_dict = {}
 
 def _fill_from_elm(log_dict, elm):
     if(elm.tag == "custom_field"):
@@ -56,9 +59,13 @@ def _fill_from_elm(log_dict, elm):
         log_dict[LOG_HEADERS["action"]] = next(elm.iter("action")).text 
         log_dict[LOG_HEADERS["input"]] = next(elm.iter("input")).text 
     elif(elm.tag == "semantic_event"):
-        trt = elm.attrib["name"]
-        log_dict[LOG_HEADERS["tutor_resp_type"]] = trt
-        log_dict[LOG_HEADERS["student_resp_type"]] = {"RESULT":"ATTEMPT","HINT_MSG":"HINT_REQUEST"}.get(trt,None)
+        rt = elm.attrib["name"]
+        log_dict[LOG_HEADERS["transaction_id"]] = elm.attrib["transaction_id"]
+        if(log_dict is tool_dict):
+            log_dict[LOG_HEADERS["student_resp_type"]] = rt
+        else:
+            log_dict[LOG_HEADERS["tutor_resp_type"]] = rt
+        # log_dict[LOG_HEADERS["student_resp_type"]] = {"RESULT":"ATTEMPT","HINT_MSG":"HINT_REQUEST"}.get(trt,None)
 
     elif(elm.tag == "dataset"):
         for level in elm.iter("level"):
@@ -90,6 +97,9 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
     def do_POST (self):
         global session_default_dict
         global output_file_path
+        global tool_dict
+
+        # print("POST")
 
         if(output_file_path == None):
             print("Received log message, but no output_file specifed.")
@@ -105,7 +115,6 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
 
         # https://github.com/CMUCTAT/CTAT/wiki/Logging-Documentation
         envelope = ElementTree.fromstring(post_data)
-
         # print("START \n\n")
 
 
@@ -117,11 +126,21 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
 
             if(x.tag == "log_action"):
                 payload = ElementTree.fromstring(unquote(x.text))
+
+                print(minidom.parseString(ElementTree.tostring(payload, encoding='utf8', method='xml')).toprettyxml())
+
                 for msg in payload.iter("context_message"):
                     # print("Message Type: ", "context_message")
                     _fill_from_elm(session_default_dict, msg)
                     for elm in list(msg):
                         _fill_from_elm(session_default_dict,elm)
+
+                for msg in payload.iter("tool_message"):
+                    tool_dict = {}
+                    for elm in list(msg):
+                        _fill_from_elm(tool_dict, elm)
+                    # print("TOOL TRANS", msg.attrib)
+
 
                 for msg in payload.iter("tutor_message"):
                     # print("Message Type: ", "tutor_message")
@@ -129,10 +148,30 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
                     for elm in list(msg):
                         _fill_from_elm(log_dict, elm)
 
-                    print("-------------------")
-                    for key,val in log_dict.items():
-                        print(key, ":", val)
-                    print("-------------------")
+                    # print("------MESSAGE-------")
+                    # mstring = ElementTree.tostring(msg, encoding='utf8', method='xml')                    
+                    # print(minidom.parseString(mstring).toprettyxml())
+                    # print("------LOG_DICT-------")
+                    # for key,val in log_dict.items():
+                    #     print(key, ":", val)
+                    # print("-------------------")
+
+                    # print("------TOOL_DICT-------")
+                    # for key,val in tool_dict.items():
+                    #     print(key, ":", val)
+                    # print("-------------------")
+
+                    if(tool_dict != None and log_dict != None and 
+                        tool_dict.get(LOG_HEADERS['transaction_id'],"bleep") == log_dict.get(LOG_HEADERS['transaction_id'],"bloop")):
+
+                        log_dict = {**log_dict, **tool_dict}
+                        tool_dict = {}
+
+                    # print("------JOINED DICT-------")
+                    # for key,val in log_dict.items():
+                    #     print(key, ":", val)
+                    # print("-------------------")
+                    
 
                     with open(output_file_path, 'a') as f: 
                         csv_writer = csv.DictWriter(f, LOG_HEADERS.values(),delimiter="\t")

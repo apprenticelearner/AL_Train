@@ -49,7 +49,15 @@ def gen_training(transactions,
 
     control = [{'agent_name': 'Control_' + agent,
                 'agent_type': agent_type,
-                'output_dir': join_path(output_root, 'control', agent),
+
+                "stay_active": True, 
+                "dont_save": True, 
+                "args" : {
+                    "when_learner": "trestle",
+                    "where_learner": "MostSpecific" 
+                },
+
+                # 'output_dir': join_path(output_root, 'control', agent),
                 'problem_set':
                     [{"set_params": {"HTML": problem_html,
                                      "examples_only": False}}] +
@@ -63,7 +71,15 @@ def gen_training(transactions,
 
     pre_test = [{'agent_name': 'Pretest_' + agent,
                  'agent_type': agent_type,
-                 'output_dir': join_path(output_root, 'pretest', agent),
+
+                "stay_active": True, 
+                "dont_save": True, 
+                "args" : {
+                    "when_learner": "trestle",
+                    "where_learner": "MostSpecific" 
+                },
+
+                 # 'output_dir': join_path(output_root, 'pretest', agent),
                  'problem_set':
                      [{"set_params": {"HTML": prepost_html,
                                       "examples_only": True}}] +
