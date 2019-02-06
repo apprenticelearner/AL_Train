@@ -15,7 +15,7 @@
                 <MessageType>InterfaceAction</MessageType>
                 <transaction_id>3780b663-4541-0320-8083-c874f88aaa65</transaction_id>
                 <Selection>
-                    <value>left_operand</value>
+                    <value>JCommTable.R0C0</value>
                 </Selection>
                 <Action>
                     <value>UpdateTextField</value>
@@ -47,7 +47,7 @@
                 <MessageType>InterfaceAction</MessageType>
                 <transaction_id>6b24f737-0a41-0506-726f-466d2f980067</transaction_id>
                 <Selection>
-                    <value>right_operand</value>
+                    <value>JCommTable3.R0C0</value>
                 </Selection>
                 <Action>
                     <value>UpdateTextField</value>
