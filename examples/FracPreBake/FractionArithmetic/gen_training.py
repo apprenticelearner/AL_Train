@@ -34,6 +34,9 @@ def get_problem_orders(transactions):
                                                'midtest b', 'posttest',
                                                'dposttest'):
             continue
+        if d['Problem Name'][0] == 'M':
+            # TODO - does this break?
+            d['Problem Name'] = 'M' + d['Problem Name'][2:]
         if d['Problem Name'][0] == 'T' or \
            d['Problem Name'] == 'InstructionSlide':
             continue
