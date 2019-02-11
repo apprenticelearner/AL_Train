@@ -30,7 +30,12 @@ def get_problem_orders(transactions):
             sequences[d['Anon Student Id']] = []
             if len(sequences) > 10:
                 break
-        if d['Problem Name'][0] == 'T':
+        if d['Level (ProblemSet)'].lower() in ('pretest', 'midtest a',
+                                               'midtest b', 'posttest',
+                                               'dposttest'):
+            continue
+        if d['Problem Name'][0] == 'T' or \
+           d['Problem Name'] == 'InstructionSlide':
             continue
         sequences[d['Anon Student Id']].append(d['Problem Name'])
     return sequences
