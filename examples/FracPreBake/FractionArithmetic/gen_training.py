@@ -8,8 +8,9 @@ from isomorphic import gen_iso_brds
 
 
 def parse_file(filename):
-    reader = csv.DictReader(filename)
-    return [r for r in reader]
+    with open(filename) as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        return [r for r in reader]
 
 
 def get_problem_orders(transactions):
@@ -95,8 +96,8 @@ def gen_training(transactions,
                      [{"set_params": {"HTML": prepost_html,
                                       "examples_only": True}}] +
                      [{'question_file': join_path(prepost_brds,
-                                                  '_'.join(agent, 'Pretest',
-                                                           str(i + 1)))}
+                                                  '_'.join((agent, 'Pretest',
+                                                           str(i + 1))))}
                       for i in range(num_pretest)] +
                      [{"set_params": {"HTML": problem_html,
                                       "examples_only": False}}] +
@@ -123,7 +124,7 @@ def gen_training(transactions,
                      [{"set_params": {"HTML": problem_html,
                                       "examples_only": True}}] +
                      [{'question_file': join_path(iso_brds, agent, 'brds', n)}
-                      for n in lisdir(join_path(iso_brds, agent, 'brds'))] +
+                      for n in listdir(join_path(iso_brds, agent, 'brds'))] +
                      [{"set_params": {"HTML": problem_html,
                                       "examples_only": False}}] +
                      [{'question_file': join_path(problem_brds, prob + '.brd')}
