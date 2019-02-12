@@ -253,7 +253,7 @@ def main(args):
     if(args.interactive): ctat_url += "&interactive=true"
 
     
-    if("selenium" in args.browser):
+    if(args.browser != None and "selenium" in args.browser):
         from selenium import webdriver
         sys.path.append("/home/danny/Projects")
         if("chrome" in args.browser):
