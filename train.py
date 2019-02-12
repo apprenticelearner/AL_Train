@@ -188,7 +188,7 @@ def parse_args(argv):
 
     print(args.browser_args)
 
-    args.browser_args = list(filter(None,re.split(';|,| |\t|\n', args.browser_args[0])))
+    args.browser_args = list(filter(None,re.split(';|,| |\t|\n', args.browser_args)))
 
     args.log_dir = os.path.abspath(apply_wd(args.log_dir))
     args.al_dir = os.path.abspath(apply_wd(args.al_dir))
