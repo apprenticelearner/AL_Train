@@ -127,7 +127,7 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
             if(x.tag == "log_action"):
                 payload = ElementTree.fromstring(unquote(x.text))
 
-                print(minidom.parseString(ElementTree.tostring(payload, encoding='utf8', method='xml')).toprettyxml())
+                # print(minidom.parseString(ElementTree.tostring(payload, encoding='utf8', method='xml')).toprettyxml())
 
                 for msg in payload.iter("context_message"):
                     # print("Message Type: ", "context_message")
