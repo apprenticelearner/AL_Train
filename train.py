@@ -252,12 +252,29 @@ def main(args):
     if(args.wd != None): ctat_url += "&wd=" + args.wd
     if(args.interactive): ctat_url += "&interactive=true"
 
-    if(args.browser != None):
+    
+    if("selenium" in args.browser):
+        from selenium import webdriver
+        sys.path.append("/home/danny/Projects")
+        if("chrome" in args.browser):
+            options = webdriver.ChromeOptions()
+            options.add_argument('--ignore-certificate-errors')
+            options.add_argument("--test-type")
+            for x in args.browser_args:
+                options.add_argument(x)
+            # options.binary_location = "/home/danny/Projects/chromedriver"
+            driver = webdriver.Chrome(chrome_options=options)
+            driver.get(ctat_url)
+        else:
+            raise ValueError("Browser %r not supported" % args.browser)
+    elif(args.browser != None):
         browser_process = subprocess.Popen([args.browser, ctat_url] + args.browser_args)
     else:
         #use defualt browser
         import webbrowser
         webbrowser.get().open(ctat_url)
+
+
 
     # al_process.wait()
     # print("AL PROCESS")
