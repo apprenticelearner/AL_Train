@@ -5,7 +5,7 @@ from operator import itemgetter
 from os import listdir, getcwd
 from os.path import join as join_path
 from os.path import relpath,dirname, isfile
-from isomorphic import gen_iso_brds
+from isomorphic import gen_iso_brds, gen_substep_brds
 
 
 def parse_file(filename):
@@ -202,10 +202,16 @@ if __name__ == '__main__':
                         help="The datashop model value file to use.")
     parser.add_argument('-iso_brds',
                         default='iso/',
-                        help="The directory location of brds for pik problems for each student.")
-    parser.add_argument('-mass_production_templates',
+                        help="The directory location of brds for isomorphic problems for each student.")
+    parser.add_argument('-iso_mass_production_templates',
                         default='mass_production/',
                         help="The directory location of AS, AD, and M brd templates.")
+    parser.add_argument('-substep_brds',
+                        default='substep/',
+                        help="The directory location of brds for sustep problems for each student.")
+    parser.add_argument('-substep_mass_production_template',
+                        default='../IntegerArithmetic/IntegerArithmetic.brd',
+                        help="The mass production template for substep problems")
 
     args = parser.parse_args()
     data = parse_file(args.trans_file)
@@ -214,6 +220,7 @@ if __name__ == '__main__':
     # args.prepost_brds = relpath(args.prepost_brds ,start=dirname(args.prepost_html))
 
     gen_iso_brds(args.model_file, args.iso_brds, args.mass_production_templates)
+    gen_substep_brds(args.model_file, args.substep_brds, args.substep_mass_production_template)
     gen_training(data,
                  agent_type=args.agent_type,
                  output_root=args.output_root,
