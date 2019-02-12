@@ -261,7 +261,7 @@ def main(args):
             options.add_argument('--ignore-certificate-errors')
             options.add_argument("--test-type")
             for x in args.browser_args:
-                options.add_argument(x)
+                if(x): options.add_argument(x)
             # options.binary_location = "/home/danny/Projects/chromedriver"
             driver = webdriver.Chrome(chrome_options=options)
             driver.get(ctat_url)
