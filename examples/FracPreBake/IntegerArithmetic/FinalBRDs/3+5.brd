@@ -100,7 +100,7 @@
                     <MessageType>InterfaceAction</MessageType>
                     <transaction_id>e2fc809e-c88e-aa27-12df-038062f4b1f8</transaction_id>
                     <Selection>
-                        <value>result</value>
+                        <value>JCommTable6.R0C0</value>
                     </Selection>
                     <Action>
                         <value>UpdateTextField</value>
@@ -121,7 +121,7 @@
                 <Selection>
                     <matcher>
                         <matcherType>ExactMatcher</matcherType>
-                        <matcherParameter name="single">result</matcherParameter>
+                        <matcherParameter name="single">JCommTable6.R0C0</matcherParameter>
                     </matcher>
                 </Selection>
                 <Action>
