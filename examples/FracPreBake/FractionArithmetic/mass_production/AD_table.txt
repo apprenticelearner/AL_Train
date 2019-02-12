@@ -1,0 +1,12 @@
+Problem Name	AD 1_2_plus_2_3	AD 1_3_plus_3_2	AD 1_4_plus_4_5	AD 2_3_plus_3_5	AD 3_7_plus_2_8	AD 4_5_plus_2_7	AD 4_9_plus_3_4	AD 5_3_plus_2_5	AD 5_3_plus_9_8	AD 5_6_plus_1_7	AD 5_6_plus_5_7	AD 5_9_plus_3_7	AD 6_7_plus_1_6	AD 7_8_plus_1_3
+%(startStateNodeName)%	AD 1_2_plus_2_3	AD 1_3_plus_3_2	AD 1_4_plus_4_5	AD 2_3_plus_3_5	AD 3_7_plus_2_8	AD 4_5_plus_2_7	AD 4_9_plus_3_4	AD 5_3_plus_2_5	AD 5_3_plus_9_8	AD 5_6_plus_1_7	AD 5_6_plus_5_7	AD 5_9_plus_3_7	AD 6_7_plus_1_6	AD 7_8_plus_1_3
+%(convert)%	x	x	x	x	x	x	x	x	x	x	x	x	x	x
+%(result_numerator)%	7	11	21	19	38	38	43	31	67	41	65	62	43	29
+%(result_denominator)%	6	6	20	15	56	35	36	15	24	42	42	63	42	24
+%(left_numerator_new)%	3	2	5	10	24	28	16	25	40	35	35	35	36	21
+%(right_numerator_new)%	4	9	16	9	14	10	27	6	27	6	30	27	7	8
+%(operator)%	+	+	+	+	+	+	+	+	+	+	+	+	+	+
+%(left_numerator)%	1	1	1	2	3	4	4	5	5	5	5	5	6	7
+%(left_denominator)%	2	3	4	3	7	5	9	3	3	6	6	9	7	8
+%(right_numerator)%	2	3	4	3	2	2	3	2	9	1	5	3	1	1
+%(right_denominator)%	3	2	5	5	8	7	4	5	8	7	7	7	6	3
