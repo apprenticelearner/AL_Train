@@ -232,4 +232,5 @@ if (len(sys.argv) > 2):
 
 
 server = StoppableHttpServer(("localhost", port), StoppableHttpRequestHandler)
+print("HOST SERVER STARTED")
 server.serve_forever()
