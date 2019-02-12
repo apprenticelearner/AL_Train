@@ -4,6 +4,7 @@ import json
 from operator import itemgetter
 from os import listdir
 from os.path import join as join_path
+from os.path import relpath,dirname
 from isomorphic import gen_iso_brds
 
 
@@ -31,8 +32,8 @@ def get_problem_orders(transactions):
     for d in data:
         if d['Anon Student Id'] not in sequences:
             sequences[d['Anon Student Id']] = []
-            if len(sequences) > 10:
-                break
+            # if len(sequences) > 10:
+            #     break
         if d['Level (ProblemSet)'].lower() in ('pretest', 'midtest a',
                                                'midtest b', 'posttest',
                                                'dposttest'):
@@ -189,6 +190,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     data = parse_file(args.trans_file)
+
+    args.problem_brds = relpath(args.problem_brds ,start=dirname(args.problem_html))
+    args.prepost_html = relpath(args.prepost_html ,start=dirname(args.problem_html))
 
     gen_iso_brds(args.model_file, args.iso_brds, args.mass_production_templates)
     gen_training(data,

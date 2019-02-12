@@ -1,0 +1,1 @@
+python gen_training.py -trans_file ds_1190_Study2.txt -agent_type WhereWhenHowNoFoa -output_root blehh.out -problem_brds mass_production/mass_production_brds -problem_html HTML/fraction_arithmetic.html -prepost_brds mass_production/pre_test_brds -prepost_html HTML/fraction_arithmetic.html -model_file model_value.txt
