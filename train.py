@@ -187,8 +187,10 @@ def parse_args(argv):
     read_conf(args, args.config)
 
     print(args.browser_args)
+    if(isinstance(args.browser_args, str)): args.browser_args = [args.browser_args] 
 
-    args.browser_args = list(filter(None,re.split(';|,| |\t|\n', args.browser_args)))
+    # args.browser_args = list(filter(None,re.split(';|,| |\t|\n', args.browser_args)))
+    # print(args.browser_args)
 
     args.log_dir = os.path.abspath(apply_wd(args.log_dir))
     args.al_dir = os.path.abspath(apply_wd(args.al_dir))
@@ -243,6 +245,8 @@ def main(args):
         
     else:
         port_error("CTAT", args.ctat_port)
+
+
 
     ctat_url = "http://localhost:%s/?training=%s&al_url=http://localhost:%s" %(args.ctat_port, args.training,args.al_port)
     if(args.wd != None): ctat_url += "&wd=" + args.wd
