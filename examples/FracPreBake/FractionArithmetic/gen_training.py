@@ -57,7 +57,9 @@ def gen_training(transactions,
                  prepost_html="mass_production/HTML/pretest.html",
                  num_pretest=8,
                  iso_brds="iso",
+                 iso_brds_relative="iso",
                  substep_brds="substep", 
+                 substep_brds_relative="substep", 
                  substep_html="IntegerArithmetic/HTML/IntegerArithmetic.html"):
 
     sequences = get_problem_orders(transactions)
@@ -144,7 +146,7 @@ def gen_training(transactions,
                  'problem_set':
                      [{"set_params": {"HTML": problem_html,
                                       "examples_only": True}}] +
-                     [{'question_file': join_path(iso_brds, agent, 'brds', n)}
+                     [{'question_file': join_path(iso_brds_relative, agent, 'brds', n)}
                       for n in listdir(join_path(iso_brds, agent, 'brds'))] +
                      [{"set_params": {"HTML": problem_html,
                                       "examples_only": False}}] +
@@ -168,11 +170,11 @@ def gen_training(transactions,
                  'problem_set':
                      [{"set_params": {"HTML": substep_html,
                                       "examples_only": True}}] +
-                     [{'question_file': join_path(substep_brds, agent, 'brds', n)}
+                     [{'question_file': join_path(substep_brds_relative, agent, 'brds', n)}
                       for n in listdir(join_path(substep_brds, agent, 'brds'))] +
                      [{"set_params": {"HTML": problem_html,
                                       "examples_only": False}}] +
-                     [{'question_file': join_path(problem_brds, prob + '.brd')}
+                     [{'question_file': join_path(problem_brds_relative, prob + '.brd')}
                       for prob in sequences[agent]]}
                 for agent in overlapped_student_ids]
     substep = {'training_set1': substep}
@@ -251,7 +253,9 @@ if __name__ == '__main__':
                  prepost_html=args.prepost_html,
                  num_pretest=args.num_pretest,
                  iso_brds=args.iso_brds,
+                 iso_brds_relative=relpath(args.iso_brds ,start=dirname(args.problem_html)),
                  substep_brds=args.substep_brds,
+                 substep_brds_relative=relpath(args.substep_brds ,start=dirname(args.substep_html)),
                  substep_html=args.substep_html,
     )
 
