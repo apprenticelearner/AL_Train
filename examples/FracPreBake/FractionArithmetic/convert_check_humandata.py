@@ -19,6 +19,10 @@ dic = {'hint_button':'hint', 'done':'done', 'JCommTable4_C1R1':'num3','JCommTabl
 
 dic2 = {'num3': 'num5', 'den3': 'den5'}
 print(list(df.columns.values))
+
+# Drop pretest and posttest transactions.
+df = df[~df['Level (ProblemSet)'].isin(['Pretest', 'Midtest A', 'Midtest B', 'Posttest', 'DPosttest'])]
+
 temp = []
 for row in range(len(df)):
     if df.iloc[row]['Selection'] in dic:
@@ -39,7 +43,9 @@ for row in range(len(df)):
 
 temp3 = []
 for i in range(len(temp)):
-    temp3.append(df.iloc[i]['Problem Name'].split()[0]+" "+str(temp[i]))
+    problem_type = df.iloc[i]['Problem Name'].split()[0]
+    problem_type = problem_type[0] if problem_type.lower() in ('ms', 'md') else problem_type 
+    temp3.append(problem_type + " " + str(temp[i]))
 
 df = df.drop('Selection', 1)
 df = df.rename(columns = {'Step Name':'KC (Rule Name)'})

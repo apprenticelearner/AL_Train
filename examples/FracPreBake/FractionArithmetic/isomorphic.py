@@ -238,6 +238,8 @@ def gen_iso_brds(model_file, iso_dir, mass_production_dir):
         m_filename = table_filename_template.format(s['student_id'], 'M')
         gen_m(m_filename, MAX_DEN, s['final_piks']['M'])
         mass_produce(m_filename, mass_production_dir + 'M_template.brd', brds_destdir)
+
+    return piks
         
 
 def gen_substep_brds(model_file, substep_dir, mass_production_template):
