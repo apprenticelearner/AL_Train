@@ -220,8 +220,8 @@ def process_piks(piks):
 
 MAX_DEN = 12
 def gen_iso_brds(model_file, iso_dir, mass_production_dir):
-    table_filename_template = iso_dir + '{}/tables/{}_table.txt'
-    brds_destdir_template = iso_dir + '{}/brds'
+    table_filename_template = iso_dir + '/{}/tables/{}_table.txt'
+    brds_destdir_template = iso_dir + '/{}/brds'
     piks = get_piks(model_file)
     problem_types, piks = process_piks(piks)
     for s in piks:
@@ -229,22 +229,22 @@ def gen_iso_brds(model_file, iso_dir, mass_production_dir):
 
         as_filename = table_filename_template.format(s['student_id'], 'AS')
         gen_as(as_filename, MAX_DEN, s['final_piks']['AS'])
-        mass_produce(as_filename, mass_production_dir + 'AS_template.brd', brds_destdir)
+        mass_produce(as_filename, mass_production_dir + '/AS_template.brd', brds_destdir)
 
         ad_filename = table_filename_template.format(s['student_id'], 'AD')
         gen_ad(ad_filename, MAX_DEN, s['final_piks']['AD'])
-        mass_produce(ad_filename, mass_production_dir + 'AD_template.brd', brds_destdir)
+        mass_produce(ad_filename, mass_production_dir + '/AD_template.brd', brds_destdir)
 
         m_filename = table_filename_template.format(s['student_id'], 'M')
         gen_m(m_filename, MAX_DEN, s['final_piks']['M'])
-        mass_produce(m_filename, mass_production_dir + 'M_template.brd', brds_destdir)
+        mass_produce(m_filename, mass_production_dir + '/M_template.brd', brds_destdir)
 
     return piks
         
 
 def gen_substep_brds(model_file, substep_dir, mass_production_template):
-    table_filename_template = substep_dir + '{}/tables/{}_table.txt'
-    brds_destdir_template = substep_dir + '{}/brds'
+    table_filename_template = substep_dir + '/{}/tables/{}_table.txt'
+    brds_destdir_template = substep_dir + '/{}/brds'
     piks = get_piks(model_file)
     problem_types, piks = process_piks(piks)
     for s in piks:

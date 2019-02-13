@@ -216,19 +216,19 @@ if __name__ == '__main__':
     parser.add_argument('-model_file',
                         help="The datashop model value file to use.")
     parser.add_argument('-iso_brds',
-                        default='iso/',
+                        default='iso',
                         help="The directory location of brds for isomorphic problems for each student.")
     parser.add_argument('-iso_mass_production_templates',
-                        default='mass_production/',
+                        default='mass_production',
                         help="The directory location of AS, AD, and M brd templates.")
     parser.add_argument('-substep_brds',
-                        default='substep/',
+                        default='substep',
                         help="The directory location of brds for sustep problems for each student.")
     parser.add_argument('-substep_mass_production_template',
                         default='../IntegerArithmetic/IntegerArithmetic.brd',
                         help="The mass production template for substep problems")
     parser.add_argument('-substep_html',
-                        default='IntegerArithmetic/HTML/IntegerArithmetic.html',
+                        default='../IntegerArithmetic/HTML/IntegerArithmetic.html',
                         help="The HTML file to use for the relevant substep"
                              "problems. I don't currently use this yet.")
 
