@@ -48,6 +48,9 @@ var EXAMPLES_ONLY = false;
 var file_params = {};
 var agent_params = {};
 
+var agent_description = "";
+
+
 
 CTATGuid = {s4:function s4() {
   return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
@@ -220,7 +223,7 @@ function apply_sai(sai){
 }
 
 function apply_hint(){
-
+	
     message = "<message><properties>" +
                     "<MessageType>InterfaceAction</MessageType>" +
                     "<Selection><value>hint</value></Selection>" +
@@ -800,6 +803,8 @@ function serve_next_agent(){
         var agent_obj = agent_iterator.shift();
         agent_params = agent_obj["set_params"] || {}
 
+        agent_description = "Agent Name:" + agent_obj["agent_name"] + "<br>Agent Type:" + agent_obj["agent_type"] +"<br>"
+
 
         console.log("CREATING AGENT", agent_obj["agent_name"]);
         var callback = function(resp){
@@ -864,6 +869,8 @@ function serve_next_problem(){
                 problem_iterator.unshift({...prob_obj})
             }
         }
+
+        document.getElementById("prompt_text").innerHTML = agent_description + "question_file:" + prob_obj["question_file"]; 
 
         console.log(prob_obj)
 
@@ -984,9 +991,9 @@ function main() {
         working_dir =  !!match ? match[1] : ''; //The directory of the training.json
     }
 
-    if(interactive){
-        document.getElementById("prompt_text").setAttribute("class", "prompt_text");
-    }
+    // if(interactive){
+    document.getElementById("prompt_text").setAttribute("class", "prompt_text");
+    // }
 
     console.log("INTERACTIVE:",interactive)
 

@@ -2,9 +2,9 @@ import argparse
 import csv
 import json
 from operator import itemgetter
-from os import listdir
+from os import listdir, getcwd
 from os.path import join as join_path
-from os.path import relpath,dirname
+from os.path import relpath,dirname, isfile
 from isomorphic import gen_iso_brds
 
 
@@ -52,8 +52,10 @@ def gen_training(transactions,
                  agent_type="WhereWhenHowNoFoa",
                  output_root="out",
                  problem_brds='converted_brds/',
+                 problem_brds_relative='converted_brds/',
                  problem_html="FractionArithmetic/HTML/fraction_arithmetic.html",
                  prepost_brds="mass_production/mass_production_brds/",
+                 prepost_brds_relative="mass_production/mass_production_brds/",
                  prepost_html="mass_production/HTML/pretest.html",
                  num_pretest=8,
                  iso_brds="iso"):
@@ -74,7 +76,7 @@ def gen_training(transactions,
                 'problem_set':
                     [{"set_params": {"HTML": problem_html,
                                      "examples_only": False}}] +
-                    [{'question_file': join_path(problem_brds, prob + '.brd')}
+                    [{'question_file': join_path(problem_brds_relative, prob + '.brd')}
                      for prob in sequences[agent]]}
                for agent in sequences]
 
@@ -82,29 +84,46 @@ def gen_training(transactions,
     with open('control_training.json', 'w') as out:
         json.dump(control, out)
 
-    pre_test = [{'agent_name': 'Pretest_' + agent,
-                 'agent_type': agent_type,
+    pre_test = []
+    for agent in sequences:
+        agent_pre_test = {'agent_name': 'Pretest_' + agent,
+                     'agent_type': agent_type,
 
-                "stay_active": True, 
-                "dont_save": True, 
-                "args" : {
-                    "when_learner": "trestle",
-                    "where_learner": "MostSpecific" 
-                },
+                    "stay_active": True, 
+                    "dont_save": True, 
+                    "args" : {
+                        "when_learner": "trestle",
+                        "where_learner": "MostSpecific" 
+                    }}
+        agent_pre_test["problem_set"] = []
+        agent_pre_test["problem_set"] +=  [{"set_params": {"HTML": prepost_html, "examples_only": True}}]
+        for i in range(num_pretest):
+            pretest_path = join_path(prepost_brds_relative,'_'.join((agent, 'Pretest', str(i + 1))) + '.brd')
+            thiswd_pretestpath = join_path(prepost_brds,'_'.join((agent, 'Pretest', str(i + 1))) + '.brd')
+            if(isfile(thiswd_pretestpath)):
+                agent_pre_test["problem_set"] += [{'question_file': pretest_path}]
+            else:
+                print("Skip:", thiswd_pretestpath)
+        
+        agent_pre_test["problem_set"] += [{"set_params": {"HTML": problem_html,"examples_only": False}}] 
+        agent_pre_test["problem_set"] += [{'question_file': join_path(problem_brds_relative, prob + '.brd')} for prob in sequences[agent]]                                      
+        pre_test.append(agent_pre_test)
+            # [{'question_file': join_path(prepost_brds,
+            #                                       '}
+            #           for i in range(num_pretest) if (isfile(join_path(prepost_brds,
+            #                                       '_'.join((agent, 'Pretest',
+            #                                                str(i + 1))) + '.brd')))] +
 
                  # 'output_dir': join_path(output_root, 'pretest', agent),
-                 'problem_set':
-                     [{"set_params": {"HTML": prepost_html,
-                                      "examples_only": True}}] +
-                     [{'question_file': join_path(prepost_brds,
-                                                  '_'.join((agent, 'Pretest',
-                                                           str(i + 1))))}
-                      for i in range(num_pretest)] +
-                     [{"set_params": {"HTML": problem_html,
-                                      "examples_only": False}}] +
-                     [{'question_file': join_path(problem_brds, prob + '.brd')}
-                      for prob in sequences[agent]]}
-                for agent in sequences]
+
+
+                 # 'problem_set':
+                 #      +
+    # pre_test = []
+
+                     
+                     
+                # for agent in sequences]
     pre_test = {'training_set1': pre_test}
     with open('pretest_training.json', 'w') as out:
         json.dump(pre_test, out)
@@ -128,7 +147,7 @@ def gen_training(transactions,
                       for n in listdir(join_path(iso_brds, agent, 'brds'))] +
                      [{"set_params": {"HTML": problem_html,
                                       "examples_only": False}}] +
-                     [{'question_file': join_path(problem_brds, prob + '.brd')}
+                     [{'question_file': join_path(problem_brds_relative, prob + '.brd')}
                       for prob in sequences[agent]]}
                 for agent in sequences]
     isomorphic = {'training_set1': pre_test}
@@ -191,16 +210,18 @@ if __name__ == '__main__':
     args = parser.parse_args()
     data = parse_file(args.trans_file)
 
-    args.problem_brds = relpath(args.problem_brds ,start=dirname(args.problem_html))
-    args.prepost_html = relpath(args.prepost_html ,start=dirname(args.problem_html))
+    # args.problem_brds = relpath(args.problem_brds ,start=dirname(args.problem_html))
+    # args.prepost_brds = relpath(args.prepost_brds ,start=dirname(args.prepost_html))
 
     gen_iso_brds(args.model_file, args.iso_brds, args.mass_production_templates)
     gen_training(data,
                  agent_type=args.agent_type,
                  output_root=args.output_root,
                  problem_brds=args.problem_brds,
+                 problem_brds_relative=relpath(args.problem_brds ,start=dirname(args.problem_html)),
                  problem_html=args.problem_html,
                  prepost_brds=args.prepost_brds,
+                 prepost_brds_relative=relpath(args.prepost_brds ,start=dirname(args.prepost_html)),
                  prepost_html=args.prepost_html,
                  num_pretest=args.num_pretest,
                  iso_brds=args.iso_brds
