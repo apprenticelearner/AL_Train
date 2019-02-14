@@ -136,6 +136,7 @@ function create_agent(callback,agent_name, agent_type, otherdata={}){
         error: ajax_retry_on_error,
 
         success: function(resp) {
+        	term_print("Successfully Built Agent: " + agent_name)
             if(callback){
             	callback(resp);
             }
