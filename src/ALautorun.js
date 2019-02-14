@@ -105,7 +105,7 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
         }
         var error = "AL failed with code " + xhr.status +" (" + textStatus + ").";
         console.error(error);
-        term_print(error);
+        term_print('\x1b[0;30;47m' + error + '\x1b[0m');
 
         kill_this(error);            
         return;
@@ -136,7 +136,7 @@ function create_agent(callback,agent_name, agent_type, otherdata={}){
         error: ajax_retry_on_error,
 
         success: function(resp) {
-        	term_print("Successfully Built Agent: " + agent_name)
+        	term_print('\x1b[0;30;47m' + "Successfully Built Agent: " + agent_name + '\x1b[0m');
             if(callback){
             	callback(resp);
             }
