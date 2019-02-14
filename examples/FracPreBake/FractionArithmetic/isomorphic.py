@@ -40,6 +40,42 @@ def random_m(max_den, count=1):
     return res
 
 
+def gen_add(filename, max_num, count=1):
+    if not os.path.exists(os.path.dirname(filename)):
+        os.makedirs(os.path.dirname(filename))
+    with open(filename, 'w+', newline='') as f:
+        writer = csv.writer(f, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+        data = [(randint(1, max_num), randint(1, max_num)) for _ in range(count)]
+        get_problem_name = lambda d: ' {}_plus_{}'.format(d[0], d[1])
+        out = [
+            ['Problem Name'] + [get_problem_name(d) for d in data],
+            ['%(left_operand)%'] + [d[0] for d in data],
+            ['%(operator)%'] + ['+' for _ in data],
+            ['%(right_operand)%'] + [d[1] for d in data],
+            ['%(result)%'] + [d[0] + d[1] for d in data],
+        ]
+        for r in out:
+            writer.writerow(r)
+
+
+def gen_mul(filename, max_num, count=1):
+    if not os.path.exists(os.path.dirname(filename)):
+        os.makedirs(os.path.dirname(filename))
+    with open(filename, 'w+', newline='') as f:
+        writer = csv.writer(f, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+        data = [(randint(1, max_num), randint(1, max_num)) for _ in range(count)]
+        get_problem_name = lambda d: ' {}_times_{}'.format(d[0], d[1])
+        out = [
+            ['Problem Name'] + [get_problem_name(d) for d in data],
+            ['%(left_operand)%'] + [d[0] for d in data],
+            ['%(operator)%'] + ['*' for _ in data],
+            ['%(right_operand)%'] + [d[1] for d in data],
+            ['%(result)%'] + [d[0] + d[1] for d in data],
+        ]
+        for r in out:
+            writer.writerow(r)
+
+
 def gen_as(filename, max_den, count=1):
     data = random_as(max_den, count)
     if not os.path.exists(os.path.dirname(filename)):
@@ -184,8 +220,8 @@ def process_piks(piks):
 
 MAX_DEN = 12
 def gen_iso_brds(model_file, iso_dir, mass_production_dir):
-    table_filename_template = iso_dir + '{}/tables/{}_table.txt'
-    brds_destdir_template = iso_dir + '{}/brds'
+    table_filename_template = iso_dir + '/{}/tables/{}_table.txt'
+    brds_destdir_template = iso_dir + '/{}/brds'
     piks = get_piks(model_file)
     problem_types, piks = process_piks(piks)
     for s in piks:
@@ -193,12 +229,31 @@ def gen_iso_brds(model_file, iso_dir, mass_production_dir):
 
         as_filename = table_filename_template.format(s['student_id'], 'AS')
         gen_as(as_filename, MAX_DEN, s['final_piks']['AS'])
-        mass_produce(as_filename, mass_production_dir + 'AS_template.brd', brds_destdir)
+        mass_produce(as_filename, mass_production_dir + '/AS_template.brd', brds_destdir)
 
         ad_filename = table_filename_template.format(s['student_id'], 'AD')
         gen_ad(ad_filename, MAX_DEN, s['final_piks']['AD'])
-        mass_produce(ad_filename, mass_production_dir + 'AD_template.brd', brds_destdir)
+        mass_produce(ad_filename, mass_production_dir + '/AD_template.brd', brds_destdir)
 
         m_filename = table_filename_template.format(s['student_id'], 'M')
         gen_m(m_filename, MAX_DEN, s['final_piks']['M'])
-        mass_produce(m_filename, mass_production_dir + 'M_template.brd', brds_destdir)
+        mass_produce(m_filename, mass_production_dir + '/M_template.brd', brds_destdir)
+
+    return piks
+        
+
+def gen_substep_brds(model_file, substep_dir, mass_production_template):
+    table_filename_template = substep_dir + '/{}/tables/{}_table.txt'
+    brds_destdir_template = substep_dir + '/{}/brds'
+    piks = get_piks(model_file)
+    problem_types, piks = process_piks(piks)
+    for s in piks:
+        brds_destdir = brds_destdir_template.format(s['student_id'])
+
+        add_filename = table_filename_template.format(s['student_id'], 'add')
+        gen_add(add_filename, MAX_DEN, s['final_piks']['AS'])
+        mass_produce(add_filename, mass_production_template, brds_destdir)
+
+        mul_filename = table_filename_template.format(s['student_id'], 'mul')
+        gen_mul(mul_filename, MAX_DEN, s['final_piks']['M'])
+        mass_produce(mul_filename, mass_production_template, brds_destdir)
