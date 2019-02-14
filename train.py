@@ -265,6 +265,21 @@ def main(args):
             # options.binary_location = "/home/danny/Projects/chromedriver"
             driver = webdriver.Chrome(chrome_options=options)
             driver.get(ctat_url)
+        elif("firefox" in args.browser):
+
+            #             geckodriver = 'C:\\Users\\grayson\\Downloads\\geckodriver.exe'
+ 
+
+ 
+            # browser = 
+            options = webdriver.FirefoxOptions()
+            # options.add_argument('--ignore-certificate-errors')
+            # options.add_argument("--test-type")
+            for x in args.browser_args:
+                if(x): options.add_argument(x)
+            # options.binary_location = "/home/danny/Projects/chromedriver"
+            driver = webdriver.Firefox(firefox_options=options)
+            driver.get(ctat_url)
         else:
             raise ValueError("Browser %r not supported" % args.browser)
     elif(args.browser != None):
