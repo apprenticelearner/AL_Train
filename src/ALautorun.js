@@ -105,6 +105,7 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
         }
         var error = "AL failed with code " + xhr.status +" (" + textStatus + ").";
         console.error(error);
+        term_print(error);
 
         kill_this(error);            
         return;
