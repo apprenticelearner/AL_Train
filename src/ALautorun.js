@@ -436,15 +436,15 @@ function query_apprentice() {
     if(verbosity > 0) console.log('querying agent');
 
     if (last_correct){
-        console.log("SETTING STATE!");
-        console.log(last_correct);
+        // console.log("SETTING STATE!");
+        // console.log(last_correct);
         state = get_state();
     }
 
     var data = {
         'state': state
     }
-    console.log("STATE",state);
+    // console.log("STATE",state);
 
     // console.log("QUERY!");
 
@@ -489,7 +489,7 @@ function query_apprentice() {
                     	console.log("Element " +resp.selection +" does not exist, providing example instead.");
                         alert("THIS HAPPENED... SO WE NEED TO ACTUALLY IMPLEMENT THIS.");
                     }else{
-                        console.log("STATE",state)
+                        // console.log("STATE",state)
 
                         if(interactive){
                             query_user_feedback()
@@ -792,6 +792,8 @@ function serve_next_training_set(){
     }else{
         console.log("ITS ALL DONE!");
         kill_this("\n TRAINING FINISHED SUCCESSFULLY! \n");
+        term_print('\x1b[0;30;47m' + "TRAINING FINISHED SUCCESSFULLY!" + '\x1b[0m');
+
     }
 }
 
@@ -820,7 +822,7 @@ function serve_next_agent(){
         delete other_data["agent_name"];
         delete other_data["agent_type"];
 
-        console.log("OTHERDATA: ", other_data)
+        // console.log("OTHERDATA: ", other_data)
 
         create_agent(callback, agent_obj["agent_name"], agent_obj["agent_type"], other_data);
 
@@ -851,7 +853,7 @@ function _next_prob_obj(){
         agent_params = {...agent_params,...prob_obj['set_params']};
         prob_obj = problem_iterator.shift();
     }
-    console.log(prob_obj)
+    // console.log(prob_obj)
 
     prob_obj = {...file_params,...agent_params,...prob_obj}
     return prob_obj
@@ -874,7 +876,7 @@ function serve_next_problem(){
 
         document.getElementById("prompt_text").innerHTML = agent_description + "question_file:" + prob_obj["question_file"]; 
 
-        console.log(prob_obj)
+        // console.log(prob_obj)
 
         HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
 
@@ -892,8 +894,8 @@ function serve_next_problem(){
         if(!isAbsPath(HTML_PATH)){
             HTML_PATH = working_dir + "/" + HTML_PATH  
         }
-        console.log("working_dir: ", working_dir)
-        console.log("HTML_PATH: ", HTML_PATH)
+        // console.log("working_dir: ", working_dir)
+        // console.log("HTML_PATH: ", HTML_PATH)
 
 
         if(session_id == null){
