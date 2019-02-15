@@ -200,7 +200,8 @@ function propose_sai(sai){
 
 function apply_sai(sai){
     sel_elm = iframe_content.document.getElementById(sai.selection)
-    if(sel_elm["data-ctat-enabled"] || 'true' == 'false'){
+    if((sel_elm["data-ctat-enabled"] || 'true') == 'false'){
+    	//Force incorrect if try to edit uneditaable
         var incorrect_event = new CustomEvent(CTAT_INCORRECT, {detail:{'sai':sai, 'component':sel_elm}, bubbles:true, cancelable:true});
         sel_elm.dispatchEvent(incorrect_event);
     }
@@ -211,15 +212,6 @@ function apply_sai(sai){
     }
 
     sai_obj = new iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
-
-    //     message = "<message><properties>" +
-    //                 "<MessageType>InterfaceAction</MessageType>" +
-    //                 "<Selection><value>"+ sai.selection + "</value></Selection>" +
-    //                 "<Action><value>" + sai.action + "</value></Action>" +
-    //                 "<Input><value><![CDATA["+ sai.inputs["value"] +"]]></value></Input>" +
-    //             "</properties></message>";
-    // // console.log("MESSAGE",message);
-    //     commLibrary.sendXML(message);   
     iframe_content.CTATCommShell.commShell.processComponentAction(sai_obj,true)
 	
 }
@@ -489,6 +481,7 @@ function query_apprentice() {
                     if(!currentElement){
                     	console.log("Element " +resp.selection +" does not exist, providing example instead.");
                         alert("THIS HAPPENED... SO WE NEED TO ACTUALLY IMPLEMENT THIS.");
+                        term_print('\x1b[0;30;47m' + "ERROR: Selection Not found : " + resp.selection + '\x1b[0m');
                     }else{
                         // console.log("STATE",state)
 
@@ -731,12 +724,11 @@ function get_state(encode_relative=false,strip_offsets=true, use_offsets=false, 
 
 function runWhenReady(){
     // console.log("DEEEE", CTAT);
-    a = typeof iframe_content.CTAT == "undefined"
-    b = iframe_content.CTAT || false
-    // term_print('\x1b[0;30;47m' + "runWhenReady" + a.toString() + b.toString() +  '\x1b[0m');
     if(typeof iframe_content.CTAT == "undefined" || iframe_content.CTAT == null ||
-     	typeof iframe_content.CTATCommShell == "undefined" || iframe_content.CTATCommShell.commShell == null ||
-     	typeof iframe_content.CTAT.ToolTutor == "undefined" || iframe_content.CTAT.ToolTutor.tutor == null){
+     	typeof iframe_content.CTATCommShell == "undefined" || iframe_content.CTATCommShell == null || 
+     	typeof iframe_content.CTATCommShell.commShell == "undefined" || iframe_content.CTATCommShell.commShell == null ||
+     	typeof iframe_content.CTAT.ToolTutor == "undefined" || iframe_content.CTAT.ToolTutor == null ||
+     	typeof iframe_content.CTAT.ToolTutor.tutor == "undefined" || iframe_content.CTAT.ToolTutor.tutor == null){
     	term_print('\x1b[0;30;47m' + "BLEHH1" +  '\x1b[0m');
         window.setTimeout(runWhenReady, 500);
         return;       
@@ -744,7 +736,7 @@ function runWhenReady(){
 	graph = iframe_content.CTAT.ToolTutor.tutor.getGraph();
     commLibrary = iframe_content.CTATCommShell.commShell.getCommLibrary();
 	hasConfig = iframe_content.CTATConfiguration != undefined
-	console.log(""+ (graph != undefined) + (commLibrary != undefined).toString() + hasConfig.toString());
+	
 	if(graph && commLibrary && hasConfig){
 		term_print('\x1b[0;30;47m' + "OK" +  '\x1b[0m');
 
