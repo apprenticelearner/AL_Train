@@ -731,7 +731,9 @@ function get_state(encode_relative=false,strip_offsets=true, use_offsets=false, 
 
 function runWhenReady(){
     // console.log("DEEEE", CTAT);
-    term_print('\x1b[0;30;47m' + "runWhenReady" + '\x1b[0m');
+    a = typeof iframe_content.CTAT == "undefined"
+    b = iframe_content.CTAT || false
+    term_print('\x1b[0;30;47m' + "runWhenReady" + a.toString() + b.toString() +  '\x1b[0m');
     if(typeof iframe_content.CTAT == "undefined" || iframe_content.CTAT == null){
         window.setTimeout(runWhenReady, 100);
         return;       
