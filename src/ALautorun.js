@@ -778,6 +778,7 @@ function runWhenReady(){
 	}else{
 		term_print('\x1b[0;30;47m' + "BLEHH2" + '\x1b[0m');
 		CTATCommShell.commShell.addGlobalEventListener(function(evt,msg){
+			term_print('\x1b[0;30;47m' + msg + '\x1b[0m');
 			if("StartStateEnd" != evt || !msg)
 	        {
 	            return;
