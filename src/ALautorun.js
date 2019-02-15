@@ -735,7 +735,8 @@ function runWhenReady(){
     b = iframe_content.CTAT || false
     // term_print('\x1b[0;30;47m' + "runWhenReady" + a.toString() + b.toString() +  '\x1b[0m');
     if(typeof iframe_content.CTAT == "undefined" || iframe_content.CTAT == null ||
-     	typeof iframe_content.CTATCommShell == "undefined" || iframe_content.CTATCommShell.commShell == null){
+     	typeof iframe_content.CTATCommShell == "undefined" || iframe_content.CTATCommShell.commShell == null ||
+     	typeof iframe_content.CTAT.ToolTutor == "undefined" || iframe_content.CTAT.ToolTutor.tutor == null){
     	term_print('\x1b[0;30;47m' + "BLEHH1" +  '\x1b[0m');
         window.setTimeout(runWhenReady, 500);
         return;       
