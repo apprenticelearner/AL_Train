@@ -323,6 +323,7 @@ function handle_incorrect(evt){
 
 function singal_done(){
 	console.log("DONE!");
+	term_print('\x1b[0;30;47m' + "PROBLEM DONE!" + '\x1b[0m');
     serve_next_problem();
 }
 
