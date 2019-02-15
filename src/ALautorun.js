@@ -736,7 +736,7 @@ function runWhenReady(){
     // term_print('\x1b[0;30;47m' + "runWhenReady" + a.toString() + b.toString() +  '\x1b[0m');
     if(typeof iframe_content.CTAT == "undefined" || iframe_content.CTAT == null){
     	term_print('\x1b[0;30;47m' + "BLEHH1" +  '\x1b[0m');
-        window.setTimeout(runWhenReady, 100);
+        window.setTimeout(runWhenReady, 500);
         return;       
     }
 	graph = iframe_content.CTAT.ToolTutor.tutor.getGraph();
