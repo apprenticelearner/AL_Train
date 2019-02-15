@@ -856,9 +856,14 @@ function isAbsPath(path){
 function _next_prob_obj(){
     var prob_obj = problem_iterator.shift();
 
+    console.log(prob_obj);
+    if(!prob_obj){return null;}
+
+
     while("set_params" in prob_obj){
         agent_params = {...agent_params,...prob_obj['set_params']};
         prob_obj = problem_iterator.shift();
+        if(!prob_obj){return null;}
     }
     // console.log(prob_obj)
 
@@ -871,69 +876,75 @@ function serve_next_problem(){
 
     if(problem_iterator.length > 0){
         prob_obj = _next_prob_obj()
-
-        if("repetitions" in prob_obj){
-            if(prob_obj["repetitions"] <= 0){
-                prob_obj = _next_prob_obj()                
-            }else if(prob_obj["repetitions"] >= 2){
-                prob_obj["repetitions"] -= 1
-                problem_iterator.unshift({...prob_obj})
-            }
-        }
-
-        document.getElementById("prompt_text").innerHTML = agent_description + "question_file:" + prob_obj["question_file"]; 
-
-        // console.log(prob_obj)
-
-        HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
-
-        EXAMPLES_ONLY = prob_obj["examples_only"] || false;
-        
-
-        // Point the iframe to the HTML and question_file (brd or nools) for the next problem
-
-        iframe_content.CTAT = null;
-        iframe_content.CTATCommShell = null;
+        if(prob_obj){
 
 
 
-        HTML_PATH = prob_obj["HTML"];
-        if(!isAbsPath(HTML_PATH)){
-            HTML_PATH = working_dir + "/" + HTML_PATH  
-        }
-        // console.log("working_dir: ", working_dir)
-        // console.log("HTML_PATH: ", HTML_PATH)
+	        if("repetitions" in prob_obj){
+	            if(prob_obj["repetitions"] <= 0){
+	                prob_obj = _next_prob_obj()                
+	            }else if(prob_obj["repetitions"] >= 2){
+	                prob_obj["repetitions"] -= 1
+	                problem_iterator.unshift({...prob_obj})
+	            }
+	        }
+
+	        document.getElementById("prompt_text").innerHTML = agent_description + "question_file:" + prob_obj["question_file"]; 
+
+	        // console.log(prob_obj)
+
+	        HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
+
+	        EXAMPLES_ONLY = prob_obj["examples_only"] || false;
+	        
+
+	        // Point the iframe to the HTML and question_file (brd or nools) for the next problem
+
+	        iframe_content.CTAT = null;
+	        iframe_content.CTATCommShell = null;
 
 
-        if(session_id == null){
-            user_guid = "Stu_" + CTATGuid.guid();
-            session_id = CTATGuid.guid();
-        }
 
-        qf_exists = prob_obj["question_file"] != undefined && prob_obj["question_file"].toUpperCase() != "INTERACTIVE";
-        if(qf_exists){
-            BRD_name = prob_obj["question_file"].substring(prob_obj["question_file"].lastIndexOf('/')+1).replace(".brd", "").replace(".nools", "");  
-        }else{
-            BRD_name = "INTERACTIVE"
-        }
-
-        qf = qf_exists  ? {"question_file" : prob_obj["question_file"]} : {}//{"question_file" : "src/empty.nools"} ;
-        logging_params = {
-            "problem_name": BRD_name,
-            "dataset_level_name1" : HTML_name,
-            "dataset_level_type1" : "Domain",
-            "SessionLog" : "true",
-            "Logging" : "ClientToLogServer",
-            "log_service_url" : window.location.origin,
-            "user_guid" : user_guid,
-            "session_id" : session_id
-        };
-        params = Object.assign({},qf,logging_params) //Merge dictionaries
-        
-        iframe.src = HTML_PATH + "?" + jQuery.param( params );
+	        HTML_PATH = prob_obj["HTML"];
+	        if(!isAbsPath(HTML_PATH)){
+	            HTML_PATH = working_dir + "/" + HTML_PATH  
+	        }
+	        // console.log("working_dir: ", working_dir)
+	        // console.log("HTML_PATH: ", HTML_PATH)
 
 
-        runWhenReady();
+	        if(session_id == null){
+	            user_guid = "Stu_" + CTATGuid.guid();
+	            session_id = CTATGuid.guid();
+	        }
+
+	        qf_exists = prob_obj["question_file"] != undefined && prob_obj["question_file"].toUpperCase() != "INTERACTIVE";
+	        if(qf_exists){
+	            BRD_name = prob_obj["question_file"].substring(prob_obj["question_file"].lastIndexOf('/')+1).replace(".brd", "").replace(".nools", "");  
+	        }else{
+	            BRD_name = "INTERACTIVE"
+	        }
+
+	        qf = qf_exists  ? {"question_file" : prob_obj["question_file"]} : {}//{"question_file" : "src/empty.nools"} ;
+	        logging_params = {
+	            "problem_name": BRD_name,
+	            "dataset_level_name1" : HTML_name,
+	            "dataset_level_type1" : "Domain",
+	            "SessionLog" : "true",
+	            "Logging" : "ClientToLogServer",
+	            "log_service_url" : window.location.origin,
+	            "user_guid" : user_guid,
+	            "session_id" : session_id
+	        };
+	        params = Object.assign({},qf,logging_params) //Merge dictionaries
+	        
+	        iframe.src = HTML_PATH + "?" + jQuery.param( params );
+
+
+	        runWhenReady();
+	    }else{
+	    	serve_next_agent();	
+	    }
     }else{
         serve_next_agent();
     }
