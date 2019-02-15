@@ -742,6 +742,7 @@ function runWhenReady(){
     commLibrary = iframe_content.CTATCommShell.commShell.getCommLibrary();
 	hasConfig = iframe_content.CTATConfiguration != undefined
 	if(graph && commLibrary && hasConfig){
+		term_print('\x1b[0;30;47m' + "OK" +  '\x1b[0m');
 
         // if(interactive){
         //     graph.hideAllFeedback();
