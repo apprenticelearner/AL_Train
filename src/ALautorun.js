@@ -774,7 +774,7 @@ function runWhenReady(){
 
 		query_apprentice();
 	}else{
-		term_print('\x1b[0;30;47m' + "BLEHH2" +  '\x1b[0m');
+		term_print('\x1b[0;30;47m' + "BLEHH2" + graph.toString() + commLibrary.toString() + hasConfig.toString() +  '\x1b[0m');
 		window.setTimeout(runWhenReady, 500);		
 	}
 	
