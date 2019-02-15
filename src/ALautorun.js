@@ -773,7 +773,7 @@ function runWhenReady(){
 
 		query_apprentice();
 	}else{
-		window.setTimeout(runWhenReady, 100);		
+		window.setTimeout(runWhenReady, 500);		
 	}
 	
 }
