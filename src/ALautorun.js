@@ -733,7 +733,7 @@ function runWhenReady(){
     // console.log("DEEEE", CTAT);
     a = typeof iframe_content.CTAT == "undefined"
     b = iframe_content.CTAT || false
-    term_print('\x1b[0;30;47m' + "runWhenReady" + a.toString() + b.toString() +  '\x1b[0m');
+    // term_print('\x1b[0;30;47m' + "runWhenReady" + a.toString() + b.toString() +  '\x1b[0m');
     if(typeof iframe_content.CTAT == "undefined" || iframe_content.CTAT == null){
         window.setTimeout(runWhenReady, 100);
         return;       
