@@ -855,8 +855,7 @@ function isAbsPath(path){
 
 function _next_prob_obj(){
     var prob_obj = problem_iterator.shift();
-
-    console.log(prob_obj);
+    // console.log(prob_obj);
     if(!prob_obj){return null;}
 
 
