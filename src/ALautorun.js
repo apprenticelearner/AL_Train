@@ -924,6 +924,8 @@ function serve_next_problem(){
 	            BRD_name = "INTERACTIVE"
 	        }
 
+	        term_print('\x1b[0;30;47m' + "Starting Problem: " + BRD_name +  '\x1b[0m');
+
 	        qf = qf_exists  ? {"question_file" : prob_obj["question_file"]} : {}//{"question_file" : "src/empty.nools"} ;
 	        logging_params = {
 	            "problem_name": BRD_name,
@@ -937,10 +939,10 @@ function serve_next_problem(){
 	        };
 	        params = Object.assign({},qf,logging_params) //Merge dictionaries
 	        
+	        iframe.onload = runWhenReady;
 	        iframe.src = HTML_PATH + "?" + jQuery.param( params );
 
 
-	        runWhenReady();
 	    }else{
 	    	serve_next_agent();	
 	    }
