@@ -734,7 +734,8 @@ function runWhenReady(){
     a = typeof iframe_content.CTAT == "undefined"
     b = iframe_content.CTAT || false
     // term_print('\x1b[0;30;47m' + "runWhenReady" + a.toString() + b.toString() +  '\x1b[0m');
-    if(typeof iframe_content.CTAT == "undefined" || iframe_content.CTAT == null){
+    if(typeof iframe_content.CTAT == "undefined" || iframe_content.CTAT == null ||
+     	typeof iframe_content.CTATCommShell == "undefined" || iframe_content.CTATCommShell.commShell == null){
     	term_print('\x1b[0;30;47m' + "BLEHH1" +  '\x1b[0m');
         window.setTimeout(runWhenReady, 500);
         return;       
@@ -742,6 +743,7 @@ function runWhenReady(){
 	graph = iframe_content.CTAT.ToolTutor.tutor.getGraph();
     commLibrary = iframe_content.CTATCommShell.commShell.getCommLibrary();
 	hasConfig = iframe_content.CTATConfiguration != undefined
+	console.log(""+ (graph != undefined) + (commLibrary != undefined).toString() + hasConfig.toString());
 	if(graph && commLibrary && hasConfig){
 		term_print('\x1b[0;30;47m' + "OK" +  '\x1b[0m');
 
@@ -774,8 +776,15 @@ function runWhenReady(){
 
 		query_apprentice();
 	}else{
-		term_print('\x1b[0;30;47m' + "BLEHH2" + graph.toString() + commLibrary.toString() + hasConfig.toString() +  '\x1b[0m');
-		window.setTimeout(runWhenReady, 500);		
+		term_print('\x1b[0;30;47m' + "BLEHH2" + '\x1b[0m');
+		CTATCommShell.commShell.addGlobalEventListener(function(evt,msg){
+			if("StartStateEnd" != evt || !msg)
+	        {
+	            return;
+	        }
+			runWhenReady();	        
+		});
+		// window.setTimeout(runWhenReady, 500);		
 	}
 	
 }
