@@ -1,0 +1,5 @@
+Problem Name	 8_plus_6	 11_plus_1
+%(left_operand)%	8	11
+%(operator)%	+	+
+%(right_operand)%	6	1
+%(result)%	14	12

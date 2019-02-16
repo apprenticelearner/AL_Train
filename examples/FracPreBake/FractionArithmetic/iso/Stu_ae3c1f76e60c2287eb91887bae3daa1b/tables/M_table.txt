@@ -1,0 +1,9 @@
+Problem Name
+%(startStateNodeName)%
+%(left_numerator)%
+%(left_denominator)%
+%(right_numerator)%
+%(right_denominator)%
+%(operator)%
+%(result_numerator)%
+%(result_denominator)%

@@ -1,0 +1,12 @@
+Problem Name	AD 1_10_plus_10_12
+%(startStateNodeName)%	
+%(left_numerator)%	1
+%(left_denominator)%	10
+%(right_numerator)%	10
+%(right_denominator)%	12
+%(operator)%	+
+%(convert)%	x
+%(result_denominator)%	120
+%(left_numerator_new)%	12
+%(right_numerator_new)%	100
+%(result_numerator)%	112

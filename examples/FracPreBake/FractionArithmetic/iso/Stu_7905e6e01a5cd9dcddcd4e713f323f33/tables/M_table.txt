@@ -1,0 +1,9 @@
+Problem Name	M 1_2_times_3_7	M 1_3_times_4_5	M 5_7_times_2_5
+%(startStateNodeName)%			
+%(left_numerator)%	1	1	5
+%(left_denominator)%	2	3	7
+%(right_numerator)%	3	4	2
+%(right_denominator)%	7	5	5
+%(operator)%	*	*	*
+%(result_numerator)%	14	15	35
+%(result_denominator)%	7	5	25

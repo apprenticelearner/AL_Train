@@ -1,0 +1,5 @@
+Problem Name	 5_times_4	 10_times_5
+%(left_operand)%	5	10
+%(operator)%	*	*
+%(right_operand)%	4	5
+%(result)%	9	15

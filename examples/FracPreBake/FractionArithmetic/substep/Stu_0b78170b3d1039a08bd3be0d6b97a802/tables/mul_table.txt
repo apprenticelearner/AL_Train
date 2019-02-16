@@ -1,0 +1,5 @@
+Problem Name	 12_times_2
+%(left_operand)%	12
+%(operator)%	*
+%(right_operand)%	2
+%(result)%	14
