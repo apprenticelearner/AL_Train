@@ -70,7 +70,7 @@ def gen_mul(filename, max_num, count=1):
             ['%(left_operand)%'] + [d[0] for d in data],
             ['%(operator)%'] + ['*' for _ in data],
             ['%(right_operand)%'] + [d[1] for d in data],
-            ['%(result)%'] + [d[0] + d[1] for d in data],
+            ['%(result)%'] + [d[0] * d[1] for d in data],
         ]
         for r in out:
             writer.writerow(r)
@@ -101,7 +101,7 @@ def gen_ad(filename, max_den, count=1):
     data = random_ad(max_den, count)
     if not os.path.exists(os.path.dirname(filename)):
         os.makedirs(os.path.dirname(filename))
-    with open(filename, 'w+', newline='') as f: 
+    with open(filename, 'w+', newline='') as f:
         writer = csv.writer(f, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
         get_problem_name = lambda d: 'AD {}_{}_plus_{}_{}'.format(d[0], d[1], d[2], d[3])
         out = [
@@ -152,7 +152,7 @@ def mass_produce(table_file, template_file, dest_dir):
         keys = []
         data = None
         for row in reader:
-            if not data: 
+            if not data:
                 data = [[] for _ in row[1:]]
             keys.append(row[0])
             for index, r in enumerate(row[1:]):
@@ -207,7 +207,7 @@ def process_piks(piks):
             kcs_by_problem_type[problem_type] = []
 
         kcs_by_problem_type[problem_type].append(kc)
-        
+
     for s in piks:
         s['final_piks'] = {}
         for problem_type, ptkcs in kcs_by_problem_type.items():
@@ -240,7 +240,7 @@ def gen_iso_brds(model_file, iso_dir, mass_production_dir):
         mass_produce(m_filename, mass_production_dir + '/M_template.brd', brds_destdir)
 
     return piks
-        
+
 
 def gen_substep_brds(model_file, substep_dir, mass_production_template):
     table_filename_template = substep_dir + '/{}/tables/{}_table.txt'
