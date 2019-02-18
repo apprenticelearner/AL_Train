@@ -15,7 +15,7 @@ import pandas as pd
 
 filename = 'ds_1190_Study2.txt'
 df = pd.read_csv(filename, sep='\t')
-dic = {'hint_button':'hint', 'done':'done', 'JCommTable4_C1R1':'num3','JCommTable4_C1R2':'den3', 'JCommTable5_C1R1':'num4', 'JCommTable5_C1R2':'den4', 'JCommTable6_C1R1':'num5', 'JCommTable6_C1R2':'den5', 'JCommTable8_C1R1':'check_convert', 'checkBoxGroup': 'check_convert'}
+dic = {'hint':'hint', 'done':'done', 'JCommTable4.R0C0':'num3','JCommTable4.R1C0':'den3', 'JCommTable5.R0C0':'num4', 'JCommTable5.R1C0':'den4', 'JCommTable6.R0C0':'num5', 'JCommTable6.R1C0':'den5', 'JCommTable8.R0C0':'check_convert', 'checkBoxGroup': 'check_convert'}
 
 dic2 = {'num3': 'num5', 'den3': 'den5'}
 print(list(df.columns.values))
