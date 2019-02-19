@@ -12,8 +12,13 @@ JCommTable4_C1R1 -> num 3
 
 import numpy as np
 import pandas as pd
+import sys, os
 
-filename = 'ds_1190_Study2.txt'
+# filename = 'ds_1190_Study2.txt'
+filename = sys.argv[1]
+outname = sys.argv[2]
+assert os.path.isfile(filename), "No such file %s" % filename
+
 df = pd.read_csv(filename, sep='\t')
 dic = {'hint':'hint', 'done':'done', 'JCommTable4.R0C0':'num3','JCommTable4.R1C0':'den3', 'JCommTable5.R0C0':'num4', 'JCommTable5.R1C0':'den4', 'JCommTable6.R0C0':'num5', 'JCommTable6.R1C0':'den5', 'JCommTable8.R0C0':'check_convert', 'checkBoxGroup': 'check_convert'}
 
@@ -21,7 +26,8 @@ dic2 = {'num3': 'num5', 'den3': 'den5'}
 print(list(df.columns.values))
 
 # Drop pretest and posttest transactions.
-df = df[~df['Level (ProblemSet)'].isin(['Pretest', 'Midtest A', 'Midtest B', 'Posttest', 'DPosttest'])]
+if('Level (ProblemSet)' in df):
+    df = df[~df['Level (ProblemSet)'].isin(['Pretest', 'Midtest A', 'Midtest B', 'Posttest', 'DPosttest'])]
 
 temp = []
 for row in range(len(df)):
@@ -44,8 +50,11 @@ for row in range(len(df)):
 temp3 = []
 for i in range(len(temp)):
     problem_type = df.iloc[i]['Problem Name'].split()[0]
-    problem_type = problem_type[0] if problem_type.lower() in ('ms', 'md') else problem_type 
-    temp3.append(problem_type + " " + str(temp[i]))
+    problem_type = problem_type[0] if problem_type.lower() in ('ms', 'md') else problem_type
+    if(problem_type in ["M", "AS", "AD"]):
+        temp3.append(problem_type + " " + str(temp[i]))
+    else:
+        temp3.append("")
 
 df = df.drop('Selection', 1)
 df = df.rename(columns = {'Step Name':'KC (Rule Name)'})
@@ -87,5 +96,6 @@ if check_convert is False and problem_type in ['MD', 'MS','AS']:
 
 
 df = df.append(df2, ignore_index=True)
-df.to_csv('Modified_check_convert_inter.txt', sep='\t', header=True, index=False, float_format='%.0f')
+# df.to_csv('Modified_check_convert_inter.txt', sep='\t', header=True, index=False, float_format='%.0f')
+df.to_csv(outname, sep='\t', header=True, index=False, float_format='%.0f')
 
