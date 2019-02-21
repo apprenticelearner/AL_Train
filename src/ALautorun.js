@@ -898,6 +898,8 @@ function serve_next_problem(){
 	        HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
 
 	        EXAMPLES_ONLY = prob_obj["examples_only"] || false;
+
+	        domain_name = prob_obj["domain_name"] || HTML_name;
 	        
 
 	        // Point the iframe to the HTML and question_file (brd or nools) for the next problem
@@ -932,7 +934,7 @@ function serve_next_problem(){
 	        qf = qf_exists  ? {"question_file" : prob_obj["question_file"]} : {}//{"question_file" : "src/empty.nools"} ;
 	        logging_params = {
 	            "problem_name": BRD_name,
-	            "dataset_level_name1" : HTML_name,
+	            "dataset_level_name1" : domain_name,
 	            "dataset_level_type1" : "Domain",
 	            "SessionLog" : "true",
 	            "Logging" : "ClientToLogServer",
