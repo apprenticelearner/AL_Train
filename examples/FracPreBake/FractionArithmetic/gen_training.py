@@ -98,7 +98,10 @@ def gen_training(transactions,
                         "where_learner": "MostSpecific" 
                     }}
         agent_pre_test["problem_set"] = []
-        agent_pre_test["problem_set"] +=  [{"set_params": {"HTML": prepost_html, "examples_only": True}}]
+        agent_pre_test["problem_set"] +=  [{"set_params": {"HTML": prepost_html,
+                                             "examples_only": True,
+                                             "domain_name" : "prior_knowledge"}
+                                          }]
         for i in range(num_pretest):
             pretest_path = join_path(prepost_brds_relative,'_'.join((agent, 'Pretest', str(i + 1))) + '.brd')
             thiswd_pretestpath = join_path(prepost_brds,'_'.join((agent, 'Pretest', str(i + 1))) + '.brd')
@@ -107,7 +110,10 @@ def gen_training(transactions,
             else:
                 print("Skip:", thiswd_pretestpath)
         
-        agent_pre_test["problem_set"] += [{"set_params": {"HTML": problem_html,"examples_only": False}}] 
+        agent_pre_test["problem_set"] += [{"set_params": {"HTML": problem_html,
+                                            "examples_only": False,
+                                            "domain_name" : "fraction_arithmetic"}
+                                        }] 
         agent_pre_test["problem_set"] += [{'question_file': join_path(problem_brds_relative, prob + '.brd')} for prob in sequences[agent]]                                      
         pre_test.append(agent_pre_test)
             # [{'question_file': join_path(prepost_brds,
@@ -145,11 +151,13 @@ def gen_training(transactions,
 
                  'problem_set':
                      [{"set_params": {"HTML": problem_html,
-                                      "examples_only": False}}] +
+                                      "examples_only": False,
+                                      "domain_name" : "prior_knowledge"}}] +
                      [{'question_file': join_path(iso_brds_relative, agent, 'brds', n)}
                       for n in listdir(join_path(iso_brds, agent, 'brds'))] +
                      [{"set_params": {"HTML": problem_html,
-                                      "examples_only": False}}] +
+                                      "examples_only": False,
+                                      "domain_name" : "fraction_arithmetic"}}] +
                      [{'question_file': join_path(problem_brds_relative, prob + '.brd')}
                       for prob in sequences[agent]]}
                 for agent in overlapped_student_ids]
@@ -169,11 +177,13 @@ def gen_training(transactions,
 
                  'problem_set':
                      [{"set_params": {"HTML": substep_html,
-                                      "examples_only": False}}] +
+                                      "examples_only": False,
+                                      "domain_name" : "prior_knowledge"}}] +
                      [{'question_file': join_path(substep_brds_relative, agent, 'brds', n)}
                       for n in listdir(join_path(substep_brds, agent, 'brds'))] +
                      [{"set_params": {"HTML": problem_html,
-                                      "examples_only": False}}] +
+                                      "examples_only": False,
+                                      "domain_name" : "fraction_arithmetic"}}] +
                      [{'question_file': join_path(problem_brds_relative, prob + '.brd')}
                       for prob in sequences[agent]]}
                 for agent in overlapped_student_ids]

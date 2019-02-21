@@ -51,10 +51,13 @@ temp3 = []
 for i in range(len(temp)):
     problem_type = df.iloc[i]['Problem Name'].split()[0]
     problem_type = problem_type[0] if problem_type.lower() in ('ms', 'md') else problem_type
-    if(problem_type in ["M", "AS", "AD"]):
-        temp3.append(problem_type + " " + str(temp[i]))
-    else:
+    domain_name = df.iloc[i]['Level (Domain)'] if 'Level (Domain)' in df else ""
+    print(domain_name)
+    if(domain_name == "prior_knowledge" or not problem_type in ["M", "AS", "AD"]):
         temp3.append("")
+    else:
+        temp3.append(problem_type + " " + str(temp[i]))
+        
 
 df = df.drop('Selection', 1)
 df = df.rename(columns = {'Step Name':'KC (Rule Name)'})
