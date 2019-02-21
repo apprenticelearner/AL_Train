@@ -145,7 +145,7 @@ def gen_training(transactions,
 
                  'problem_set':
                      [{"set_params": {"HTML": problem_html,
-                                      "examples_only": True}}] +
+                                      "examples_only": False}}] +
                      [{'question_file': join_path(iso_brds_relative, agent, 'brds', n)}
                       for n in listdir(join_path(iso_brds, agent, 'brds'))] +
                      [{"set_params": {"HTML": problem_html,
@@ -169,7 +169,7 @@ def gen_training(transactions,
 
                  'problem_set':
                      [{"set_params": {"HTML": substep_html,
-                                      "examples_only": True}}] +
+                                      "examples_only": False}}] +
                      [{'question_file': join_path(substep_brds_relative, agent, 'brds', n)}
                       for n in listdir(join_path(substep_brds, agent, 'brds'))] +
                      [{"set_params": {"HTML": problem_html,
