@@ -1,12 +1,12 @@
-Problem Name	AD 7_12_plus_4_5
+Problem Name	AD 4_8_plus_9_12
 %(startStateNodeName)%	
-%(left_numerator)%	7
-%(left_denominator)%	12
-%(right_numerator)%	4
-%(right_denominator)%	5
+%(left_numerator)%	4
+%(left_denominator)%	8
+%(right_numerator)%	9
+%(right_denominator)%	12
 %(operator)%	+
 %(convert)%	x
-%(result_denominator)%	60
-%(left_numerator_new)%	35
-%(right_numerator_new)%	48
-%(result_numerator)%	83
+%(result_denominator)%	96
+%(left_numerator_new)%	48
+%(right_numerator_new)%	72
+%(result_numerator)%	120

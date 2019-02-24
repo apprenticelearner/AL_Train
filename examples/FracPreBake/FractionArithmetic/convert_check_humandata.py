@@ -52,8 +52,10 @@ for i in range(len(temp)):
     problem_type = df.iloc[i]['Problem Name'].split()[0]
     problem_type = problem_type[0] if problem_type.lower() in ('ms', 'md') else problem_type
     domain_name = df.iloc[i]['Level (Domain)'] if 'Level (Domain)' in df else ""
-    print(domain_name)
-    if(domain_name == "prior_knowledge" or not problem_type in ["M", "AS", "AD"]):
+    r_sub = df.iloc[i]['Student Response Subtype'] if "Student Response Subtype" in df else ""
+    ignore = df.iloc[i]['Selection'] in ['hint','null.nextButton','null.previousButton']
+    
+    if(ignore or domain_name == "prior_knowledge" or not problem_type in ["M", "AS", "AD"] or r_sub == "tutor-performed"):
         temp3.append("")
     else:
         temp3.append(problem_type + " " + str(temp[i]))

@@ -1,5 +1,5 @@
-Problem Name	 7_plus_4	 9_plus_9
-%(left_operand)%	7	9
+Problem Name	 7_plus_1	 8_plus_5
+%(left_operand)%	7	8
 %(operator)%	+	+
-%(right_operand)%	4	9
-%(result)%	11	18
+%(right_operand)%	1	5
+%(result)%	8	13

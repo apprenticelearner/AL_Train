@@ -1,7 +1,7 @@
-Problem Name	AS 9_10_plus_2_10
+Problem Name	AS 6_7_plus_6_7
 %(startStateNodeName)%	
-%(left_numerator)%	9
-%(denominator)%	10
-%(right_numerator)%	2
+%(left_numerator)%	6
+%(denominator)%	7
+%(right_numerator)%	6
 %(operator)%	+
-%(result_numerator)%	11
+%(result_numerator)%	12

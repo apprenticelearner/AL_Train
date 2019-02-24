@@ -1,5 +1,11 @@
 from random import randint
-import csv, os
+import csv, os, math
+from pprint import pprint
+import numpy as np
+from statistics import median, mean
+
+def sigmoid(x):
+    return 1/(1+np.exp(-float(x)))
 
 
 def random_as(max_den, count=1):
@@ -175,9 +181,12 @@ def get_piks(model_file):
         content = f.read()
         kc_text = content[content.find('KC Name'): content.find('\n\n', content.find('KC Name'))].splitlines()
         kc_values = list(csv.DictReader(kc_text[1:], kc_text[0].split('\t'), delimiter='\t'))
+        print(kc_values)
         student_text = content[content.find('Anon Student Id'): content.find('\n\n', content.find('Anon Student Id'))].splitlines()
         student_values = csv.DictReader(student_text[1:], student_text[0].split('\t'), delimiter='\t')
         piks = []
+
+
         for s in student_values:
             intercept = s['Intercept']
             student_piks = {
@@ -186,7 +195,10 @@ def get_piks(model_file):
                 'piks': {}
             }
             for kc in kc_values:
-                student_piks['piks'][kc['KC Name']] = float(intercept) / float(kc['Slope'])
+                # print( float(intercept), float(kc['Slope']), sigmoid(float(intercept)), sigmoid(float(kc['Slope'])), sigmoid(float(intercept)) / float(kc['Slope']) )  
+                # student_piks['piks'][kc['KC Name']] = sigmoid(float(intercept)) / sigmoid(float(kc['Slope']))
+                # student_piks['piks'][kc['KC Name']] = (float(intercept)- float(kc['Intercept (logit)'] )) / float(kc['Slope'])
+                student_piks['piks'][kc['KC Name']] = (float(intercept)+ 2 ) / float(kc['Slope'])
 
             piks.append(student_piks)
 
@@ -196,9 +208,9 @@ def get_piks(model_file):
 def process_piks(piks):
     kcs = piks[0]['piks'].keys()
     for kc in kcs:
-        min_value = min([s['piks'][kc] for s in piks])
+        # min_value = min([s['piks'][kc] for s in piks])
         for s in piks:
-            s['piks'][kc] = round(s['piks'][kc] - min_value)
+            s['piks'][kc] = round(s['piks'][kc])
 
     kcs_by_problem_type = {}
     for kc in kcs:
@@ -211,7 +223,8 @@ def process_piks(piks):
     for s in piks:
         s['final_piks'] = {}
         for problem_type, ptkcs in kcs_by_problem_type.items():
-            s['final_piks'][problem_type] = min([s['piks'][kc] for kc in ptkcs])
+            s['final_piks'][problem_type] = max(round(min([s['piks'][kc] for kc in ptkcs])),0)
+            print(problem_type, s['final_piks'][problem_type], sigmoid(s['student_intercept'])) 
 
 
     return kcs_by_problem_type.keys(), piks
@@ -257,3 +270,14 @@ def gen_substep_brds(model_file, substep_dir, mass_production_template):
         mul_filename = table_filename_template.format(s['student_id'], 'mul')
         gen_mul(mul_filename, MAX_DEN, s['final_piks']['M'])
         mass_produce(mul_filename, mass_production_template, brds_destdir)
+
+if __name__ == '__main__':
+    piks = get_piks('human_model_values.txt')
+    # pprint(piks)
+    problem_types, piks = process_piks(piks)
+    for p in piks:
+        print(p['final_piks'])  
+    # pprint(piks)
+    print("AS-average:",sum(p['final_piks']['AS'] for p in piks)/len(piks))
+    print("AD-average:",sum(p['final_piks']['AD'] for p in piks)/len(piks))
+    print("M-average:",sum(p['final_piks']['M'] for p in piks)/len(piks))
