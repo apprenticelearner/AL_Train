@@ -203,6 +203,3 @@ AIC(iso.pred.mixed)
 
 anova(base.pred.mixed, control.pred.mixed, pretest.pred.mixed, iso.pred.mixed)
 anova(pretest.pred.mixed, iso.pred.mixed)
-
-overall.pred.mixed <- glmer(correctness.Human ~ opp.Human + `correctness.Decision Tree` + (1 + opp.Human|kc.Pretest) + (1 + opp.Human|student.Pretest), data=subset(overall_data_wide, domain.Human=="Fraction Arithmetic"), family=binomial())
-
