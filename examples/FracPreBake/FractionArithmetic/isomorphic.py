@@ -130,7 +130,7 @@ def gen_ad(filename, max_den, count=1):
 
 
 def gen_m(filename, max_den, count=1):
-    data = random_ad(max_den, count)
+    data = random_m(max_den, count)
     if not os.path.exists(os.path.dirname(filename)):
         os.makedirs(os.path.dirname(filename))
     with open(filename, 'w+', newline='') as f:
