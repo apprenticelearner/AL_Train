@@ -23,8 +23,8 @@ human_data = read.csv("human.txt", header=TRUE, sep="\t", na.strings=c("", " "))
 human_data$correctness <- 0
 human_data[human_data$First.Attempt == "correct",]$correctness <- 1
 # human_data = data.frame(human_data$Anon.Student.Id, human_data$Problem.Name, human_data$correctness, human_data$Opportunity..Literal.Field., human_data$KC..Literal.Field.)
-human_data = data.frame(human_data$Anon.Student.Id, human_data$Problem.Name, human_data$correctness, human_data$Opportunity..Field., human_data$KC..Field.)
-names(human_data) <- c('student', 'problem', 'correctness', 'opp', 'kc')
+human_data = data.frame(human_data$Anon.Student.Id, human_data$Problem.Name, human_data$correctness, human_data$Opportunity..Field., human_data$KC..Field., human_data$First.Attempt)
+names(human_data) <- c('student', 'problem', 'correctness', 'opp', 'kc', 'first_attempt')
 human_data <- human_data[human_data$kc != "InstructionSlide done",]
 human_data <- human_data[human_data$kc != "AS null.nextButton",]
 human_data <- human_data[human_data$kc != "AD null.nextButton",]
@@ -74,25 +74,25 @@ human_data[human_data$student == "Stu_6a17ab9903ecc5292a40b43443df7fb6",]
 control_data = read.csv("control.txt", header=TRUE, sep="\t", na.strings=c("", " "))
 control_data$correctness <- 0
 control_data[control_data$First.Attempt == "correct",]$correctness <- 1
-control_data = data.frame(control_data$Anon.Student.Id, control_data$Problem.Name, control_data$correctness, control_data$Opportunity..Field., control_data$KC..Field.)
-names(control_data) <- c('student', 'problem', 'correctness', 'opp', 'kc')
+control_data = data.frame(control_data$Anon.Student.Id, control_data$Problem.Name, control_data$correctness, control_data$Opportunity..Field., control_data$KC..Field., control_data$First.Attempt)
+names(control_data) <- c('student', 'problem', 'correctness', 'opp', 'kc', 'first_attempt')
 control_data <- subset(control_data, (control_data$kc %in% unique(human_data$kc)))
 control_data <- control_data[!is.na(control_data$kc),]
 control_data$kc <- factor(control_data$kc)
 unique(control_data$kc)
-control_data$agent_type = "Control"
+control_data$agent_type = "No Pretraining"
 
 # Pretest
 pretest_data = read.csv("pretest.txt", header=TRUE, sep="\t", na.strings=c("", " "))
 pretest_data$correctness <- 0
 pretest_data[pretest_data$First.Attempt == "correct",]$correctness <- 1
-pretest_data = data.frame(pretest_data$Anon.Student.Id, pretest_data$Problem.Name, pretest_data$correctness, pretest_data$Opportunity..Field., pretest_data$KC..Field.)
-names(pretest_data) <- c('student', 'problem', 'correctness', 'opp', 'kc')
+pretest_data = data.frame(pretest_data$Anon.Student.Id, pretest_data$Problem.Name, pretest_data$correctness, pretest_data$Opportunity..Field., pretest_data$KC..Field., pretest_data$First.Attempt)
+names(pretest_data) <- c('student', 'problem', 'correctness', 'opp', 'kc', 'first_attempt')
 pretest_data <- subset(pretest_data, (pretest_data$kc %in% unique(human_data$kc)))
 pretest_data <- pretest_data[!is.na(pretest_data$kc),]
 pretest_data$kc <- factor(pretest_data$kc)
 unique(pretest_data$kc)
-pretest_data$agent_type = "Pretest"
+pretest_data$agent_type = "Demonstrated Pretest"
 
 # Hunt for case where pretest is longer than others.
 pretest_data[pretest_data$opp >= 25,]
@@ -108,24 +108,24 @@ pretest_data[pretest_data$opp >= 25,]
 iso_data = read.csv("iso.txt", header=TRUE, sep="\t", na.strings=c("", " "))
 iso_data$correctness <- 0
 iso_data[iso_data$First.Attempt == "correct",]$correctness <- 1
-iso_data = data.frame(iso_data$Anon.Student.Id, iso_data$Problem.Name, iso_data$correctness, iso_data$Opportunity..Field., iso_data$KC..Field.)
-names(iso_data) <- c('student', 'problem', 'correctness', 'opp', 'kc')
+iso_data = data.frame(iso_data$Anon.Student.Id, iso_data$Problem.Name, iso_data$correctness, iso_data$Opportunity..Field., iso_data$KC..Field., iso_data$First.Attempt)
+names(iso_data) <- c('student', 'problem', 'correctness', 'opp', 'kc', 'first_attempt')
 iso_data <- subset(iso_data, (iso_data$kc %in% unique(human_data$kc)))
 iso_data <- iso_data[!is.na(iso_data$kc),]
 iso_data$kc <- factor(iso_data$kc)
 unique(iso_data$kc)
-iso_data$agent_type = "Iso"
+iso_data$agent_type = "Estimated Fraction"
 
 substep_data = read.csv("substep.txt", header=TRUE, sep="\t", na.strings=c("", " "))
 substep_data$correctness <- 0
 substep_data[substep_data$First.Attempt == "correct",]$correctness <- 1
-substep_data = data.frame(substep_data$Anon.Student.Id, substep_data$Problem.Name, substep_data$correctness, substep_data$Opportunity..Field., substep_data$KC..Field.)
-names(substep_data) <- c('student', 'problem', 'correctness', 'opp', 'kc')
+substep_data = data.frame(substep_data$Anon.Student.Id, substep_data$Problem.Name, substep_data$correctness, substep_data$Opportunity..Field., substep_data$KC..Field., substep_data$First.Attempt)
+names(substep_data) <- c('student', 'problem', 'correctness', 'opp', 'kc', 'first_attempt')
 substep_data <- subset(substep_data, (substep_data$kc %in% unique(human_data$kc)))
 substep_data <- substep_data[!is.na(substep_data$kc),]
 substep_data$kc <- factor(substep_data$kc)
 unique(substep_data$kc)
-substep_data$agent_type = "Substep"
+substep_data$agent_type = "Estimated Whole Number"
 
 # hist(ddply(human_data, .(student, kc), summarise, total=length(student))$total)
 # hist(ddply(control_data, .(student, kc), summarise, total=length(student))$total)
@@ -254,6 +254,24 @@ for (kc in unique(graph_data$kc.Human)){
     scale_color_manual(values=brewer.pal(5, "Set1"))
   ggsave(filename=paste('plots/', kc, '.png'))
 }
+
+graph_data <- subset(graph_data, correctness == 0)
+ggplot(data=graph_data, aes(x=opp.Human, y=1-correctness, color=agent_type, shape=agent_type)) +
+  stat_summary(fun.y = mean, geom = "line", size=1.5, alpha=0.7, data=subset(graph_data, agent_type != "Human")) + 
+  #stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width=0.025, alpha=0.7, data=subset(as_data, agent_type != "Human")) + 
+  stat_summary(fun.y = mean, geom = "point", size=4, alpha=0.7, data=subset(graph_data, agent_type != "Human")) + 
+  
+  stat_summary(fun.y = mean, geom = "line", size=1.5, data=subset(graph_data, agent_type == "Human")) + 
+  #stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width=0.025, data=subset(as_data, agent_type == "Human")) + 
+  stat_summary(fun.y = mean, geom = "point", size=4, data=subset(graph_data, agent_type == "Human")) + 
+  #xlim(1,24) +
+  theme(legend.position=c(.8,.8), legend.box="horizontal") +
+  labs(color=agent_type, shape=agent_type) + 
+  xlab("# of Practice Opportunities") +
+  ylab("Average Error") +
+  # ggtitle("Fraction Arithmetic") +
+  scale_color_manual(values=brewer.pal(5, "Set1"))
+
 
 overall_data_wide$residuals.Control <- overall_data_wide$correctness.Human - overall_data_wide$`correctness.Control`
 overall_data_wide$residuals.Pretest <- overall_data_wide$correctness.Human - overall_data_wide$`correctness.Pretest`
