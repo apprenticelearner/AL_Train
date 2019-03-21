@@ -198,7 +198,8 @@ def get_piks(model_file):
                 # print( float(intercept), float(kc['Slope']), sigmoid(float(intercept)), sigmoid(float(kc['Slope'])), sigmoid(float(intercept)) / float(kc['Slope']) )  
                 # student_piks['piks'][kc['KC Name']] = sigmoid(float(intercept)) / sigmoid(float(kc['Slope']))
                 # student_piks['piks'][kc['KC Name']] = (float(intercept)- float(kc['Intercept (logit)'] )) / float(kc['Slope'])
-                student_piks['piks'][kc['KC Name']] = (float(intercept)+ 2 ) / float(kc['Slope'])
+                print(kc['KC Name'],float(kc['Intercept (logit)']), float(intercept),(float(intercept) + float(kc['Intercept (logit)']) ) / float(kc['Slope']))
+                student_piks['piks'][kc['KC Name']] = (float(intercept) + 2 ) / float(kc['Slope'])
 
             piks.append(student_piks)
 
