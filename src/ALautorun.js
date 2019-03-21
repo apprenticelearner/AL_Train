@@ -939,7 +939,7 @@ function serve_next_problem(){
 	            "SessionLog" : "true",
 	            "Logging" : "ClientToLogServer",
 	            "log_service_url" : window.location.origin,
-	            "user_guid" : user_guid,
+	            "user_guid" : agent_id,
 	            "session_id" : session_id
 	        };
 	        params = Object.assign({},qf,logging_params) //Merge dictionaries
