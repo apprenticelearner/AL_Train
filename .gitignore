@@ -10,4 +10,4 @@ __pycache__/
 # vim-generated files
 *.swp
 *.swo
-
+geckodriver.log
