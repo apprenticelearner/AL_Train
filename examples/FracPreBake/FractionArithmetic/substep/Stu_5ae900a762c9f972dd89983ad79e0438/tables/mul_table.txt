@@ -1,5 +1,0 @@
-Problem Name	 3_times_5	 7_times_6	 10_times_8
-%(left_operand)%	3	7	10
-%(operator)%	*	*	*
-%(right_operand)%	5	6	8
-%(result)%	15	42	80

@@ -1,5 +1,0 @@
-Problem Name	 2_times_6
-%(left_operand)%	2
-%(operator)%	*
-%(right_operand)%	6
-%(result)%	12

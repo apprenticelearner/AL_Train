@@ -1,5 +1,0 @@
-Problem Name	 8_times_4	 10_times_9
-%(left_operand)%	8	10
-%(operator)%	*	*
-%(right_operand)%	4	9
-%(result)%	32	90

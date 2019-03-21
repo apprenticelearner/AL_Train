@@ -1,5 +1,0 @@
-Problem Name
-%(left_operand)%
-%(operator)%
-%(right_operand)%
-%(result)%

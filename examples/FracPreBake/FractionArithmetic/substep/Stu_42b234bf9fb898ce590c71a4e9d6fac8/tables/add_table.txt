@@ -1,5 +1,0 @@
-Problem Name	 2_plus_10
-%(left_operand)%	2
-%(operator)%	+
-%(right_operand)%	10
-%(result)%	12
