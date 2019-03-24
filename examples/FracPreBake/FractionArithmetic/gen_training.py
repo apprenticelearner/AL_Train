@@ -199,7 +199,7 @@ if __name__ == '__main__':
     parser.add_argument('-trans_file',
                         help="The datashop transaction file to use.")
     parser.add_argument('-agent_type',
-                        choices=['WhereWhenHowNoFoa', 'RLAgent'],
+                        choices=['WhereWhenHowNoFoa', 'RLAgent','ModularAgent'],
                         default='WhereWhenHowNoFoa',
                         help="The type of agent to set in the training.json")
     parser.add_argument('-output_root',
