@@ -10,6 +10,7 @@ var AL_URL = null;//'http://localhost:8000';
 var graph = null;
 var commLibrary = null;
 var currentElement = null;
+var current_sai_data = null;
 var cache = null;
 var project_id = 1;//"DEFAULT_PROJECT";
 
@@ -258,8 +259,55 @@ function handle_user_example(evt){
 
     last_correct = true;
 
+    if(use_foci && sai_data.selection != 'done'){
+        current_sai_data = sai_data;
+        query_user_foci();
+    }else{
+        send_training_data(sai_data);    
+    }
     // console.log(sai_data);
-    send_training_data(sai_data);
+    
+}
+
+var current_foci = [];
+
+function handle_foci_select(evt){
+    console.log("FOCI SELECT!")
+    for(ele of evt.path){
+        console.log("EELE", ele)
+        if(ele.classList != undefined && ele.classList.contains("CTATComponent")){
+            var indx = current_foci.indexOf(ele)
+            // console.log(current_foci)
+            if(indx == -1){
+                current_foci.push(ele)
+                ele.classList.add("CTAT--AL_highlight");
+            }else{
+                current_foci.splice(indx,1)
+                ele.classList.remove("CTAT--AL_highlight");
+            }
+            console.log(current_foci)
+
+            break
+        }    
+    }
+    
+}
+
+function handle_foci_done(evt){
+    console.log("FOCI DONE!")
+    var foci_of_attention = [];
+    for(ele of current_foci){
+        ele.classList.remove("CTAT--AL_highlight");
+        foci_of_attention.push(ele.id);
+    }
+    // console.log(foci_of_attention)
+    current_sai_data.foci_of_attention = foci_of_attention;
+    current_foci = []
+    iframe_content.document.removeEventListener("click", handle_foci_select)
+
+    send_training_data(current_sai_data);    
+    current_sai_data = null;
+
 }
 
 function handle_user_feedback_correct(evt){
@@ -337,7 +385,7 @@ function send_training_data(sai_data) {
     // console.log("SAI: ", sai_data)
 
     // loggingLibrary.logResponse (transactionID,"textinput1","UpdateTextField","Hello World","RESULT","CORRECT","You got it!");
-
+    console.log(sai_data)
 	$.ajax({
         type: 'POST',
         url: AL_URL + '/train/' + agent_id + '/',
@@ -368,6 +416,7 @@ function query_user_feedback(){
     document.getElementById("prompt_text").innerHTML = "Is the <span style='color: #9932CC'>highlighted</span> input correct for the next step?"
     document.getElementById("yes_button").setAttribute("class", "yes_button");
     document.getElementById("no_button").setAttribute("class", "no_button");
+    document.getElementById("foci_done_button").setAttribute("class", "hidden");
     document.getElementById("yes_button").addEventListener("click", handle_user_feedback_correct);
     document.getElementById("no_button").addEventListener("click", handle_user_feedback_incorrect);
 }
@@ -381,6 +430,7 @@ function query_user_example(){
     document.getElementById("prompt_text").innerHTML = "Demonstrate the next step."
     document.getElementById("yes_button").setAttribute("class", "hidden");
     document.getElementById("no_button").setAttribute("class", "hidden");
+    document.getElementById("foci_done_button").setAttribute("class", "hidden");
 
     iframe_content.document.addEventListener(CTAT_ACTION, handle_user_example); 
     iframe_content.document.getElementById("done").addEventListener("click", _done_clicked); 
@@ -392,6 +442,19 @@ function query_user_example(){
 //   }
 // };);   
 }
+
+function query_user_foci(){
+    document.getElementById("prompt_text").innerHTML = "Select any interface elements that were used to compute this result."
+    document.getElementById("yes_button").setAttribute("class", "hidden");
+    document.getElementById("no_button").setAttribute("class", "hidden");
+    document.getElementById("foci_done_button").setAttribute("class", "foci_done_button");
+
+    //Add other handler for interface
+    iframe_content.document.addEventListener("click", handle_foci_select)
+    document.getElementById("foci_done_button").addEventListener("click", handle_foci_done);
+
+}
+
 
 // // https://stackoverflow.com/questions/11616630/json-stringify-avoid-typeerror-converting-circular-structure-to-json/11616993
 // function customReplacer(key, value) {
@@ -517,7 +580,7 @@ function checkTypes(element, types){
 }
 
 
-function get_state(encode_relative=false,strip_offsets=true, use_offsets=false, use_class=false, use_id=true){
+function get_state(encode_relative=false,strip_offsets=false, use_offsets=true, use_class=false, use_id=true){
     var state_array = iframe_content.$('div').toArray();
     // state_array.push({current_task: current_task});
 
@@ -1006,6 +1069,7 @@ function main() {
     var training_file = urlParams.get('training');
     var tutor_interface = urlParams.get('tutor_interface');
     interactive = urlParams.get('interactive') == "true";
+    use_foci = urlParams.get('use_foci') == "true";
     working_dir = urlParams.get('wd');
 
     AL_URL = urlParams.get('al_url');
