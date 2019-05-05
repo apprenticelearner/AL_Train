@@ -4,7 +4,7 @@
 		"agent_type":"ModularAgent",
 		"output_dir":"out/myAgent1",
 		"args": {
-			"search_depth" : 1,
+			"search_depth" : 2,
 			"when_learner": "decisiontree"
 		},
 		"problem_set" : [

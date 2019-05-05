@@ -1,0 +1,18 @@
+{
+	"training_set1" : [{
+		"agent_name":"myAgent1",
+		"agent_type":"ModularAgent",
+		"output_dir":"out/myAgent1",
+		"args": {
+			"search_depth" : 2,
+			"when_learner": "decisiontree"
+		},
+		"problem_set" : [
+			{"set_params" : 
+				{"HTML": "model/HTML/MultiColumnArithmatic.html"}
+			},
+			{
+			"repetitions":-1}
+		]
+	}]
+}
