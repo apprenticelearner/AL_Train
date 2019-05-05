@@ -47,6 +47,21 @@ input.CTAT--AL_highlight[type="radio"] {
 	visibility: hidden;
 }
 
+.nools_button{
+	position: relative;
+	top:100px;
+	width:200px;
+	font-size:20px;
+	background-color: #999999;
+}
+
+.startstate_button{
+	position: relative;
+	width:200px;
+	font-size:20px;
+	background-color: #4CAF50;
+}
+
 .yes_button{
 	width:100px;
 	font-size:40px;

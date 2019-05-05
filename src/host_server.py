@@ -7,6 +7,8 @@ from xml.dom import minidom
 from urllib.parse import unquote
 import uuid, csv
 import errno
+import json
+from nools_gen import generate_nools
 # 
 def _read_data(handler):
     content_length = int(handler.headers['Content-Length']) # <--- Gets the size of data
@@ -89,6 +91,35 @@ def _fill_from_elm(log_dict, elm):
 
 class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
     """http request handler with QUIT stopping the server"""
+
+    def do_GEN_NOOLS(self):
+        post_data = _read_data(self)
+        d = json.loads(post_data)
+
+        nools_dir = d['nools_dir']
+        del d["nools_dir"]
+
+        if not os.path.exists(nools_dir):
+            try:
+                os.makedirs(nools_dir)
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+
+        print("---------------------------")
+        print(d)
+        print("---------------------------")
+    
+        d["problems"] = None
+        # d["skills"] = None
+        generate_nools(**d)
+
+        with open(nools_dir + "/rules.json",'w') as f:
+            json.dump(d['skills'],f)
+        # json.dump()
+        self.send_response(200)
+        self.end_headers()
+
 
     def do_QUIT (self):
         _print_and_resp(self)

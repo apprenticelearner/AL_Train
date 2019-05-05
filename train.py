@@ -147,7 +147,7 @@ def parse_args(argv):
         help="Force kill processes that hold up ports we want to use. Only implemented for Linux systems.")
     parser.add_argument('-i', '--interactive', action='store_true',default=False, dest = "interactive",
         help="Indicates that AL should trained interactively by the user instead of automatically by example/model tracing.")
-    parser.add_argument('--use-foci', action='store_true',default=False, dest = "use_foci",
+    parser.add_argument('--foci', action='store_true',default=False, dest = "use_foci",
         help="Indicates that AL should trained interactively by the user instead of automatically by example/model tracing.")
 
     parser.add_argument('-a', '--al-port' , default=None, dest = "al_port",     metavar="<AL_port>",
@@ -177,6 +177,8 @@ def parse_args(argv):
         help="Bash style configuration file used for setting default variables. ")
     parser.add_argument('-w' , "--working-directory",  default=None, dest = "wd",      metavar="<working-directory>",
         help="The working directory of the ctat server. By default it is the directory where training.json is located")
+    parser.add_argument('-n' , "--nools",  default=None, dest = "nools_dir",      metavar="<nools-out-dir>",
+        help="The directory to output the nools production rule code for the agent")
 
     try:
         args = parser.parse_args(argv)
@@ -254,6 +256,7 @@ def main(args):
     if(args.wd != None): ctat_url += "&wd=" + args.wd
     if(args.interactive): ctat_url += "&interactive=true"
     if(args.use_foci): ctat_url += "&use_foci=true"
+    if(args.nools_dir): ctat_url += "&nools_dir=%s" % args.nools_dir
 
     
     if(args.browser != None and "selenium" in args.browser):

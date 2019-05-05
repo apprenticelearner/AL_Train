@@ -1,0 +1,10 @@
+import("basetypes.nools");
+
+rule bootstrap {
+    when {
+        s: Boolean s === false from false;
+    }
+    then {
+    	halt();
+    }
+}

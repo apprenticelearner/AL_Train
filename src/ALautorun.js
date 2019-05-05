@@ -51,6 +51,12 @@ var agent_params = {};
 
 var agent_description = "";
 
+var request_history = [];
+
+var free_authoring = false;
+
+var start_state_elements =[];
+
 
 
 CTATGuid = {s4:function s4() {
@@ -231,6 +237,26 @@ function apply_hint(){
 
 // Cr1Str1.addEventListener(CTAT.Component.Base.Tutorable.EventType.action, function(){ alert("Hello World!");});
 
+function handle_startstate_done(evt){
+    document.getElementById("startstate_button").removeEventListener("click", handle_startstate_done);
+    iframe_content.document.removeEventListener(CTAT_ACTION, handle_user_set_state); 
+
+    for (i in start_state_elements){
+        elm = iframe_content.document.getElementById(start_state_elements[i]);
+        elm.setAttribute("data-ctat-enabled","false")
+        elm.firstChild.setAttribute("contentEditable","false")
+        elm.firstChild.disabled = true;
+        // console.log("BOOP",elm);
+    }
+    query_apprentice();
+}
+
+function handle_user_set_state(evt){
+    var sai = evt.detail.sai;
+    // var elm = );
+    start_state_elements.push(sai.getSelection());
+    
+}
 
 function handle_user_example(evt){
     var sai = evt.detail.sai
@@ -260,7 +286,9 @@ function handle_user_example(evt){
     last_correct = true;
 
     if(use_foci && sai_data.selection != 'done'){
+
         current_sai_data = sai_data;
+        // console.log("current_sai_data",current_sai_data)
         query_user_foci();
     }else{
         send_training_data(sai_data);    
@@ -412,11 +440,32 @@ function send_training_data(sai_data) {
     });
 }
 
+function _hide_all(except=[]){
+    l = ["yes_button","no_button","foci_done_button","startstate_button"]
+    for (x in l){
+        if(!except.includes(x)){
+            console.log(l[x])
+            document.getElementById(l[x]).setAttribute("class", "hidden");        
+        }
+    }
+}
+
+function query_user_startstate(){
+    document.getElementById("prompt_text").innerHTML = "Set the start state."
+    _hide_all(except=["startstate_done_button"]);
+    document.getElementById("startstate_button").setAttribute("class", "startstate_button");
+
+    start_state_elements = [];
+    document.getElementById("startstate_button").addEventListener("click", handle_startstate_done);
+    iframe_content.document.addEventListener(CTAT_ACTION, handle_user_set_state); 
+}
+
+
 function query_user_feedback(){
     document.getElementById("prompt_text").innerHTML = "Is the <span style='color: #9932CC'>highlighted</span> input correct for the next step?"
+    _hide_all(except=["yes_button","no_button"]);
     document.getElementById("yes_button").setAttribute("class", "yes_button");
     document.getElementById("no_button").setAttribute("class", "no_button");
-    document.getElementById("foci_done_button").setAttribute("class", "hidden");
     document.getElementById("yes_button").addEventListener("click", handle_user_feedback_correct);
     document.getElementById("no_button").addEventListener("click", handle_user_feedback_incorrect);
 }
@@ -428,10 +477,8 @@ function _done_clicked(evt){
 
 function query_user_example(){
     document.getElementById("prompt_text").innerHTML = "Demonstrate the next step."
-    document.getElementById("yes_button").setAttribute("class", "hidden");
-    document.getElementById("no_button").setAttribute("class", "hidden");
-    document.getElementById("foci_done_button").setAttribute("class", "hidden");
-
+    _hide_all();
+    
     iframe_content.document.addEventListener(CTAT_ACTION, handle_user_example); 
     iframe_content.document.getElementById("done").addEventListener("click", _done_clicked); 
        
@@ -500,6 +547,8 @@ function query_apprentice() {
     var data = {
         'state': state
     }
+
+
     // console.log("STATE",state);
 
     // console.log("QUERY!");
@@ -511,7 +560,7 @@ function query_apprentice() {
             post_next_example();    
         }
     }else{
-
+        request_history.push(data);
         $.ajax({
             type: 'POST',
             url: AL_URL + '/request/' + agent_id + '/',
@@ -526,7 +575,10 @@ function query_apprentice() {
             tryCount : 0,
             error: ajax_retry_on_error,
 
+
+
             success: function(resp) {
+                
                 if (jQuery.isEmptyObject(resp)) {
                     if(interactive){
                         query_user_example();
@@ -535,6 +587,8 @@ function query_apprentice() {
                     }
                     
                 } else {
+                    
+
                 	last_action = resp;
 
                     if(verbosity > 0) console.log('action to take!');
@@ -580,7 +634,7 @@ function checkTypes(element, types){
 }
 
 
-function get_state(encode_relative=false,strip_offsets=false, use_offsets=true, use_class=false, use_id=true){
+function get_state(encode_relative=false,strip_offsets=true, use_offsets=false, use_class=false, use_id=true){
     var state_array = iframe_content.$('div').toArray();
     // state_array.push({current_task: current_task});
 
@@ -796,10 +850,17 @@ function runWhenReady(){
         window.setTimeout(runWhenReady, 500);
         return;       
     }
-	graph = iframe_content.CTAT.ToolTutor.tutor.getGraph();
+	graph = iframe_content.CTAT.ToolTutor.tutor.getGraph() || interactive;
     commLibrary = iframe_content.CTATCommShell.commShell.getCommLibrary();
 	hasConfig = iframe_content.CTATConfiguration != undefined
 	
+    // console.log("graph")
+    // console.log(graph)
+    // console.log("comm")
+    // console.log(commLibrary)
+    // console.log(hasConfig)
+    
+
 	if(graph && commLibrary && hasConfig){
 		term_print('\x1b[0;30;47m' + "OK" +  '\x1b[0m');
 
@@ -830,7 +891,12 @@ function runWhenReady(){
         CTAT_INCORRECT = iframe_content.CTAT.Component.Base.Tutorable.EventType.incorrect;
         CTAT_ACTION = iframe_content.CTAT.Component.Base.Tutorable.EventType.action;    
 
-		query_apprentice();
+        if(free_authoring){
+            query_user_startstate();
+        }else{
+            query_apprentice();    
+        }
+		
 	}else{
 		term_print('\x1b[0;30;47m' + "BLEHH2" + '\x1b[0m');
 		// CTATCommShell.commShell.addGlobalEventListener(function(evt,msg){
@@ -886,6 +952,7 @@ function serve_next_agent(){
         console.log("CREATING AGENT", agent_obj["agent_name"]);
         var callback = function(resp){
             agent_id = resp["agent_id"];
+            request_history = [];
             serve_next_problem();
         }
         problem_iterator = agent_obj["problem_set"];
@@ -939,14 +1006,19 @@ function _next_prob_obj(){
 function serve_next_problem(){
     console.log("PROBLEM ITERATOR", problem_iterator.length);
 
+    
     if(problem_iterator.length > 0){
         prob_obj = _next_prob_obj()
+        console.log("SLOOOP")
+        console.log(prob_obj)
         if(prob_obj){
 
 
 
 	        if("repetitions" in prob_obj){
-	            if(prob_obj["repetitions"] <= 0){
+                if(prob_obj["repetitions"] < 0){
+                    problem_iterator.unshift({...prob_obj})
+                }else if(prob_obj["repetitions"] == 0){
 	                prob_obj = _next_prob_obj()                
 	            }else if(prob_obj["repetitions"] >= 2){
 	                prob_obj["repetitions"] -= 1
@@ -988,13 +1060,22 @@ function serve_next_problem(){
 	        qf_exists = prob_obj["question_file"] != undefined && prob_obj["question_file"].toUpperCase() != "INTERACTIVE";
 	        if(qf_exists){
 	            BRD_name = prob_obj["question_file"].substring(prob_obj["question_file"].lastIndexOf('/')+1).replace(".brd", "").replace(".nools", "");  
+                free_authoring = false;
 	        }else{
-	            BRD_name = "INTERACTIVE"
+	            BRD_name = "FREE AUTHORING"
+                free_authoring = true;
 	        }
+            // term_print(prob_obj["question_file"])
+            
 
 	        term_print('\x1b[0;30;47m' + "Starting Problem: " + BRD_name +  '\x1b[0m');
 
-	        qf = qf_exists  ? {"question_file" : prob_obj["question_file"]} : {}//{"question_file" : "src/empty.nools"} ;
+	        qf = qf_exists  ? {"question_file" : prob_obj["question_file"]} : {"question_file" : "/src/empty.nools"} ;
+
+            console.log(qf)
+            if(!interactive && qf["question_file"].includes(".nools")){
+                kill_this('\x1b[0;30;47m' +'Question file cannot be nools in non-interactive mode. Use example tracing.\x1b[0m')
+            }
 	        logging_params = {
 	            "problem_name": BRD_name,
 	            "dataset_level_name1" : domain_name,
@@ -1034,13 +1115,6 @@ function load_training_file(training_file){
 
         serve_next_training_set()
 
-        // for (var key in training_json) {
-        //     console.log("START TRAINING SET:", key);
-
-            
-        // }
-
-
     })
     .fail(function(jqXHR,textStatus,errorThrown) {
         var error  = training_file + " not valid json.";
@@ -1050,14 +1124,35 @@ function load_training_file(training_file){
         console.log(errorThrown);
         kill_this(error);
     });
+}
+
+function generate_nools(evt) {
+    data = {'states':request_history.map(x => x['state'])}
+    console.log(JSON.stringify(data))
+    $.ajax({
+        type: 'POST',
+        url: AL_URL + '/get_skills/' + agent_id + '/',
+        crossdomain : true,
+        data: JSON.stringify(data),
+        contentType: "application/json; charset=utf-8",
+        dataType: 'json',
 
 
+        error: ajax_retry_on_error,
 
+        success: function(resp) {zzzzzzzzzzzzzzzzzzzzzzzzzzz
+            $.ajax({
+                type: "GEN_NOOLS",
+                url: window.location.origin,
+                data: '{"nools_dir":"' + nools_dir + '"}',
+                contentType: "application/json; charset=utf-8",
+                dataType: 'json',
+            });
+        },
+    });
 
-
-    // window.setTimeout(runWhenReady, 100);   
+    // console.log('{"nools_dir" :' + nools_dir + '}')
     
-
 }
 
 function main() {
@@ -1071,6 +1166,7 @@ function main() {
     interactive = urlParams.get('interactive') == "true";
     use_foci = urlParams.get('use_foci') == "true";
     working_dir = urlParams.get('wd');
+    nools_dir = urlParams.get('nools_dir');
 
     AL_URL = urlParams.get('al_url');
     verbosity = urlParams.get('verbosity') || 0;
@@ -1081,6 +1177,11 @@ function main() {
     if(working_dir == null){
         match = training_file.match(/(.*)[\/\\]/)
         working_dir =  !!match ? match[1] : ''; //The directory of the training.json
+    }
+
+    if(nools_dir){
+        document.getElementById("nools_gen_button").addEventListener('click',generate_nools);
+        document.getElementById("nools_gen_button").setAttribute("class","nools_button");
     }
 
     // if(interactive){
