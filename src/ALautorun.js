@@ -56,6 +56,7 @@ var request_history = [];
 var free_authoring = false;
 
 var start_state_elements =[];
+var start_state_history =[];
 
 
 
@@ -240,26 +241,66 @@ function apply_hint(){
 function handle_startstate_done(evt){
     document.getElementById("startstate_button").removeEventListener("click", handle_startstate_done);
     iframe_content.document.removeEventListener(CTAT_ACTION, handle_user_set_state); 
-
+    // iframe_content.document.removeEventListener('input', handle_user_clear_state); 
+    console.log("START DONE")
     for (i in start_state_elements){
         elm = iframe_content.document.getElementById(start_state_elements[i]);
-        elm.setAttribute("data-ctat-enabled","false")
-        elm.firstChild.setAttribute("contentEditable","false")
-        elm.firstChild.disabled = true;
-        // console.log("BOOP",elm);
+        if(elm.firstChild.value){
+            elm.setAttribute("data-ctat-enabled","false")
+            elm.firstChild.setAttribute("contentEditable","false")
+            elm.firstChild.disabled = true;    
+        }
+        elm.firstChild.classList.remove("CTAT--AL_start");
+        console.log("BOOP",elm);
     }
+    //Take away focus from whatever is there so it isn't treated as an example
+    // document.activeElement.blur();
+    console.log("STAT",get_state({append_ele:false}))
+    start_state_history.push(get_state({append_ele:false}));
     query_apprentice();
 }
+
+// function handle_user_clear_state(evt){
+//     console.log(evt.data)
+//     if(!evt.data && !evt.target.value){
+//         evt.target.classList.remove("CTAT--AL_start");
+//         if(start_state_elements.includes(evt.target.parentElement.name)){
+//             start_state_elements.remove(evt.target.parentElement.name);
+//         }
+//         // if(start_state_elements.includes(sai.getSelection())){
+//         //     start_state_elements.remove(sai.getSelection());
+//         // }
+//         console.log("clear")
+//         // elm = iframe_content.document.getElementById(evt.target);
+//         // a = 1/0;
+//     }
+// }
 
 function handle_user_set_state(evt){
     var sai = evt.detail.sai;
     // var elm = );
-    start_state_elements.push(sai.getSelection());
+    elm = iframe_content.document.getElementById(sai.getSelection());
+    console.log(sai.getInput())
+    if(sai.getInput() != ""){
+        elm.firstChild.classList.add("CTAT--AL_start");
+        start_state_elements.push(sai.getSelection());
+    }else{
+        elm.firstChild.classList.remove("CTAT--AL_start");
+        if(start_state_elements.includes(sai.getSelection())){
+            start_state_elements.remove(sai.getSelection());
+        }
+    }
     
 }
 
 function handle_user_example(evt){
     var sai = evt.detail.sai
+
+    var elm = iframe_content.document.getElementById(sai.getSelection())
+    if(elm.firstChild.contentEditable == "false"){
+        console.log("BAIL")
+        return
+    }
 
     console.log("%cUSER_EXAMPLE: " + sai.getSelection() + " -> " + sai.getInput(), 'color: #2222bb; background: #DDDDDD;');
     term_print('\x1b[0;33;44m' + "USER_EXAMPLE:" + sai.getSelection() + " -> " + sai.getInput() + '\x1b[0m')
@@ -275,7 +316,7 @@ function handle_user_example(evt){
     };
 
     // apply_sai(sai_data);
-    var elm = iframe_content.document.getElementById(sai.getSelection())
+    
     var comp = iframe_content.CTATShellTools.findComponent(sai.getSelection())[0];
     comp.setEnabled(false);
     // elm.contentEditable = "false";
@@ -451,6 +492,7 @@ function _hide_all(except=[]){
 }
 
 function query_user_startstate(){
+
     document.getElementById("prompt_text").innerHTML = "Set the start state."
     _hide_all(except=["startstate_done_button"]);
     document.getElementById("startstate_button").setAttribute("class", "startstate_button");
@@ -458,6 +500,7 @@ function query_user_startstate(){
     start_state_elements = [];
     document.getElementById("startstate_button").addEventListener("click", handle_startstate_done);
     iframe_content.document.addEventListener(CTAT_ACTION, handle_user_set_state); 
+    // iframe_content.document.addEventListener('input', handle_user_clear_state);  
 }
 
 
@@ -634,7 +677,7 @@ function checkTypes(element, types){
 }
 
 
-function get_state(encode_relative=false,strip_offsets=true, use_offsets=false, use_class=false, use_id=true){
+function get_state({encode_relative=false,strip_offsets=true, use_offsets=false, use_class=false, use_id=true,append_ele=true}={}){
     var state_array = iframe_content.$('div').toArray();
     // state_array.push({current_task: current_task});
 
@@ -680,7 +723,9 @@ function get_state(encode_relative=false,strip_offsets=true, use_offsets=false, 
     			// }
     			
     		}
-    		state_json["?ele-" + element.id] = obj;
+            name = (append_ele ? "?ele-":"") + element.id
+            console.log(name,append_ele)
+    		state_json[name] = obj;
 	        count++;
     	}
         // add question marks for apprentice
@@ -894,6 +939,7 @@ function runWhenReady(){
         if(free_authoring){
             query_user_startstate();
         }else{
+            start_state_history.push(get_state({append_ele:false}));
             query_apprentice();    
         }
 		
@@ -942,6 +988,7 @@ function serve_next_agent(){
 
         session_id = null;
         user_guid = null;
+        start_state_history = [];
 
         var agent_obj = agent_iterator.shift();
         agent_params = agent_obj["set_params"] || {}
@@ -1009,8 +1056,8 @@ function serve_next_problem(){
     
     if(problem_iterator.length > 0){
         prob_obj = _next_prob_obj()
-        console.log("SLOOOP")
-        console.log(prob_obj)
+        // console.log("SLOOOP")
+        // console.log(prob_obj)
         if(prob_obj){
 
 
@@ -1129,6 +1176,9 @@ function load_training_file(training_file){
 function generate_nools(evt) {
     data = {'states':request_history.map(x => x['state'])}
     console.log(JSON.stringify(data))
+
+    
+
     $.ajax({
         type: 'POST',
         url: AL_URL + '/get_skills/' + agent_id + '/',
@@ -1140,11 +1190,16 @@ function generate_nools(evt) {
 
         error: ajax_retry_on_error,
 
-        success: function(resp) {zzzzzzzzzzzzzzzzzzzzzzzzzzz
+        success: function(resp) {
+            out_data = {"nools_dir":nools_dir,
+                "problems": start_state_history,
+                "skills" : resp
+                }
+
             $.ajax({
                 type: "GEN_NOOLS",
                 url: window.location.origin,
-                data: '{"nools_dir":"' + nools_dir + '"}',
+                data: JSON.stringify(out_data),
                 contentType: "application/json; charset=utf-8",
                 dataType: 'json',
             });

@@ -9,6 +9,7 @@ import uuid, csv
 import errno
 import json
 from nools_gen import generate_nools
+from pprint import pprint
 # 
 def _read_data(handler):
     content_length = int(handler.headers['Content-Length']) # <--- Gets the size of data
@@ -107,15 +108,12 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
                     raise
 
         print("---------------------------")
-        print(d)
+        print(json.dumps(d))
         print("---------------------------")
     
-        d["problems"] = None
-        # d["skills"] = None
-        generate_nools(**d)
-
-        with open(nools_dir + "/rules.json",'w') as f:
-            json.dump(d['skills'],f)
+        generate_nools(d,nools_dir)
+        with open(os.path.join(nools_dir, "rules.json"),'w') as f:
+            json.dump(d,f)
         # json.dump()
         self.send_response(200)
         self.end_headers()
