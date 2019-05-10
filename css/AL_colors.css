@@ -24,6 +24,26 @@ input.CTAT--example[type="radio"] {
 
 
 
+.CTAT--AL_start { /* general example highlighting */
+	box-shadow: 0px 0px 15px 5px darkcyan;
+}
+textarea.CTAT--AL_start,
+input.CTAT--AL_start[type="text"] { /* font color change for text components */
+	box-shadow: none;
+	color: darkcyan;
+}
+label.CTAT--AL_start { /* labels for checkboxes and radio buttons */
+	box-shadow: none;
+	text-shadow: 0px 0px 5px darkcyan;
+}
+input.CTAT--AL_start[type="checkbox"],
+input.CTAT--AL_start[type="radio"] {
+	box-shadow: 0px 0px 5px 0px darkcyan;
+}
+.CTATNumberLine--point.CTAT--AL_start {
+	fill: darkcyan;
+}
+
 
 .CTAT--AL_highlight {
 	box-shadow: 0px 0px 15px 5px darkorchid;
