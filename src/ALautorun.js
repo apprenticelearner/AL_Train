@@ -255,8 +255,8 @@ function handle_startstate_done(evt){
     }
     //Take away focus from whatever is there so it isn't treated as an example
     // document.activeElement.blur();
-    console.log("STAT",get_state({append_ele:false}))
-    start_state_history.push(get_state({append_ele:false}));
+    console.log("STAT",get_state())
+    start_state_history.push(get_state());
     query_apprentice();
 }
 
@@ -677,7 +677,7 @@ function checkTypes(element, types){
 }
 
 
-function get_state({encode_relative=false,strip_offsets=true, use_offsets=false, use_class=false, use_id=true,append_ele=true}={}){
+function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, use_class=true, use_id=true,append_ele=true}={}){
     var state_array = iframe_content.$('div').toArray();
     // state_array.push({current_task: current_task});
 
@@ -689,7 +689,7 @@ function get_state({encode_relative=false,strip_offsets=true, use_offsets=false,
     	if(element.classList.contains("CTATComponent")
              && !element.classList.contains("CTATTable")) {
             // if(obj["className"] == "CTATTable") {continue;} //Skip table objects and just use cells
-    		if(use_class){obj["className"] = element.classList[0];}
+    		if(use_class){obj["type"] = element.classList[0];}
             if(use_offsets){
         		obj["offsetParent"] = element.offsetParent.dataset.silexId;
         		obj["offsetLeft"] = element.offsetLeft;
@@ -758,11 +758,12 @@ function get_state({encode_relative=false,strip_offsets=true, use_offsets=false,
     // Gets lists of elements that are to the left, right and above the current element
     if(encode_relative){
         elm_list = Object.entries(state_json);
-        console.log(elm_list.length);
+        console.log(elm_list);
 
         if(! (HTML_PATH in relative_pos_cache) ){
             var rel_objs = {};
             for (var i = 0; i < elm_list.length; i++) {
+                console.log(elm_list[i][0])
                 rel_objs[elm_list[i][0]] = {
                     "to_left" : [],
                     "to_right" : [],
@@ -799,20 +800,39 @@ function get_state({encode_relative=false,strip_offsets=true, use_offsets=false,
 
             var grab1st = function(x){return x[0];};
             var compare2nd = function(x,y){return x[1] > y[1];};
+            var grabN = function(x,n){
+                out = []
+                for (var i = 0; i < n; i++){
+                    if(i < x.length){
+                        out.push(x[i])
+                    }else{
+                        out.push(null)
+                    }
+                }
+                return out
+            }
             for (var i = 0; i < elm_list.length; i++) {
                 var rel_obj = rel_objs[elm_list[i][0]];
-                rel_obj["below"] = rel_obj["below"].sort(compare2nd).map(grab1st).join(' '); 
-                rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st).join(' '); 
-                rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st).join(' '); 
-                rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st).join(' '); 
+                // rel_obj["below"] = rel_obj["below"].sort(compare2nd).map(grab1st).join(' '); 
+                // rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st).join(' '); 
+                // rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st).join(' '); 
+                // rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st).join(' '); 
+                rel_obj["below"] = grabN(rel_obj["below"].sort(compare2nd).map(grab1st),2);
+                rel_obj["above"] = grabN(rel_obj["above"].sort(compare2nd).map(grab1st),2);
+                rel_obj["to_right"] = grabN(rel_obj["to_right"].sort(compare2nd).map(grab1st),2);
+                rel_obj["to_left"] = grabN(rel_obj["to_left"].sort(compare2nd).map(grab1st),2);
             }
             
-
+            console.log(rel_objs)
             relative_pos_cache[HTML_PATH] = rel_objs;
         }else{
             for (var i = 0; i < elm_list.length; i++) {
                 var obj = state_json[elm_list[i][0]];
                 var rel_obj = relative_pos_cache[HTML_PATH][elm_list[i][0]];
+                console.log(rel_obj)
+                console.log(elm_list[i][0])
+                console.log(relative_pos_cache[HTML_PATH])
+
                 obj["below"] = rel_obj["below"];
                 obj["above"] = rel_obj["above"];
                 obj["to_right"] = rel_obj["to_right"];
@@ -939,7 +959,7 @@ function runWhenReady(){
         if(free_authoring){
             query_user_startstate();
         }else{
-            start_state_history.push(get_state({append_ele:false}));
+            start_state_history.push(get_state());//{append_ele:false}));
             query_apprentice();    
         }
 		
