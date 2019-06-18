@@ -199,7 +199,7 @@ def parse_args(argv):
     args.log_dir = os.path.abspath(apply_wd(args.log_dir))
     args.al_dir = os.path.abspath(apply_wd(args.al_dir))
     # os.path.join(calling_dir,args.al_dir)
-    args.training = os.path.os.path.relpath(apply_wd(args.training), start=os.getcwd())
+    args.training = os.path.relpath(apply_wd(args.training), start=os.getcwd())
 
 
     assert os.path.isfile(args.training), "No such file %r" % args.training
@@ -252,7 +252,7 @@ def main(args):
 
 
 
-    ctat_url = "http://localhost:%s/?training=%s&al_url=http://localhost:%s" %(args.ctat_port, args.training,args.al_port)
+    ctat_url = "http://localhost:%s/?training=/%s&al_url=http://localhost:%s" %(args.ctat_port, args.training,args.al_port)
     if(args.wd != None): ctat_url += "&wd=" + args.wd
     if(args.interactive): ctat_url += "&interactive=true"
     if(args.use_foci): ctat_url += "&use_foci=true"
