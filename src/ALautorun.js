@@ -401,7 +401,14 @@ function handle_user_feedback_incorrect(evt){
     document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
 
     var elm = iframe_content.document.getElementById(last_action.selection)
-    elm.firstElementChild.setAttribute("class", "CTAT--incorrect");
+    
+    if(interactive){
+        elm.firstElementChild.value = ""
+        elm.firstElementChild.setAttribute("class", "");    
+    }else{
+        elm.firstElementChild.setAttribute("class", "CTAT--incorrect");    
+    }
+    
     var comp = iframe_content.CTATShellTools.findComponent(last_action.selection)[0];
     comp.setEnabled(true);
 

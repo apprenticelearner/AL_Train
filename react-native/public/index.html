@@ -38,26 +38,39 @@
         flex-grow: 1;
         flex-basis:  600px;
         height: 35vh;
+        justify-content: center;
       }
       .ctat_content {
         width:800px;
         height: 64vh;
         flex-grow: 100;
-        padding: 4px
+        padding: 4px;
       }
       .skill_panel {
         height: 35vh;
         /*flex-direction: row;*/
         /*flex-shrink: 1*/
-        flex-basis:  600px;
+        flex-basis:  65vw;
         /*height: 320px*/
 
       }
       
 
       .buttons{
-        align-self:  center;
-        padding: 60px
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        height: 35vh;
+        /*width:300px;*/
+        flex-wrap: wrap;
+        flex-basis: 32vw;
+        /*justify-self:  start;*/
+        /*align-self:  ;*/
+        /*padding: 60px,*/
+        justify-content: space-between;
+        
+        align-content: center;
+        
       }
 
       
@@ -78,30 +91,32 @@
         </div>
 
         <div class="controls">
-          <!-- <div class="skill_panel"> -->
-            <div class="skill_panel" id="skill_panel"></div>
-          <!-- </div> -->
+          
+            <!-- <div class="skill_panel" id="skill_panel"></div> -->
+          
         
         
       
 
           <div class="buttons">        
-            <div id="prompt_text" class="hidden"></div>
-            <div style="text-align:center">
-              <button type="button" id="yes_button" class="hidden" > yes</button>
-              <button type="button" id="no_button" class="hidden" > no </button>
+            <div id="prompt_text" class="hidden">PROMPT! WHICH IS VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY LONG</div>
+            <div class="position:relative">
+              <div style="text-align:center;position:relative;z-index: 1;">
+                <button type="button" id="yes_button" class="hidden" > yes</button>
+                <button type="button" id="no_button" class="hidden" > no </button>
+              </div>
+              <div style="text-align:center;position:relative;z-index: 2;">
+                <button type="button" id="foci_done_button" class="hidden" > done </button>
+              </div>
+              <div style="text-align:center;position:relative;z-index: 3;">
+                <button type="button" id="startstate_button" class="hidden" > Start State Done. </button>
+              </div>
             </div>
             <div style="text-align:center">
-              <button type="button" id="foci_done_button" class="hidden" > done </button>
-            </div>
-            <div style="text-align:center">
-              <button type="button" id="startstate_button" class="hidden" > Start State Done. </button>
-            </div>
-            <div style="text-align:center">
-              <button type="button" id="nools_gen_button" class="hidden" > Generate Nools </button>
+              <button  type="button" id="nools_gen_button" class="hidden" > Generate Nools </button>
             </div>
           </div>
-          </div>
+        </div>
       </div>
     </div>
     <!-- </div> -->
