@@ -476,7 +476,13 @@ function send_training_data(sai_data) {
 
         success: function(resp) {
             if(verbosity > 0) console.log('training received.');
-            // console.log(sai_data);
+
+            console.log(resp)
+            console.log()
+            let cont = JSON.parse(resp).map((value,index) => value['skill_info'])
+            setSkillWindowState({"Explanations": cont})
+            // console.log("------resp--------");
+            // console.log(resp);
 
             //If correctly pushed done then problem finished otherwise query again.
             if(sai_data.selection === "done" && sai_data.reward > 0){
@@ -597,6 +603,9 @@ function query_apprentice() {
     var data = {
         'state': state
     }
+    if(interactive){
+        data['kwargs'] = {'add_skill_info':true,'n':0}
+    }
 
 
     // console.log("STATE",state);
@@ -611,6 +620,8 @@ function query_apprentice() {
         }
     }else{
         request_history.push(data);
+        // data_str = 
+        // add_skill_info
         $.ajax({
             type: 'POST',
             url: AL_URL + '/request/' + agent_id + '/',
@@ -628,7 +639,8 @@ function query_apprentice() {
 
 
             success: function(resp) {
-                
+                console.log("RESP")
+                console.log(resp)
                 if (jQuery.isEmptyObject(resp)) {
                     if(interactive){
                         query_user_example();
@@ -638,6 +650,9 @@ function query_apprentice() {
                     
                 } else {
                     
+                    applicable_skills = resp['responses'].map(value=>value['skill_info'])
+                    console.log(applicable_skills)
+                    setSkillWindowState({"Applicable Skills" : applicable_skills})
 
                 	last_action = resp;
 
@@ -765,12 +780,12 @@ function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, u
     // Gets lists of elements that are to the left, right and above the current element
     if(encode_relative){
         elm_list = Object.entries(state_json);
-        console.log(elm_list);
+        // console.log(elm_list);
 
         if(! (HTML_PATH in relative_pos_cache) ){
             var rel_objs = {};
             for (var i = 0; i < elm_list.length; i++) {
-                console.log(elm_list[i][0])
+                // console.log(elm_list[i][0])
                 rel_objs[elm_list[i][0]] = {
                     "to_left" : [],
                     "to_right" : [],
@@ -830,15 +845,15 @@ function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, u
                 rel_obj["to_left"] = grabN(rel_obj["to_left"].sort(compare2nd).map(grab1st),2);
             }
             
-            console.log(rel_objs)
+            // console.log(rel_objs)
             relative_pos_cache[HTML_PATH] = rel_objs;
         }else{
             for (var i = 0; i < elm_list.length; i++) {
                 var obj = state_json[elm_list[i][0]];
                 var rel_obj = relative_pos_cache[HTML_PATH][elm_list[i][0]];
-                console.log(rel_obj)
-                console.log(elm_list[i][0])
-                console.log(relative_pos_cache[HTML_PATH])
+                // console.log(rel_obj)
+                // console.log(elm_list[i][0])
+                // console.log(relative_pos_cache[HTML_PATH])
 
                 obj["below"] = rel_obj["below"];
                 obj["above"] = rel_obj["above"];
