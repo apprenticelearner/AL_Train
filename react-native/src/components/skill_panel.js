@@ -55,7 +55,7 @@ class SkillPanel extends Component{
                             <Text style={[liststyles.item, skill_eq && liststyles.selected]} 
                             backgroundColor={"#ff00ffff"}>
                             
-                            {skill['name']}</Text>
+                            {skill['name'] || skill['how']}</Text>
                         </TouchableHighlight>
                   let matches = [];
                   if("matches" in skill){

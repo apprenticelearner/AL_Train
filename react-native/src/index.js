@@ -11,6 +11,7 @@ function clicky_callback(evt){
 function setSkillWindowState(skill_set){
 	ReactDOM.render(<SkillPanel skill_set={skill_set} clicky_callback={clicky_callback}/>, document.getElementById('skill_panel'));	
 }
+window.setSkillWindowState = setSkillWindowState
 
 // function render(){
 let sections = [
