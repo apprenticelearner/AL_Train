@@ -3,79 +3,209 @@ import PropTypes from 'prop-types'
 import { TouchableHighlight,ScrollView,View, Text, Platform, StyleSheet,SectionList,AppRegistry } from "react-native";
 import Panel from './panel.js'
 
+
+
+function cramBtw(arr,sep){
+  return [...arr].map((e, i) => i < arr.length - 1 ? [e, sep] : [e]).reduce((a, b) => a.concat(b))
+}
+
+function colorItems(text, items, colors){
+  text = [text]
+  // for(var item in colorMap) {
+  items.forEach(function(item,i) {
+    text = text.map((t,_) => {
+      if(typeof t == 'string'){
+        let splt = t.split(item)
+        if(splt.length > 1){
+         return cramBtw(splt,<Text style={
+            {"color":colors[i], 'text-shadow': '0 0 3px '+colors[i]}}>{item}</Text>);
+         // return cramBtw(splt,<Text style={{"color":colorMap[item]}}>{item}</Text>);
+        }
+      }
+      return t;
+    }).flat();
+  });
+  return text;
+}
+
+const skill_text_by_action ={
+  ButtonPressed: function(skill,colors) {
+    return "Press Button"
+  },
+  UpdateTextField: function(skill,colors) {
+    return skill['name'] || skill['how'];
+  }
+
+};
+
+const match_text_by_action = {
+  UpdateTextField: function(match,colors) {
+    let sel = match['mapping']['?sel']
+    let args =  Object.entries(match['mapping']).reduce(
+      function (acc,kv) {if(kv[0] != "?sel") {acc.push(kv[1])}return acc;},[]);
+    console.log(sel,args)
+    sel = sel.replace("?ele-","")
+    args = args.map(x => x.replace("?ele-",""))
+    let innerHTML = String.fromCharCode(8226) + "(" + args.join(", ") + "): " + sel + "->" + (match['inputs'] && match['inputs']['value']);
+    innerHTML = colorItems(innerHTML,[sel].concat(args), colors); // innerHTML = cramBtw( innerHTML.split("A1"),<Text style={{"color":"red"}}>A1</Text>);
+    return innerHTML;
+  },
+  ButtonPressed: function(match,colors) {
+    return "Press: " + match['mapping']['?sel'].replace("?ele-","");
+  }                          
+}
+
+
 class SkillPanel extends Component{
-	constructor(props){
+  constructor(props){
         super(props);
 
-        const selected_skill =  props.skill_set[Object.keys(this.props.skill_set)[0]][0]
+
+        this.s_skill_set = this.structure_skills(props.skill_set)
+        let select = this.s_skill_set[Object.keys(this.s_skill_set)[0]][0]
+        // const selected_skill = 0;
         this.state = {
-        	skills: [],
-          selected_skill: selected_skill,
-          selected_match: selected_skill['matches'][0] || undefined,
+          selected_skill: select,
+          selected_match: select,
+          colorMap:{},
         };
       this.handleClickSkillItem = this.handleClickSkillItem.bind(this)
-	}
+  }
+
+  structure_skills(skill_set){
+    const s_skill_set = {}
+    var id_count = 0;
+    for (var title in skill_set) {
+      let skills = {};
+
+      for (var i in skill_set[title]){
+        var skill = skill_set[title][i]
+        if(!(skill['how'] in skills)){
+          
+          skills[skill['how']] = skill;
+          skills[skill['how']]['matches'] = []
+          // delete skills[skill['how']]["mapping"]
+
+        }
+        skill['_id'] = id_count++;
+        skills[skill['how']]['matches'].push(skill);
+
+      console.log(skills)
+      s_skill_set[title] = Object.keys(skills).map((key,index)=>skills[key]);
+      }
+
+    }
+    return s_skill_set
+    // console.log(skill_set)
+  }
+	
 
   selectSkill(skill,match){
+    if(!match){
+      match = skill
+    }
     this.setState({selected_skill: skill,
                     selected_match: match})     
   }
 
-  daisyChain(fnc, rest){
-    return (evt) => {fnc(evt,rest)};
+  daisyChain(fnc, rest,callback){
+    return (evt) => {fnc(evt,rest,callback)};
   }
-  handleClickSkillItem(evt,rest){
-    const [title,index,match] = rest;
-    this.selectSkill(this.props.skill_set[title][index],match)
-    console.log(title,index,match)
-    if(this.props.clicky_callback){
-      this.props.clicky_callback(evt,rest)   
+  handleClickSkillItem(evt,rest,callback){
+    const [skill,match] = rest;
+    // console.log(title,index,match)
+    // this.selectSkill(this.props.skill_set[title][index],match)
+    this.selectSkill(skill,match)
+    console.log(this.props.select_callback)
+    if(this.props.select_callback){
+      this.props.select_callback(match || skill)   
+    }
+    if(callback){
+      callback(rest)
     }
     
+  }
+  componentWillReceiveProps(nextProps){
+    this.s_skill_set = this.structure_skills(nextProps.skill_set)
+    if(!this.state.selected_skill){
+      let select = this.s_skill_set[Object.keys(this.s_skill_set)[0]][0]
+      this.setState({
+          selected_skill: select,
+          selected_match: select,
+      })
+    }
   }
 
 
 	render(){
+    // console.log(this.s_skill_set)
+    // this.s_skill_set = this.structure_skills(this.props.skill_set)
+    
+    
+
+    // this.state = 
 		return (
 		    <View style={skillbox_styles.content}>
 		      
           <View style={liststyles.skill_list}>
           <ScrollView>
-            {Object.keys(this.props.skill_set).map((title, index) => {
+            {Object.keys(this.s_skill_set).map((title, index) => {
               let header = <TouchableHighlight underlayColor="#fff" >
                  <Text style={liststyles.sectionHeader}>{title}</Text>
               </TouchableHighlight> 
               // let itemStyle = liststyles.item;
-              let rest = this.props.skill_set[title].map((skill, index) => {
-                  const skill_eq = this.state.selected_skill==skill;
+              let rest = this.s_skill_set[title].map((skill, index) => {
+                  const skill_eq = this.state.selected_skill && this.state.selected_skill['_id']===skill['_id'];
+                  console.log(skill_eq)
                   // console.log("IS",itemStyle)
                   // console.log("EQ",eq, index, (eq ? itemStyle.selectColor : itemStyle.backgroundColor))
+                  let innerHTML = (skill_text_by_action[skill.action] || skill_text_by_action["UpdateTextField"])(skill,this.props.where_colors)
                   let skill_elem = <TouchableHighlight underlayColor="#f1f1f1"
-                             onPress={ this.daisyChain(this.handleClickSkillItem,[title,index]) } >
-                            <Text style={[liststyles.item, skill_eq && liststyles.selected]} 
-                            backgroundColor={"#ff00ffff"}>
-                            
-                            {skill['name'] || skill['how']}</Text>
+                             onPress={ this.daisyChain(this.handleClickSkillItem,[skill],
+                                                       skill['callback']) } >
+                            <Text style={[liststyles.item, skill_eq && liststyles.selected_skill]} 
+                            backgroundColor={"#ff00ffff"}>{
+                              innerHTML}</Text>
                         </TouchableHighlight>
                   let matches = [];
                   if("matches" in skill){
-                      matches = skill["matches"].map((match,mIndex) => { 
-                        const match_eq = this.state.selected_match==match;
-                        // console.log()
-                        let match_elem = <TouchableHighlight underlayColor="#919191"
-                             onPress={ this.daisyChain(this.handleClickSkillItem,[title,index,match]) } >
-                            <Text style={[liststyles.match,skill_eq && match_eq && liststyles.selected]}>{
-                              String.fromCharCode(8226)+ " "+match.join(", ")
-                            }</Text>
-                        </TouchableHighlight>
-                        return match_elem;
+                      console.log(skill["matches"])
+                      matches = skill["matches"].map((match,mIndex) => {
+                        if('mapping' in match){
+                          const match_eq = this.state.selected_match && this.state.selected_match['_id']===match['_id'];
+                          
+                          // let sel = match['mapping']['?sel']
+                          // let args =  Object.entries(match['mapping']).reduce(
+                          //   function (acc,kv) {if(kv[0] != "?sel") {acc.push(kv[1])}return acc;},[]);
+                          // console.log(sel,args)
+                          // sel = sel.replace("?ele-","")
+                          // args = args.map(x => x.replace("?ele-",""))
+                          // let innerHTML = String.fromCharCode(8226) + "(" + args.join(", ") + "):" + sel + "->" + (match['inputs'] && match['inputs']['value']);
+                          // innerHTML = colorItems(innerHTML,{"B1":'red',"A1":'green'}); // innerHTML = cramBtw( innerHTML.split("A1"),<Text style={{"color":"red"}}>A1</Text>);
+                          // console.log(match_text_by_action,match.action)
+                          let innerHTML = (match_text_by_action[match.action] || match_text_by_action["UpdateTextField"])(match,this.props.where_colors)
+                          let match_elem = <TouchableHighlight underlayColor="#919191"
+
+                               onPress={ this.daisyChain(this.handleClickSkillItem,[skill,match], 
+                                                         match['callback'])} >
+                              <Text style={[liststyles.match,skill_eq && match_eq && liststyles.selected_match]}>{
+                                innerHTML
+                                // String.fromCharCode(8226)+ " "+Object.values(match['mapping'] || {}).map(.join(", ")
+                              }</Text>
+                          </TouchableHighlight>
+                          // console.log(typeof match_elem)
+                          return match_elem;
+                        }else{
+                          return;
+                        }
                       })
                   }
+                  matches = matches.filter(x => x != null); //remove undefinded
                   return [skill_elem].concat(matches);
                 })
-              console.log(title)
-              console.log(header)
-              console.log(rest)
+              // console.log(title)
+              // console.log(header)
+              // console.log(rest)
               return [header].concat(rest)
               })
             }
@@ -93,19 +223,19 @@ class SkillPanel extends Component{
 		                 >
 		        <Panel title="How"
 		        	   collapsedHeight={this.props.collapsedHeight.how}>
-		          <Text>{this.state.selected_skill.how}</Text>
+		          <Text>{this.state.selected_skill && this.state.selected_skill.how}</Text>
 		        </Panel>
 		        <Panel title="Where"
 		        	   collapsedHeight={this.props.collapsedHeight.where}>
-		          <Text>{this.state.selected_skill.where}</Text>
+		          <Text>{this.state.selected_skill && this.state.selected_skill.where}</Text>
 		        </Panel>
 		        <Panel title="When"
 		        	   collapsedHeight={this.props.collapsedHeight.when}>
-		          <Text>{this.state.selected_skill.when}</Text>
+		          <Text>{this.state.selected_skill && this.state.selected_skill.when}</Text>
 		        </Panel>
 		        <Panel title="Which"
 		        	   collapsedHeight={this.props.collapsedHeight.which}>
-		          <Text>{this.state.selected_skill.which}</Text>
+		          <Text>{this.state.selected_skill && this.state.selected_skill.which}</Text>
 		        </Panel>
 
 		      </ScrollView>
@@ -155,8 +285,11 @@ const liststyles = StyleSheet.create({
     fontWeight: 'bold',
     backgroundColor: "'rgba(247,247,247,1.0)'",
   },
-  selected:{
-    backgroundColor: "'rgba(156,200,156,1.0)'",
+  selected_skill:{
+    backgroundColor: "#93e4ec",
+  },
+  selected_match:{
+    backgroundColor: "#b3e8ff",
   },
   item: {
     flexWrap: 'wrap',
@@ -166,7 +299,6 @@ const liststyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: 'gray',
     backgroundColor: "'rgba(247,0,0,0.0)'",
-    // selectColor: "'rgba(247,0,0,1.0)'",
   },
   match: {
     flexWrap: 'wrap',
@@ -186,7 +318,7 @@ const liststyles = StyleSheet.create({
 
 SkillPanel.propTypes = {
   collapsedHeight: PropTypes.object,
-  clicky_callback: PropTypes.func,
+  select_callback: PropTypes.func,
 }
 
 SkillPanel.defaultProps = {
@@ -195,8 +327,9 @@ SkillPanel.defaultProps = {
 					"when": 90,
 					"which": 40,
 					},
-   skill_set: [],
-   clicky_callback: () => {}
+   //"darkorchid", "#feb201",   "#ff884d", "#52d0e0", "#e44161",  "#2f85ee", "#562ac6", "#cc24cc"
+   where_colors: [  "darkorchid",  "#ff884d", "#2f85ee",   "#e44161","#feb201", "#52d0e0",  "#2f85ee", "#562ac6", "#cc24cc"],
+   select_callback: () => {}
 }
 
 export default SkillPanel;

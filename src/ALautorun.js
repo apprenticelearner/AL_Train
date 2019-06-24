@@ -58,7 +58,10 @@ var free_authoring = false;
 var start_state_elements =[];
 var start_state_history =[];
 
+const where_colors = [ "darkorchid",  "#ff884d", "#2f85ee",   "#e44161","#feb201", "#52d0e0", "#2f85ee", "#562ac6", "#cc24cc"]
 
+//copies a 
+function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
 
 CTATGuid = {s4:function s4() {
   return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
@@ -195,15 +198,85 @@ function post_next_example(){
 	
 }
 
-function propose_sai(sai){
+function clear_highlights(){
+    if(last_action){
+        if(last_action.mapping){
+            Object.entries(last_action.mapping).forEach(function(v,index){
+                const [var_str, elem_str] = v;
+                // console.log(var_str, elem_str);
+                
+                var elm = iframe_content.document.getElementById(elem_str.replace('?ele-',""));
+                // console.log(elem_str.replace('?ele-',""))
+                // console.log(elm.firstElementChild.classList);
+                if(var_str == "?sel"){
+                    elm.firstElementChild.value = "";
+                }
+                // elm.firstElementChild.className = "";
+                // elm.firstElementChild.classList.remove("CTAT--AL_highlight"+1);
+                // elm.firstElementChild.classList.remove("CTAT--AL_highlight"+2);
+                // elm.firstElementChild.classList.remove("CTAT--AL_highlight"+3);
+                for (var i = 1; i <= where_colors.length; i++) { 
+                    var c = "CTAT--AL_highlight"+i;
+                    // console.log(c)
+                    // if(elm.firstElementChild.classList.contains(c)) {
+                    elm.firstElementChild.classList.remove(c)
+                    // }
+                }
+                // console.log(elm.firstElementChild.classList);
+            });
+        }else{
+            var elm = iframe_content.document.getElementById(last_action.selection.replace('?ele-',""));    
+            elm.firstElementChild.value = "";
+            elm.firstElementChild.classList.remove("CTAT--AL_highlight1");
+        }
+        var comp = iframe_content.CTATShellTools.findComponent(last_action.selection)[0];
+        comp.setEnabled(true);
+    }
+    
+}
+
+function make_highlights(sai){
     var comp = iframe_content.CTATShellTools.findComponent(sai.selection)[0];
-    var elm = iframe_content.document.getElementById(sai.selection);
-    console.log(comp);
+    var elm = iframe_content.document.getElementById(sai.selection.replace('?ele-',""));
+    // console.log(comp);
     var sai_obj =  new iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
     comp.executeSAI(sai_obj);
     comp.setEnabled(false);
+    if(sai.mapping){
+        Object.entries(sai.mapping).forEach(function(v,index){
+            const [var_str, elem_str] = v
+            colorIndex = 1
+            if(var_str != "?sel"){
+                colorIndex = 2 + ((index-1) % (where_colors.length-1));
+                console.log(colorIndex)
+            }
+            elm = iframe_content.document.getElementById(elem_str.replace('?ele-',""));
+            elm.firstElementChild.classList.add("CTAT--AL_highlight"+colorIndex)
+        });
+    }else{
+        elm.firstElementChild.classList.add("CTAT--AL_highlight1")
+    }
+}
 
-    elm.firstElementChild.setAttribute("class", "CTAT--AL_highlight");
+
+function propose_sai(sai){
+    console.log("LAST!!!!",last_action);
+    console.log("PROPOSE!!!!",sai);
+    clear_highlights();
+    make_highlights(sai);
+    // if(last_action){
+    //     //CLEAR
+    //     var elm = iframe_content.document.getElementById(last_action.selection)    
+    //     elm.firstElementChild.value = ""
+    //     elm.firstElementChild.classList.remove("CTAT--AL_highlight1")
+    //     // elm.firstElementChild.setAttribute("class", "");    
+    // }
+    
+
+    // elm.firstElementChild.setAttribute("class", "CTAT--AL_highlight1");
+    // elm.firstElementChild.classList.add("CTAT--AL_highlight1")
+
+    last_action = sai
 }
 
 function apply_sai(sai){
@@ -349,10 +422,10 @@ function handle_foci_select(evt){
             // console.log(current_foci)
             if(indx == -1){
                 current_foci.push(ele)
-                ele.classList.add("CTAT--AL_highlight");
+                ele.classList.add("CTAT--AL_highlight1");
             }else{
                 current_foci.splice(indx,1)
-                ele.classList.remove("CTAT--AL_highlight");
+                ele.classList.remove("CTAT--AL_highlight1");
             }
             console.log(current_foci)
 
@@ -366,7 +439,7 @@ function handle_foci_done(evt){
     console.log("FOCI DONE!")
     var foci_of_attention = [];
     for(ele of current_foci){
-        ele.classList.remove("CTAT--AL_highlight");
+        ele.classList.remove("CTAT--AL_highlight1");
         foci_of_attention.push(ele.id);
     }
     // console.log(foci_of_attention)
@@ -456,6 +529,11 @@ function send_feedback(reward){
     send_training_data(data);
 }
 
+function ignoreKeys(key,value){
+    if(key=='matches') return undefined;
+    else return value;
+}
+
 function send_training_data(sai_data) {
 
     // console.log("SAI: ", sai_data)
@@ -465,7 +543,7 @@ function send_training_data(sai_data) {
 	$.ajax({
         type: 'POST',
         url: AL_URL + '/train/' + agent_id + '/',
-        data: JSON.stringify(sai_data),
+        data: JSON.stringify(sai_data,ignoreKeys),
         contentType: "application/json; charset=utf-8",
 
         // async: true,
@@ -479,8 +557,8 @@ function send_training_data(sai_data) {
 
             console.log(resp)
             console.log()
-            let cont = JSON.parse(resp).map((value,index) => value['skill_info'])
-            setSkillWindowState({"Explanations": cont})
+            let cont = JSON.parse(resp)//.map((value,index) => value['skill_info'])
+            setSkillWindowState({"Explanations": cont},null, where_colors)
             // console.log("------resp--------");
             // console.log(resp);
 
@@ -650,9 +728,9 @@ function query_apprentice() {
                     
                 } else {
                     
-                    applicable_skills = resp['responses'].map(value=>value['skill_info'])
+                    applicable_skills = resp['responses']//.map(value=>value['skill_info'])
                     console.log(applicable_skills)
-                    setSkillWindowState({"Applicable Skills" : applicable_skills})
+                    setSkillWindowState({"Applicable Skills" : applicable_skills},propose_sai,where_colors)
 
                 	last_action = resp;
 
