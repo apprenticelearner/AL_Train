@@ -5,7 +5,8 @@
 		"output_dir":"out/myAgent1",
 		"args": {
 			"search_depth" : 2,
-			"when_learner": "decisiontree"
+			"when_learner": "decisiontree",
+			"planner" : "fo_planner"
 		},
 		"problem_set" : [
 			{"HTML": "model/HTML/MultiColumnArithmatic.html",

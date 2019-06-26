@@ -55,8 +55,8 @@ var request_history = [];
 
 var free_authoring = false;
 
-var start_state_elements =[];
-var start_state_history =[];
+var start_state_elements = [];
+var start_state_history = [];
 
 const where_colors = [ "darkorchid",  "#ff884d", "#2f85ee",   "#e44161","#feb201", "#52d0e0", "#2f85ee", "#562ac6", "#cc24cc"]
 
