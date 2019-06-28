@@ -10,8 +10,16 @@ import * as serviceWorker from './serviceWorker';
 
 // }
 
-function setSkillWindowState(skill_set,select_callback,where_colors){
-	ReactDOM.render(<SkillPanel skill_set={skill_set} select_callback={select_callback} where_colors={where_colors}/>, document.getElementById('skill_panel'));	
+function setSkillWindowState(skill_set, select_callback,
+							 correctness_callback, initial_select=null,
+							 where_colors=null){
+	ReactDOM.render(<SkillPanel skill_set={skill_set}
+								select_callback={select_callback}
+								correctness_callback={correctness_callback}
+								initial_select={initial_select}
+								where_colors={where_colors || undefined}
+								
+								/>, document.getElementById('skill_panel'));	
 }
 window.setSkillWindowState = setSkillWindowState
 
@@ -72,6 +80,7 @@ let test_skills = {"explanations": [
 
 
 			};
+// setSkillWindowState({"skills:": []});
 setSkillWindowState(test_skills);
 
 // }
