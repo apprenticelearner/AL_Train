@@ -67,11 +67,14 @@
         /*justify-self:  start;*/
         /*align-self:  ;*/
         /*padding: 60px,*/
-        justify-content: space-between;
+        justify-content: auto;
         
         align-content: center;
         
       }
+
+      
+
 
       
     </style>
@@ -99,20 +102,21 @@
       
 
           <div class="buttons">        
-            <div id="prompt_text" class="hidden">PROMPT! WHICH IS VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY VERY LONG</div>
-            <div class="position:relative">
-              <div style="text-align:center;position:relative;z-index: 1;">
+            <div id="prompt_text" class="prompt_text">
+            PROMPT!  PROMPT! PROMPT! PROMPT! PROMPT! PROMPT! PROMPT! PROMPT! </div>
+            <div style="margin-top:20px;display:flex;position:relative; width: 100%;pointer-events: none ">
+              <div style="left:50%; transform: translate(-50%, 0);position:absolute;z-index: 3; pointer-events: none;">
                 <button type="button" id="yes_button" class="hidden" > yes</button>
                 <button type="button" id="no_button" class="hidden" > no </button>
               </div>
-              <div style="text-align:center;position:relative;z-index: 2;">
-                <button type="button" id="foci_done_button" class="hidden" > done </button>
+              <div style="left:50%; transform: translate(-50%, 0);position:absolute;z-index: 2; pointer-events: none; ">
+                <button type="button" id="next_button" class="hidden" > next </button>
               </div>
-              <div style="text-align:center;position:relative;z-index: 3;">
+              <div style="left:50%; transform: translate(-50%, 0);position:absolute;z-index: 1; pointer-events: none;">
                 <button type="button" id="startstate_button" class="hidden" > Start State Done. </button>
               </div>
             </div>
-            <div style="text-align:center">
+            <div style="margin-top: auto;text-align:center">
               <button  type="button" id="nools_gen_button" class="hidden" > Generate Nools </button>
             </div>
           </div>

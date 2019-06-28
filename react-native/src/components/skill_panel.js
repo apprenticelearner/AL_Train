@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { TouchableHighlight,ScrollView,View, Text, Platform, StyleSheet,SectionList,AppRegistry } from "react-native";
+import { TouchableHighlight,ScrollView,View, Text, StyleSheet } from "react-native";
 import Panel from './panel.js'
 
 
@@ -18,7 +18,7 @@ function colorItems(text, items, colors){
         let splt = t.split(item)
         if(splt.length > 1){
          return cramBtw(splt,<Text style={
-            {"color":colors[i], 'text-shadow': '0 0 3px '+colors[i]}}>{item}</Text>);
+            {"color":colors[i],'textShadowRadius':3, 'textShadowColor': colors[i]}}>{item}</Text>);
          // return cramBtw(splt,<Text style={{"color":colorMap[item]}}>{item}</Text>);
         }
       }
@@ -42,11 +42,11 @@ const match_text_by_action = {
   UpdateTextField: function(match,colors) {
     let sel = match['mapping']['?sel']
     let args =  Object.entries(match['mapping']).reduce(
-      function (acc,kv) {if(kv[0] != "?sel") {acc.push(kv[1])}return acc;},[]);
+      function (acc,kv) {if(kv[0] !== "?sel") {acc.push(kv[1])}return acc;},[]);
     console.log(sel,args)
     sel = sel.replace("?ele-","")
     args = args.map(x => x.replace("?ele-",""))
-    let innerHTML = String.fromCharCode(8226) + "(" + args.join(", ") + "): " + sel + "->" + (match['inputs'] && match['inputs']['value']);
+    let innerHTML = /*String.fromCharCode(8226) +*/ "(" + args.join(", ") + "): " + sel + "->" + (match['inputs'] && match['inputs']['value']);
     innerHTML = colorItems(innerHTML,[sel].concat(args), colors); // innerHTML = cramBtw( innerHTML.split("A1"),<Text style={{"color":"red"}}>A1</Text>);
     return innerHTML;
   },
@@ -62,14 +62,24 @@ class SkillPanel extends Component{
 
 
         this.s_skill_set = this.structure_skills(props.skill_set)
-        let select = this.s_skill_set[Object.keys(this.s_skill_set)[0]][0]
+        
+        var select = this.starting_selection();
         // const selected_skill = 0;
         this.state = {
           selected_skill: select,
           selected_match: select,
-          colorMap:{},
+          correctness_map:{},
         };
       this.handleClickSkillItem = this.handleClickSkillItem.bind(this)
+      this.handleClickCorrectnessButton = this.handleClickCorrectnessButton.bind(this)
+  }
+
+  starting_selection(){
+    if(this.props.initial_select == "first"){
+      let first_key = Object.keys(this.s_skill_set)[0];
+      return first_key==null ? null : this.s_skill_set[first_key][0];
+    }
+
   }
 
   structure_skills(skill_set){
@@ -125,6 +135,27 @@ class SkillPanel extends Component{
     }
     
   }
+  handleClickCorrectnessButton(evt,rest){
+    const [skill,match,label] = rest;
+    // console.log(skill)
+    // console.log(match)
+    // console.log(label)
+    let match_id = match["_id"];
+    console.log(match["_id"])
+    console.log(this.state.correctness_map)
+    let new_label = (this.state.correctness_map[match_id]
+           && label === this.state.correctness_map[match_id]) ? null : label;
+    
+    let new_correctness_map = {...this.state.correctness_map};
+    new_correctness_map[match_id] = new_label
+    this.setState({correctness_map : new_correctness_map});
+
+    if(this.props.correctness_callback){
+      this.props.correctness_callback(match || skill,new_label)
+    }
+
+
+  }
   componentWillReceiveProps(nextProps){
     this.s_skill_set = this.structure_skills(nextProps.skill_set)
     if(!this.state.selected_skill){
@@ -132,6 +163,7 @@ class SkillPanel extends Component{
       this.setState({
           selected_skill: select,
           selected_match: select,
+          match_correctness: {},
       })
     }
   }
@@ -184,19 +216,52 @@ class SkillPanel extends Component{
                           // innerHTML = colorItems(innerHTML,{"B1":'red',"A1":'green'}); // innerHTML = cramBtw( innerHTML.split("A1"),<Text style={{"color":"red"}}>A1</Text>);
                           // console.log(match_text_by_action,match.action)
                           let innerHTML = (match_text_by_action[match.action] || match_text_by_action["UpdateTextField"])(match,this.props.where_colors)
-                          let match_elem = <TouchableHighlight underlayColor="#919191"
+                          let correct = this.state.correctness_map[match["_id"]] === "correct";
+                          let incorrect = this.state.correctness_map[match["_id"]] === "incorrect";
+                          console.log(this.state.correctness_map)
+                          let match_view = <View style={liststyles.match_container}> 
 
-                               onPress={ this.daisyChain(this.handleClickSkillItem,[skill,match], 
-                                                         match['callback'])} >
-                              <Text style={[liststyles.match,skill_eq && match_eq && liststyles.selected_match]}>{
-                                innerHTML
-                                // String.fromCharCode(8226)+ " "+Object.values(match['mapping'] || {}).map(.join(", ")
-                              }</Text>
-                          </TouchableHighlight>
+                            <TouchableHighlight underlayColor="#919191"  
+                            onPress = {this.daisyChain(this.handleClickCorrectnessButton,[skill,match,"correct"])}
+
+                                 // onPress={ this.daisyChain(this.handleClickSkillItem,[skill,match], 
+                                                           // match['callback'])} >
+                                                           >
+                                <Text style={[liststyles.correctness_button, correct && liststyles.correct_selected]}>{
+                                  String.fromCharCode(10004)
+                                  // innerHTML
+                                  // String.fromCharCode(8226)+ " "+Object.values(match['mapping'] || {}).map(.join(", ")
+                                }</Text>
+                            </TouchableHighlight>
+                            <TouchableHighlight underlayColor="#919191"  
+                            onPress = {this.daisyChain(this.handleClickCorrectnessButton,[skill,match,"incorrect"])}
+                                 // onPress={ this.daisyChain(this.handleClickSkillItem,[skill,match], 
+                                                           // match['callback'])} >
+                                                           >
+                                <Text style={[liststyles.correctness_button, incorrect && liststyles.incorrect_selected]}>{
+                                  String.fromCharCode(10006)
+                                  // innerHTML
+                                  // String.fromCharCode(8226)+ " "+Object.values(match['mapping'] || {}).map(.join(", ")
+                                }</Text>
+                            </TouchableHighlight>
+
+                            
+                            <TouchableHighlight underlayColor="#919191"
+                                  style={{'flex': 1}}
+                                 onPress={ this.daisyChain(this.handleClickSkillItem,[skill,match], 
+                                                           match['callback'])} >
+                                <Text style={[liststyles.match,skill_eq && match_eq && liststyles.selected_match]}>{
+                                  innerHTML
+                                  // String.fromCharCode(8226)+ " "+Object.values(match['mapping'] || {}).map(.join(", ")
+                                }</Text>
+                            </TouchableHighlight>
+                          </View>
+
+                          // let match_view = <View> {match_elem} </View>
                           // console.log(typeof match_elem)
-                          return match_elem;
+                          return match_view;
                         }else{
-                          return;
+                          return null;
                         }
                       })
                   }
@@ -268,7 +333,7 @@ const skillbox_styles = StyleSheet.create({
 
 const liststyles = StyleSheet.create({
   skill_list: {
-   flexBasis : 200,
+   flexBasis : 250,
    paddingTop: 10,
   },
   skill_info: {
@@ -288,27 +353,51 @@ const liststyles = StyleSheet.create({
   selected_skill:{
     backgroundColor: "#93e4ec",
   },
-  selected_match:{
-    backgroundColor: "#b3e8ff",
-  },
+  
+
   item: {
     flexWrap: 'wrap',
     padding: 4,
     paddingLeft: 6,
-    fontSize: 14,
+    fontSize: 16,
     borderBottomWidth: 1,
     borderColor: 'gray',
     backgroundColor: "'rgba(247,0,0,0.0)'",
   },
-  match: {
-    flexWrap: 'wrap',
+  correctness_button:{
+    fontSize: 20,
+    width:27,
+    textAlign:"center",
+    borderWidth:.1,
+    borderColor: 'lightgray',
+
+  },
+  incorrect_selected:{
+    // underlayColor:"#00FF00",
+    backgroundColor: "red",
+  },
+  correct_selected:{
+    backgroundColor: "limegreen",
+  },
+  match_container:{
+    display: 'flex',
+    flexDirection: 'row',
     borderBottomWidth: 1,
     borderColor: 'gray',
+
+  },
+  match: {
+    flex: 1,
+    flexWrap: 'wrap',
+    justifySelf: 'stretch',
     padding: 3,
-    textIndent:10,
-    fontSize: 13,
+    textIndent:5,
+    fontSize: 15,
     backgroundColor: "'rgba(252,252,252,1.0)'",
 
+  },
+  selected_match:{
+    backgroundColor: "#b3e8ff",
   },
 })
 
@@ -328,7 +417,7 @@ SkillPanel.defaultProps = {
 					"which": 40,
 					},
    //"darkorchid", "#feb201",   "#ff884d", "#52d0e0", "#e44161",  "#2f85ee", "#562ac6", "#cc24cc"
-   where_colors: [  "darkorchid",  "#ff884d", "#2f85ee",   "#e44161","#feb201", "#52d0e0",  "#2f85ee", "#562ac6", "#cc24cc"],
+   where_colors: [  "darkorchid",  "#ff884d",  "#52d0e0", "#feb201",  "#e44161", "#ed3eea", "#2f85ee",  "#562ac6", "#cc24cc"],
    select_callback: () => {}
 }
 

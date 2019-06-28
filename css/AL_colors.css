@@ -3,7 +3,7 @@
 \*-------------------------------------------------------*/
 
 .CTAT--example { /* general example highlighting */
-	box-shadow: 0px 0px 15px 5px dodgerblue;
+	box-shadow: 0px 0px 15px 5px dodgerblue ;
 }
 textarea.CTAT--example,
 input.CTAT--example[type="text"] { /* font color change for text components */
@@ -84,12 +84,13 @@ $colors: darkorchid, #feb236, #d64161, #ff7b25, #a2b9bc, #b2ad7f, #878f99, #6b5b
 }
 
 label.CTAT--AL_highlight1 {
-  box-shadow: none;
+  box-shadow: 0px 0px 15px 5px darkorchid;
   text-shadow: 0px 0px 5px darkorchid;
 }
 
 textarea.CTAT--AL_highlight1,
 input.CTAT--AL_highlight1[type="text"] {
+  box-shadow: 0px 0px 15px 5px darkorchid;
   -webkit-appearance: none;
   -moz-appearance: none;
   color: darkorchid;
@@ -105,12 +106,13 @@ input.CTAT--AL_highlight1[type="radio"] {
 }
 
 label.CTAT--AL_highlight2 {
-  box-shadow: none;
+  box-shadow: 0px 0px 2px 2px #ff884d;
   text-shadow: 0px 0px 5px #ff884d;
 }
 
 textarea.CTAT--AL_highlight2,
 input.CTAT--AL_highlight2[type="text"] {
+  box-shadow: 0px 0px 2px 2px #ff884d;
   -webkit-appearance: none;
   -moz-appearance: none;
   color: #ff884d;
@@ -118,104 +120,109 @@ input.CTAT--AL_highlight2[type="text"] {
 
 input.CTAT--AL_highlight2[type="checkbox"],
 input.CTAT--AL_highlight2[type="radio"] {
-  box-shadow: 0px 0px 5px 0px #ff884d;
+  box-shadow: 0px 0px 2px 0px #ff884d;
 }
 
 .CTAT--AL_highlight3 {
-  box-shadow: 0px 0px 2px 2px #2f85ee;
+  box-shadow: 0px 0px 2px 2px #52d0e0;
 }
 
 label.CTAT--AL_highlight3 {
-  box-shadow: none;
-  text-shadow: 0px 0px 5px #2f85ee;
+  box-shadow: 0px 0px 2px 2px #52d0e0;
+  text-shadow: 0px 0px 5px #52d0e0;
 }
 
 textarea.CTAT--AL_highlight3,
 input.CTAT--AL_highlight3[type="text"] {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  color: #2f85ee;
-}
-
-input.CTAT--AL_highlight3[type="checkbox"],
-input.CTAT--AL_highlight3[type="radio"] {
-  box-shadow: 0px 0px 5px 0px #2f85ee;
-}
-
-.CTAT--AL_highlight4 {
-  box-shadow: 0px 0px 15px 5px #e44161;
-}
-
-label.CTAT--AL_highlight4 {
-  box-shadow: none;
-  text-shadow: 0px 0px 5px #e44161;
-}
-
-textarea.CTAT--AL_highlight4,
-input.CTAT--AL_highlight4[type="text"] {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  color: #e44161;
-}
-
-input.CTAT--AL_highlight4[type="checkbox"],
-input.CTAT--AL_highlight4[type="radio"] {
-  box-shadow: 0px 0px 5px 0px #e44161;
-}
-
-.CTAT--AL_highlight5 {
-  box-shadow: 0px 0px 15px 5px #feb201;
-}
-
-label.CTAT--AL_highlight5 {
-  box-shadow: none;
-  text-shadow: 0px 0px 5px #feb201;
-}
-
-textarea.CTAT--AL_highlight5,
-input.CTAT--AL_highlight5[type="text"] {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  color: #feb201;
-}
-
-input.CTAT--AL_highlight5[type="checkbox"],
-input.CTAT--AL_highlight5[type="radio"] {
-  box-shadow: 0px 0px 5px 0px #feb201;
-}
-
-.CTAT--AL_highlight6 {
-  box-shadow: 0px 0px 15px 5px #52d0e0;
-}
-
-label.CTAT--AL_highlight6 {
-  box-shadow: none;
-  text-shadow: 0px 0px 5px #52d0e0;
-}
-
-textarea.CTAT--AL_highlight6,
-input.CTAT--AL_highlight6[type="text"] {
+  box-shadow: 0px 0px 2px 2px #52d0e0;
   -webkit-appearance: none;
   -moz-appearance: none;
   color: #52d0e0;
 }
 
+input.CTAT--AL_highlight3[type="checkbox"],
+input.CTAT--AL_highlight3[type="radio"] {
+  box-shadow: 0px 0px 2px 0px #52d0e0;
+}
+
+.CTAT--AL_highlight4 {
+  box-shadow: 0px 0px 2px 2px #feb201;
+}
+
+label.CTAT--AL_highlight4 {
+  box-shadow: 0px 0px 2px 2px #feb201;
+  text-shadow: 0px 0px 5px #feb201;
+}
+
+textarea.CTAT--AL_highlight4,
+input.CTAT--AL_highlight4[type="text"] {
+  box-shadow: 0px 0px 2px 2px #feb201;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  color: #feb201;
+}
+
+input.CTAT--AL_highlight4[type="checkbox"],
+input.CTAT--AL_highlight4[type="radio"] {
+  box-shadow: 0px 0px 2px 0px #feb201;
+}
+
+.CTAT--AL_highlight5 {
+  box-shadow: 0px 0px 2px 2px #e44161;
+}
+
+label.CTAT--AL_highlight5 {
+  box-shadow: 0px 0px 2px 2px #e44161;
+  text-shadow: 0px 0px 5px #e44161;
+}
+
+textarea.CTAT--AL_highlight5,
+input.CTAT--AL_highlight5[type="text"] {
+  box-shadow: 0px 0px 2px 2px #e44161;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  color: #e44161;
+}
+
+input.CTAT--AL_highlight5[type="checkbox"],
+input.CTAT--AL_highlight5[type="radio"] {
+  box-shadow: 0px 0px 2px 0px #e44161;
+}
+
+.CTAT--AL_highlight6 {
+  box-shadow: 0px 0px 2px 2px #ed3eea;
+}
+
+label.CTAT--AL_highlight6 {
+  box-shadow: 0px 0px 2px 2px #ed3eea;
+  text-shadow: 0px 0px 5px #ed3eea;
+}
+
+textarea.CTAT--AL_highlight6,
+input.CTAT--AL_highlight6[type="text"] {
+  box-shadow: 0px 0px 2px 2px #ed3eea;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  color: #ed3eea;
+}
+
 input.CTAT--AL_highlight6[type="checkbox"],
 input.CTAT--AL_highlight6[type="radio"] {
-  box-shadow: 0px 0px 5px 0px #52d0e0;
+  box-shadow: 0px 0px 2px 0px #ed3eea;
 }
 
 .CTAT--AL_highlight7 {
-  box-shadow: 0px 0px 15px 5px #2f85ee;
+  box-shadow: 0px 0px 2px 2px #2f85ee;
 }
 
 label.CTAT--AL_highlight7 {
-  box-shadow: none;
+  box-shadow: 0px 0px 2px 2px #2f85ee;
   text-shadow: 0px 0px 5px #2f85ee;
 }
 
 textarea.CTAT--AL_highlight7,
 input.CTAT--AL_highlight7[type="text"] {
+  box-shadow: 0px 0px 2px 2px #2f85ee;
   -webkit-appearance: none;
   -moz-appearance: none;
   color: #2f85ee;
@@ -223,20 +230,21 @@ input.CTAT--AL_highlight7[type="text"] {
 
 input.CTAT--AL_highlight7[type="checkbox"],
 input.CTAT--AL_highlight7[type="radio"] {
-  box-shadow: 0px 0px 5px 0px #2f85ee;
+  box-shadow: 0px 0px 2px 0px #2f85ee;
 }
 
 .CTAT--AL_highlight8 {
-  box-shadow: 0px 0px 15px 5px #562ac6;
+  box-shadow: 0px 0px 2px 2px #562ac6;
 }
 
 label.CTAT--AL_highlight8 {
-  box-shadow: none;
+  box-shadow: 0px 0px 2px 2px #562ac6;
   text-shadow: 0px 0px 5px #562ac6;
 }
 
 textarea.CTAT--AL_highlight8,
 input.CTAT--AL_highlight8[type="text"] {
+  box-shadow: 0px 0px 2px 2px #562ac6;
   -webkit-appearance: none;
   -moz-appearance: none;
   color: #562ac6;
@@ -244,20 +252,21 @@ input.CTAT--AL_highlight8[type="text"] {
 
 input.CTAT--AL_highlight8[type="checkbox"],
 input.CTAT--AL_highlight8[type="radio"] {
-  box-shadow: 0px 0px 5px 0px #562ac6;
+  box-shadow: 0px 0px 2px 0px #562ac6;
 }
 
 .CTAT--AL_highlight9 {
-  box-shadow: 0px 0px 15px 5px #cc24cc;
+  box-shadow: 0px 0px 2px 2px #cc24cc;
 }
 
 label.CTAT--AL_highlight9 {
-  box-shadow: none;
+  box-shadow: 0px 0px 2px 2px #cc24cc;
   text-shadow: 0px 0px 5px #cc24cc;
 }
 
 textarea.CTAT--AL_highlight9,
 input.CTAT--AL_highlight9[type="text"] {
+  box-shadow: 0px 0px 2px 2px #cc24cc;
   -webkit-appearance: none;
   -moz-appearance: none;
   color: #cc24cc;
@@ -265,12 +274,14 @@ input.CTAT--AL_highlight9[type="text"] {
 
 input.CTAT--AL_highlight9[type="checkbox"],
 input.CTAT--AL_highlight9[type="radio"] {
-  box-shadow: 0px 0px 5px 0px #cc24cc;
+  box-shadow: 0px 0px 2px 0px #cc24cc;
 }
+
 
 
 .hidden {
 	visibility: hidden;
+	pointer-events: none;
 }
 
 .nools_button{
@@ -279,6 +290,7 @@ input.CTAT--AL_highlight9[type="radio"] {
 	width:200px;
 	font-size:20px;
 	background-color: #999999;
+	pointer-events: auto;
 }
 
 .startstate_button{
@@ -286,28 +298,32 @@ input.CTAT--AL_highlight9[type="radio"] {
 	width:200px;
 	font-size:20px;
 	background-color: #4CAF50;
+	pointer-events: auto;
 }
 
 .yes_button{
-	width:100px;
-	font-size:40px;
+	width:80px;
+	font-size:35px;
 	background-color: #4CAF50;
+	pointer-events: auto;
 }
 
 .no_button{
-	width:100px;
-	font-size:40px;
+	width:80px;
+	font-size:35px;
 	background-color: #f44336;
+	pointer-events: auto;
 }
 
-.foci_done_button{
+.next_button{
 	width:100px;
 	font-size:40px;
 	background-color: #4CAFFF;
+	pointer-events: auto;
 }
 
 .prompt_text{
+	/*display:flex;*/
 	text-align:center;
-	height:40px;
 	font-size:25px;
 }

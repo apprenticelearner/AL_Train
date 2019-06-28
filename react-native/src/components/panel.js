@@ -74,7 +74,7 @@ class Panel extends Component{
                 <TouchableHighlight 
                     underlayColor="#f1f1f1"
                     onLayout={this._setMinHeight.bind(this)}
-                    onPress={this.state.expandable && this.toggle.bind(this)}> 
+                    onPress={this.state.expandable ? this.toggle.bind(this):null}> 
                     <View style={styles.titleContainer}>
                         
                         <Text style={styles.title}> {this.props.title} </Text> 

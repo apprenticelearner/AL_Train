@@ -58,7 +58,11 @@ var free_authoring = false;
 var start_state_elements = [];
 var start_state_history = [];
 
-const where_colors = [ "darkorchid",  "#ff884d", "#2f85ee",   "#e44161","#feb201", "#52d0e0", "#2f85ee", "#562ac6", "#cc24cc"]
+var last_highlights = null;
+
+const where_colors = [  "darkorchid",  "#ff884d",  "#52d0e0", "#feb201",  "#e44161", "#ed3eea", "#2f85ee",  "#562ac6", "#cc24cc"]
+
+var feedback_queue = null;
 
 //copies a 
 function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
@@ -198,19 +202,46 @@ function post_next_example(){
 	
 }
 
+function submit_feedback_queue(){
+    Object.entries(feedback_queue).forEach(function(kv,index) {
+        const [_id,[skill,label]] = kv
+
+    })    
+}
+
+function feedback_queue_change(skill,label){
+    var wasempty = Object.keys(feedback_queue).length == 0
+
+    if(label){
+        feedback_queue[skill["_id"]] = (skill,label)
+    }else{
+        delete feedback_queue[skill["_id"]]
+    }
+
+    if(Object.keys(feedback_queue).length == 0){
+        if(!wasempty){
+            console.log("BACK TO EMPTY")    
+        }
+    }else{
+        if(wasempty){
+            console.log("Now Non-EMPTY")
+        }
+    }
+}
+
 function clear_highlights(){
-    if(last_action){
-        if(last_action.mapping){
-            Object.entries(last_action.mapping).forEach(function(v,index){
-                const [var_str, elem_str] = v;
+    if(last_highlights){
+        // if(last_action.mapping){
+            last_highlights.forEach(function(elem_str,index){
+                // const [var_str, elem_str] = v;
                 // console.log(var_str, elem_str);
                 
                 var elm = iframe_content.document.getElementById(elem_str.replace('?ele-',""));
                 // console.log(elem_str.replace('?ele-',""))
                 // console.log(elm.firstElementChild.classList);
-                if(var_str == "?sel"){
-                    elm.firstElementChild.value = "";
-                }
+                // if(var_str == "?sel"){
+                //     elm.firstElementChild.value = "";
+                // }
                 // elm.firstElementChild.className = "";
                 // elm.firstElementChild.classList.remove("CTAT--AL_highlight"+1);
                 // elm.firstElementChild.classList.remove("CTAT--AL_highlight"+2);
@@ -224,24 +255,21 @@ function clear_highlights(){
                 }
                 // console.log(elm.firstElementChild.classList);
             });
-        }else{
-            var elm = iframe_content.document.getElementById(last_action.selection.replace('?ele-',""));    
-            elm.firstElementChild.value = "";
-            elm.firstElementChild.classList.remove("CTAT--AL_highlight1");
-        }
-        var comp = iframe_content.CTATShellTools.findComponent(last_action.selection)[0];
-        comp.setEnabled(true);
+        // }else{
+        //     var elm = iframe_content.document.getElementById(last_action.selection.replace('?ele-',""));    
+        //     elm.firstElementChild.value = "";
+        //     elm.firstElementChild.classList.remove("CTAT--AL_highlight1");
+        // }
+        
     }
+    last_highlights = null;
     
 }
 
 function make_highlights(sai){
-    var comp = iframe_content.CTATShellTools.findComponent(sai.selection)[0];
-    var elm = iframe_content.document.getElementById(sai.selection.replace('?ele-',""));
-    // console.log(comp);
-    var sai_obj =  new iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
-    comp.executeSAI(sai_obj);
-    comp.setEnabled(false);
+    clear_highlights();
+    
+    last_highlights = []
     if(sai.mapping){
         Object.entries(sai.mapping).forEach(function(v,index){
             const [var_str, elem_str] = v
@@ -252,8 +280,10 @@ function make_highlights(sai){
             }
             elm = iframe_content.document.getElementById(elem_str.replace('?ele-',""));
             elm.firstElementChild.classList.add("CTAT--AL_highlight"+colorIndex)
+            last_highlights.push(elem_str)
         });
     }else{
+        last_highlights.push(elm.firstElementChild.id)
         elm.firstElementChild.classList.add("CTAT--AL_highlight1")
     }
 }
@@ -262,8 +292,21 @@ function make_highlights(sai){
 function propose_sai(sai){
     console.log("LAST!!!!",last_action);
     console.log("PROPOSE!!!!",sai);
-    clear_highlights();
+    var elm, comp
+    if(last_action){
+        elm = iframe_content.document.getElementById(last_action.selection.replace('?ele-',""));    
+        elm.firstElementChild.value = "";
+        comp = iframe_content.CTATShellTools.findComponent(last_action.selection)[0];
+        comp.setEnabled(true);
+    }
     make_highlights(sai);
+
+    comp = iframe_content.CTATShellTools.findComponent(sai.selection)[0];
+    elm = iframe_content.document.getElementById(sai.selection.replace('?ele-',""));
+    // console.log(comp);
+    var sai_obj =  new iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
+    comp.executeSAI(sai_obj);
+    comp.setEnabled(false);
     // if(last_action){
     //     //CLEAR
     //     var elm = iframe_content.document.getElementById(last_action.selection)    
@@ -436,6 +479,7 @@ function handle_foci_select(evt){
 }
 
 function handle_foci_done(evt){
+    clear_highlights();
     console.log("FOCI DONE!")
     var foci_of_attention = [];
     for(ele of current_foci){
@@ -447,12 +491,15 @@ function handle_foci_done(evt){
     current_foci = []
     iframe_content.document.removeEventListener("click", handle_foci_select)
 
+    document.getElementById("prompt_text").innerHTML = "Apprentice Learner thinking..."
+    document.getElementById("next_button").setAttribute("class", "hidden");
     send_training_data(current_sai_data);    
     current_sai_data = null;
 
 }
 
 function handle_user_feedback_correct(evt){
+    clear_highlights();
     console.log("%cCORRECT:" + last_action.selection + " -> " + last_action.inputs.value, "color: #009922; background: #DDDDDD;");
     term_print('\x1b[0;30;42m' + "CORRECT:" + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
     document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
@@ -468,6 +515,7 @@ function handle_user_feedback_correct(evt){
 }
 
 function handle_user_feedback_incorrect(evt){
+    clear_highlights();
     console.log("%cINCORRECT: " + last_action.selection + " -> " + last_action.inputs.value, "color: #bb2222; background: #DDDDDD;");
     term_print('\x1b[0;30;41m' + "INCORRECT: " + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
     document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
@@ -558,7 +606,9 @@ function send_training_data(sai_data) {
             console.log(resp)
             console.log()
             let cont = JSON.parse(resp)//.map((value,index) => value['skill_info'])
-            setSkillWindowState({"Explanations": cont},null, where_colors)
+            // make_highlights(cont[0]);
+            setSkillWindowState({"Explanations": cont},make_highlights,feedback_queue_change)
+            feedback_queue = {}
             // console.log("------resp--------");
             // console.log(resp);
 
@@ -573,7 +623,7 @@ function send_training_data(sai_data) {
 }
 
 function _hide_all(except=[]){
-    l = ["yes_button","no_button","foci_done_button","startstate_button"]
+    l = ["yes_button","no_button","next_button","startstate_button"]
     for (x in l){
         if(!except.includes(x)){
             console.log(l[x])
@@ -594,10 +644,26 @@ function query_user_startstate(){
     // iframe_content.document.addEventListener('input', handle_user_clear_state);  
 }
 
+function query_user_submit_queue(){
+    document.getElementById("prompt_text").innerHTML = "Is the <span style='color: #9932CC; text-shadow: 0px 0px 5px #9932CC;'>highlighted</span> input correct for the next step?"
+    _hide_all(except=["next_button"]);
+
+    document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
+    document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
+
+    document.getElementById("next_button").setAttribute("class", "next_button");
+    document.getElementById("next_button").addEventListener("click", null);
+    // document.getElementById("no_button").addEventListener("click", handle_user_feedback_incorrect);
+}
+
 
 function query_user_feedback(){
-    document.getElementById("prompt_text").innerHTML = "Is the <span style='color: #9932CC'>highlighted</span> input correct for the next step?"
+
+    document.getElementById("prompt_text").innerHTML = "Is the <span style='color: #9932CC; text-shadow: 0px 0px 5px #9932CC;'>highlighted</span> input correct for the next step?"
     _hide_all(except=["yes_button","no_button"]);
+
+    document.getElementById("next_button").removeEventListener("click", null);
+
     document.getElementById("yes_button").setAttribute("class", "yes_button");
     document.getElementById("no_button").setAttribute("class", "no_button");
     document.getElementById("yes_button").addEventListener("click", handle_user_feedback_correct);
@@ -610,6 +676,7 @@ function _done_clicked(evt){
 }
 
 function query_user_example(){
+    clear_highlights();
     document.getElementById("prompt_text").innerHTML = "Demonstrate the next step."
     _hide_all();
     
@@ -625,14 +692,15 @@ function query_user_example(){
 }
 
 function query_user_foci(){
+    clear_highlights();
     document.getElementById("prompt_text").innerHTML = "Select any interface elements that were used to compute this result."
     document.getElementById("yes_button").setAttribute("class", "hidden");
     document.getElementById("no_button").setAttribute("class", "hidden");
-    document.getElementById("foci_done_button").setAttribute("class", "foci_done_button");
+    document.getElementById("next_button").setAttribute("class", "next_button");
 
     //Add other handler for interface
     iframe_content.document.addEventListener("click", handle_foci_select)
-    document.getElementById("foci_done_button").addEventListener("click", handle_foci_done);
+    document.getElementById("next_button").addEventListener("click", handle_foci_done);
 
 }
 
@@ -730,7 +798,8 @@ function query_apprentice() {
                     
                     applicable_skills = resp['responses']//.map(value=>value['skill_info'])
                     console.log(applicable_skills)
-                    setSkillWindowState({"Applicable Skills" : applicable_skills},propose_sai,where_colors)
+                    setSkillWindowState({"Applicable Skills" : applicable_skills},propose_sai,feedback_queue_change,null,initial_select='first')
+                    feedback_queue = {}
 
                 	last_action = resp;
 
