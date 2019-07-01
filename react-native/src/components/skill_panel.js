@@ -292,7 +292,7 @@ class SkillPanel extends Component{
 		        </Panel>
 		        <Panel title="Where"
 		        	   collapsedHeight={this.props.collapsedHeight.where}>
-		          <Text>{this.state.selected_skill && this.state.selected_skill.where}</Text>
+		          <Text>{this.state.selected_skill && JSON.stringify(this.state.selected_skill.where, null, 2)}</Text>
 		        </Panel>
 		        <Panel title="When"
 		        	   collapsedHeight={this.props.collapsedHeight.when}>
