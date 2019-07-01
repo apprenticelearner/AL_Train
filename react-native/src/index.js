@@ -35,7 +35,7 @@ let test_skills = {"explanations": [
 				
 				{"name" : "E0 + E1",
 				 "how": "E0 + E1",
-				 "where": "WHERE PART",
+				 "where": {"A":{"B":1}},
 				 "when": "WHEN PART",
 				 "which": 7.0,
 				 'mapping': {"?sel": 'A1', "?arg0": 'B1',"?arg1": 'C1'}
