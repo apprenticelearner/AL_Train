@@ -43,7 +43,7 @@ const match_text_by_action = {
     let sel = match['mapping']['?sel']
     let args =  Object.entries(match['mapping']).reduce(
       function (acc,kv) {if(kv[0] !== "?sel") {acc.push(kv[1])}return acc;},[]);
-    console.log(sel,args)
+    // console.log(sel,args)
     sel = sel.replace("?ele-","")
     args = args.map(x => x.replace("?ele-",""))
     let innerHTML = /*String.fromCharCode(8226) +*/ "(" + args.join(", ") + "): " + sel + "->" + (match['inputs'] && match['inputs']['value']);
@@ -100,7 +100,7 @@ class SkillPanel extends Component{
         skill['_id'] = id_count++;
         skills[skill['how']]['matches'].push(skill);
 
-      console.log(skills)
+      // console.log(skills)
       s_skill_set[title] = Object.keys(skills).map((key,index)=>skills[key]);
       }
 
@@ -141,14 +141,31 @@ class SkillPanel extends Component{
     // console.log(match)
     // console.log(label)
     let match_id = match["_id"];
-    console.log(match["_id"])
-    console.log(this.state.correctness_map)
+    // console.log(match["_id"])
+    // console.log(this.state.correctness_map)
     let new_label = (this.state.correctness_map[match_id]
            && label === this.state.correctness_map[match_id]) ? null : label;
     
     let new_correctness_map = {...this.state.correctness_map};
-    new_correctness_map[match_id] = new_label
+    if(new_label === null){
+      delete new_correctness_map[match_id];
+    }else{
+      new_correctness_map[match_id] = new_label;
+    }
+    
+    let was_empty = Object.keys(this.state.correctness_map).length === 0
+    let now_empty = Object.keys(new_correctness_map).length === 0
+    if(!was_empty && now_empty){
+      console.log("EMPTY")
+      this.props.service.send("SKILL_PANEL_FEEDBACK_EMPTY")
+    }else if(was_empty && !now_empty){
+      console.log("NOT EMPTY")
+      this.props.service.send("SKILL_PANEL_FEEDBACK_NONEMPTY")
+    }
+
     this.setState({correctness_map : new_correctness_map});
+
+    console.log(new_correctness_map)
 
     if(this.props.correctness_callback){
       this.props.correctness_callback(match || skill,new_label)
@@ -158,8 +175,9 @@ class SkillPanel extends Component{
   }
   componentWillReceiveProps(nextProps){
     this.s_skill_set = this.structure_skills(nextProps.skill_set)
-    if(!this.state.selected_skill){
-      let select = this.s_skill_set[Object.keys(this.s_skill_set)[0]][0]
+    let s_keys = Object.keys(this.s_skill_set)
+    if(!this.state.selected_skill && s_keys.length > 0){
+      let select = this.s_skill_set[s_keys[0]][0]
       this.setState({
           selected_skill: select,
           selected_match: select,
@@ -188,7 +206,7 @@ class SkillPanel extends Component{
               // let itemStyle = liststyles.item;
               let rest = this.s_skill_set[title].map((skill, index) => {
                   const skill_eq = this.state.selected_skill && this.state.selected_skill['_id']===skill['_id'];
-                  console.log(skill_eq)
+                  // console.log(skill_eq)
                   // console.log("IS",itemStyle)
                   // console.log("EQ",eq, index, (eq ? itemStyle.selectColor : itemStyle.backgroundColor))
                   let innerHTML = (skill_text_by_action[skill.action] || skill_text_by_action["UpdateTextField"])(skill,this.props.where_colors)
@@ -201,7 +219,7 @@ class SkillPanel extends Component{
                         </TouchableHighlight>
                   let matches = [];
                   if("matches" in skill){
-                      console.log(skill["matches"])
+                      // console.log(skill["matches"])
                       matches = skill["matches"].map((match,mIndex) => {
                         if('mapping' in match){
                           const match_eq = this.state.selected_match && this.state.selected_match['_id']===match['_id'];
@@ -218,7 +236,7 @@ class SkillPanel extends Component{
                           let innerHTML = (match_text_by_action[match.action] || match_text_by_action["UpdateTextField"])(match,this.props.where_colors)
                           let correct = this.state.correctness_map[match["_id"]] === "correct";
                           let incorrect = this.state.correctness_map[match["_id"]] === "incorrect";
-                          console.log(this.state.correctness_map)
+                          // console.log(this.state.correctness_map)
                           let match_view = <View style={liststyles.match_container}> 
 
                             <TouchableHighlight underlayColor="#919191"  

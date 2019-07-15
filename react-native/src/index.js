@@ -2,13 +2,42 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import SkillPanel from './components/skill_panel';
+import Buttons from './components/buttons';
 import * as serviceWorker from './serviceWorker';
+import ButtonsMachine from './state_machine.js'
+import { interpret } from 'xstate';
 
 
 
 // function setSkillWindowState(evt){
 
 // }
+window.state_machine = ButtonsMachine.initialState
+window.state_machine_service = interpret(ButtonsMachine)
+window.state_machine_service.start()
+
+
+// const state = {
+//   current: 
+// };
+window.state_machine_service.onTransition(current => {
+	console.log(current.value)
+	setButtonsState(current,window.debugmode)
+  
+  // this.setState({ current : current })
+  }
+);
+
+// function setButtonCallbacks(callbacks){
+// window.button_callbacks = callbacks
+// }
+// window.setButtonCallbacks = setButtonCallbacks
+
+// function setNoolsCallback(callback){
+// 	window.nools_callback = callback
+// }
+// window.setNoolsCallback = setNoolsCallback
+
 
 function setSkillWindowState(skill_set, select_callback,
 							 correctness_callback, initial_select=null,
@@ -18,10 +47,26 @@ function setSkillWindowState(skill_set, select_callback,
 								correctness_callback={correctness_callback}
 								initial_select={initial_select}
 								where_colors={where_colors || undefined}
+								current = {window.state_machine}
+								service = {window.state_machine_service}
 								
 								/>, document.getElementById('skill_panel'));	
 }
+
+
+function setButtonsState(current,debugmode=false){
+	window.state_machine = current;
+	ReactDOM.render(<Buttons current={current}
+					 service={window.state_machine_service}
+					 debugmode={debugmode}
+					 callbacks={window.button_callbacks}
+					 nools_callback={window.nools_callback}/>,
+	 document.getElementById('buttons'));	
+}
+
 window.setSkillWindowState = setSkillWindowState
+window.setButtonCallbacks = setSkillWindowState
+window.setButtonsState = setButtonsState
 
 // function render(){
 // let sections = [
@@ -81,7 +126,16 @@ let test_skills = {"explanations": [
 
 			};
 // setSkillWindowState({"skills:": []});
-setSkillWindowState(test_skills);
+
+if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+	window.debugmode = true;
+	window.query_apprentice = () => {};
+	setButtonsState(window.state_machine,true)
+	setSkillWindowState(test_skills);
+}else{
+	window.debugmode = false
+}
+// setButtonsState("press_next",true,true);
 
 // }
 // document.getElementById('render_button').addEventListener("click",render)
