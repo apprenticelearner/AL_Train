@@ -4,6 +4,7 @@ var agent_id = null;
 var state = null;
 var current_task = null;
 var last_action = null;
+var last_proposal = null;
 var last_correct = true;
 var lastButtonList = null;
 var AL_URL = null;//'http://localhost:8000';
@@ -202,12 +203,7 @@ function post_next_example(){
 	
 }
 
-function submit_feedback_queue(){
-    Object.entries(feedback_queue).forEach(function(kv,index) {
-        const [_id,[skill,label]] = kv
 
-    })    
-}
 
 function feedback_queue_change(skill,label){
     var wasempty = Object.keys(feedback_queue).length == 0
@@ -289,16 +285,22 @@ function make_highlights(sai){
 }
 
 
-function propose_sai(sai){
-    console.log("LAST!!!!",last_action);
-    console.log("PROPOSE!!!!",sai);
-    var elm, comp
-    if(last_action){
-        elm = iframe_content.document.getElementById(last_action.selection.replace('?ele-',""));    
+function clear_last_proposal(){
+    if(last_proposal){
+        elm = iframe_content.document.getElementById(last_proposal.selection.replace('?ele-',""));    
         elm.firstElementChild.value = "";
-        comp = iframe_content.CTATShellTools.findComponent(last_action.selection)[0];
+        comp = iframe_content.CTATShellTools.findComponent(last_proposal.selection)[0];
         comp.setEnabled(true);
     }
+}
+
+function propose_sai(sai){
+    console.log("LAST!!!!",last_proposal);
+    console.log("PROPOSE!!!!",sai);
+    var elm, comp
+    // elm = iframe_content.document.getElementById(last_proposal.selection.replace('?ele-',""));    
+    // comp = iframe_content.CTATShellTools.findComponent(last_proposal.selection)[0];
+    clear_last_proposal();
     make_highlights(sai);
 
     comp = iframe_content.CTATShellTools.findComponent(sai.selection)[0];
@@ -319,7 +321,7 @@ function propose_sai(sai){
     // elm.firstElementChild.setAttribute("class", "CTAT--AL_highlight1");
     // elm.firstElementChild.classList.add("CTAT--AL_highlight1")
 
-    last_action = sai
+    last_action = last_proposal = sai
 }
 
 function apply_sai(sai){
@@ -337,7 +339,7 @@ function apply_sai(sai){
 
     sai_obj = new iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
     iframe_content.CTATCommShell.commShell.processComponentAction(sai_obj,true)
-	
+	last_action = sai
 }
 
 function apply_hint(){
@@ -354,8 +356,16 @@ function apply_hint(){
 
 // Cr1Str1.addEventListener(CTAT.Component.Base.Tutorable.EventType.action, function(){ alert("Hello World!");});
 
+function submit_feedback_queue(){
+    Object.entries(feedback_queue).forEach(function(kv,index) {
+        const [_id,[skill,label]] = kv
+
+    })    
+}
+
 function handle_startstate_done(evt){
-    document.getElementById("startstate_button").removeEventListener("click", handle_startstate_done);
+
+    // document.getElementById("startstate_button").removeEventListener("click", handle_startstate_done);
     iframe_content.document.removeEventListener(CTAT_ACTION, handle_user_set_state); 
     // iframe_content.document.removeEventListener('input', handle_user_clear_state); 
     console.log("START DONE")
@@ -373,7 +383,8 @@ function handle_startstate_done(evt){
     // document.activeElement.blur();
     console.log("STAT",get_state())
     start_state_history.push(get_state());
-    query_apprentice();
+    last_action = last_proposal = null;
+    // query_apprentice();
 }
 
 // function handle_user_clear_state(evt){
@@ -417,6 +428,7 @@ function handle_user_example(evt){
         console.log("BAIL")
         return
     }
+    
 
     console.log("%cUSER_EXAMPLE: " + sai.getSelection() + " -> " + sai.getInput(), 'color: #2222bb; background: #DDDDDD;');
     term_print('\x1b[0;33;44m' + "USER_EXAMPLE:" + sai.getSelection() + " -> " + sai.getInput() + '\x1b[0m')
@@ -431,6 +443,7 @@ function handle_user_example(evt){
         reward: 1
     };
 
+    
     // apply_sai(sai_data);
     
     var comp = iframe_content.CTATShellTools.findComponent(sai.getSelection())[0];
@@ -442,8 +455,10 @@ function handle_user_example(evt){
 
     last_correct = true;
 
-    if(use_foci && sai_data.selection != 'done'){
+    clear_last_proposal();
 
+    if(use_foci && sai_data.selection != 'done'){
+        window.state_machine_service.send("DEMONSTRATE");
         current_sai_data = sai_data;
         // console.log("current_sai_data",current_sai_data)
         query_user_foci();
@@ -491,23 +506,26 @@ function handle_foci_done(evt){
     current_foci = []
     iframe_content.document.removeEventListener("click", handle_foci_select)
 
-    document.getElementById("prompt_text").innerHTML = "Apprentice Learner thinking..."
-    document.getElementById("next_button").setAttribute("class", "hidden");
+    // document.getElementById("prompt_text").innerHTML = "Apprentice Learner thinking..."
+    // document.getElementById("next_button").setAttribute("class", "hidden");
     send_training_data(current_sai_data);    
     current_sai_data = null;
+
+    iframe_content.document.addEventListener(CTAT_ACTION, handle_user_example); 
+    iframe_content.document.getElementById("done").addEventListener("click", _done_clicked); 
 
 }
 
 function handle_user_feedback_correct(evt){
     clear_highlights();
-    console.log("%cCORRECT:" + last_action.selection + " -> " + last_action.inputs.value, "color: #009922; background: #DDDDDD;");
-    term_print('\x1b[0;30;42m' + "CORRECT:" + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
-    document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
-    document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
+    console.log("%cCORRECT:" + last_proposal.selection + " -> " + last_proposal.inputs.value, "color: #009922; background: #DDDDDD;");
+    term_print('\x1b[0;30;42m' + "CORRECT:" + last_proposal.selection + " -> " + last_proposal.inputs.value + '\x1b[0m')
+    // document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
+    // document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
 
-    var elm = iframe_content.document.getElementById(last_action.selection)
+    var elm = iframe_content.document.getElementById(last_proposal.selection)
     elm.firstElementChild.setAttribute("class", "CTAT--correct");
-    var comp = iframe_content.CTATShellTools.findComponent(last_action.selection)[0];
+    var comp = iframe_content.CTATShellTools.findComponent(last_proposal.selection)[0];
     comp.setEnabled(false);
 
     last_correct = true;
@@ -516,12 +534,12 @@ function handle_user_feedback_correct(evt){
 
 function handle_user_feedback_incorrect(evt){
     clear_highlights();
-    console.log("%cINCORRECT: " + last_action.selection + " -> " + last_action.inputs.value, "color: #bb2222; background: #DDDDDD;");
-    term_print('\x1b[0;30;41m' + "INCORRECT: " + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
-    document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
-    document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
+    console.log("%cINCORRECT: " + last_proposal.selection + " -> " + last_proposal.inputs.value, "color: #bb2222; background: #DDDDDD;");
+    term_print('\x1b[0;30;41m' + "INCORRECT: " + last_proposal.selection + " -> " + last_proposal.inputs.value + '\x1b[0m')
+    // document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
+    // document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
 
-    var elm = iframe_content.document.getElementById(last_action.selection)
+    var elm = iframe_content.document.getElementById(last_proposal.selection)
     
     if(interactive){
         elm.firstElementChild.value = ""
@@ -530,7 +548,7 @@ function handle_user_feedback_incorrect(evt){
         elm.firstElementChild.setAttribute("class", "CTAT--incorrect");    
     }
     
-    var comp = iframe_content.CTATShellTools.findComponent(last_action.selection)[0];
+    var comp = iframe_content.CTATShellTools.findComponent(last_proposal.selection)[0];
     comp.setEnabled(true);
 
     last_correct = false;
@@ -558,7 +576,10 @@ function handle_incorrect(evt){
 	send_feedback(-1);
 }
 
-function singal_done(){
+function signal_done(){
+    iframe_content.document.removeEventListener("click", handle_foci_select)
+    clear_highlights();
+    window.state_machine_service.send("DONE")
 	console.log("DONE!");
 	term_print('\x1b[0;30;47m' + "PROBLEM DONE!" + '\x1b[0m');
     serve_next_problem();
@@ -566,20 +587,69 @@ function singal_done(){
 
 
 
-function send_feedback(reward){
-	if (last_action === null) {
-        console.log('error. cannot give feedback on no action.');
-    }
-    var data = last_action;
-    data.state = state;
-    data.reward = reward;
 
-    send_training_data(data);
-}
 
 function ignoreKeys(key,value){
     if(key=='matches') return undefined;
     else return value;
+}
+
+
+function on_train_success(sai_data,resp){
+    last_proposal = null;
+    if(verbosity > 0) console.log('training received.');
+    console.log('training received.');
+
+    console.log(resp)
+    // console.log()
+    try{
+        let cont = JSON.parse(resp)//.map((value,index) => value['skill_info'])
+        setSkillWindowState({"Explanations": cont},make_highlights,feedback_queue_change)
+        feedback_queue = {}    
+    }catch{
+        ;
+    }
+    
+    // console.log("------resp--------");
+    // console.log(resp);
+    if(last_correct){
+        state = get_state()
+    }
+
+    //If correctly pushed done then problem finished otherwise query again.
+    if(sai_data.selection === "done" && (sai_data.reward || 1) > 0){
+        signal_done();
+    }else if(!interactive){
+        query_apprentice(); 
+    }
+}
+
+function send_feedback(reward){
+    if (last_action === null) {
+        console.log('error. cannot give feedback on no action.');
+    }
+    last_action.reward = reward
+    var data = {state: state,
+                explanations: [{
+                    "rhs_id" : last_action["rhs_id"],
+                    "mapping" : last_action["mapping"]
+                }],
+                rewards:[reward],
+                selection : last_action.selection,
+                reward : reward,
+                };
+
+    $.ajax({
+        type: 'POST',
+        url: AL_URL + '/train/' + agent_id + '/',
+        data: JSON.stringify(data),
+        contentType: "application/json; charset=utf-8",
+        retryLimit : AL_RETRY_LIMIT,
+        tryCount : 0,
+        error: ajax_retry_on_error,
+
+        success: (resp) => {on_train_success(data,resp)}
+    });
 }
 
 function send_training_data(sai_data) {
@@ -600,74 +670,67 @@ function send_training_data(sai_data) {
         tryCount : 0,
         error: ajax_retry_on_error,
 
-        success: function(resp) {
-            if(verbosity > 0) console.log('training received.');
-
-            console.log(resp)
-            console.log()
-            let cont = JSON.parse(resp)//.map((value,index) => value['skill_info'])
-            // make_highlights(cont[0]);
-            setSkillWindowState({"Explanations": cont},make_highlights,feedback_queue_change)
-            feedback_queue = {}
-            // console.log("------resp--------");
-            // console.log(resp);
-
-            //If correctly pushed done then problem finished otherwise query again.
-            if(sai_data.selection === "done" && sai_data.reward > 0){
-            	singal_done();
-            }else{
-            	query_apprentice();	
-            }
-        }
+        success: (resp) => {on_train_success(sai_data,resp)}
     });
 }
 
-function _hide_all(except=[]){
-    l = ["yes_button","no_button","next_button","startstate_button"]
-    for (x in l){
-        if(!except.includes(x)){
-            console.log(l[x])
-            document.getElementById(l[x]).setAttribute("class", "hidden");        
-        }
-    }
-}
+// function _hide_all(except=[]){
+//     l = ["yes_button","no_button","next_button","startstate_button"]
+//     for (x in l){
+//         if(!except.includes(x)){
+//             console.log(l[x])
+//             document.getElementById(l[x]).setAttribute("class", "hidden");        
+//         }
+//     }
+// }
+
 
 function query_user_startstate(){
 
-    document.getElementById("prompt_text").innerHTML = "Set the start state."
-    _hide_all(except=["startstate_done_button"]);
-    document.getElementById("startstate_button").setAttribute("class", "startstate_button");
+    // document.getElementById("prompt_text").innerHTML = "Set the start state."
+    // _hide_all(except=["startstate_done_button"]);
+    // document.getElementById("startstate_button").setAttribute("class", "startstate_button");
 
     start_state_elements = [];
-    document.getElementById("startstate_button").addEventListener("click", handle_startstate_done);
+    // document.getElementById("startstate_button").addEventListener("click", handle_startstate_done);
     iframe_content.document.addEventListener(CTAT_ACTION, handle_user_set_state); 
-    // iframe_content.document.addEventListener('input', handle_user_clear_state);  
 }
 
 function query_user_submit_queue(){
-    document.getElementById("prompt_text").innerHTML = "Is the <span style='color: #9932CC; text-shadow: 0px 0px 5px #9932CC;'>highlighted</span> input correct for the next step?"
-    _hide_all(except=["next_button"]);
+    // document.getElementById("prompt_text").innerHTML = "Is the <span style='color: #9932CC; text-shadow: 0px 0px 5px #9932CC;'>highlighted</span> input correct for the next step?"
+    // _hide_all(except=["next_button"]);
 
-    document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
-    document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
+    // document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
+    // document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
 
-    document.getElementById("next_button").setAttribute("class", "next_button");
-    document.getElementById("next_button").addEventListener("click", null);
-    // document.getElementById("no_button").addEventListener("click", handle_user_feedback_incorrect);
+    // document.getElementById("next_button").setAttribute("class", "next_button");
+    // document.getElementById("next_button").addEventListener("click", null);
 }
 
 
-function query_user_feedback(){
+function query_user_demonstrate(skills_applicable=false){
+    // console.log("QUERY_USER_DEMONSTRATE")
+    if(skills_applicable){
+        window.state_machine_service.send("APPLICABLE_SKILLS_RECIEVED")    
+    }else{
+        window.state_machine_service.send("NO_SKILLS_RECIEVED")    
+    }
+    
+    clear_highlights();
+    // document.getElementById("prompt_text").innerHTML = "Demonstrate the next step."
+    // _hide_all();
+    
+    iframe_content.document.addEventListener(CTAT_ACTION, handle_user_example); 
+    iframe_content.document.getElementById("done").addEventListener("click", _done_clicked); 
+    // document.getElementById("prompt_text").innerHTML = "Is the <span style='color: #9932CC; text-shadow: 0px 0px 5px #9932CC;'>highlighted</span> input correct for the next step?"
+    // _hide_all(except=["yes_button","no_button"]);
 
-    document.getElementById("prompt_text").innerHTML = "Is the <span style='color: #9932CC; text-shadow: 0px 0px 5px #9932CC;'>highlighted</span> input correct for the next step?"
-    _hide_all(except=["yes_button","no_button"]);
+    // document.getElementById("next_button").removeEventListener("click", null);
 
-    document.getElementById("next_button").removeEventListener("click", null);
-
-    document.getElementById("yes_button").setAttribute("class", "yes_button");
-    document.getElementById("no_button").setAttribute("class", "no_button");
-    document.getElementById("yes_button").addEventListener("click", handle_user_feedback_correct);
-    document.getElementById("no_button").addEventListener("click", handle_user_feedback_incorrect);
+    // document.getElementById("yes_button").setAttribute("class", "yes_button");
+    // document.getElementById("no_button").setAttribute("class", "no_button");
+    // document.getElementById("yes_button").addEventListener("click", handle_user_feedback_correct);
+    // document.getElementById("no_button").addEventListener("click", handle_user_feedback_incorrect);
 }
 
 //I REALLY SHOULD"T NEED THIS BECAUSE DONE SHOULD BE PROPAGATED W/ CTAT_ACTION
@@ -676,12 +739,7 @@ function _done_clicked(evt){
 }
 
 function query_user_example(){
-    clear_highlights();
-    document.getElementById("prompt_text").innerHTML = "Demonstrate the next step."
-    _hide_all();
     
-    iframe_content.document.addEventListener(CTAT_ACTION, handle_user_example); 
-    iframe_content.document.getElementById("done").addEventListener("click", _done_clicked); 
        
 //     iframe_content.CTATCommShell.commShell.addGlobalEventListener({processDone: function (anEvent, aMessage) { if (anEvent=="DonePressed"){}
 //     {
@@ -693,14 +751,14 @@ function query_user_example(){
 
 function query_user_foci(){
     clear_highlights();
-    document.getElementById("prompt_text").innerHTML = "Select any interface elements that were used to compute this result."
-    document.getElementById("yes_button").setAttribute("class", "hidden");
-    document.getElementById("no_button").setAttribute("class", "hidden");
-    document.getElementById("next_button").setAttribute("class", "next_button");
+    // document.getElementById("prompt_text").innerHTML = "Select any interface elements that were used to compute this result."
+    // document.getElementById("yes_button").setAttribute("class", "hidden");
+    // document.getElementById("no_button").setAttribute("class", "hidden");
+    // document.getElementById("next_button").setAttribute("class", "next_button");
 
     //Add other handler for interface
     iframe_content.document.addEventListener("click", handle_foci_select)
-    document.getElementById("next_button").addEventListener("click", handle_foci_done);
+    // document.getElementById("next_button").addEventListener("click", handle_foci_done);
 
 }
 
@@ -734,6 +792,9 @@ function query_user_foci(){
 
 
 function query_apprentice() {
+    if(last_action && last_action.selection == "done" && (last_action.reward || 1) > 0){
+        return
+    }
     if (agent_id == null) {
         return;
     }
@@ -760,7 +821,7 @@ function query_apprentice() {
 
     if(EXAMPLES_ONLY){
         if(interactive){
-            query_user_example();
+            query_user_demonstrate(false);
         }else{
             post_next_example();    
         }
@@ -785,11 +846,11 @@ function query_apprentice() {
 
 
             success: function(resp) {
-                console.log("RESP")
-                console.log(resp)
+                // console.log("RESP")
+                // console.log(resp)
                 if (jQuery.isEmptyObject(resp)) {
                     if(interactive){
-                        query_user_example();
+                        query_user_demonstrate(false);
                     }else{
                         post_next_example();    
                     }
@@ -797,14 +858,14 @@ function query_apprentice() {
                 } else {
                     
                     applicable_skills = resp['responses']//.map(value=>value['skill_info'])
-                    console.log(applicable_skills)
+                    // console.log(applicable_skills)
                     setSkillWindowState({"Applicable Skills" : applicable_skills},propose_sai,feedback_queue_change,null,initial_select='first')
                     feedback_queue = {}
 
-                	last_action = resp;
+                	// last_action = resp;
 
                     if(verbosity > 0) console.log('action to take!');
-                    // console.log("RESPONSE: ", resp);
+                    console.log("RESPONSE: ", resp);
                     currentElement = iframe_content.document.getElementById(resp.selection);
                     // console.log(resp)
                     if(!currentElement){
@@ -815,7 +876,7 @@ function query_apprentice() {
                         // console.log("STATE",state)
 
                         if(interactive){
-                            query_user_feedback()
+                            query_user_demonstrate(true)
                             propose_sai(resp) 
                         }else{
                             currentElement.addEventListener(CTAT_CORRECT, handle_correct);
@@ -835,6 +896,7 @@ function query_apprentice() {
         });
     }
 }
+window.query_apprentice = query_apprentice
 
 function checkTypes(element, types){
 	var ok = false;
@@ -893,7 +955,7 @@ function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, u
     			
     		}
             name = (append_ele ? "?ele-":"") + element.id
-            console.log(name,append_ele)
+            // console.log(name,append_ele)
     		state_json[name] = obj;
 	        count++;
     	}
@@ -1262,7 +1324,10 @@ function serve_next_problem(){
 	            }
 	        }
 
-	        document.getElementById("prompt_text").innerHTML = agent_description + "question_file:" + prob_obj["question_file"]; 
+            if(!interactive){
+                document.getElementById("prompt_text").innerHTML = agent_description + "question_file:" + prob_obj["question_file"];     
+            }
+	        
 
 	        // console.log(prob_obj)
 
@@ -1326,7 +1391,9 @@ function serve_next_problem(){
 	        
 	        iframe.onload = runWhenReady;
 	        iframe.src = HTML_PATH + "?" + jQuery.param( params );
-
+            
+            clear_highlights()
+            window.setSkillWindowState({});
 
 	    }else{
 	    	serve_next_agent();	
@@ -1400,6 +1467,10 @@ function generate_nools(evt) {
 }
 
 function main() {
+    
+
+
+
     iframe = document.getElementById("tutor_iframe")
     iframe_content = iframe.contentWindow
 
@@ -1423,14 +1494,31 @@ function main() {
         working_dir =  !!match ? match[1] : ''; //The directory of the training.json
     }
 
-    if(nools_dir){
-        document.getElementById("nools_gen_button").addEventListener('click',generate_nools);
-        document.getElementById("nools_gen_button").setAttribute("class","nools_button");
-    }
-
-    // if(interactive){
-    document.getElementById("prompt_text").setAttribute("class", "prompt_text");
+    // if(nools_dir){
+    //     document.getElementById("nools_gen_button").addEventListener('click',generate_nools);
+    //     document.getElementById("nools_gen_button").setAttribute("class","nools_button");
     // }
+
+    if(interactive){
+        window.nools_callback = generate_nools
+
+        window.button_callbacks = {
+            "START_STATE_SET" : handle_startstate_done,
+            "FOCI_DONE" : handle_foci_done,
+            "NEXT_PRESSED" : query_apprentice,
+            "YES_PRESSED" : handle_user_feedback_correct,
+            "NO_PRESSED" : handle_user_feedback_incorrect,
+            "SUBMIT_SKILL_FEEDBACK" : () => {},
+        };
+        console.log(window.button_callbacks)
+        // alert("BOOP")
+
+        window.setButtonsState(window.state_machine)
+        window.setSkillWindowState({});
+    }else{
+        document.getElementById("prompt_text").setAttribute("class", "prompt_text");
+    
+    }
 
     console.log("INTERACTIVE:",interactive)
 

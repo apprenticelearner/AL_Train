@@ -3,6 +3,8 @@
 		"agent_name":"myAgent1",
 		"agent_type":"ModularAgent",
 		"output_dir":"out/myAgent1",
+		"stay_active": true,
+      	"dont_save": true,
 		"args": {
 			"search_depth" : 2,
 			"when_learner": "decisiontree"
