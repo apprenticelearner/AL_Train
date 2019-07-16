@@ -67,12 +67,16 @@ def gen_training(transactions,
     control = [{'agent_name': 'Control_' + agent,
                 'agent_type': agent_type,
 
-                "stay_active": True, 
-                "dont_save": True, 
-                "args" : {
-                    "when_learner": "trestle",
-                    "where_learner": "MostSpecific" 
+                "stay_active": True,
+                "dont_save": True,
+                "no_ops_parse" : True,
+                "args": {
+                  "when_learner": "trestle",
+                  "where_learner": "MostSpecific",
+                  "planner" : "fo_planner"
                 },
+                "feature_set" : ["equals"],
+                "function_set" : ["add", "subtract", "multiply", "divide"],
 
                 # 'output_dir': join_path(output_root, 'control', agent),
                 'problem_set':
