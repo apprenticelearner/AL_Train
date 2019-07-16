@@ -3,9 +3,19 @@
 		"agent_name":"myAgent1",
 		"agent_type":"ModularAgent",
 		"output_dir":"out/myAgent1",
+
+		"stay_active": true,
+		"dont_save": true,
+		"no_ops_parse" : true,
+		
+		"feature_set" : [],
+		"function_set" : ["add","add3","mod10","div10"],
+
 		"args": {
 			"search_depth" : 2,
-			"when_learner": "decisiontree"
+			"where_learner": "MostSpecific",
+			"when_learner": "decisiontree",
+			"planner" : "vectorized"
 		},
 		"problem_set" : [
 			{"set_params" : 
