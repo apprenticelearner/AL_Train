@@ -8,7 +8,7 @@ var last_correct = true;
 var lastButtonList = null;
 var AL_URL = null;//'http://localhost:8000';
 var OUTER_LOOP_URL = null;//'http://localhost:8000';
-var use_outer_loop_agent = false;
+var use_outer_loop_controller = false;
 var graph = null;
 var commLibrary = null;
 var currentElement = null;
@@ -179,6 +179,7 @@ function post_next_example(){
 		selection: sai.getSelection(),
 		action: sai.getAction(),
 		inputs: {value: sai.getInput()},
+        feedback_type : "example",
         state: state, //get_state(),
 		reward: 1
 	};
@@ -325,6 +326,7 @@ function handle_user_example(evt){
         action: sai.getAction(),
         inputs: {value: sai.getInput()},
         state: state,
+        feedback_type: "example",
         reward: 1
     };
 
@@ -447,7 +449,7 @@ function handle_incorrect(evt){
 function singal_done(){
 	console.log("DONE!");
 	term_print('\x1b[0;30;47m' + "PROBLEM DONE!" + '\x1b[0m');
-    if(use_outer_loop_agent){
+    if(use_outer_loop_controller){
         request_next_problem();
     }else{
         serve_next_problem();
@@ -462,20 +464,20 @@ function send_feedback(reward){
     }
     var data = last_action;
     data.reward = reward;
+    data.feedback_type = "correctness"
 
-    if(use_outer_loop_agent){
-        outer_loop_update(data);
-    }
 
     data.state = state;
     send_training_data(data);
 }
 
 function outer_loop_update(sai_data){
+    data = {...sai_data}
+    data.problem_name = BRD_name
     $.ajax({
         type: 'POST',
         url: OUTER_LOOP_URL,
-        data: JSON.stringify(sai_data),
+        data: JSON.stringify(data),
         contentType: "application/json; charset=utf-8",
         retryLimit : AL_RETRY_LIMIT,
         tryCount : 0,
@@ -485,6 +487,11 @@ function outer_loop_update(sai_data){
 
 function send_training_data(sai_data) {
 
+    if(use_outer_loop_controller){
+        data_copy = {...sai_data}
+        delete data_copy['state']
+        outer_loop_update(data_copy);
+    }
     // console.log("SAI: ", sai_data)
 
     // loggingLibrary.logResponse (transactionID,"textinput1","UpdateTextField","Hello World","RESULT","CORRECT","You got it!");
@@ -1044,6 +1051,7 @@ function declare_new_student(agent_id,outer_loop_type,problem_set){
         error: ajax_retry_on_error,
 
         success: function(resp) {
+            problem_iterator = []
             request_next_problem();            
         },
     });
@@ -1117,7 +1125,7 @@ function serve_next_agent(){
         problem_iterator = [...agent_obj["problem_set"]];
 
         var callback;
-        if("outer_loop_agent" in agent_obj){
+        if("outer_loop_controller" in agent_obj){
             if(OUTER_LOOP_URL === null){ 
                 term_print('\x1b[1;40;31m' + "ERROR: An agent was configured with an outer loop agent. Please use --outer-loop flag in train.py" + '\x1b[0m');
                 setTimeout(() => {kill_this("Terminating..."), 200}) 
@@ -1126,15 +1134,15 @@ function serve_next_agent(){
 
                 throw "use --outer-loop flag in train.py"
             }
-            use_outer_loop_agent = true;
+            use_outer_loop_controller = true;
             callback = function(resp){
                 agent_id = resp["agent_id"];
                 request_history = [];
 
-                declare_new_student(agent_id, agent_obj["outer_loop_agent"], agent_obj["problem_set"])
+                declare_new_student(agent_id, agent_obj["outer_loop_controller"], agent_obj["problem_set"])
             }
         }else{
-            use_outer_loop_agent = false
+            use_outer_loop_controller = false
             callback = function(resp){
                 agent_id = resp["agent_id"];
                 request_history = [];
@@ -1146,6 +1154,7 @@ function serve_next_agent(){
         delete other_data["problem_set"];
         delete other_data["agent_name"];
         delete other_data["agent_type"];
+        delete other_data["repetitions"];
 
         // console.log("OTHERDATA: ", other_data)
 
