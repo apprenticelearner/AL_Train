@@ -14,7 +14,7 @@
             "examples_only": false
         },
       "repetitions" : 5,
-      "outer_loop_agent" : "Random",
+      "outer_loop_controller" : "Random",
       "problem_set": [
         { "question_file" : "../mass_production/mass_production_brds/AD 1_6_plus_4_7.brd"},
         { "question_file" : "../mass_production/mass_production_brds/M 2_7_time_1_6.brd"},
