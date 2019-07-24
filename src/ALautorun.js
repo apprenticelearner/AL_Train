@@ -47,6 +47,7 @@ var BRD_name = null
 var interactive = null;
 
 var EXAMPLES_ONLY = false;
+var TEST_MODE = false;
 
 var file_params = {};
 var training_set_params = {};
@@ -431,8 +432,19 @@ function handle_correct(evt){
 	currentElement.removeEventListener(CTAT_CORRECT, handle_correct);
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
-    last_correct = true;
-	send_feedback(1);
+
+	if(TEST_MODE){
+		last_correct = true;
+		if(last_action.selection === "done"){
+        	singal_done();
+        }else{
+        	query_apprentice();	
+        }
+	}else{
+		last_correct = true;
+		send_feedback(1);	
+	}
+    
 }
 
 function handle_incorrect(evt){
@@ -442,8 +454,20 @@ function handle_incorrect(evt){
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
 
-    last_correct = false;
-	send_feedback(-1);
+	if(TEST_MODE){
+		var elm = iframe_content.document.getElementById(last_action.selection)
+		elm.firstElementChild.contentEditable = false
+		last_correct = true;
+		if(last_action.selection === "done"){
+        	singal_done();
+        }else{
+        	query_apprentice();	
+        }
+	}else{
+		last_correct = false;
+		send_feedback(-1);
+	}
+    
 }
 
 function singal_done(){
@@ -484,6 +508,7 @@ function outer_loop_update(sai_data){
         error: ajax_retry_on_error,
     })
 }
+
 
 function send_training_data(sai_data) {
 
@@ -948,7 +973,14 @@ function runWhenReady(){
     
 
 	if(graph && commLibrary && hasConfig){
-		term_print('\x1b[0;30;47m' + "OK" +  '\x1b[0m');
+		if(EXAMPLES_ONLY){
+			term_print('\x1b[0;30;47m' + "EXAMPLES_ONLY" +  '\x1b[0m');	
+		}else if(TEST_MODE){
+			term_print('\x1b[0;30;47m' + "TEST_MODE" +  '\x1b[0m');	
+		}else{
+			term_print('\x1b[0;30;47m' + "OK" +  '\x1b[0m');	
+		}
+		
 
         // if(interactive){
         //     graph.hideAllFeedback();
@@ -1227,6 +1259,7 @@ function serve_next_problem(){
 	        HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
 
 	        EXAMPLES_ONLY = prob_obj["examples_only"] || false;
+	        TEST_MODE = prob_obj["test_mode"] || false;
 
 	        domain_name = prob_obj["domain_name"] || HTML_name;
 	        
