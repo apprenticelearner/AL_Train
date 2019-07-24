@@ -206,7 +206,16 @@ function post_next_example(){
 
 
 	// console.log(sai_data);
-	send_training_data(sai_data);
+	if(TEST_MODE){
+		if(sai_data.selection === "done"){
+        	singal_done();
+        }else{
+        	query_apprentice();	
+        }
+	}else{
+		send_training_data(sai_data);	
+	}
+	
 	
 }
 
