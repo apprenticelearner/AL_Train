@@ -34,6 +34,7 @@ LOG_HEADERS = {"user_guid"              :"Anon Student Id",
                "tutor_resp_type"        :"Tutor Response Type",
                "level"                  :"Level (Domain)",
                "problem_name"           :"Problem Name",
+               "problem_context"        :"Problem Context",
                "step_id"                :"Step Name",
                "selection"              :"Selection",
                "action"                 :"Action",
@@ -80,6 +81,7 @@ def _fill_from_elm(log_dict, elm):
 
         problem = next(elm.iter("problem"))
         log_dict[LOG_HEADERS["problem_name"]] = next(problem.iter("name")).text 
+        log_dict[LOG_HEADERS["problem_context"]] = next(problem.iter("context")).text 
 
     elif(elm.tag in LOG_HEADERS):
         log_dict[LOG_HEADERS[elm.tag]] = elm.text
@@ -156,7 +158,7 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
             if(x.tag == "log_action"):
                 payload = ElementTree.fromstring(unquote(x.text))
 
-                # print(minidom.parseString(ElementTree.tostring(payload, encoding='utf8', method='xml')).toprettyxml())
+                print(minidom.parseString(ElementTree.tostring(payload, encoding='utf8', method='xml')).toprettyxml())
 
                 for msg in payload.iter("context_message"):
                     # print("Message Type: ", "context_message")
