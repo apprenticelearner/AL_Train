@@ -1303,6 +1303,15 @@ function serve_next_problem(){
             if(!interactive && qf["question_file"].includes(".nools")){
                 kill_this('\x1b[0;30;47m' +'Question file cannot be nools in non-interactive mode. Use example tracing.\x1b[0m')
             }
+
+            if(EXAMPLES_ONLY){
+				problem_context = "examples_only"
+			}else if(TEST_MODE){
+				problem_context = "test_mode"
+			}else{
+				problem_context = "instant_feedback"
+			}
+
 	        logging_params = {
 	            "problem_name": BRD_name,
 	            "dataset_level_name1" : domain_name,
@@ -1311,7 +1320,9 @@ function serve_next_problem(){
 	            "Logging" : "ClientToLogServer",
 	            "log_service_url" : window.location.origin,
 	            "user_guid" : agent_id,
-	            "session_id" : session_id
+	            "session_id" : session_id,
+	            "problem_context" : problem_context,
+	            // "test_mode" : TEST_MODE,
 	        };
 	        params = Object.assign({},qf,logging_params) //Merge dictionaries
 	        
