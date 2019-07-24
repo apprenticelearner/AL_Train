@@ -337,9 +337,10 @@ function apply_sai(sai){
         sai.inputs = {"value" : -1}
     }
 
+    last_action = sai
     sai_obj = new iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
     iframe_content.CTATCommShell.commShell.processComponentAction(sai_obj,true)
-	last_action = sai
+	
 }
 
 function apply_hint(){
@@ -458,7 +459,7 @@ function handle_user_example(evt){
     clear_last_proposal();
 
     if(use_foci && sai_data.selection != 'done'){
-        window.state_machine_service.send("DEMONSTRATE");
+        if(interactive){window.state_machine_service.send("DEMONSTRATE");}
         current_sai_data = sai_data;
         // console.log("current_sai_data",current_sai_data)
         query_user_foci();
@@ -562,7 +563,7 @@ function handle_correct(evt){
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
     last_correct = true;
-	send_feedback(1);
+	send_feedback(1,false);
 }
 
 function handle_incorrect(evt){
@@ -573,13 +574,15 @@ function handle_incorrect(evt){
 	currentElement = null;
 
     last_correct = false;
-	send_feedback(-1);
+	send_feedback(-1,false);
 }
 
 function signal_done(){
     iframe_content.document.removeEventListener("click", handle_foci_select)
-    clear_highlights();
-    window.state_machine_service.send("DONE")
+    if(interactive){
+        clear_highlights();
+        window.state_machine_service.send("DONE")
+    }
 	console.log("DONE!");
 	term_print('\x1b[0;30;47m' + "PROBLEM DONE!" + '\x1b[0m');
     serve_next_problem();
@@ -602,12 +605,14 @@ function on_train_success(sai_data,resp){
 
     console.log(resp)
     // console.log()
-    try{
-        let cont = JSON.parse(resp)//.map((value,index) => value['skill_info'])
-        setSkillWindowState({"Explanations": cont},make_highlights,feedback_queue_change)
-        feedback_queue = {}    
-    }catch{
-        ;
+    if(interactive){
+        try{
+            let cont = JSON.parse(resp)//.map((value,index) => value['skill_info'])
+            setSkillWindowState({"Explanations": cont},make_highlights,feedback_queue_change)
+            feedback_queue = {}    
+        }catch{
+            ;
+        }
     }
     
     // console.log("------resp--------");
@@ -624,11 +629,18 @@ function on_train_success(sai_data,resp){
     }
 }
 
-function send_feedback(reward){
+function send_feedback(reward, explicit=true){
+
     if (last_action === null) {
         console.log('error. cannot give feedback on no action.');
     }
     last_action.reward = reward
+    if(!explicit){
+        last_action.state = state
+        send_training_data(last_action)   
+        return
+    }
+
     var data = {state: state,
                 explanations: [{
                     "rhs_id" : last_action["rhs_id"],
@@ -638,6 +650,9 @@ function send_feedback(reward){
                 selection : last_action.selection,
                 reward : reward,
                 };
+    if(interactive){
+        data['kwargs'] = {'add_skill_info':true}
+    }
 
     $.ajax({
         type: 'POST',
@@ -657,6 +672,9 @@ function send_training_data(sai_data) {
     // console.log("SAI: ", sai_data)
 
     // loggingLibrary.logResponse (transactionID,"textinput1","UpdateTextField","Hello World","RESULT","CORRECT","You got it!");
+    if(interactive){
+        sai_data['kwargs'] = {'add_skill_info':true}
+    }
     console.log(sai_data)
 	$.ajax({
         type: 'POST',
@@ -792,7 +810,7 @@ function query_user_foci(){
 
 
 function query_apprentice() {
-    if(last_action && last_action.selection == "done" && (last_action.reward || 1) > 0){
+    if(interactive && last_action && last_action.selection == "done" && (last_action.reward || 1) > 0){
         return
     }
     if (agent_id == null) {
@@ -859,8 +877,11 @@ function query_apprentice() {
                     
                     applicable_skills = resp['responses']//.map(value=>value['skill_info'])
                     // console.log(applicable_skills)
-                    setSkillWindowState({"Applicable Skills" : applicable_skills},propose_sai,feedback_queue_change,null,initial_select='first')
-                    feedback_queue = {}
+                    if(interactive){
+                        setSkillWindowState({"Applicable Skills" : applicable_skills},propose_sai,feedback_queue_change,null,initial_select='first')
+                        feedback_queue = {}    
+                    }
+                    
 
                 	// last_action = resp;
 
@@ -881,6 +902,7 @@ function query_apprentice() {
                         }else{
                             currentElement.addEventListener(CTAT_CORRECT, handle_correct);
                             currentElement.addEventListener(CTAT_INCORRECT, handle_incorrect);    
+                            console.log("REEEEZ",resp)
                             apply_sai(resp);    
                         }
                         
@@ -896,6 +918,7 @@ function query_apprentice() {
         });
     }
 }
+
 window.query_apprentice = query_apprentice
 
 function checkTypes(element, types){
@@ -1048,10 +1071,15 @@ function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, u
                 // rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st).join(' '); 
                 // rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st).join(' '); 
                 // rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st).join(' '); 
-                rel_obj["below"] = grabN(rel_obj["below"].sort(compare2nd).map(grab1st),2);
-                rel_obj["above"] = grabN(rel_obj["above"].sort(compare2nd).map(grab1st),2);
-                rel_obj["to_right"] = grabN(rel_obj["to_right"].sort(compare2nd).map(grab1st),2);
-                rel_obj["to_left"] = grabN(rel_obj["to_left"].sort(compare2nd).map(grab1st),2);
+                rel_obj["below"] = rel_obj["below"].sort(compare2nd).map(grab1st)[0];
+                rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st)[0];
+                rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st)[0];
+                rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st)[0];
+            
+                // rel_obj["below"] = grabN(rel_obj["below"].sort(compare2nd).map(grab1st),2);
+                // rel_obj["above"] = grabN(rel_obj["above"].sort(compare2nd).map(grab1st),2);
+                // rel_obj["to_right"] = grabN(rel_obj["to_right"].sort(compare2nd).map(grab1st),2);
+                // rel_obj["to_left"] = grabN(rel_obj["to_left"].sort(compare2nd).map(grab1st),2);
             }
             
             // console.log(rel_objs)
@@ -1136,7 +1164,7 @@ function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, u
 // }
 
 function runWhenReady(){
-    // console.log("DEEEE", CTAT);
+    console.log("runWhenReady");
     if(typeof iframe_content.CTAT == "undefined" || iframe_content.CTAT == null ||
      	typeof iframe_content.CTATCommShell == "undefined" || iframe_content.CTATCommShell == null || 
      	typeof iframe_content.CTATCommShell.commShell == "undefined" || iframe_content.CTATCommShell.commShell == null ||
@@ -1392,8 +1420,10 @@ function serve_next_problem(){
 	        iframe.onload = runWhenReady;
 	        iframe.src = HTML_PATH + "?" + jQuery.param( params );
             
-            clear_highlights()
-            window.setSkillWindowState({});
+            if(interactive){
+                clear_highlights()
+                window.setSkillWindowState({});
+            }
 
 	    }else{
 	    	serve_next_agent();	

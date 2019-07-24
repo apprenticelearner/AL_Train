@@ -7,7 +7,7 @@
       "dont_save": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "version_space"
+        "where_learner": "MostSpecific"
       },
       "problem_set": [
         {
