@@ -34,13 +34,13 @@ LOG_HEADERS = {"user_guid"              :"Anon Student Id",
                "tutor_resp_type"        :"Tutor Response Type",
                "level"                  :"Level (Domain)",
                "problem_name"           :"Problem Name",
-               "problem_context"        :"Problem Context",
                "step_id"                :"Step Name",
                "selection"              :"Selection",
                "action"                 :"Action",
                "input"                  :"Input",
                "tutor_advice"           :"Feedback Text",
                "action_evaluation"      :"Outcome",
+               "problem_context"        :"CF (Problem Context)",
                }
 
 session_default_dict =  {key: None for key in LOG_HEADERS.values()}
