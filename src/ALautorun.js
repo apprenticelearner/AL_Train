@@ -7,6 +7,8 @@ var last_action = null;
 var last_correct = true;
 var lastButtonList = null;
 var AL_URL = null;//'http://localhost:8000';
+var OUTER_LOOP_URL = null;//'http://localhost:8000';
+var use_outer_loop_controller = false;
 var graph = null;
 var commLibrary = null;
 var currentElement = null;
@@ -45,8 +47,10 @@ var BRD_name = null
 var interactive = null;
 
 var EXAMPLES_ONLY = false;
+var TEST_MODE = false;
 
 var file_params = {};
+var training_set_params = {};
 var agent_params = {};
 
 var agent_description = "";
@@ -97,7 +101,17 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
         // kill_this(null, error);    
     // }else{
     // if (textStatus == 'timeout') {
-        console.log("REQUEST " + this.url + "\n" +
+        var server_target = "unknown target"
+        switch (this.url){
+            case AL_URL:
+                server_target = "AL"
+                break;
+            case OUTER_LOOP_URL:
+                server_target = "OUTER LOOP"
+                break;
+        }
+
+        console.log(this.type + " " + this.url + "\n" +
                     "DATA:" + this.data + "\n" + 
                     "FAILED. Attempt: " 
                      + this.tryCount + "/" + this.retryLimit);
@@ -111,7 +125,7 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
             }, 1000);
             return;
         }
-        var error = "AL failed with code " + xhr.status +" (" + textStatus + ").";
+        var error = server_target + " failed with code " + xhr.status +" (" + textStatus + ").";
         console.error(error);
         term_print('\x1b[0;30;47m' + error + '\x1b[0m');
 
@@ -166,6 +180,7 @@ function post_next_example(){
 		selection: sai.getSelection(),
 		action: sai.getAction(),
 		inputs: {value: sai.getInput()},
+        feedback_type : "example",
         state: state, //get_state(),
 		reward: 1
 	};
@@ -191,7 +206,16 @@ function post_next_example(){
 
 
 	// console.log(sai_data);
-	send_training_data(sai_data);
+	if(TEST_MODE){
+		if(sai_data.selection === "done"){
+        	singal_done();
+        }else{
+        	query_apprentice();	
+        }
+	}else{
+		send_training_data(sai_data);	
+	}
+	
 	
 }
 
@@ -312,6 +336,7 @@ function handle_user_example(evt){
         action: sai.getAction(),
         inputs: {value: sai.getInput()},
         state: state,
+        feedback_type: "example",
         reward: 1
     };
 
@@ -412,11 +437,23 @@ function handle_user_feedback_incorrect(evt){
 function handle_correct(evt){
 	console.log("%cCORRECT:" + last_action.selection + " -> " + last_action.inputs.value, "color: #009922; background: #DDDDDD;");
     term_print('\x1b[0;30;42m' + "CORRECT:" + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
+
 	currentElement.removeEventListener(CTAT_CORRECT, handle_correct);
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
-    last_correct = true;
-	send_feedback(1);
+
+	if(TEST_MODE){
+		last_correct = true;
+		if(last_action.selection === "done"){
+        	singal_done();
+        }else{
+        	query_apprentice();	
+        }
+	}else{
+		last_correct = true;
+		send_feedback(1);	
+	}
+    
 }
 
 function handle_incorrect(evt){
@@ -426,14 +463,30 @@ function handle_incorrect(evt){
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
 
-    last_correct = false;
-	send_feedback(-1);
+	if(TEST_MODE){
+		var elm = iframe_content.document.getElementById(last_action.selection)
+		elm.firstElementChild.contentEditable = false
+		last_correct = true;
+		if(last_action.selection === "done"){
+        	singal_done();
+        }else{
+        	query_apprentice();	
+        }
+	}else{
+		last_correct = false;
+		send_feedback(-1);
+	}
+    
 }
 
 function singal_done(){
 	console.log("DONE!");
 	term_print('\x1b[0;30;47m' + "PROBLEM DONE!" + '\x1b[0m');
-    serve_next_problem();
+    if(use_outer_loop_controller){
+        request_next_problem();
+    }else{
+        serve_next_problem();
+    }
 }
 
 
@@ -443,14 +496,36 @@ function send_feedback(reward){
         console.log('error. cannot give feedback on no action.');
     }
     var data = last_action;
-    data.state = state;
     data.reward = reward;
+    data.feedback_type = "correctness"
 
+
+    data.state = state;
     send_training_data(data);
 }
 
+function outer_loop_update(sai_data){
+    data = {...sai_data}
+    data.problem_name = BRD_name
+    $.ajax({
+        type: 'POST',
+        url: OUTER_LOOP_URL,
+        data: JSON.stringify(data),
+        contentType: "application/json; charset=utf-8",
+        retryLimit : AL_RETRY_LIMIT,
+        tryCount : 0,
+        error: ajax_retry_on_error,
+    })
+}
+
+
 function send_training_data(sai_data) {
 
+    if(use_outer_loop_controller){
+        data_copy = {...sai_data}
+        delete data_copy['state']
+        outer_loop_update(data_copy);
+    }
     // console.log("SAI: ", sai_data)
 
     // loggingLibrary.logResponse (transactionID,"textinput1","UpdateTextField","Hello World","RESULT","CORRECT","You got it!");
@@ -907,7 +982,14 @@ function runWhenReady(){
     
 
 	if(graph && commLibrary && hasConfig){
-		term_print('\x1b[0;30;47m' + "OK" +  '\x1b[0m');
+		if(EXAMPLES_ONLY){
+			term_print('\x1b[0;30;47m' + "EXAMPLES_ONLY" +  '\x1b[0m');	
+		}else if(TEST_MODE){
+			term_print('\x1b[0;30;47m' + "TEST_MODE" +  '\x1b[0m');	
+		}else{
+			term_print('\x1b[0;30;47m' + "OK" +  '\x1b[0m');	
+		}
+		
 
         // if(interactive){
         //     graph.hideAllFeedback();
@@ -965,14 +1047,26 @@ function serve_next_training_set(){
         var out = training_iterator.shift();
         var name = out[0];
 
+
         while(name == "set_params"){
             file_params = {...file_params, ...out[1]} //join and prefer new one
             out = training_iterator.shift();
             name = out[0];
         }
 
+        var set_obj = out[1]
+
         console.log("START TRAINING SET: ", name);
-        agent_iterator = out[1];        
+        if(Array.isArray(set_obj)) {
+            training_set_params = {};
+            agent_iterator = set_obj;
+        }else{
+            training_set_params = set_obj["set_params"] || {}
+            agent_iterator = set_obj['agents'];
+        }
+
+
+        
         serve_next_agent();
     }else{
         console.log("ITS ALL DONE!");
@@ -981,6 +1075,53 @@ function serve_next_training_set(){
 
     }
 }
+
+function declare_new_student(agent_id,outer_loop_type,problem_set){
+    $.ajax({
+        type: 'NEW_STUDENT',
+        url: OUTER_LOOP_URL,
+        crossdomain : true,
+        data: JSON.stringify({"id": agent_id, "outer_loop_type": outer_loop_type, "problem_set":problem_set}),
+        // contentType: "application/json; charset=utf-8",
+        // dataType: 'json',
+        // "headers": {
+        //       "Access-Control-Allow-Origin":"*"
+        //   },
+
+
+        error: ajax_retry_on_error,
+
+        success: function(resp) {
+            problem_iterator = []
+            request_next_problem();            
+        },
+    });
+}
+
+function request_next_problem(resp){
+
+    $.ajax({
+        type: 'NEXT_PROBLEM',
+        url: OUTER_LOOP_URL,
+        crossdomain : true,
+        data: JSON.stringify({"id": agent_id}),
+        // contentType: "application/json; charset=utf-8",
+        // dataType: 'json',
+
+
+        error: ajax_retry_on_error,
+
+        success: function(resp) {
+            console.log("NEXT:",resp)
+            if(Object.entries(resp).length !== 0)
+                problem_iterator.unshift(resp)
+            serve_next_problem();
+        },
+    });
+    
+
+}
+var agent_repeat_count = null;
 
 function serve_next_agent(){
     console.log("AGENT ITERATOR", agent_iterator.length);
@@ -991,27 +1132,74 @@ function serve_next_agent(){
         start_state_history = [];
 
         var agent_obj = agent_iterator.shift();
+
+        
+
+        if("repetitions" in agent_obj){
+            if(agent_obj["repetitions"] < 0){
+                agent_iterator.unshift({...agent_obj})
+            }else if(agent_obj["repetitions"] == 0){
+                agent_obj = agent_iterator.shift()
+            }else if(agent_obj["repetitions"] >= 2){
+                agent_obj["repetitions"] -= 1
+                
+                agent_iterator.unshift({...agent_obj})
+            }
+            if(agent_obj["repetitions"] >= 1){
+                agent_repeat_count = agent_repeat_count === null ? 0 : agent_repeat_count
+                agent_repeat_count += 1
+            }
+        }else{
+            agent_repeat_count = null;
+        }
+
+        console.log(agent_repeat_count)
+        var agent_name = agent_obj["agent_name"] + ((agent_repeat_count !== null) ? "(" + agent_repeat_count + ")" : "")
+
         agent_params = agent_obj["set_params"] || {}
 
-        agent_description = "Agent Name:" + agent_obj["agent_name"] + "<br>Agent Type:" + agent_obj["agent_type"] +"<br>"
+        agent_description = "Agent Name:" + agent_name + "<br>Agent Type:" + agent_obj["agent_type"] +"<br>"
 
 
-        console.log("CREATING AGENT", agent_obj["agent_name"]);
-        var callback = function(resp){
-            agent_id = resp["agent_id"];
-            request_history = [];
-            serve_next_problem();
+        console.log("CREATING AGENT", agent_name);
+        
+        problem_iterator = [...agent_obj["problem_set"]];
+
+        var callback;
+        if("outer_loop_controller" in agent_obj){
+            if(OUTER_LOOP_URL === null){ 
+                term_print('\x1b[1;40;31m' + "ERROR: An agent was configured with an outer loop agent. Please use --outer-loop flag in train.py" + '\x1b[0m');
+                setTimeout(() => {kill_this("Terminating..."), 200}) 
+
+                // kill_this("use --outer-loop flag in train.py")
+
+                throw "use --outer-loop flag in train.py"
+            }
+            use_outer_loop_controller = true;
+            callback = function(resp){
+                agent_id = resp["agent_id"];
+                request_history = [];
+
+                declare_new_student(agent_id, agent_obj["outer_loop_controller"], agent_obj["problem_set"])
+            }
+        }else{
+            use_outer_loop_controller = false
+            callback = function(resp){
+                agent_id = resp["agent_id"];
+                request_history = [];
+                serve_next_problem();
+            }
         }
-        problem_iterator = agent_obj["problem_set"];
 
         other_data = {...agent_obj}
         delete other_data["problem_set"];
         delete other_data["agent_name"];
         delete other_data["agent_type"];
+        delete other_data["repetitions"];
 
         // console.log("OTHERDATA: ", other_data)
 
-        create_agent(callback, agent_obj["agent_name"], agent_obj["agent_type"], other_data);
+        create_agent(callback, agent_name, agent_obj["agent_type"], other_data);
 
     }else{
         serve_next_training_set();
@@ -1046,7 +1234,7 @@ function _next_prob_obj(){
     }
     // console.log(prob_obj)
 
-    prob_obj = {...file_params,...agent_params,...prob_obj}
+    prob_obj = {...file_params,...training_set_params,...agent_params,...prob_obj}
     return prob_obj
 }
 
@@ -1080,6 +1268,7 @@ function serve_next_problem(){
 	        HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
 
 	        EXAMPLES_ONLY = prob_obj["examples_only"] || false;
+	        TEST_MODE = prob_obj["test_mode"] || false;
 
 	        domain_name = prob_obj["domain_name"] || HTML_name;
 	        
@@ -1123,6 +1312,15 @@ function serve_next_problem(){
             if(!interactive && qf["question_file"].includes(".nools")){
                 kill_this('\x1b[0;30;47m' +'Question file cannot be nools in non-interactive mode. Use example tracing.\x1b[0m')
             }
+
+            if(EXAMPLES_ONLY){
+				problem_context = "examples_only"
+			}else if(TEST_MODE){
+				problem_context = "test_mode"
+			}else{
+				problem_context = "instant_feedback"
+			}
+
 	        logging_params = {
 	            "problem_name": BRD_name,
 	            "dataset_level_name1" : domain_name,
@@ -1131,7 +1329,9 @@ function serve_next_problem(){
 	            "Logging" : "ClientToLogServer",
 	            "log_service_url" : window.location.origin,
 	            "user_guid" : agent_id,
-	            "session_id" : session_id
+	            "session_id" : session_id,
+	            "problem_context" : problem_context,
+	            // "test_mode" : TEST_MODE,
 	        };
 	        params = Object.assign({},qf,logging_params) //Merge dictionaries
 	        
@@ -1224,6 +1424,7 @@ function main() {
     nools_dir = urlParams.get('nools_dir');
 
     AL_URL = urlParams.get('al_url');
+    OUTER_LOOP_URL = urlParams.get('outer_loop_url');
     verbosity = urlParams.get('verbosity') || 0;
 
     if(!training_file){console.error('training must be set in url query <CTAT URL>?training=<myfile>.json');return;};

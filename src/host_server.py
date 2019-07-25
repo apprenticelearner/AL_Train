@@ -40,6 +40,7 @@ LOG_HEADERS = {"user_guid"              :"Anon Student Id",
                "input"                  :"Input",
                "tutor_advice"           :"Feedback Text",
                "action_evaluation"      :"Outcome",
+               "problem_context"        :"CF (Problem Context)",
                }
 
 session_default_dict =  {key: None for key in LOG_HEADERS.values()}
@@ -80,6 +81,7 @@ def _fill_from_elm(log_dict, elm):
 
         problem = next(elm.iter("problem"))
         log_dict[LOG_HEADERS["problem_name"]] = next(problem.iter("name")).text 
+        log_dict[LOG_HEADERS["problem_context"]] = next(problem.iter("context")).text 
 
     elif(elm.tag in LOG_HEADERS):
         log_dict[LOG_HEADERS[elm.tag]] = elm.text
