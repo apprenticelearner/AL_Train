@@ -1,77 +1,96 @@
 {
-	"set_params" : {"README" : "You can set parameters at the file level. These will stick around while this .json is running except for when they are overriden"},
+ "set_params" : {"README" : "You can set parameters at the file level. These will stick around while this .json is running except for when they are overriden"},
 
-	"training_set1" : [
-	{
-		"agent_name":"Treatment_IntegerAddition",
-		"agent_type":"WhereWhenHowNoFoa",
-		"output_dir":"out/myAgent1",
-		"problem_set" : [
+ "training_set1" : [
+ {
+  "agent_name": "my_AL_agent",
+  "agent_type": "ModularAgent",
+  "stay_active": true,
+  "dont_save": true,
+  "no_ops_parse": true,
+  "args": {
+    "when_learner": "trestle",
+    "where_learner": "MostSpecific",
+    "planner": "fo_planner"
+  },
+  "feature_set": [
+    "equals"
+  ],
+  "function_set": [
+    "add",
+    "subtract",
+    "multiply",
+    "divide"
+  ],
+  "set_params": {
+        "HTML": "HTML/fraction_arithmetic.html",
+        "examples_only": false
+    },
+  "problem_set" : [
 
-			{"set_params" : 
-				{"README" : "You can also set parameters at the agent level. These will stick around for just this agent. And override file level parameters.",
-				"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
-				"examples_only" : true}
-			},
+   {"set_params" : 
+    {"README" : "You can also set parameters at the agent level. These will stick around for just this agent. And override file level parameters.",
+    "HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
+    "examples_only" : true}
+   },
 
-	 		{"README" : "Problem level parameters will override everything else. But only apply to this problem.",
-	 		"question_file" : "../FinalBRDs/1+1.brd"},
-	 		{"question_file" : "../FinalBRDs/2+1.brd"},
-	 		{"question_file" : "../FinalBRDs/2+2.brd"},
-	 		{"question_file" : "../FinalBRDs/3+4.brd"},
-	 		{"question_file" : "../FinalBRDs/3+5.brd"},
-	 		{"question_file" : "../FinalBRDs/4+3.brd"},
-	 		{"question_file" : "../FinalBRDs/6+9.brd"},
-	 		{"question_file" : "../FinalBRDs/8+7.brd"},
+    {"README" : "Problem level parameters will override everything else. But only apply to this problem.",
+    "question_file" : "../FinalBRDs/1+1.brd"},
+    {"question_file" : "../FinalBRDs/2+1.brd"},
+    {"question_file" : "../FinalBRDs/2+2.brd"},
+    {"question_file" : "../FinalBRDs/3+4.brd"},
+    {"question_file" : "../FinalBRDs/3+5.brd"},
+    {"question_file" : "../FinalBRDs/4+3.brd"},
+    {"question_file" : "../FinalBRDs/6+9.brd"},
+    {"question_file" : "../FinalBRDs/8+7.brd"},
 
-	 		{"README" : "We can also set the number of repetitions for a problem. Default 1. <= 0, nothing happens",
-	 		"question_file" : "../FinalBRDs/9+2.brd",
-	 		"repetitions":7},
+    {"README" : "We can also set the number of repetitions for a problem. Default 1. <= 0, nothing happens",
+    "question_file" : "../FinalBRDs/9+2.brd",
+    "repetitions":7},
 
-	 		{"set_params" : 
-				{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-				"examples_only" : false}
-			},
+    {"set_params" : 
+    {"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+    "examples_only" : false}
+   },
 
-	 		{"question_file" : "../training/1-3_plus_4-9.brd"},
-	 		{"question_file" : "../training/1-4_plus_2-5.brd"},
-	 		{"question_file" : "../training/1-4_plus_2-6.brd"},
-	 		{"question_file" : "../training/1-4_plus_2-7.brd"},
-	 		{"question_file" : "../training/1-5_plus_4-6.brd"},
-	 		{"question_file" : "../training/1-6_plus_2-6.brd"}
+    {"question_file" : "../training/1-3_plus_4-9.brd"},
+    {"question_file" : "../training/1-4_plus_2-5.brd"},
+    {"question_file" : "../training/1-4_plus_2-6.brd"},
+    {"question_file" : "../training/1-4_plus_2-7.brd"},
+    {"question_file" : "../training/1-5_plus_4-6.brd"},
+    {"question_file" : "../training/1-6_plus_2-6.brd"}
 
-		]
-	},
+  ]
+ },
 
-	{
+ {
 
-		"agent_name":"Control",
-		"agent_type":"WhereWhenHowNoFoa",
-		"output_dir":"out/myAgent1",
-		"problem_set" : [
+  "agent_name":"Control",
+  "agent_type":"WhereWhenHowNoFoa",
+  "problem_set" : [
 
-			{"README" : "If you want to explictly name the HTML each time that's fine too.",
-				
-			"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-3_plus_4-9.brd"},
+   {"README" : "If you want to explictly name the HTML each time that's fine too.",
+    
+   "HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+    "question_file" : "../training/1-3_plus_4-9.brd"},
 
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-4_plus_2-5.brd"},
+    {"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+    "question_file" : "../training/1-4_plus_2-5.brd"},
 
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-4_plus_2-6.brd"},
+    {"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+    "question_file" : "../training/1-4_plus_2-6.brd"},
 
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-4_plus_2-7.brd"},
+    {"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+    "question_file" : "../training/1-4_plus_2-7.brd"},
 
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-5_plus_4-6.brd"},
+    {"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+    "question_file" : "../training/1-5_plus_4-6.brd"},
 
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-6_plus_2-6.brd"}
+    {"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+    "question_file" : "../training/1-6_plus_2-6.brd"}
 
-		]
-	}
+  ]
+ }
 
 ]
 }
