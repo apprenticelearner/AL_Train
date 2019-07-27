@@ -81,13 +81,15 @@ function kill_this(data){
     });
 }
 
-function term_print(data){
+function term_print(message,type){
     // ''' Prints back to the terminal that this was started in.'''
+    // handles types of CORRECT, INCORRECT, INfO, WARNING, ERROR
     $.ajax({
         type: "PRINT",
         url: window.location.origin,
-        data: data,
-        dataType: "text",
+        data: JSON.stringify({"message":message,
+               "type":type}),
+        dataType: "json",
     });
 }
 
@@ -127,7 +129,8 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
         }
         var error = server_target + " failed with code " + xhr.status +" (" + textStatus + ").";
         console.error(error);
-        term_print('\x1b[0;30;47m' + error + '\x1b[0m');
+        // term_print('\x1b[0;30;47m' + error + '\x1b[0m');
+        term_print(error, 'ERROR');
 
         kill_this(error);            
         return;
@@ -158,7 +161,8 @@ function create_agent(callback,agent_name, agent_type, otherdata={}){
         error: ajax_retry_on_error,
 
         success: function(resp) {
-        	term_print('\x1b[0;30;47m' + "Successfully Built Agent: " + agent_name + '\x1b[0m');
+        	// term_print('\x1b[0;30;47m' + "Successfully Built Agent: " + agent_name + '\x1b[0m');
+            term_print("Successfully Built Agent: " + agent_name, 'INFO');
             if(callback){
             	callback(resp);
             }
@@ -194,7 +198,8 @@ function post_next_example(){
 
     inps = sai_data.inputs['value'] || ""
     console.log("%cEXAMPLE: " + sai_data.selection + " -> " + inps, 'color: #2222bb; background: #DDDDDD;');
-    term_print('\x1b[0;33;44m' + "EXAMPLE: " + sai_data.selection + " -> " + inps + '\x1b[0m')
+    // term_print('\x1b[0;33;44m' + "EXAMPLE: " + sai_data.selection + " -> " + inps + '\x1b[0m')
+    term_print("EXAMPLE: " + sai_data.selection + " -> " + inps, "EXAMPLE")
     
 
 	apply_sai(sai_data);
@@ -327,7 +332,8 @@ function handle_user_example(evt){
     }
 
     console.log("%cUSER_EXAMPLE: " + sai.getSelection() + " -> " + sai.getInput(), 'color: #2222bb; background: #DDDDDD;');
-    term_print('\x1b[0;33;44m' + "USER_EXAMPLE:" + sai.getSelection() + " -> " + sai.getInput() + '\x1b[0m')
+    // term_print('\x1b[0;33;44m' + "USER_EXAMPLE:" + sai.getSelection() + " -> " + sai.getInput() + '\x1b[0m')
+    term_print("USER_EXAMPLE:" + sai.getSelection() + " -> " + sai.getInput(),"EXAMPLE")
     iframe_content.document.removeEventListener(CTAT_ACTION, handle_user_example);
     iframe_content.document.getElementById("done").removeEventListener("click", _done_clicked); 
 
@@ -406,7 +412,8 @@ function handle_foci_done(evt){
 
 function handle_user_feedback_correct(evt){
     console.log("%cCORRECT:" + last_action.selection + " -> " + last_action.inputs.value, "color: #009922; background: #DDDDDD;");
-    term_print('\x1b[0;30;42m' + "CORRECT:" + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
+    // term_print('\x1b[0;30;42m' + "CORRECT:" + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
+    term_print("CORRECT:" + last_action.selection + " -> " + last_action.inputs.value,"CORRECT");
     document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
     document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
 
@@ -421,7 +428,8 @@ function handle_user_feedback_correct(evt){
 
 function handle_user_feedback_incorrect(evt){
     console.log("%cINCORRECT: " + last_action.selection + " -> " + last_action.inputs.value, "color: #bb2222; background: #DDDDDD;");
-    term_print('\x1b[0;30;41m' + "INCORRECT: " + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
+    // term_print('\x1b[0;30;41m' + "INCORRECT: " + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
+    term_print("INCORRECT: " + last_action.selection + " -> " + last_action.inputs.value,"INCORRECT");
     document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
     document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
 
@@ -436,7 +444,8 @@ function handle_user_feedback_incorrect(evt){
 
 function handle_correct(evt){
 	console.log("%cCORRECT:" + last_action.selection + " -> " + last_action.inputs.value, "color: #009922; background: #DDDDDD;");
-    term_print('\x1b[0;30;42m' + "CORRECT:" + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
+    // term_print('\x1b[0;30;42m' + "CORRECT:" + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
+    term_print("CORRECT:" + last_action.selection + " -> " + last_action.inputs.value,"CORRECT")
 
 	currentElement.removeEventListener(CTAT_CORRECT, handle_correct);
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
@@ -458,7 +467,8 @@ function handle_correct(evt){
 
 function handle_incorrect(evt){
 	console.log("%cINCORRECT: " + last_action.selection + " -> " + last_action.inputs.value, "color: #bb2222; background: #DDDDDD;");
-    term_print('\x1b[0;30;41m' + "INCORRECT: " + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
+    // term_print('\x1b[0;30;41m' + "INCORRECT: " + last_action.selection + " -> " + last_action.inputs.value + '\x1b[0m')
+    term_print("INCORRECT: " + last_action.selection + " -> " + last_action.inputs.value,"INCORRECT")
 	currentElement.removeEventListener(CTAT_CORRECT, handle_correct);
 	currentElement.removeEventListener(CTAT_INCORRECT, handle_incorrect);
 	currentElement = null;
@@ -481,7 +491,8 @@ function handle_incorrect(evt){
 
 function singal_done(){
 	console.log("DONE!");
-	term_print('\x1b[0;30;47m' + "PROBLEM DONE!" + '\x1b[0m');
+	// term_print('\x1b[0;30;47m' + "PROBLEM DONE!" + '\x1b[0m');
+    term_print("PROBLEM DONE!","INFO");
     if(use_outer_loop_controller){
         request_next_problem();
     }else{
@@ -650,7 +661,9 @@ function query_user_foci(){
 
 
 function query_apprentice() {
+    console.log("query_apprentice");
     if (agent_id == null) {
+        console.error("Agent_id is NULL!?");
         return;
     }
 
@@ -696,7 +709,7 @@ function query_apprentice() {
 
 
             success: function(resp) {
-                
+                console.log("query_apprentice SUCESS");
                 if (jQuery.isEmptyObject(resp)) {
                     if(interactive){
                         query_user_example();
@@ -716,7 +729,8 @@ function query_apprentice() {
                     if(!currentElement){
                     	console.log("Element " +resp.selection +" does not exist, providing example instead.");
                         alert("THIS HAPPENED... SO WE NEED TO ACTUALLY IMPLEMENT THIS.");
-                        term_print('\x1b[0;30;47m' + "ERROR: Selection Not found : " + resp.selection + '\x1b[0m');
+                        // term_print('\x1b[0;30;47m' + "ERROR: Selection Not found : " + resp.selection + '\x1b[0m');
+                        term_print("ERROR: Selection Not found : " + resp.selection,"ERROR");
                     }else{
                         // console.log("STATE",state)
 
@@ -735,9 +749,9 @@ function query_apprentice() {
                     // query_user_feedback(resp);
                 }
             },
-            // error: function (resp){
-            // 	create_agent(query_apprentice);
-            // }
+            error: function (resp){
+             	// create_agent(query_apprentice);
+            }
         });
     }
 }
@@ -966,7 +980,8 @@ function runWhenReady(){
      	typeof iframe_content.CTATCommShell.commShell == "undefined" || iframe_content.CTATCommShell.commShell == null ||
      	typeof iframe_content.CTAT.ToolTutor == "undefined" || iframe_content.CTAT.ToolTutor == null ||
      	typeof iframe_content.CTAT.ToolTutor.tutor == "undefined" || iframe_content.CTAT.ToolTutor.tutor == null){
-    	term_print('\x1b[0;30;47m' + "BLEHH1" +  '\x1b[0m');
+    	// term_print('\x1b[0;30;47m' + "BLEHH1" +  '\x1b[0m');
+        term_print("BLEHH1","ERROR");
         window.setTimeout(runWhenReady, 500);
         return;       
     }
@@ -980,14 +995,16 @@ function runWhenReady(){
     // console.log(commLibrary)
     // console.log(hasConfig)
     
-
 	if(graph && commLibrary && hasConfig){
 		if(EXAMPLES_ONLY){
-			term_print('\x1b[0;30;47m' + "EXAMPLES_ONLY" +  '\x1b[0m');	
+			// term_print('\x1b[0;30;47m' + "EXAMPLES_ONLY" +  '\x1b[0m');	
+            term_print("EXAMPLES_ONLY","INFO"); 
 		}else if(TEST_MODE){
-			term_print('\x1b[0;30;47m' + "TEST_MODE" +  '\x1b[0m');	
+			// term_print('\x1b[0;30;47m' + "TEST_MODE" +  '\x1b[0m');	
+            term_print("TEST_MODE","INFO"); 
 		}else{
-			term_print('\x1b[0;30;47m' + "OK" +  '\x1b[0m');	
+			// term_print('\x1b[0;30;47m' + "OK" +  '\x1b[0m');	
+            term_print("OK","INFO");    
 		}
 		
 
@@ -1026,7 +1043,8 @@ function runWhenReady(){
         }
 		
 	}else{
-		term_print('\x1b[0;30;47m' + "BLEHH2" + '\x1b[0m');
+        // term_print('\x1b[0;30;47m' + "BLEHH2" + '\x1b[0m');
+		term_print("BLEHH2","ERROR");
 		// CTATCommShell.commShell.addGlobalEventListener(function(evt,msg){
 		// 	term_print('\x1b[0;30;47m' + msg + '\x1b[0m');
 		// 	if("StartStateEnd" != evt || !msg)
@@ -1071,7 +1089,8 @@ function serve_next_training_set(){
     }else{
         console.log("ITS ALL DONE!");
         kill_this("\n TRAINING FINISHED SUCCESSFULLY! \n");
-        term_print('\x1b[0;30;47m' + "TRAINING FINISHED SUCCESSFULLY!" + '\x1b[0m');
+        // term_print('\x1b[0;30;47m' + "TRAINING FINISHED SUCCESSFULLY!" + '\x1b[0m');
+        term_print("TRAINING FINISHED SUCCESSFULLY!","INFO");
 
     }
 }
@@ -1168,7 +1187,8 @@ function serve_next_agent(){
         var callback;
         if("outer_loop_controller" in agent_obj){
             if(OUTER_LOOP_URL === null){ 
-                term_print('\x1b[1;40;31m' + "ERROR: An agent was configured with an outer loop agent. Please use --outer-loop flag in train.py" + '\x1b[0m');
+                // term_print('\x1b[1;40;31m' + "ERROR: An agent was configured with an outer loop agent. Please use --outer-loop flag in train.py" + '\x1b[0m');
+                term_print("ERROR: An agent was configured with an outer loop agent. Please use --outer-loop flag in train.py","ERROR");
                 setTimeout(() => {kill_this("Terminating..."), 200}) 
 
                 // kill_this("use --outer-loop flag in train.py")
@@ -1304,7 +1324,8 @@ function serve_next_problem(){
             // term_print(prob_obj["question_file"])
             
 
-	        term_print('\x1b[0;30;47m' + "Starting Problem: " + BRD_name +  '\x1b[0m');
+	        // term_print('\x1b[0;30;47m' + "Starting Problem: " + BRD_name +  '\x1b[0m');
+            term_print("Starting Problem: " + BRD_name,"INFO");
 
 	        qf = qf_exists  ? {"question_file" : prob_obj["question_file"]} : {"question_file" : "/src/empty.nools"} ;
 
