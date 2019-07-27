@@ -29,11 +29,11 @@ def _print_and_resp(handler,outmode=sys.stdout):
     message = post_data.get('message', None)
     if message is not None:
         if m_type == 'correct':
-            print(Back.GREEN + message) #, file=outmode)
+            print(Back.GREEN + Fore.BLACK  + message) #, file=outmode)
         elif m_type == 'incorrect':
-            print(Back.RED + message)#, file=outmode)
+            print(Back.RED + Fore.BLACK + message)#, file=outmode)
         elif m_type == 'example':
-            print(Back.BLUE + message)#, file=outmode)
+            print(Back.BLUE + Fore.YELLOW  +  message)#, file=outmode)
         elif m_type == 'info':
             print(Back.WHITE + Fore.BLACK + message)#, file=outmode)
         elif m_type == 'warning':
