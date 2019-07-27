@@ -12,7 +12,9 @@ from nools_gen import generate_nools
 from pprint import pprint
 import colorama
 from colorama import Fore, Back, Style
-# 
+
+colorama.init(autoreset=True)
+
 def _read_data(handler):
     content_length = int(handler.headers['Content-Length']) # <--- Gets the size of data
     post_data = handler.rfile.read(content_length) # <--- Gets the data itself
@@ -23,7 +25,6 @@ def _print_and_resp(handler,outmode=sys.stdout):
     # post_data = handler.rfile.read(content_length) # <--- Gets the data itself
     post_data = json.loads(_read_data(handler))
     # colorama.init(strip=True, convert=True, autoreset=True)
-    colorama.init(autoreset=True)
     m_type = post_data.get('type', 'default').lower()
     message = post_data.get('message', None)
     if message is not None:
