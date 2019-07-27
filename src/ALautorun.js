@@ -71,12 +71,13 @@ CTATGuid = {s4:function s4() {
 }};
 
 // Special REST call to killable_server.py server
-function kill_this(data){
+function kill_this(message,type="info"){
     // ''' Sends a request to kill the server where this is running.'''
     $.ajax({
         type: "QUIT",
         url: window.location.origin,
-        data: data,
+        data: JSON.stringify({"message":message,
+               "type":type}),
         dataType: "text",
     });
 }
@@ -1331,7 +1332,7 @@ function serve_next_problem(){
 
             console.log(qf)
             if(!interactive && qf["question_file"].includes(".nools")){
-                kill_this('\x1b[0;30;47m' +'Question file cannot be nools in non-interactive mode. Use example tracing.\x1b[0m')
+                kill_this('Question file cannot be nools in non-interactive mode. Use example tracing.', "error")
             }
 
             if(EXAMPLES_ONLY){
