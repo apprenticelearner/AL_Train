@@ -11,6 +11,7 @@ from datetime import datetime
 al_process = None
 ctat_process = None
 browser_process = None
+outer_loop_process = None
 # al_thread = None
 # ctat_thread = None
 calling_dir = None
@@ -118,6 +119,7 @@ def kill_all():
     if(al_process != None): al_process.terminate()
     if(ctat_process != None): ctat_process.terminate()    
     if(browser_process != None): browser_process.terminate()    
+    if(outer_loop_process != None): outer_loop_process.terminate()
     # sys.stderr = temp_stderr
     # if(al_process != None): kill_group(al_process)
     # if(ctat_process != None): kill_group(ctat_process)
@@ -179,7 +181,18 @@ def parse_args(argv):
         help="The working directory of the ctat server. By default it is the directory where training.json is located")
     parser.add_argument('-n' , "--nools",  default=None, dest = "nools_dir",      metavar="<nools-out-dir>",
         help="The directory to output the nools production rule code for the agent")
-
+    
+    parser.add_argument('--outer-loop', action='store_true', default=False, dest = "outer_loop",
+        help="Specifies that an external outer loop server will be used.")
+    parser.add_argument('--outer-loop-host' , default="localhost", dest = "outer_loop_host",     metavar="<outer_loop_host>",
+        help="The host url for the outer loop server. Default=localhost.")
+    parser.add_argument('--outer-loop-port', default=None, dest = "outer_loop_port",      metavar="<outer_loop_port>",
+        help="Specifies the port to bind to for running the outer loop server.")
+    parser.add_argument('--outer-loop-dir', default=None, dest = "outer_loop_dir",      metavar="<outer_loop_dir>",
+        help="Specifies the directory of the outer loop repo.")
+    parser.add_argument('--outer-loop-url', default=None, dest = "outer_loop_url",      metavar="<outer_loop_url>", 
+        help="Specifies the URL of a running outer loop server.")   
+    
     try:
         args = parser.parse_args(argv)
         # args.setattr(args, "training", args.training[0]) # dunno why it comes in a list
@@ -212,6 +225,10 @@ def parse_args(argv):
     if(args.output == None):
         args.output = "%s/%sLog-%s.txt" % (args.log_dir , os.path.basename(args.training).split(".")[0], datetime.now().strftime("%Y-%m-%d-%H_%M_%S"))
 
+    if(args.outer_loop_dir != None):
+        args.outer_loop_dir = os.path.abspath(apply_wd(args.outer_loop_dir))    
+
+
     
     args.output = os.path.abspath(apply_wd(args.output))
 
@@ -231,7 +248,7 @@ def parse_args(argv):
 
 
 def main(args):
-    global al_process,ctat_process, browser_process
+    global al_process,ctat_process, browser_process, outer_loop_process
 
     if(not args.al_port): args.al_port = get_open_port()
     if(check_port(args.al_host, args.al_port, args.force)):
@@ -248,7 +265,27 @@ def main(args):
         # ctat_thread.start()
         
     else:
+
         port_error("CTAT", args.ctat_port)
+
+
+    if(args.outer_loop_url is None and args.outer_loop):
+        assert args.outer_loop_dir is not None, "Must specify OUTER_LOOP_DIR in net.conf"
+        if(not args.outer_loop_port): args.outer_loop_port = get_open_port()        
+        if(check_port(args.outer_loop_host, args.outer_loop_port, args.force)):
+            # print([sys.executable, os.path.join(args.outer_loop_dir, "src", "server.py") , "--host", str(args.outer_loop_host),"--port", int(args.outer_loop_port)])
+            outer_loop_process = subprocess.Popen([sys.executable, os.path.join(args.outer_loop_dir, "server.py") , "--host", str(args.outer_loop_host),"--port", str(args.outer_loop_port)])
+            args.outer_loop_url = args.outer_loop_host + ":" + str(args.outer_loop_port)
+        else:
+            port_error("OUTER LOOP", args.outer_loop_port)
+    if(args.outer_loop_url is not None and
+       not (args.outer_loop_url.startswith("http://") or
+       args.outer_loop_url.startswith("https://"))):
+        args.outer_loop_url = "http://" + args.outer_loop_url
+
+
+
+
 
 
 
@@ -257,6 +294,7 @@ def main(args):
     if(args.interactive): ctat_url += "&interactive=true"
     if(args.use_foci): ctat_url += "&use_foci=true"
     if(args.nools_dir): ctat_url += "&nools_dir=%s" % args.nools_dir
+    if(args.outer_loop_url): ctat_url += "&outer_loop_url=%s" % args.outer_loop_url
 
     
     if(args.browser != None and "selenium" in args.browser):

@@ -5,10 +5,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -137,10 +148,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -299,10 +321,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -461,10 +494,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -623,10 +667,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -752,10 +807,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -824,10 +890,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -884,10 +961,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -929,10 +1017,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -1043,10 +1142,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -1163,10 +1273,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -1307,10 +1428,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -1394,10 +1526,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -1538,10 +1681,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -1700,10 +1854,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -1862,10 +2027,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -2024,10 +2200,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -2186,10 +2373,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -2315,10 +2513,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -2351,10 +2560,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -2513,10 +2733,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -2618,10 +2849,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -2780,10 +3022,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -2918,10 +3171,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -3080,10 +3344,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -3227,10 +3502,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -3260,10 +3546,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -3407,10 +3704,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -3497,10 +3805,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -3572,10 +3891,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -3734,10 +4064,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -3869,10 +4210,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -4031,10 +4383,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -4049,10 +4412,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -4118,10 +4492,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -4268,10 +4653,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -4430,10 +4826,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -4592,10 +4999,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -4718,10 +5136,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -4841,10 +5270,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -5003,10 +5443,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -5165,10 +5616,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -5204,10 +5666,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -5366,10 +5839,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -5486,10 +5970,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -5627,10 +6122,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -5771,10 +6277,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -5924,10 +6441,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -6032,10 +6560,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -6194,10 +6733,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -6356,10 +6906,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -6485,10 +7046,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -6626,10 +7198,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -6788,10 +7371,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -6911,10 +7505,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -6968,10 +7573,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -7130,10 +7746,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -7247,10 +7874,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -7409,10 +8047,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -7532,10 +8181,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -7661,10 +8321,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -7823,10 +8494,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -7952,10 +8634,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -8114,10 +8807,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -8264,10 +8968,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -8393,10 +9108,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -8555,10 +9281,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -8597,10 +9334,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -8756,10 +9504,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -8909,10 +9668,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -9014,10 +9784,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -9152,10 +9933,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -9248,10 +10040,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -9404,10 +10207,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -9566,10 +10380,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -9632,10 +10457,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -9764,10 +10600,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -9911,10 +10758,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -9980,10 +10838,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -10031,10 +10900,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -10166,10 +11046,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -10301,10 +11192,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -10391,10 +11293,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -10553,10 +11466,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -10715,10 +11639,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -10877,10 +11812,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -11018,10 +11964,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -11180,10 +12137,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -11198,10 +12166,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -11309,10 +12288,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -11471,10 +12461,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -11600,10 +12601,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -11720,10 +12732,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -11879,10 +12902,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -12041,10 +13075,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -12167,10 +13212,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -12329,10 +13385,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -12371,10 +13438,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -12515,10 +13593,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -12677,10 +13766,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -12836,10 +13936,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -12998,10 +14109,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -13061,10 +14183,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -13223,10 +14356,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -13313,10 +14457,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -13400,10 +14555,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -13562,10 +14728,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -13724,10 +14901,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -13847,10 +15035,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -14000,10 +15199,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -14162,10 +15372,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -14324,10 +15545,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -14477,10 +15709,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -14612,10 +15855,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -14774,10 +16028,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -14867,10 +16132,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -14984,10 +16260,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {
@@ -15143,10 +16430,21 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
+      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
-        "where_learner": "MostSpecific"
+        "where_learner": "MostSpecific",
+        "planner": "fo_planner"
       },
+      "feature_set": [
+        "equals"
+      ],
+      "function_set": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide"
+      ],
       "problem_set": [
         {
           "set_params": {

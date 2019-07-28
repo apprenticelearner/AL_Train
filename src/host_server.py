@@ -10,7 +10,11 @@ import errno
 import json
 from nools_gen import generate_nools
 from pprint import pprint
-# 
+import colorama
+from colorama import Fore, Back, Style
+
+colorama.init(autoreset=True)
+
 def _read_data(handler):
     content_length = int(handler.headers['Content-Length']) # <--- Gets the size of data
     post_data = handler.rfile.read(content_length) # <--- Gets the data itself
@@ -19,8 +23,25 @@ def _read_data(handler):
 def _print_and_resp(handler,outmode=sys.stdout):
     # content_length = int(handler.headers['Content-Length']) # <--- Gets the size of data
     # post_data = handler.rfile.read(content_length) # <--- Gets the data itself
-    post_data = _read_data(handler)
-    print(post_data,file=outmode)
+    post_data = json.loads(_read_data(handler))
+    # colorama.init(strip=True, convert=True, autoreset=True)
+    m_type = post_data.get('type', 'default').lower()
+    message = post_data.get('message', None)
+    if message is not None:
+        if m_type == 'correct':
+            print(Back.GREEN + Fore.BLACK  + message) #, file=outmode)
+        elif m_type == 'incorrect':
+            print(Back.RED + Fore.BLACK + message)#, file=outmode)
+        elif m_type == 'example':
+            print(Back.BLUE + Fore.YELLOW  +  message)#, file=outmode)
+        elif m_type == 'info':
+            print(Back.WHITE + Fore.BLACK + message)#, file=outmode)
+        elif m_type == 'warning':
+            print(Back.BLACK + Fore.YELLOW + message)#, file=outmode)
+        elif m_type == 'error':
+            print(Back.BLACK + Fore.RED + message)#, file=outmode)
+        else:
+            print(message)#, file=outmode)
     handler.send_response(200)
     handler.end_headers()
 
@@ -40,6 +61,7 @@ LOG_HEADERS = {"user_guid"              :"Anon Student Id",
                "input"                  :"Input",
                "tutor_advice"           :"Feedback Text",
                "action_evaluation"      :"Outcome",
+               "problem_context"        :"CF (Problem Context)",
                }
 
 session_default_dict =  {key: None for key in LOG_HEADERS.values()}
@@ -80,6 +102,7 @@ def _fill_from_elm(log_dict, elm):
 
         problem = next(elm.iter("problem"))
         log_dict[LOG_HEADERS["problem_name"]] = next(problem.iter("name")).text 
+        log_dict[LOG_HEADERS["problem_context"]] = next(problem.iter("context")).text 
 
     elif(elm.tag in LOG_HEADERS):
         log_dict[LOG_HEADERS[elm.tag]] = elm.text
