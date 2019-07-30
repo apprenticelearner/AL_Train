@@ -97,7 +97,7 @@ class Buttons extends Component{
               
 
             {(matches({"Query_Demonstrate":"Query_Yes_No_Feedback"})
-             || matches({"Query_Submit_Feedback":"Query_Yes_No_Feedback"})) &&
+             || matches({"Query_Demonstrate":"Query_Submit_Feedback"})) &&
 
             <View style={styles.button_wrapper2}>
               <Text style={styles.prompt2}> 
