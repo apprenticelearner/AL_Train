@@ -7,7 +7,8 @@
       	"dont_save": true,
 		"args": {
 			"search_depth" : 2,
-			"when_learner": "decisiontree"
+			"when_learner": "decisiontree",
+			"planner" : "vectorized"
 		},
 		"problem_set" : [
 			{"set_params" : 

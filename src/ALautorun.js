@@ -360,6 +360,7 @@ function apply_hint(){
 function submit_feedback_queue(){
     Object.entries(feedback_queue).forEach(function(kv,index) {
         const [_id,[skill,label]] = kv
+        term_print(str(_id)+str(skill),"info")
 
     })    
 }
@@ -1071,15 +1072,15 @@ function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, u
                 // rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st).join(' '); 
                 // rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st).join(' '); 
                 // rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st).join(' '); 
-                rel_obj["below"] = rel_obj["below"].sort(compare2nd).map(grab1st)[0];
-                rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st)[0];
-                rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st)[0];
-                rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st)[0];
+                // rel_obj["below"] = rel_obj["below"].sort(compare2nd).map(grab1st)[0];
+                // rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st)[0];
+                // rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st)[0];
+                // rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st)[0];
             
-                // rel_obj["below"] = grabN(rel_obj["below"].sort(compare2nd).map(grab1st),2);
-                // rel_obj["above"] = grabN(rel_obj["above"].sort(compare2nd).map(grab1st),2);
-                // rel_obj["to_right"] = grabN(rel_obj["to_right"].sort(compare2nd).map(grab1st),2);
-                // rel_obj["to_left"] = grabN(rel_obj["to_left"].sort(compare2nd).map(grab1st),2);
+                rel_obj["below"] = grabN(rel_obj["below"].sort(compare2nd).map(grab1st),2);
+                rel_obj["above"] = grabN(rel_obj["above"].sort(compare2nd).map(grab1st),2);
+                rel_obj["to_right"] = grabN(rel_obj["to_right"].sort(compare2nd).map(grab1st),2);
+                rel_obj["to_left"] = grabN(rel_obj["to_left"].sort(compare2nd).map(grab1st),2);
             }
             
             // console.log(rel_objs)
@@ -1481,7 +1482,7 @@ function generate_nools(evt) {
                 "problems": start_state_history,
                 "skills" : resp
                 }
-
+            console.log(out_data)
             $.ajax({
                 type: "GEN_NOOLS",
                 url: window.location.origin,
@@ -1538,7 +1539,7 @@ function main() {
             "NEXT_PRESSED" : query_apprentice,
             "YES_PRESSED" : handle_user_feedback_correct,
             "NO_PRESSED" : handle_user_feedback_incorrect,
-            "SUBMIT_SKILL_FEEDBACK" : () => {},
+            "SUBMIT_SKILL_FEEDBACK" : submit_feedback_queue,
         };
         console.log(window.button_callbacks)
         // alert("BOOP")

@@ -21,6 +21,7 @@ window.state_machine_service.start()
 //   current: 
 // };
 window.state_machine_service.onTransition(current => {
+	console.log("current.value")
 	console.log(current.value)
 	setButtonsState(current,window.debugmode)
   
