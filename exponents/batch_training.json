@@ -16,10 +16,10 @@
         "equals"
       ],
       "function_set": [
-        "add",
-        "subtract",
-        "multiply",
-        "divide",
+	"add",
+	"subtract",
+	"multiply",
+	"divide",
 	"exp",
 	"common_base_exists",
 	"common_base",

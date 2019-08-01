@@ -16,13 +16,16 @@
 			"subtract",
 			"multiply",
 			"divide",
-			"exp"
+			"exp",
+			"common_base_exists",
+			"common_base",
+			"find_exp"
 		],
 
 		"args": {
-			"search_depth" : 2,
+			"search_depth" : 1,
 			"where_learner": "MostSpecific",
-			"when_learner": "trestle",
+			"when_learner": "decisiontree",
 			"planner" : "fo_planner"
 		},
 		"problem_set" : [
