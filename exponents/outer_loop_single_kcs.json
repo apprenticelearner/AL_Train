@@ -17,7 +17,11 @@
                 "add",
                 "subtract",
                 "multiply",
-                "divide"
+                "divide",
+		"exp",
+		"common_base_exists",
+		"common_base",
+		"find_exp"
             ],
             "set_params": {
                 "HTML": "ExponentsOperation.html",
