@@ -20,7 +20,10 @@
         "subtract",
         "multiply",
         "divide",
-	"exp"
+	"exp",
+	"common_base_exists",
+	"common_base",
+	"find_exp"
       ],
       "problem_set": [
         {
