@@ -1,0 +1,36 @@
+{
+	"training_set1" : [{
+		"agent_name":"myAgent1",
+		"agent_type":"ModularAgent",
+		"output_dir":"out/myAgent1",
+
+		"stay_active": true,
+		"dont_save": true,
+		"no_ops_parse" : true,
+
+		"feature_set" : [
+			"equal"
+		],
+		"function_set" : [
+			"add",
+			"subtract",
+			"multiply",
+			"divide",
+			"exp"
+		],
+
+		"args": {
+			"search_depth" : 2,
+			"where_learner": "MostSpecific",
+			"when_learner": "trestle",
+			"planner" : "fo_planner"
+		},
+		"problem_set" : [
+			{"set_params" :
+				{"HTML": "./ExponentsOperation.html"}
+			},
+			{
+				"repetitions":-1}
+		]
+	}]
+}
