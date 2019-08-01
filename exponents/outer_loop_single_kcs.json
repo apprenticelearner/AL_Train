@@ -1,0 +1,164 @@
+{
+    "training_set1": [
+        {
+            "agent_name": "my_AL_agent",
+            "agent_type": "ModularAgent",
+            "stay_active": true,
+            "dont_save": true,
+            "no_ops_parse": true,
+            "args": {
+                "when_learner": "trestle",
+                "where_learner": "MostSpecific"
+            },
+            "feature_set": [
+                "equals"
+            ],
+            "function_set": [
+                "add",
+                "subtract",
+                "multiply",
+                "divide"
+            ],
+            "set_params": {
+                "HTML": "ExponentsOperation.html",
+                "examples_only": false
+            },
+            "repetitions": 1,
+            "outer_loop_controller": "BKTKCsExponentSingle",
+            "problem_set": [
+                {
+                    "question_file": "/MassProduction/A 1.brd",
+                    "kc_list": [
+                        "A "
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/A 2.brd",
+                    "kc_list": [
+                        "A "
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/A 3.brd",
+                    "kc_list": [
+                        "A "
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/A 4.brd",
+                    "kc_list": [
+                        "A "
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/A 5.brd",
+                    "kc_list": [
+                        "A "
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/DD1.brd",
+                    "kc_list": [
+                        "DD"
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/DS1.brd",
+                    "kc_list": [
+                        "DS"
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/DS2.brd",
+                    "kc_list": [
+                        "DS"
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/DS3.brd",
+                    "kc_list": [
+                        "DS"
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/DS4.brd",
+                    "kc_list": [
+                        "DS"
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/DS5.brd",
+                    "kc_list": [
+                        "DS"
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/DS6.brd",
+                    "kc_list": [
+                        "DS"
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/MD1.brd",
+                    "kc_list": [
+                        "MD"
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/MS1.brd",
+                    "kc_list": [
+                        "MS"
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/MS2.brd",
+                    "kc_list": [
+                        "MS"
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/MS3.brd",
+                    "kc_list": [
+                        "MS"
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/MS4.brd",
+                    "kc_list": [
+                        "MS"
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/S 1.brd",
+                    "kc_list": [
+                        "S "
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/S 2.brd",
+                    "kc_list": [
+                        "S "
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/S 3.brd",
+                    "kc_list": [
+                        "S "
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/S 4.brd",
+                    "kc_list": [
+                        "S "
+                    ]
+                },
+                {
+                    "question_file": "/MassProduction/S 5.brd",
+                    "kc_list": [
+                        "S "
+                    ]
+                }
+            ]
+        }
+    ]
+}
