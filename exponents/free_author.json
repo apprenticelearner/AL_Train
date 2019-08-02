@@ -14,10 +14,8 @@
 		"function_set" : [
 			"add",
 			"subtract",
-			"multiply",
-			"divide",
+			"multiply", "divide",
 			"exp",
-			"common_base_exists",
 			"common_base",
 			"find_exp"
 		],
