@@ -176,14 +176,17 @@ class SkillPanel extends Component{
   componentWillReceiveProps(nextProps){
     this.s_skill_set = this.structure_skills(nextProps.skill_set)
     let s_keys = Object.keys(this.s_skill_set)
-    if(!this.state.selected_skill && s_keys.length > 0){
-      let select = this.s_skill_set[s_keys[0]][0]
-      this.setState({
-          selected_skill: select,
-          selected_match: select,
-          match_correctness: {},
-      })
-    }
+    this.setState({
+      correctness_map: {}
+    })
+
+    // if(s_keys.length > 0 && !this.state.selected_skill || !this.state.selected_skill){
+    let select = this.s_skill_set[s_keys[0]][0]
+    this.setState({
+        selected_skill: select,
+        selected_match: select,
+    })
+    // }
   }
 
 
