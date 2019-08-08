@@ -209,7 +209,7 @@ function feedback_queue_change(skill,label){
     var wasempty = Object.keys(feedback_queue).length == 0
 
     if(label){
-        feedback_queue[skill["_id"]] = (skill,label)
+        feedback_queue[skill["_id"]] = [skill,label]
     }else{
         delete feedback_queue[skill["_id"]]
     }
@@ -358,11 +358,72 @@ function apply_hint(){
 // Cr1Str1.addEventListener(CTAT.Component.Base.Tutorable.EventType.action, function(){ alert("Hello World!");});
 
 function submit_feedback_queue(){
-    Object.entries(feedback_queue).forEach(function(kv,index) {
-        const [_id,[skill,label]] = kv
-        term_print(str(_id)+str(skill),"info")
+    console.log(feedback_queue)
+    explanations = []
+    rewards = []
 
-    })    
+    // data = {}
+    Object.entries(feedback_queue).forEach(function(kv,index) {
+        console.log(kv)
+        const [_id,[skill,label]] = kv
+        // delete skill["matches"]
+        explanations.push({"rhs_id" : skill["rhs_id"],
+                           "mapping" : skill["mapping"] })
+        r = label === "correct" ? 1 :-1 
+        rewards.push(r)
+        if(r == 1){
+            term_print('\x1b[0;30;42m' + "CORRECT:" + skill.selection + " -> " + skill.inputs.value + '\x1b[0m')
+        }else{
+            term_print('\x1b[0;30;41m' + "INCORRECT: " + skill.selection + " -> " + skill.inputs.value + '\x1b[0m')
+        }
+        
+        // if(last_proposal 
+        //     && last_proposal.rhs_id == skill["rhs_id"] 
+        //     &&  last_proposal.mapping == skill["mapping"]){
+
+        // }
+        // term_print(toString(_id)+toString(skill),"info")
+
+    }) 
+
+
+    // state: state,
+    //             explanations: [{
+    //                 "rhs_id" : last_action["rhs_id"],
+    //                 "mapping" : last_action["mapping"]
+    //             }],
+    //             rewards:[reward],
+    //             selection : last_action.selection,
+    //             reward : reward,
+    data = {state :state,
+            explanations: explanations,
+            rewards:rewards}
+
+    
+    last_correct = false
+    // last_action =
+    // if(last_proposal){
+    //     data
+    // }
+    data = JSON.stringify(data,ignoreKeys)
+
+    $.ajax({
+        type: 'POST',
+        url: AL_URL + '/train/' + agent_id + '/',
+        data: data,
+        contentType: "application/json; charset=utf-8",
+        retryLimit : AL_RETRY_LIMIT,
+        tryCount : 0,
+        error: ajax_retry_on_error,
+
+        success: (resp) => {
+            console.log("SUBMIT_SKILL_FEEDBACK SUCESS")
+            console.log(data)
+            query_apprentice()
+            // window.state_machine_service.send("DEMONSTRATE");
+            // on_train_success(last_proposal,resp)
+        }
+    });
 }
 
 function handle_startstate_done(evt){
@@ -383,7 +444,7 @@ function handle_startstate_done(evt){
     }
     //Take away focus from whatever is there so it isn't treated as an example
     // document.activeElement.blur();
-    console.log("STAT",get_state())
+    // console.log("STAT",get_state())
     start_state_history.push(get_state());
     last_action = last_proposal = null;
     // query_apprentice();
@@ -943,45 +1004,47 @@ function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, u
     	obj = {}
     	if(element.classList.contains("CTATComponent")
              && !element.classList.contains("CTATTable")) {
-            // if(obj["className"] == "CTATTable") {continue;} //Skip table objects and just use cells
-    		if(use_class){obj["type"] = element.classList[0];}
-            if(use_offsets){
-        		obj["offsetParent"] = element.offsetParent.dataset.silexId;
-        		obj["offsetLeft"] = element.offsetLeft;
-                obj["offsetTop"] = element.offsetTop;
-                obj["offsetWidth"] = element.offsetWidth;
-        		obj["offsetHeight"] = element.offsetHeight;
+            // if(obj["className"] == "CTATTextField") {continue;} //Skip table objects and just use cells
+            if(element.classList[0] != "CTATTextField") { //Skip text fields
+        		if(use_class){obj["type"] = element.classList[0];}
+                if(use_offsets){
+            		obj["offsetParent"] = element.offsetParent.dataset.silexId;
+            		obj["offsetLeft"] = element.offsetLeft;
+                    obj["offsetTop"] = element.offsetTop;
+                    obj["offsetWidth"] = element.offsetWidth;
+            		obj["offsetHeight"] = element.offsetHeight;
+                }
+
+
+        		if(use_id){obj["id"] = element.id;}
+
+        		if(checkTypes(element, ["CTATTextInput","CTATComboBox","CTATTable--cell"])){
+        			obj["value"] = element.firstElementChild.value;
+        			obj["contentEditable"] = (element.firstElementChild.contentEditable == 'true');
+        			// obj["name"] = element.id
+        		}
+        		// if(checkTypes(element, ["CTATTextField", "CTATComboBox"])){
+        		// 	obj["textContent"] = element.textContent;
+        		// }
+
+        		if(checkTypes(element, ["CTATComboBox"])){
+        			// if(element.options){
+        				//Probably not the best
+        			var options = element.firstElementChild.options;
+        			var temp = [];
+        			for (var i = 0; i < options.length; i++) {
+        				temp.push(options[i].text);
+        			}
+        			obj["options"] = Object.assign({}, temp)
+
+        			// }
+        			
+        		}
+                name = (append_ele ? "?ele-":"") + element.id
+                // console.log(name,append_ele)
+        		state_json[name] = obj;
+    	        count++;
             }
-
-
-    		if(use_id){obj["id"] = element.id;}
-
-    		if(checkTypes(element, ["CTATTextInput","CTATComboBox","CTATTable--cell"])){
-    			obj["value"] = element.firstElementChild.value;
-    			obj["contentEditable"] = (element.firstElementChild.contentEditable == 'true');
-    			// obj["name"] = element.id
-    		}
-    		// if(checkTypes(element, ["CTATTextField", "CTATComboBox"])){
-    		// 	obj["textContent"] = element.textContent;
-    		// }
-
-    		if(checkTypes(element, ["CTATComboBox"])){
-    			// if(element.options){
-    				//Probably not the best
-    			var options = element.firstElementChild.options;
-    			var temp = [];
-    			for (var i = 0; i < options.length; i++) {
-    				temp.push(options[i].text);
-    			}
-    			obj["options"] = Object.assign({}, temp)
-
-    			// }
-    			
-    		}
-            name = (append_ele ? "?ele-":"") + element.id
-            // console.log(name,append_ele)
-    		state_json[name] = obj;
-	        count++;
     	}
         // add question marks for apprentice
         // element = jQuery.extend({}, element);
@@ -1072,15 +1135,15 @@ function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, u
                 // rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st).join(' '); 
                 // rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st).join(' '); 
                 // rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st).join(' '); 
-                // rel_obj["below"] = rel_obj["below"].sort(compare2nd).map(grab1st)[0];
-                // rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st)[0];
-                // rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st)[0];
-                // rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st)[0];
+                rel_obj["below"] = rel_obj["below"].sort(compare2nd).map(grab1st)[0] || "";
+                rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st)[0] || "";
+                rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st)[0] || "";
+                rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st)[0] || "";
             
-                rel_obj["below"] = grabN(rel_obj["below"].sort(compare2nd).map(grab1st),2);
-                rel_obj["above"] = grabN(rel_obj["above"].sort(compare2nd).map(grab1st),2);
-                rel_obj["to_right"] = grabN(rel_obj["to_right"].sort(compare2nd).map(grab1st),2);
-                rel_obj["to_left"] = grabN(rel_obj["to_left"].sort(compare2nd).map(grab1st),2);
+                // rel_obj["below"] = grabN(rel_obj["below"].sort(compare2nd).map(grab1st),2);
+                // rel_obj["above"] = grabN(rel_obj["above"].sort(compare2nd).map(grab1st),2);
+                // rel_obj["to_right"] = grabN(rel_obj["to_right"].sort(compare2nd).map(grab1st),2);
+                // rel_obj["to_left"] = grabN(rel_obj["to_left"].sort(compare2nd).map(grab1st),2);
             }
             
             // console.log(rel_objs)
@@ -1424,6 +1487,7 @@ function serve_next_problem(){
             if(interactive){
                 clear_highlights()
                 window.setSkillWindowState({});
+                feedback_queue = {};
             }
 
 	    }else{
