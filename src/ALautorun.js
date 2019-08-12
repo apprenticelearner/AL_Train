@@ -286,6 +286,7 @@ function make_highlights(sai){
 
 
 function clear_last_proposal(){
+    console.log("CLEAR",last_proposal)
     if(last_proposal){
         elm = iframe_content.document.getElementById(last_proposal.selection.replace('?ele-',""));    
         elm.firstElementChild.value = "";
@@ -581,6 +582,7 @@ function handle_foci_done(evt){
 
 function handle_user_feedback_correct(evt){
     clear_highlights();
+
     console.log("%cCORRECT:" + last_proposal.selection + " -> " + last_proposal.inputs.value, "color: #009922; background: #DDDDDD;");
     term_print('\x1b[0;30;42m' + "CORRECT:" + last_proposal.selection + " -> " + last_proposal.inputs.value + '\x1b[0m')
     // document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
@@ -590,6 +592,7 @@ function handle_user_feedback_correct(evt){
     elm.firstElementChild.setAttribute("class", "CTAT--correct");
     var comp = iframe_content.CTATShellTools.findComponent(last_proposal.selection)[0];
     comp.setEnabled(false);
+
 
     last_correct = true;
     send_feedback(1);
@@ -683,12 +686,16 @@ function on_train_success(sai_data,resp){
         state = get_state()
     }
 
+
     //If correctly pushed done then problem finished otherwise query again.
     if(sai_data.selection === "done" && (sai_data.reward || 1) > 0){
         signal_done();
-    }else if(!interactive){
+    }else if(interactive){
+        window.state_machine_service.send("TRAINING_RECIEVED")    
+    }else{
         query_apprentice(); 
     }
+
 }
 
 function send_feedback(reward, explicit=true){
@@ -696,6 +703,7 @@ function send_feedback(reward, explicit=true){
     if (last_action === null) {
         console.log('error. cannot give feedback on no action.');
     }
+
     last_action.reward = reward
     if(!explicit){
         last_action.state = state
@@ -715,6 +723,7 @@ function send_feedback(reward, explicit=true){
     if(interactive){
         data['kwargs'] = {'add_skill_info':true}
     }
+
 
     $.ajax({
         type: 'POST',
@@ -897,7 +906,7 @@ function query_apprentice() {
 
     // console.log("STATE",state);
 
-    // console.log("QUERY!");
+    console.log("QUERY!");
 
     if(EXAMPLES_ONLY){
         if(interactive){
@@ -929,7 +938,9 @@ function query_apprentice() {
                 // console.log("RESP")
                 // console.log(resp)
                 if (jQuery.isEmptyObject(resp)) {
+                    console.log("RESPONSE EMPTY")
                     if(interactive){
+                        setSkillWindowState({})
                         query_user_demonstrate(false);
                     }else{
                         post_next_example();    
@@ -1111,13 +1122,15 @@ function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, u
                             rel_objs[a_n]["to_right"].push([b_n, dist]);
                             rel_objs[b_n]["to_left"].push([a_n, dist]);
 
+                            // console.log(a_n,b_n,dist)
+
                         }
                     }
                 }
             }
 
             var grab1st = function(x){return x[0];};
-            var compare2nd = function(x,y){return x[1] > y[1];};
+            var compare2nd = function(x,y){return x[1] - y[1];};
             var grabN = function(x,n){
                 out = []
                 for (var i = 0; i < n; i++){
@@ -1135,6 +1148,7 @@ function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, u
                 // rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st).join(' '); 
                 // rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st).join(' '); 
                 // rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st).join(' '); 
+                // console.log(elm_list[i], rel_obj["to_left"].sort(compare2nd))
                 rel_obj["below"] = rel_obj["below"].sort(compare2nd).map(grab1st)[0] || "";
                 rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st)[0] || "";
                 rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st)[0] || "";
