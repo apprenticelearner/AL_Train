@@ -595,6 +595,7 @@ function handle_user_feedback_correct(evt){
 
 
     last_correct = true;
+    last_proposal = null;
     send_feedback(1);
 }
 
@@ -618,6 +619,7 @@ function handle_user_feedback_incorrect(evt){
     comp.setEnabled(true);
 
     last_correct = false;
+    last_proposal = null;
     send_feedback(-1);
 }
 
@@ -664,7 +666,7 @@ function ignoreKeys(key,value){
 
 
 function on_train_success(sai_data,resp){
-    last_proposal = null;
+    
     if(verbosity > 0) console.log('training received.');
     console.log('training received.');
 
