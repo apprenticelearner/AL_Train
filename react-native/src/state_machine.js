@@ -53,7 +53,7 @@ const ButtonsMachine = Machine({
     },
     "Request_Foci": {
       on: {
-        "FOCI_DONE": "Explantions_Displayed",
+        "FOCI_DONE": "Query_Demonstrate",
       },
     },
     "Explantions_Displayed": {
