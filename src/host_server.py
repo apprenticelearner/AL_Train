@@ -45,6 +45,8 @@ LOG_HEADERS = {"user_guid"              :"Anon Student Id",
 session_default_dict =  {key: None for key in LOG_HEADERS.values()}
 output_file_path = None
 tool_dict = {}
+completeness_dict = {}
+completeness_file_name = "" 
 
 def _fill_from_elm(log_dict, elm):
     if(elm.tag == "custom_field"):
@@ -117,7 +119,57 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
         # json.dump()
         self.send_response(200)
         self.end_headers()
+    def do_START_COMPLETENESS(self):
+        post_data = _read_data(self)
+        d = json.loads(post_data)
 
+        c_dir = d['dir']
+        del d["dir"]
+
+        global completeness_dict, completeness_file_name
+        completeness_dict = {}
+
+
+
+        now = datetime.now() # current date and time
+        completeness_file_name = now.strftime("c_%Y-%m-%d-%H_%M_%S") + ".json"
+
+        if not os.path.exists(c_dir):
+            try:
+                os.makedirs(c_dir)
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+
+        open(os.path.join(c_dir, completeness_file_name),'a').close()
+        
+        self.send_response(200)
+        self.end_headers()
+
+
+    def do_APPEND_COMPLETENESS(self):
+        post_data = _read_data(self)
+        d = json.loads(post_data)
+
+        c_dir = d['dir']
+        del d["dir"]
+
+        
+        state_str = json.dumps(d['state'])
+        # print("---------------------------")
+        # print(state_str)
+        # print("---------------------------")
+
+    
+        if(state_str not in completeness_dict):
+            with open(os.path.join(c_dir, completeness_file_name),'a') as f:
+                json.dump(d,f)
+                f.write("\n")
+                completeness_dict[state_str] = True
+
+        # json.dump()
+        self.send_response(200)
+        self.end_headers()
 
     def do_QUIT (self):
         _print_and_resp(self)
