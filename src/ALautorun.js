@@ -400,8 +400,12 @@ function submit_feedback_queue(){
             explanations: explanations,
             rewards:rewards}
 
+    clear_highlights();
+    clear_last_proposal();
     
-    last_correct = false
+    last_correct = false;
+    last_proposal = null;
+    last_action = null;
     // last_action =
     // if(last_proposal){
     //     data
@@ -420,7 +424,8 @@ function submit_feedback_queue(){
         success: (resp) => {
             console.log("SUBMIT_SKILL_FEEDBACK SUCESS")
             console.log(data)
-            query_apprentice()
+            window.state_machine_service.send("TRAINING_RECIEVED")    
+            // query_apprentice()
             // window.state_machine_service.send("DEMONSTRATE");
             // on_train_success(last_proposal,resp)
         }
@@ -1562,6 +1567,7 @@ function generate_nools(evt) {
                 "problems": start_state_history,
                 "skills" : resp
                 }
+            console.log("OUT_DATA")
             console.log(out_data)
             $.ajax({
                 type: "GEN_NOOLS",
@@ -1572,6 +1578,108 @@ function generate_nools(evt) {
             });
         },
     });
+
+    // console.log('{"nools_dir" :' + nools_dir + '}')
+    
+}
+
+ground_truth_requests = [];
+$.ajax({
+    url: "ground_truth_777.json",
+    dataType: 'text',
+    async: true,
+    success: function (data){
+        data.toString().split("\n").forEach(function(line, index, arr) {
+            if (index === arr.length - 1 && line === "") { return; }
+            json = JSON.parse(line)
+            ground_truth_requests.push(json)
+            // console.log(json['state']);
+        });  
+    },
+    error : ajax_retry_on_error
+});
+// reader.readAsText("ground_truth_777.json");
+
+function gen_completeness_profile(evt) {
+    // data = {'states':request_history.map(x => x['state'])}
+    // console.log(JSON.stringify(data))
+
+    // requests = request_history
+    requests = ground_truth_requests
+
+    
+
+    console.log(nools_dir)
+    start_data = {"dir": nools_dir}
+    $.ajax({
+        type: "START_COMPLETENESS",
+        url: window.location.origin,
+        data: JSON.stringify(start_data),
+        // contentType: "application/json; charset=utf-8",
+        // dataType: 'json',
+        error: ajax_retry_on_error,
+        success: function(whatever) {
+            console.log("STARTED")
+            requests.forEach(function (item, index) {
+                s = item['state']
+                var data = {
+                    'state': s,
+                    'kwargs': {'add_skill_info':true,'n':0}
+                }
+                $.ajax({
+                    type: 'POST',
+                    url: AL_URL + '/request/' + agent_id + '/',
+                    crossdomain : true,
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    context:item,
+
+
+                    error: ajax_retry_on_error,
+
+                    success: function(resp) {
+                        console.log("WRITE")
+                        responses = []
+                        if("responses" in resp){
+                            resp["responses"].forEach(function (r, index) {
+                                sai = {selection: r['selection'],
+                                       action: r['action'], 
+                                       inputs: r['inputs'], 
+                                }
+                                console.log(r)
+                                console.log(r["selection"])
+                                responses.push(sai)
+                            });
+                        }
+
+                        completeness_data = {
+                            'state' : this["state"],
+                            'responses' : responses,
+                            'dir' : nools_dir
+                        }
+                        $.ajax({
+                            type: "APPEND_COMPLETENESS",
+                            url: window.location.origin,
+                            data: JSON.stringify(completeness_data),
+                            
+
+                            error: ajax_retry_on_error,
+
+                            success : function(){
+                                console.log("WRITTEN")
+                            }
+                        });
+                    }
+                });
+            });
+        }
+    });
+
+
+    
+    
+    
 
     // console.log('{"nools_dir" :' + nools_dir + '}')
     
@@ -1608,10 +1716,10 @@ function main() {
     // if(nools_dir){
     //     document.getElementById("nools_gen_button").addEventListener('click',generate_nools);
     //     document.getElementById("nools_gen_button").setAttribute("class","nools_button");
-    // }
+    // }/
 
     if(interactive){
-        window.nools_callback = generate_nools
+        window.nools_callback = gen_completeness_profile
 
         window.button_callbacks = {
             "START_STATE_SET" : handle_startstate_done,
