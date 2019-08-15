@@ -1585,7 +1585,7 @@ function generate_nools(evt) {
 
 ground_truth_requests = [];
 $.ajax({
-    url: "ground_truth_777.json",
+    url: "ground_truth.json",
     dataType: 'text',
     async: true,
     success: function (data){
