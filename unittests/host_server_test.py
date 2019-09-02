@@ -1,9 +1,14 @@
 import argparse,sys,os, atexit,re 
-import requests, socket,subprocess
+import socket,subprocess
 import http.client
 from urllib.parse import quote
 from time import sleep
 import unittest
+# import requests_async as requests
+# import requests
+import grequests
+import requests
+from gevent.pool import Pool
 
 envelope = '<?xml version="1.0" encoding="UTF-8"?>' + \
 '<log_action auth_token="" session_id="ctat_session_73c47bf7-edfb-05f4-8851-ba71280e3d4f" action_id="EVALUATE_QUESTION" user_guid="calvin" date_time="2015/09/09 15:41:01.632" timezone="undefined" source_id="tutor" external_object_id="" info_type="tutor_message.dtd">' +\
@@ -61,27 +66,43 @@ def get_open_port():
     s.close()
     return port
 
+def nothing(x):
+    print("REPONSE")
+bloop = []
 class TestMethods(unittest.TestCase):
 
     def test_logging(self):
         port = get_open_port()
 
-        URL = 'http://localhost:%s' % port
+        URL = 'http://127.0.0.1:%s' % port
+        # URL = 'http://localhost:%s' % port
 
         # print(URL)
 
         ctat_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), "log/test_log.txt"])
         sleep(1)
         session_id = 0 
-        for i in range(1000):
-            # print(i)
+        # async with requests.Session() as session:
+        r_list = []
+        pool = Pool(20)
+        for i in range(100):
+            print(i)
             if(i % 10 == 0):
                 data = context_message
                 session_id = i
             else:
                 data = tutor_message % (session_id,i)
             data = envelope % (quote(data)) 
-            r = requests.post(URL,data=data)
+
+            def go():
+                r = requests.post(URL,data=data)
+            pool.spawn(go)
+
+            # req = grequests.send(r, grequests.Pool(1))
+            # req.get()
+            # bloop.append(req)
+            # grequests.map([r])
+            sleep(.01)
         # sending post request and saving response as response object 
             # print(data)
           # headers = headers = {"Content-type": "text/html; charset=utf-8",
@@ -92,24 +113,28 @@ class TestMethods(unittest.TestCase):
           # r = conn.getresponse()
             
           # extracting response text  
-            pastebin_url = r.text 
+            # pastebin_url = r.text 
             # print(i,"The pastebin URL is:%s"%pastebin_url) 
             # sleep(.01)
-        for i in range(1,6):
-            print(i)
-            sleep(.1)
+        # for i in range(1,6):
+        #     print(i)
+        #     sleep(1)
 
         count = 0
+
         with open("log/test_log.txt",'r') as f:
             headers = next(f).split("\t")
             problem_name_index = headers.index("Problem Name")
             level_domain_index = headers.index("Level (Domain)")
+            print(headers,problem_name_index,level_domain_index)
             for line in f:
+                print("line: ",line)
                 split = line.split("\t")
                 self.assertNotEqual(split[problem_name_index],"")
                 self.assertNotEqual(split[level_domain_index],"")
                 count += 1
-        self.assertEqual(count,900)
+        self.assertEqual(count,90)
+        ctat_process.kill()
 
 if __name__ == '__main__':
     unittest.main()
