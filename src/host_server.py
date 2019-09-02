@@ -1,4 +1,5 @@
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+from SocketServer import ThreadingMixIn
 import os, sys, time
 from datetime import datetime
 from xml.etree import ElementTree
@@ -12,6 +13,8 @@ from nools_gen import generate_nools
 from pprint import pprint
 import colorama
 from colorama import Fore, Back, Style
+
+HOST_DOMAIN = '127.0.0.1' #Use this instead of localhost on windows
 
 colorama.init(autoreset=True)
 
@@ -159,7 +162,7 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
             
 
         
-        # print("ITS A POST\n")
+        print("ITS A POST\n")
         post_data = _read_data(self)
 
         # print(post_data)
@@ -232,7 +235,7 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
                     # print("-------------------")
                     
 
-                    with open(output_file_path, 'a') as f: 
+                    with open(output_file_path, 'a', newline='') as f: 
                         csv_writer = csv.DictWriter(f, LOG_HEADERS.values(),delimiter="\t")
                         csv_writer.writerow(log_dict)
 
@@ -261,8 +264,9 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
 
 
 
-class StoppableHttpServer (HTTPServer):
+class StoppableHttpServer (HTTPServer,ThreadingMixIn):
     """http server that reacts to self.stop flag"""
+
 
     def serve_forever (self):
         """Handle one request at a time until stopped."""
@@ -285,11 +289,12 @@ if (len(sys.argv) > 2):
                 raise
 
 
-    with open(output_file_path, 'w') as f: 
+    with open(output_file_path, 'w', newline='') as f: 
         csv_writer = csv.DictWriter(f, LOG_HEADERS.values(),delimiter="\t")
         csv_writer.writeheader()
 
 
-server = StoppableHttpServer(("localhost", port), StoppableHttpRequestHandler)
+server = StoppableHttpServer((HOST_DOMAIN, port), StoppableHttpRequestHandler)
+
 print("HOST SERVER STARTED")
 server.serve_forever()

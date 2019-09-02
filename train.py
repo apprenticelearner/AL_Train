@@ -16,6 +16,7 @@ outer_loop_process = None
 # ctat_thread = None
 calling_dir = None
 CONFIG_DEFAULT = "net.conf"
+HOST_DOMAIN = '127.0.0.1' #Use this instead of localhost on windows
 
 
 def read_conf(ns, path):
@@ -157,10 +158,10 @@ def parse_args(argv):
     parser.add_argument('-c', '--ctat-port',default=None, dest = "ctat_port",   metavar="<CTAT_port>",
         type=int, help="The port where the ctat interface and logging server bind to.")
 
-    parser.add_argument('--al-host' , default="localhost", dest = "al_host",     metavar="<AL_host>",
-        help="The host url for the apprentice learner server. Default=localhost.")
-    parser.add_argument('--ctat-host' , default="localhost", dest = "ctat_host",     metavar="<CTAT_host>",
-        help="The host url for the apprentice learner server. Default=localhost.")
+    parser.add_argument('--al-host' , default='127.0.0.1', dest = "al_host",     metavar="<AL_host>",
+        help="The host url for the apprentice learner server. Default=127.0.0.1.")
+    parser.add_argument('--ctat-host' , default='127.0.0.1', dest = "ctat_host",     metavar="<CTAT_host>",
+        help="The host url for the apprentice learner server. Default=127.0.0.1.")
 
     parser.add_argument('-d', '--al-dir' ,  default=None, dest = "al_dir",      metavar="<AL_dir>",
         help="The directory where the apprentice learner API can be found.")
@@ -184,8 +185,8 @@ def parse_args(argv):
     
     parser.add_argument('--outer-loop', action='store_true', default=False, dest = "outer_loop",
         help="Specifies that an external outer loop server will be used.")
-    parser.add_argument('--outer-loop-host' , default="localhost", dest = "outer_loop_host",     metavar="<outer_loop_host>",
-        help="The host url for the outer loop server. Default=localhost.")
+    parser.add_argument('--outer-loop-host' , default='127.0.0.1', dest = "outer_loop_host",     metavar="<outer_loop_host>",
+        help="The host url for the outer loop server. Default=127.0.0.1.")
     parser.add_argument('--outer-loop-port', default=None, dest = "outer_loop_port",      metavar="<outer_loop_port>",
         help="Specifies the port to bind to for running the outer loop server.")
     parser.add_argument('--outer-loop-dir', default=None, dest = "outer_loop_dir",      metavar="<outer_loop_dir>",
@@ -289,7 +290,7 @@ def main(args):
 
 
 
-    ctat_url = "http://localhost:%s/?training=%s&al_url=http://localhost:%s" %(args.ctat_port, args.training,args.al_port)
+    ctat_url = "http://%s:%s/?training=%s&al_url=http://%s:%s" %(HOST_DOMAIN,args.ctat_port, args.training,HOST_DOMAIN,args.al_port)
     if(args.wd != None): ctat_url += "&wd=" + args.wd
     if(args.interactive): ctat_url += "&interactive=true"
     if(args.use_foci): ctat_url += "&use_foci=true"
