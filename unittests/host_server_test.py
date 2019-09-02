@@ -9,6 +9,7 @@ import unittest
 import grequests
 import requests
 from gevent.pool import Pool
+import threading
 
 envelope = '<?xml version="1.0" encoding="UTF-8"?>' + \
 '<log_action auth_token="" session_id="ctat_session_73c47bf7-edfb-05f4-8851-ba71280e3d4f" action_id="EVALUATE_QUESTION" user_guid="calvin" date_time="2015/09/09 15:41:01.632" timezone="undefined" source_id="tutor" external_object_id="" info_type="tutor_message.dtd">' +\
@@ -79,12 +80,18 @@ class TestMethods(unittest.TestCase):
 
         # print(URL)
 
-        ctat_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), "log/test_log.txt"])
-        sleep(1)
+        ctat_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), "log/test_log.txt"],stdout=subprocess.PIPE)
+        while True:
+            line = ctat_process.stdout.readline()
+            if("HOST SERVER STARTED" in str(line)):
+                break
+        
         session_id = 0 
         # async with requests.Session() as session:
-        r_list = []
-        pool = Pool(20)
+        # r_list = []
+        # pool = Pool(1)
+        # threads = []
+        # sleep(1)
         for i in range(100):
             print(i)
             if(i % 10 == 0):
@@ -96,7 +103,12 @@ class TestMethods(unittest.TestCase):
 
             def go():
                 r = requests.post(URL,data=data)
-            pool.spawn(go)
+
+            thread = threading.Thread(target=go)
+            thread.start()
+            
+            # pool.spawn(go)
+
 
             # req = grequests.send(r, grequests.Pool(1))
             # req.get()
