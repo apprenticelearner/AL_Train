@@ -69,84 +69,67 @@ def get_open_port():
 
 def nothing(x):
     print("REPONSE")
+
+def log_test(self,sleep_interval):
+    port = get_open_port()
+
+    URL = 'http://127.0.0.1:%s' % port
+    log_path = "log/test_log-%.4f.txt" % sleep_interval
+
+    if os.path.exists(log_path):
+        os.remove(log_path)
+
+    ctat_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=subprocess.PIPE)
+    while True:
+        line = ctat_process.stdout.readline()
+        if("HOST SERVER STARTED" in str(line)):
+            break
+    
+    session_id = 0 
+    
+    for i in range(100):
+        print(i)
+        if(i % 10 == 0):
+            data = context_message
+            session_id = i
+        else:
+            data = tutor_message % (session_id,i)
+        data = envelope % (quote(data)) 
+
+        def go():
+            r = requests.post(URL,data=data)
+
+        thread = threading.Thread(target=go)
+        thread.start()
+
+        sleep(sleep_interval)
+    
+
+    count = 0
+
+    with open(log_path,'r') as f:
+        headers = next(f).split("\t")
+        problem_name_index = headers.index("Problem Name")
+        level_domain_index = headers.index("Level (Domain)")
+        print(headers,problem_name_index,level_domain_index)
+        for j,line in enumerate(f):
+            print("line: ",line)
+            split = line.split("\t")
+            self.assertNotEqual(split[problem_name_index],"","Problem Name is empty in row %s of %s" % (j,log_path))
+            self.assertNotEqual(split[level_domain_index],"","Level (Domain) is empty in row %s of %s" % (j,log_path))
+            count += 1
+    self.assertEqual(count,90, "%s has %s rows, should have 90" %(log_path, count))
+    ctat_process.kill()
 bloop = []
 class TestMethods(unittest.TestCase):
 
-    def test_logging(self):
-        port = get_open_port()
-
-        URL = 'http://127.0.0.1:%s' % port
-        # URL = 'http://localhost:%s' % port
-
-        # print(URL)
-
-        ctat_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), "log/test_log.txt"],stdout=subprocess.PIPE)
-        while True:
-            line = ctat_process.stdout.readline()
-            if("HOST SERVER STARTED" in str(line)):
-                break
+    def test_logging_general(self):
+        log_test(self,0.05)
+    def test_logging_fast(self):
+        log_test(self,0.0005)
+    def test_logging_async(self):
+        log_test(self,0.0)
         
-        session_id = 0 
-        # async with requests.Session() as session:
-        # r_list = []
-        # pool = Pool(1)
-        # threads = []
-        # sleep(1)
-        for i in range(100):
-            print(i)
-            if(i % 10 == 0):
-                data = context_message
-                session_id = i
-            else:
-                data = tutor_message % (session_id,i)
-            data = envelope % (quote(data)) 
-
-            def go():
-                r = requests.post(URL,data=data)
-
-            thread = threading.Thread(target=go)
-            thread.start()
-            
-            # pool.spawn(go)
-
-
-            # req = grequests.send(r, grequests.Pool(1))
-            # req.get()
-            # bloop.append(req)
-            # grequests.map([r])
-            sleep(.01)
-        # sending post request and saving response as response object 
-            # print(data)
-          # headers = headers = {"Content-type": "text/html; charset=utf-8",
-          #                      "Accept": "text/plain"}
-          # conn = http.client.HTTPSConnection('http://localhost', port)
-          # conn.request('PRINT', '/', data,headers)
-          # conn.endheaders() # <---
-          # r = conn.getresponse()
-            
-          # extracting response text  
-            # pastebin_url = r.text 
-            # print(i,"The pastebin URL is:%s"%pastebin_url) 
-            # sleep(.01)
-        # for i in range(1,6):
-        #     print(i)
-        #     sleep(1)
-
-        count = 0
-
-        with open("log/test_log.txt",'r') as f:
-            headers = next(f).split("\t")
-            problem_name_index = headers.index("Problem Name")
-            level_domain_index = headers.index("Level (Domain)")
-            print(headers,problem_name_index,level_domain_index)
-            for line in f:
-                print("line: ",line)
-                split = line.split("\t")
-                self.assertNotEqual(split[problem_name_index],"")
-                self.assertNotEqual(split[level_domain_index],"")
-                count += 1
-        self.assertEqual(count,90)
-        ctat_process.kill()
 
 if __name__ == '__main__':
     unittest.main()
