@@ -1,5 +1,5 @@
 from http.server import HTTPServer, SimpleHTTPRequestHandler
-from SocketServer import ThreadingMixIn
+# from SocketServer import ThreadingMixIn
 import os, sys, time
 from datetime import datetime
 from xml.etree import ElementTree
@@ -264,7 +264,7 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
 
 
 
-class StoppableHttpServer (HTTPServer,ThreadingMixIn):
+class StoppableHttpServer (HTTPServer):
     """http server that reacts to self.stop flag"""
 
 
