@@ -171,21 +171,26 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
 
 
         for x in envelope.iter():
+            # print(x.tag)
             if(x.tag == "log_session_start"):
                 # print("Message Type: ", x.tag)
                 session_default_dict = {key: None for key in LOG_HEADERS.values()}
                 _fill_from_elm(session_default_dict, x)
 
             if(x.tag == "log_action"):
+                # print(unquote(x.text))
                 payload = ElementTree.fromstring(unquote(x.text))
 
                 # print(minidom.parseString(ElementTree.tostring(payload, encoding='utf8', method='xml')).toprettyxml())
 
                 for msg in payload.iter("context_message"):
+                    # print()
                     # print("Message Type: ", "context_message")
                     _fill_from_elm(session_default_dict, msg)
                     for elm in list(msg):
                         _fill_from_elm(session_default_dict,elm)
+                    # pprint(session_default_dict)
+                    # print()
 
                 for msg in payload.iter("tool_message"):
                     tool_dict = {}
@@ -196,9 +201,11 @@ class StoppableHttpRequestHandler (SimpleHTTPRequestHandler):
 
                 for msg in payload.iter("tutor_message"):
                     # print("Message Type: ", "tutor_message")
+
                     log_dict = session_default_dict.copy()
                     for elm in list(msg):
                         _fill_from_elm(log_dict, elm)
+                    # print("t_id",log_dict.get(LOG_HEADERS['transaction_id'],"bloop"))
 
                     # print("------MESSAGE-------")
                     # mstring = ElementTree.tostring(msg, encoding='utf8', method='xml')                    
