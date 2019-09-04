@@ -986,7 +986,7 @@ function runWhenReady(){
      	typeof iframe_content.CTAT.ToolTutor.tutor == "undefined" || iframe_content.CTAT.ToolTutor.tutor == null){
     	// term_print('\x1b[0;30;47m' + "BLEHH1" +  '\x1b[0m');
         if(ctatWaitSpins > 0){
-           term_print("Waiting for CTAT to load. Attempt: "+ blehspins,"WARNING");
+           term_print("Waiting for CTAT to load. Attempt: "+ ctatWaitSpins,"WARNING");
         }
         ctatWaitSpins += 1;
         window.setTimeout(runWhenReady, 500);
