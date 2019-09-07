@@ -1108,12 +1108,12 @@ function serve_next_training_set(){
     }
 }
 
-function declare_new_student(agent_id,outer_loop_type,problem_set){
+function declare_new_student(agent_id,outer_loop_type,problem_set, outer_loop_args){
     $.ajax({
         type: 'NEW_STUDENT',
         url: OUTER_LOOP_URL,
         crossdomain : true,
-        data: JSON.stringify({"id": agent_id, "outer_loop_type": outer_loop_type, "problem_set":problem_set}),
+        data: JSON.stringify({"id": agent_id, "outer_loop_type": outer_loop_type, "problem_set":problem_set, "outer_loop_args":outer_loop_args}),
         // contentType: "application/json; charset=utf-8",
         // dataType: 'json',
         // "headers": {
@@ -1213,7 +1213,7 @@ function serve_next_agent(){
                 agent_id = resp["agent_id"];
                 request_history = [];
 
-                declare_new_student(agent_id, agent_obj["outer_loop_controller"], agent_obj["problem_set"])
+                declare_new_student(agent_id, agent_obj["outer_loop_controller"], agent_obj["problem_set"], agent_obj["outer_loop_args"]);
             }
         }else{
             use_outer_loop_controller = false
