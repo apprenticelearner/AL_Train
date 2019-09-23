@@ -1,6 +1,6 @@
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 # from SocketServer import ThreadingMixIn
-import os, sys, time
+import os, sys, time, copy
 from datetime import datetime
 from xml.etree import ElementTree
 from xml.etree.ElementTree import ElementTree as ETree
@@ -18,23 +18,38 @@ HOST_DOMAIN = '127.0.0.1' #Use this instead of localhost on windows
 
 colorama.init(autoreset=True)
 
+agents_stats = {}
+INITIAL_AGENT_STAT = {
+    # 'correct': 0,
+    # 'incorrect': 0,
+    'feedbacks': []
+}
+
 def _read_data(handler):
     content_length = int(handler.headers['Content-Length']) # <--- Gets the size of data
     post_data = handler.rfile.read(content_length) # <--- Gets the data itself
     return post_data.decode('UTF-8')
 
-def _print_and_resp(handler,outmode=sys.stdout):
+def _print_and_resp(handler, outmode=sys.stdout):
     # content_length = int(handler.headers['Content-Length']) # <--- Gets the size of data
     # post_data = handler.rfile.read(content_length) # <--- Gets the data itself
     post_data = json.loads(_read_data(handler))
     # colorama.init(strip=True, convert=True, autoreset=True)
     m_type = post_data.get('type', 'default').lower()
+    agent_id = post_data.get('agent_id', None)
     message = post_data.get('message', None)
+    print(post_data)
+    print(agent_id)
+    if agent_id not in agents_stats:
+        agents_stats[agent_id] = copy.deepcopy(INITIAL_AGENT_STAT)
+    feedbacks = agents_stats[agent_id]['feedbacks']
     if message is not None:
         if m_type == 'correct':
-            print(Back.GREEN + Fore.BLACK  + message) #, file=outmode)
+            feedbacks.append(1)
+            print(Back.GREEN + Fore.BLACK  + message + ' [{}/{}]'.format(sum(feedbacks), len(feedbacks))) #, file=outmode)
         elif m_type == 'incorrect':
-            print(Back.RED + Fore.BLACK + message)#, file=outmode)
+            feedbacks.append(0)
+            print(Back.RED + Fore.BLACK + message + ' [{}/{}]'.format(len(feedbacks) - sum(feedbacks), len(feedbacks)))#, file=outmode)
         elif m_type == 'example':
             print(Back.BLUE + Fore.YELLOW  +  message)#, file=outmode)
         elif m_type == 'info':

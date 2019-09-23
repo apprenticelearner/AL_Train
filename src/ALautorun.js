@@ -62,6 +62,7 @@ var free_authoring = false;
 var start_state_elements =[];
 var start_state_history =[];
 
+var current_agent_id = null;
 
 
 CTATGuid = {s4:function s4() {
@@ -82,14 +83,18 @@ function kill_this(message,type="info"){
     });
 }
 
-function term_print(message,type){
+function term_print(message, type, data){
     // ''' Prints back to the terminal that this was started in.'''
     // handles types of CORRECT, INCORRECT, INfO, WARNING, ERROR
     $.ajax({
         type: "PRINT",
         url: window.location.origin,
-        data: JSON.stringify({"message":message,
-               "type":type}),
+        data: JSON.stringify({
+            ...data,
+            "message": message,
+            "type": type,
+            "agent_id": current_agent_id
+        }),
         dataType: "json",
     });
 }
@@ -140,7 +145,7 @@ function ajax_retry_on_error(xhr, textStatus, errorThrown) {
 }
 
 
-function create_agent(callback,agent_name, agent_type, otherdata={}){
+function create_agent(callback, agent_name, agent_type, otherdata={}){
     data_dict = {
             'name': agent_name,
             'agent_type': agent_type,
@@ -163,7 +168,9 @@ function create_agent(callback,agent_name, agent_type, otherdata={}){
 
         success: function(resp) {
         	// term_print('\x1b[0;30;47m' + "Successfully Built Agent: " + agent_name + '\x1b[0m');
-            term_print("Successfully Built Agent: " + agent_name, 'INFO');
+            agent_id = resp["agent_id"];
+            current_agent_id = agent_id;
+            term_print(`Successfully Built Agent: ${agent_name} (id: ${agent_id})`, 'INFO');
             if(callback){
             	callback(resp);
             }
