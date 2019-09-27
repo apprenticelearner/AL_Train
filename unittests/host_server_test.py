@@ -242,7 +242,7 @@ def log_test(self,sleep_interval):
       x.join()
     
     sleep(2)
-    host_process.kill()
+    host_process.terminate()
     # sleep(2)
 
     with open(log_path,'r') as f:
