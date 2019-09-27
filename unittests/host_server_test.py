@@ -2,7 +2,7 @@ import argparse,sys,os, atexit,re
 import socket,subprocess
 import http.client
 from urllib.parse import quote
-from time import sleep
+
 import unittest
 # import requests_async as requests
 # import requests
@@ -10,15 +10,29 @@ import grequests
 import requests
 from gevent.pool import Pool
 import threading
+from datetime import datetime
+from datetime import timezone
+from time import sleep
+import time
+
+
+from gevent import monkey
+monkey.patch_all()
 
 envelope = '<?xml version="1.0" encoding="UTF-8"?>' + \
-'<log_action auth_token="" session_id="ctat_session_73c47bf7-edfb-05f4-8851-ba71280e3d4f" action_id="EVALUATE_QUESTION" user_guid="calvin" date_time="2015/09/09 15:41:01.632" timezone="undefined" source_id="tutor" external_object_id="" info_type="tutor_message.dtd">' +\
+'<log_action auth_token="" session_id="0" action_id="EVALUATE_QUESTION" user_guid="calvin" date_time="whatever" timezone="undefined" source_id="tutor" external_object_id="" info_type="tutor_message.dtd">' +\
 '%s' + \
 '</log_action>'
 
+session_start_message = '<?xml version="1.0" ?>' + \
+'<log_session_start assignment_id="" auth_token="none" class_id="" \
+ date_time="2019/09/25 21:25:15.377" info_type="tutor_message.dtd" \
+ session_id="0" timezone="America/New_York" treatment_id="" user_guid="1481"/>'
+
+
 context_message = '<?xml version="1.0" encoding="UTF-8"?>' + \
 '<tutor_related_message_sequence version_number="4">' + \
-  '<context_message context_message_id="0CEF2E07-24DE-BFDA-9BAB-957C3AE236CE" name="START_PROBLEM">' + \
+  '<context_message context_message_id="%s" name="START_PROBLEM">' + \
     '<dataset>' + \
       '<name>Stoichiometry Study 1 - Spring 2005</name>' + \
       '<level type="Domain">' + \
@@ -35,29 +49,96 @@ context_message = '<?xml version="1.0" encoding="UTF-8"?>' + \
   '</context_message>' + \
 '</tutor_related_message_sequence>'
 
-
-tutor_message = '<?xml version="1.0" encoding="UTF-8"?>' + \
-'<log_action auth_token="bleh" session_id="ctat_session_73c47bf7-edfb-05f4-8851-ba71280e3d4f" action_id="EVALUATE_QUESTION" user_guid="calvin" date_time="2015/09/09 15:41:01.632" timezone="America/New_York" source_id="CTATTutor" external_object_id="" info_type="tutor_message.dtd">' + \
-  '<tutor_related_message_sequence version_number="4">' + \
-    '<tutor_message context_message_id="9fb401fb-a7ca-5557-a38b-5f344d56d925">' + \
-      '<semantic_event transaction_id="%s" name="RESULT"/>' + \
-      '<event_descriptor>' + \
+event_descriptor = '<event_descriptor>' + \
         '<selection>textinput1</selection>' + \
         '<action>UpdateTextField</action>' + \
         '<input>' + \
           '<![CDATA[%s]]>' + \
         '</input>' + \
-      '</event_descriptor>' + \
+      '</event_descriptor>'
+
+tool_message = '<?xml version="1.0" encoding="UTF-8"?>' + \
+'<log_action auth_token="bleh" session_id="0" action_id="EVALUATE_QUESTION" user_guid="calvin" date_time="2015/09/09 15:41:01.632" timezone="America/New_York" source_id="CTATTutor" external_object_id="" info_type="tutor_message.dtd">' + \
+'<tutor_related_message_sequence version_number="4">' + \
+  '<tool_message context_message_id="%s">' + \
+    '<semantic_event name="ATTEMPT" transaction_id="%s"/>' + \
+    event_descriptor + \
+    '<custom_field>' + \
+      '<name>tool_event_time</name>' + \
+      '<value>%s</value>' + \
+    '</custom_field>' + \
+  '</tool_message>' + \
+'</tutor_related_message_sequence>' + \
+'</log_action>' 
+
+
+
+tutor_message = '<?xml version="1.0" encoding="UTF-8"?>' + \
+'<log_action auth_token="bleh" session_id="0" action_id="EVALUATE_QUESTION" user_guid="calvin" date_time="2015/09/09 15:41:01.632" timezone="America/New_York" source_id="CTATTutor" external_object_id="" info_type="tutor_message.dtd">' + \
+  '<tutor_related_message_sequence version_number="4">' + \
+    '<tutor_message context_message_id="%s">' + \
+      '<semantic_event transaction_id="%s" name="RESULT"/>' + \
+      event_descriptor + \
       '<action_evaluation>CORRECT</action_evaluation>' + \
       '<tutor_advice>' + \
         '<![CDATA[You got it!]]>' + \
       '</tutor_advice>' + \
+      '<custom_field>' + \
+        '<name>tutor_event_time</name>' + \
+        '<value>%s</value>' + \
+      '</custom_field>' + \
     '</tutor_message>' + \
   '</tutor_related_message_sequence>' + \
 '</log_action>' 
 
-print(context_message)
+done_descriptor = '<event_descriptor>' + \
+        '<selection>done</selection>' + \
+        '<action>ButtonPressed</action>' + \
+        '<input>' + \
+          '<![CDATA[%s]]>' + \
+        '</input>' + \
+      '</event_descriptor>'
+
+tool_done = '<?xml version="1.0" encoding="UTF-8"?>' + \
+'<log_action auth_token="bleh" session_id="0" action_id="EVALUATE_QUESTION" user_guid="calvin" date_time="2015/09/09 15:41:01.632" timezone="America/New_York" source_id="CTATTutor" external_object_id="" info_type="tutor_message.dtd">' + \
+'<tutor_related_message_sequence version_number="4">' + \
+  '<tool_message context_message_id="%s">' + \
+    '<semantic_event name="ATTEMPT" transaction_id="%s"/>' + \
+    done_descriptor + \
+    '<custom_field>' + \
+      '<name>tool_event_time</name>' + \
+      '<value>%s</value>' + \
+    '</custom_field>' + \
+  '</tool_message>' + \
+'</tutor_related_message_sequence>' + \
+'</log_action>' 
+
+
+
+tutor_done = '<?xml version="1.0" encoding="UTF-8"?>' + \
+'<log_action auth_token="bleh" session_id="0" action_id="EVALUATE_QUESTION" user_guid="calvin" date_time="2015/09/09 15:41:01.632" timezone="America/New_York" source_id="CTATTutor" external_object_id="" info_type="tutor_message.dtd">' + \
+  '<tutor_related_message_sequence version_number="4">' + \
+    '<tutor_message context_message_id="%s">' + \
+      '<semantic_event transaction_id="%s" name="RESULT"/>' + \
+      done_descriptor + \
+      '<action_evaluation>CORRECT</action_evaluation>' + \
+      '<tutor_advice>' + \
+        '<![CDATA[You got it!]]>' + \
+      '</tutor_advice>' + \
+      '<custom_field>' + \
+        '<name>tutor_event_time</name>' + \
+        '<value>%s</value>' + \
+      '</custom_field>' + \
+    '</tutor_message>' + \
+  '</tutor_related_message_sequence>' + \
+'</log_action>' 
+
+# print(context_message)
+print(tool_message)
 print(tutor_message)
+
+MAX_SOCKETS = 10
+socket_semaphore = threading.Semaphore(MAX_SOCKETS)
 
 def get_open_port():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -70,6 +151,29 @@ def get_open_port():
 def nothing(x):
     print("REPONSE")
 
+all_threads = []
+
+def post_data(URL,data):
+    def go():
+        # global socket_semaphore
+        socket_semaphore.acquire()
+        # print("acquire")
+        # print(URL)
+        r = requests.post(URL,data=data,timeout=.5)
+        # print("RETURN",r.text)
+        socket_semaphore.release()
+        # print("release")
+
+    thread = threading.Thread(target=go)
+    thread.start()
+    all_threads.append(thread)
+    # return thread
+
+def get_time_str():
+  now = datetime.now(timezone.utc)
+  return now.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
+  
+
 def log_test(self,sleep_interval):
     port = get_open_port()
 
@@ -79,54 +183,94 @@ def log_test(self,sleep_interval):
     if os.path.exists(log_path):
         os.remove(log_path)
 
-    ctat_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=subprocess.PIPE)
+    print(sys.executable)
+    print(" ".join([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path]))
+    with open('log/term_out.txt', "w") as outfile:
+      # host_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=sys.stdout)#stdout=subprocess.PIPE)#
+      host_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=subprocess.PIPE)
+    # sleep(3)
     while True:
-        line = ctat_process.stdout.readline()
+        line = host_process.stdout.readline()
         if("HOST SERVER STARTED" in str(line)):
             break
     
     session_id = 0 
     
-    for i in range(100):
-        print(i)
-        if(i % 10 == 0):
-            data = context_message
-            session_id = i
+    for i in range(10):
+      post_data(URL,session_start_message)
+
+      # ts = get_time_str()
+      ts = get_time_str()
+      data = context_message % i
+      data = envelope % (quote(data)) 
+      post_data(URL,data)
+
+      for j in range(10):
+        n_dots = ((i*10+j)%4)
+        print(("%d,%d"%(i,j)) + "."*n_dots+ " "*(3-n_dots)+ "\r",end="",flush=True)
+        if(j < 9):
+          data = tool_message % (i,j,j,ts)
+          ts = get_time_str()
+          data = envelope % (quote(data)) 
+          post_data(URL,data)
+
+          data = tutor_message % (i,j,j,ts)
+          ts = get_time_str()
+          data = envelope % (quote(data)) 
+          post_data(URL,data)
         else:
-            data = tutor_message % (session_id,i)
-        data = envelope % (quote(data)) 
+          # print("send DONE")
+          data = tool_done % (i,j,j,ts)
+          ts = get_time_str()
+          data = envelope % (quote(data)) 
+          post_data(URL,data)
+          # print(data)
 
-        def go():
-            r = requests.post(URL,data=data)
+          data = tutor_done % (i,j,j,ts)
+          ts = get_time_str()
+          data = envelope % (quote(data)) 
+          post_data(URL,data)
 
-        thread = threading.Thread(target=go)
-        thread.start()
+        
 
         sleep(sleep_interval)
     
 
     count = 0
 
+    for x in all_threads:
+      x.join()
+    
+    sleep(2)
+    host_process.kill()
+    # sleep(2)
+
     with open(log_path,'r') as f:
         headers = next(f).split("\t")
         problem_name_index = headers.index("Problem Name")
         level_domain_index = headers.index("Level (Domain)")
-        print(headers,problem_name_index,level_domain_index)
+        outcome_index = headers.index("Outcome")
+        # print(headers,problem_name_index,level_domain_index)
         for j,line in enumerate(f):
             print("line: ",line)
             split = line.split("\t")
             self.assertNotEqual(split[problem_name_index],"","Problem Name is empty in row %s of %s" % (j,log_path))
             self.assertNotEqual(split[level_domain_index],"","Level (Domain) is empty in row %s of %s" % (j,log_path))
+            self.assertNotEqual(split[outcome_index],"","Outcome is empty in row %s of %s" % (j,log_path))
             count += 1
-    self.assertEqual(count,90, "%s has %s rows, should have 90" %(log_path, count))
-    ctat_process.kill()
+    self.assertEqual(count,100, "%s has %s rows, should have 100" %(log_path, count))
+
+    # while True:
+    #     print(host_process.stdout.readline())
+
+    
 bloop = []
 class TestMethods(unittest.TestCase):
 
     def test_logging_general(self):
         log_test(self,0.05)
     def test_logging_fast(self):
-        log_test(self,0.0005)
+        log_test(self,0.0001)
     def test_logging_async(self):
         log_test(self,0.0)
         
@@ -135,7 +279,7 @@ if __name__ == '__main__':
     unittest.main()
 
 # while True:
-#     if(ctat_process.poll() != None):
+#     if(host_process.poll() != None):
 #         break
 #     # try:
 #     sleep(.1)
