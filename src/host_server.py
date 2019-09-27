@@ -17,6 +17,7 @@ from pprint import pprint
 import colorama
 from colorama import Fore, Back, Style
 import atexit
+import signal
 
 colorama.init(autoreset=True)
 
@@ -39,11 +40,15 @@ WRITE_THREADS = 1
 
 
 #defining function to run on shutdown
-def joint_queues():
+def cleanup():
     post_queue.join()
     write_queue.join()
+    log_file_handle.close()
+    print("CLEANUP")
 #Register the function to be called on exit
-atexit.register(joint_queues)
+atexit.register(cleanup)
+signal.signal(signal.SIGTERM, cleanup)
+
 
 
 def check_started(host,port):
