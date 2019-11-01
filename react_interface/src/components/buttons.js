@@ -4,7 +4,6 @@ import { TouchableHighlight,ScrollView,View, Text, StyleSheet } from "react-nati
 import Panel from './panel.js'
 
 
-
 // import { useMachine } from '@xstate/react';
 
 
@@ -211,7 +210,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     // flexBasis : "20%",
     marginTop: "auto",
-    justifySelf: "flex-end",
+    // justifySelf: "flex-end",
     // "pointerEvents": "none",
 
   },
@@ -246,7 +245,7 @@ const styles = StyleSheet.create({
   "startstate_button" : {
     "position": "relative",
     "width":200,
-    "fontSize":18,
+    // "fontSize":18,
     "backgroundColor": "#4CAF50",
      borderRadius: 5,
      padding: 5,

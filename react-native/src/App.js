@@ -2,6 +2,7 @@
 // import { CollapsingToolbar }  from 'react-native-collapsingtoolbar';
 // import CollapsibleList from './collapsible_list.js'
 import SkillPanel from './components/skill_panel.js'
+import CTAT_Tutor from './ReactCTAT_Tutor';
 
 
 // 
@@ -22,8 +23,8 @@ const instructions = Platform.select({
 
 const HomeScreen = () => {
   return (
-    
-      <SkillPanel></SkillPanel>
+	  <CTAT_Tutor></CTAT_Tutor>    	
+      /*<SkillPanel></SkillPanel>*/
   );
 };
 

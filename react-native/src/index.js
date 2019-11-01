@@ -6,7 +6,7 @@ import Buttons from './components/buttons';
 import * as serviceWorker from './serviceWorker';
 import ButtonsMachine from './state_machine.js'
 import { interpret } from 'xstate';
-
+import CTAT_Tutor from './ReactCTAT_Tutor';
 
 
 // function setSkillWindowState(evt){
@@ -43,15 +43,20 @@ window.state_machine_service.onTransition(current => {
 function setSkillWindowState(skill_set, select_callback,
 							 correctness_callback, initial_select=null,
 							 where_colors=null){
-	ReactDOM.render(<SkillPanel skill_set={skill_set}
-								select_callback={select_callback}
-								correctness_callback={correctness_callback}
-								initial_select={initial_select}
-								where_colors={where_colors || undefined}
-								current = {window.state_machine}
-								service = {window.state_machine_service}
-								
-								/>, document.getElementById('skill_panel'));	
+	ReactDOM.render(
+		//<View>
+		<CTAT_Tutor></CTAT_Tutor>
+		//<SkillPanel skill_set={skill_set}
+		//						select_callback={select_callback}
+		//						correctness_callback={correctness_callback}
+	//							initial_select={initial_select}
+	//							where_colors={where_colors || undefined}
+//								current = {window.state_machine}
+//								service = {window.state_machine_service}
+//								
+//								/>
+//		</View>
+		, document.getElementById('skill_panel'));	
 }
 
 
