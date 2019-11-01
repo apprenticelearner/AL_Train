@@ -1,0 +1,3 @@
+rootProject.name = 'TutorInterface'
+
+include ':app'
