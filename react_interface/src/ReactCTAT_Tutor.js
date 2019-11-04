@@ -1,5 +1,6 @@
 import React from 'react';
 import WebView  from 'react-native-web-webview';
+// import WebViewFile from '../../examples/FracPreBake/FractionArithmetic/HTML/fraction_arithmetic.html';
 import {
   Icon,
   View,
@@ -9,18 +10,403 @@ import {
   // WebView
 } from 'react-native';
 
+var $ = require('jquery');
+
+// const post_message = 
+// "\
+// function waitForBridge() {\
+//    //the react native postMessage has only 1 parameter\
+//    //while the default one has 2, so check the signature\
+//    //of the function\
+//    if (window.postMessage.length !== 1){\
+//      setTimeout(waitForBridge, 200);\
+//    }\
+//    else {\
+//      window.postMessage(document);\
+//    }\
+// }\
+// \
+// window.onload = waitForBridge;\
+// ";
+
+function checkTypes(element, types){
+  var ok = false;
+    for (var i = types.length - 1; i >= 0; i--) {
+    var type = types[i];
+    if(element.classList.contains(type)) ok = true;
+  }
+  return ok;
+}
+
 export default class CTAT_Tutor extends React.Component {
   constructor(props){
     super(props);
+    // this.webview_loaded = this.webview_loaded.bind(this)
+    this.onTransition = this.onTransition.bind(this)
+    this.lockElement = this.lockElement.bind(this)
+    this.unlockElement = this.unlockElement.bind(this)
+    this.colorElement = this.colorElement.bind(this)
+    this.makeHighlights = this.makeHighlights.bind(this)
+    this.clearHighlights = this.clearHighlights.bind(this)
+    this._triggerWhenInitialized = this._triggerWhenInitialized.bind(this)
+    this.componentDidUpdate = this.componentDidUpdate.bind(this)
+    this.relative_pos_cache = {};
+
+    this.color_class_map = {
+      "EXAMPLE" : "CTAT--example",
+      "CORRECT" : "CTAT--correct",
+      "INCORRECT" : "CTAT--incogetDerrect",
+      "HIGHLIGHT" : "CTAT--AL_highlight",
+      "START_STATE" : "CTAT--AL_start",
+      "DEFAULT" : ""
+      };
+
+    this.ctat_webview = React.createRef();
+
   }
 
+  componentDidMount(){
+    window.ctat_webview = this.ctat_webview
+    this.iframe_content = this.ctat_webview.frameRef.contentWindow;
+    console.log("THIS",this)
+    // this.graph = this.iframe_content.CTAT.ToolTutor.tutor.getGraph() || false;
+  }
+
+  componentDidUpdate(prevProps,prevState){
+    console.log("UPDATED", prevProps)
+
+    if(!this.init_callback){
+      this.init_callback = (x) => {};
+    }
+
+    this._triggerWhenInitialized()
+
+  }
+
+  _triggerWhenInitialized(){
+    console.log("TRIGGER WHEN INITIALIZED")
+    const iframe_content = this.iframe_content
+
+    if(typeof iframe_content.CTAT == "undefined" || iframe_content.CTAT == null ||
+      typeof iframe_content.CTATCommShell == "undefined" || iframe_content.CTATCommShell == null || 
+      typeof iframe_content.CTATCommShell.commShell == "undefined" || iframe_content.CTATCommShell.commShell == null ||
+      typeof iframe_content.CTAT.ToolTutor == "undefined" || iframe_content.CTAT.ToolTutor == null ||
+      typeof iframe_content.CTAT.ToolTutor.tutor == "undefined" || iframe_content.CTAT.ToolTutor.tutor == null){
+        // term_print('\x1b[0;30;47m' + "BLEHH1" +  '\x1b[0m');
+        console.log("BLEHH1")
+        window.setTimeout(() => {this._triggerWhenInitialized()}, 500);
+        return;       
+    }
+    this.graph = iframe_content.CTAT.ToolTutor.tutor.getGraph() || false;
+    this.commLibrary = iframe_content.CTATCommShell.commShell.getCommLibrary();
+    this.hasConfig = iframe_content.CTATConfiguration != undefined
+  
+    // console.log("graph")
+    // console.log(graph)
+    // console.log("comm")
+    // console.log(commLibrary)
+    // console.log(hasConfig)
+    
+
+    if(this.graph && this.commLibrary && this.hasConfig){
+      var link = iframe_content.document.createElement('link');
+      link.setAttribute('rel', 'stylesheet');
+      link.setAttribute('type', 'text/css');
+      // link.setAttribute('href', "../".repeat(working_dir.split('/').length+1) + 'css/AL_colors.css');
+      link.setAttribute('href', document.location.origin + '/css/AL_colors.css');
+      iframe_content.document.getElementsByTagName('head')[0].appendChild(link);
+
+      //Gets rid of annyoing sai printout on every call to sendXML
+      iframe_content.flashVars.setParams({"deliverymode" : "bleehhhh"})
+
+      //Grab these event constants from CTAT
+      this.CTAT_CORRECT = iframe_content.CTAT.Component.Base.Tutorable.EventType.correct;
+      this.CTAT_INCORRECT = iframe_content.CTAT.Component.Base.Tutorable.EventType.incorrect;
+      this.CTAT_ACTION = iframe_content.CTAT.Component.Base.Tutorable.EventType.action;    
+
+      this.init_callback(this)
+    }else{
+      // term_print('\x1b[0;30;47m' + "BLEHH2" + '\x1b[0m');
+      console.log("BLEHH2")
+      window.setTimeout(() => {this._triggerWhenInitialized()}, 500);
+    }
+  }
+
+
+  onTransition(state){
+
+  }
+
+  lockElement(name){
+    var comp = this.iframe_content.CTATShellTools.findComponent(name)[0];
+    comp.setEnabled(false);
+  }
+
+  unlockElement(name){
+    var comp = this.iframe_content.CTATShellTools.findComponent(name)[0];
+    comp.setEnabled(true);
+  }
+
+  colorElement(name,type){
+    console.log("THIS1",this)
+    var elm = this.iframe_content.document.getElementById(name)
+    elm.firstElementChild.setAttribute("class", this.color_class_map[type]);
+  }
+
+  clearElement(name){
+    var elm = this.iframe_content.document.getElementById(name);    
+    elm.firstElementChild.value = "";
+  }
+
+  makeHighlights(sai){
+    
+  }
+
+  clearHighlights(){
+    
+  }
+
+  getDefaultSAI(){
+    return this.graph.getExampleTracer().getBestNextLink().getDefaultSAI();
+  }
+
+  executeSAI(sai){
+    var comp = this.iframe_content.CTATShellTools.findComponent(sai.selection)[0];
+    var sai_obj =  new this.iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
+    comp.executeSAI(sai_obj);
+    comp.setEnabled(false);
+  }
+
+  get_state({encode_relative=true,strip_offsets=true, use_offsets=true, use_class=true, use_id=true,append_ele=true}={}){
+    var relative_pos_cache = this.relative_pos_cache
+    var HTML_PATH = this.HTML_PATH
+    var state_array = this.iframe_content.$('div').toArray();
+    // state_array.push({current_task: current_task});
+
+    var state_json = {}
+    var count = 0;
+    $.each(state_array, function(idx, element){
+
+      obj = {}
+      if(element.classList.contains("CTATComponent")
+             && !element.classList.contains("CTATTable")) {
+            // if(obj["className"] == "CTATTextField") {continue;} //Skip table objects and just use cells
+            if(element.classList[0] != "CTATTextField") { //Skip text fields
+            if(use_class){obj["type"] = element.classList[0];}
+                if(use_offsets){
+                obj["offsetParent"] = element.offsetParent.dataset.silexId;
+                obj["offsetLeft"] = element.offsetLeft;
+                    obj["offsetTop"] = element.offsetTop;
+                    obj["offsetWidth"] = element.offsetWidth;
+                obj["offsetHeight"] = element.offsetHeight;
+                }
+
+
+            if(use_id){obj["id"] = element.id;}
+
+            if(checkTypes(element, ["CTATTextInput","CTATComboBox","CTATTable--cell"])){
+              obj["value"] = element.firstElementChild.value;
+              obj["contentEditable"] = (element.firstElementChild.contentEditable == 'true');
+              // obj["name"] = element.id
+            }
+            // if(checkTypes(element, ["CTATTextField", "CTATComboBox"])){
+            //  obj["textContent"] = element.textContent;
+            // }
+
+            if(checkTypes(element, ["CTATComboBox"])){
+              // if(element.options){
+                //Probably not the best
+              var options = element.firstElementChild.options;
+              var temp = [];
+              for (var i = 0; i < options.length; i++) {
+                temp.push(options[i].text);
+              }
+              obj["options"] = Object.assign({}, temp)
+
+              // }
+              
+            }
+            let name = (append_ele ? "?ele-":"") + element.id
+                // console.log(name,append_ele)
+            state_json[name] = obj;
+              count++;
+            }
+      }
+        // add question marks for apprentice
+        // element = jQuery.extend({}, element);
+        // element = jQuery.data(element);
+        // if(element && !jQuery.isEmptyObject(element) && element.CTATComponent){
+        //  console.log("ELEEMENT", element);
+        //  // element = jQuery.data(element.CTATComponent);
+        //  element = element.CTATComponent;
+        //  // if(element.CTATComponent){
+        //    // element.CTATComponent = jQuery.data(element.CTATComponent);
+        //  // }
+        //  console.log("KEY ", idx, element.className);
+         //  state_json["?ele-" + idx] = element;
+         //  count++;
+        // }
+        
+        // element.component = jQuery.data(element.component);
+        
+
+        // if(element.hasAttribute("removeData") ){
+        //  element.removeData();
+        //  console.log("WOOOPS");
+        // }
+
+    });
+
+
+    
+    // Gets lists of elements that are to the left, right and above the current element
+    if(encode_relative){
+        const elm_list = Object.entries(state_json);
+        // console.log(elm_list);
+
+        if(! (HTML_PATH in relative_pos_cache) ){
+            var rel_objs = {};
+            for (var i = 0; i < elm_list.length; i++) {
+                // console.log(elm_list[i][0])
+                rel_objs[elm_list[i][0]] = {
+                    "to_left" : [],
+                    "to_right" : [],
+                    "above" : [],
+                    "below" : []
+                }
+            }
+
+            for (var i = 0; i < elm_list.length; i++) {
+                for (var j = 0; j < elm_list.length; j++) {
+                    if(i != j){
+                        var [a_n, a_obj] = elm_list[i];
+                        var [b_n, b_obj] = elm_list[j];
+                        if(a_obj.offsetTop > b_obj.offsetTop 
+                            && a_obj.offsetLeft < b_obj.offsetLeft + b_obj.offsetWidth
+                            && a_obj.offsetLeft + a_obj.offsetWidth > b_obj.offsetLeft){
+
+                            var dist = a_obj.offsetTop-b_obj.offsetTop;
+                            rel_objs[a_n]["above"].push([b_n, dist]);
+                            rel_objs[b_n]["below"].push([a_n, dist]);
+                        }
+                        if(a_obj.offsetLeft < b_obj.offsetLeft 
+                            && a_obj.offsetTop + a_obj.offsetHeight > b_obj.offsetTop
+                            && a_obj.offsetTop < b_obj.offsetTop + b_obj.offsetHeight){
+
+                            var dist = b_obj.offsetLeft-a_obj.offsetLeft;
+                            rel_objs[a_n]["to_right"].push([b_n, dist]);
+                            rel_objs[b_n]["to_left"].push([a_n, dist]);
+
+                            // console.log(a_n,b_n,dist)
+
+                        }
+                    }
+                }
+            }
+
+            var grab1st = function(x){return x[0];};
+            var compare2nd = function(x,y){return x[1] - y[1];};
+            var grabN = function(x,n){
+                let out = []
+                for (var i = 0; i < n; i++){
+                    if(i < x.length){
+                        out.push(x[i])
+                    }else{
+                        out.push(null)
+                    }
+                }
+                return out
+            }
+            for (var i = 0; i < elm_list.length; i++) {
+                var rel_obj = rel_objs[elm_list[i][0]];
+                // rel_obj["below"] = rel_obj["below"].sort(compare2nd).map(grab1st).join(' '); 
+                // rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st).join(' '); 
+                // rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st).join(' '); 
+                // rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st).join(' '); 
+                // console.log(elm_list[i], rel_obj["to_left"].sort(compare2nd))
+                rel_obj["below"] = rel_obj["below"].sort(compare2nd).map(grab1st)[0] || "";
+                rel_obj["above"] = rel_obj["above"].sort(compare2nd).map(grab1st)[0] || "";
+                rel_obj["to_right"] = rel_obj["to_right"].sort(compare2nd).map(grab1st)[0] || "";
+                rel_obj["to_left"] = rel_obj["to_left"].sort(compare2nd).map(grab1st)[0] || "";
+            
+                // rel_obj["below"] = grabN(rel_obj["below"].sort(compare2nd).map(grab1st),2);
+                // rel_obj["above"] = grabN(rel_obj["above"].sort(compare2nd).map(grab1st),2);
+                // rel_obj["to_right"] = grabN(rel_obj["to_right"].sort(compare2nd).map(grab1st),2);
+                // rel_obj["to_left"] = grabN(rel_obj["to_left"].sort(compare2nd).map(grab1st),2);
+            }
+            
+            // console.log(rel_objs)
+            relative_pos_cache[HTML_PATH] = rel_objs;
+        }else{
+            for (var i = 0; i < elm_list.length; i++) {
+                var obj = state_json[elm_list[i][0]];
+                var rel_obj = relative_pos_cache[HTML_PATH][elm_list[i][0]];
+                // console.log(rel_obj)
+                // console.log(elm_list[i][0])
+                // console.log(relative_pos_cache[HTML_PATH])
+
+                obj["below"] = rel_obj["below"];
+                obj["above"] = rel_obj["above"];
+                obj["to_right"] = rel_obj["to_right"];
+                obj["to_left"] = rel_obj["to_left"];
+                if(strip_offsets){
+                    delete obj["offsetTop"];
+                    delete obj["offsetLeft"];
+                    delete obj["offsetWidth"];
+                    delete obj["offsetHeight"];
+                }
+
+                state_json[elm_list[i][0]] = obj;
+            }
+        }
+
+
+    }
+
+    // console.log(state_json);
+    return state_json;
+
+}
+
+
+
+  // state_update(state){
+
+  // }
+
+  // webview_loaded(message){
+  //   console.log(message)
+  //   var d = message.nativeEvent.data;
+  //   console.log("document&:",d)
+  //   console.log(document.getElementsByClassName('background-initial'))
+  //   // window.document.domain = "http://0.0.0.0:8000"
+  // }
+
+  setRef = webview => {
+    this.ctat_webview = webview; 
+    this.iframe_content = webview.frameRef.contentWindow;
+  }
   render() {
     return (
       <WebView
-            style={{ height: 700, width: 400 }}
+            //title="hey"
+            ///*ref={function(webview) {window.ctat_webview = webview;*/}
+            //                        this.iframe_content = webview.frameRef.contentWindow;
+            //                        console.log("THIS",this)
+            //                        // this.graph = this.iframe_content.CTAT.ToolTutor.tutor.getGraph() || false;
+             //                       console.log("MOOP",webview)}}
+            ref={this.setRef}
+            // style={{ height: 700, width: 400 }}
             originWhitelist={['*']}
-            source={{ html: '<h1>Hello world</h1>' }}
+            // source={{"uri": "http://0.0.0.0:8000/HTML/fraction_arithmetic.html?question_file=../mass_production/mass_production_brds/AD 5_9_plus_3_7.brd"}}
+            source={{"uri": "../../examples/FracPreBake/FractionArithmetic/HTML/fraction_arithmetic.html?question_file=../mass_production/mass_production_brds/AD 5_9_plus_3_7.brd"}}
+            // source={{"html": "<!DOCTYPE html><html><head></head><body> HERE IS THE TUTOR... ARE YOU LEARNING YET? </body></html>"}}
+            // source={{"html": "<? echo file_get_contents('http://0.0.0.0:8000/HTML/fraction_arithmetic.html'); ?>"}}
+            // injectedJavaScript={"window.booger = document"}
+            // onMessage={this.webview_loaded}
+
       />
     );
   }
+  
 }

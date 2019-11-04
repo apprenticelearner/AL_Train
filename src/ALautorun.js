@@ -65,6 +65,8 @@ const where_colors = [  "darkorchid",  "#ff884d",  "#52d0e0", "#feb201",  "#e441
 
 var feedback_queue = null;
 
+
+
 //copies a 
 function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
 
@@ -192,10 +194,11 @@ function post_next_example(){
 
 	apply_sai(sai_data);
 
-    var elm = iframe_content.document.getElementById(sai.getSelection())
-    console.log(elm.firstElementChild);
-    elm.firstElementChild.setAttribute("class", "CTAT--example");
-    console.log(elm.firstElementChild);
+    tutor.colorElement(sai.getSelection(),"EXAMPLE")
+    // var elm = iframe_content.document.getElementById(sai.getSelection())
+    // console.log(elm.firstElementChild);
+    // elm.firstElementChild.setAttribute("class", "CTAT--example");
+    // console.log(elm.firstElementChild);
 
 
 	// console.log(sai_data);
@@ -288,10 +291,12 @@ function make_highlights(sai){
 function clear_last_proposal(){
     console.log("CLEAR",last_proposal)
     if(last_proposal){
-        elm = iframe_content.document.getElementById(last_proposal.selection.replace('?ele-',""));    
-        elm.firstElementChild.value = "";
-        comp = iframe_content.CTATShellTools.findComponent(last_proposal.selection)[0];
-        comp.setEnabled(true);
+        tutor.clearElement(last_proposal.selection)
+        tutor.lockElement(last_proposal.selection.replace('?ele-',""))
+        // elm = iframe_content.document.getElementById(last_proposal.selection.replace('?ele-',""));    
+        // elm.firstElementChild.value = "";
+        // comp = iframe_content.CTATShellTools.findComponent(last_proposal.selection)[0];
+        // comp.setEnabled(true);
     }
 }
 
@@ -304,12 +309,13 @@ function propose_sai(sai){
     clear_last_proposal();
     make_highlights(sai);
 
-    comp = iframe_content.CTATShellTools.findComponent(sai.selection)[0];
-    elm = iframe_content.document.getElementById(sai.selection.replace('?ele-',""));
-    // console.log(comp);
-    var sai_obj =  new iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
-    comp.executeSAI(sai_obj);
-    comp.setEnabled(false);
+    tutor.executeSAI(sai)
+    // comp = iframe_content.CTATShellTools.findComponent(sai.selection)[0];
+    // // elm = iframe_content.document.getElementById(sai.selection.replace('?ele-',""));
+    // // console.log(comp);
+    // var sai_obj =  new iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
+    // comp.executeSAI(sai_obj);
+    // comp.setEnabled(false);
     // if(last_action){
     //     //CLEAR
     //     var elm = iframe_content.document.getElementById(last_action.selection)    
@@ -451,7 +457,7 @@ function handle_startstate_done(evt){
     //Take away focus from whatever is there so it isn't treated as an example
     // document.activeElement.blur();
     // console.log("STAT",get_state())
-    start_state_history.push(get_state());
+    start_state_history.push(tutor.get_state());
     last_action = last_proposal = null;
     // query_apprentice();
 }
@@ -514,13 +520,14 @@ function handle_user_example(evt){
 
     
     // apply_sai(sai_data);
-    
-    var comp = iframe_content.CTATShellTools.findComponent(sai.getSelection())[0];
-    comp.setEnabled(false);
+    tutor.lockElement(sai.getSelection())
+    // var comp = iframe_content.CTATShellTools.findComponent(sai.getSelection())[0];
+    // comp.setEnabled(false);
     // elm.contentEditable = "false";
-    console.log(elm.firstElementChild);
-    elm.firstElementChild.setAttribute("class", "CTAT--example");
-    console.log(elm.firstElementChild);
+    // console.log(elm.firstElementChild);
+    // elm.firstElementChild.setAttribute("class", "CTAT--example");
+    // console.log(elm.firstElementChild);
+    tutor.colorElement(sai.getSelection(),"EXAMPLE")
 
     last_correct = true;
 
@@ -593,10 +600,12 @@ function handle_user_feedback_correct(evt){
     // document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
     // document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
 
-    var elm = iframe_content.document.getElementById(last_proposal.selection)
-    elm.firstElementChild.setAttribute("class", "CTAT--correct");
-    var comp = iframe_content.CTATShellTools.findComponent(last_proposal.selection)[0];
-    comp.setEnabled(false);
+    tutor.colorElement(last_proposal.selection,"CORRECT")
+    tutor.lockElement(last_proposal.selection)
+    // var elm = iframe_content.document.getElementById(last_proposal.selection)
+    // elm.firstElementChild.setAttribute("class", "CTAT--correct");
+    // var comp = iframe_content.CTATShellTools.findComponent(last_proposal.selection)[0];
+    // comp.setEnabled(false);
 
 
     last_correct = true;
@@ -611,17 +620,21 @@ function handle_user_feedback_incorrect(evt){
     // document.getElementById("yes_button").removeEventListener("click", handle_user_feedback_correct);
     // document.getElementById("no_button").removeEventListener("click", handle_user_feedback_incorrect);
 
-    var elm = iframe_content.document.getElementById(last_proposal.selection)
+    // var elm = iframe_content.document.getElementById(last_proposal.selection)
     
     if(interactive){
-        elm.firstElementChild.value = ""
-        elm.firstElementChild.setAttribute("class", "");    
+        tutor.clearElement(last_proposal.selection)
+        tutor.colorElement(last_proposal.selection,"DEFAULT")
+        // elm.firstElementChild.value = ""
+        // elm.firstElementChild.setAttribute("class", "");    
     }else{
-        elm.firstElementChild.setAttribute("class", "CTAT--incorrect");    
+        tutor.colorElement(last_proposal.selection,"INCORRECT")
+        // elm.firstElementChild.setAttribute("class", "CTAT--incorrect");    
     }
     
-    var comp = iframe_content.CTATShellTools.findComponent(last_proposal.selection)[0];
-    comp.setEnabled(true);
+    // var comp = iframe_content.CTATShellTools.findComponent(last_proposal.selection)[0];
+    // comp.setEnabled(true);
+    tutor.unlockElement(last_proposal.selection)
 
     last_correct = false;
     last_proposal = null;
@@ -690,7 +703,7 @@ function on_train_success(sai_data,resp){
     // console.log("------resp--------");
     // console.log(resp);
     if(last_correct){
-        state = get_state()
+        state = tutor.get_state()
     }
 
 
@@ -900,7 +913,7 @@ function query_apprentice() {
     if (last_correct){
         // console.log("SETTING STATE!");
         // console.log(last_correct);
-        state = get_state();
+        state = tutor.get_state();
     }
 
     var data = {
@@ -1248,6 +1261,20 @@ function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, u
     
 // }
 
+function onTutorInitialized(tutorRef){
+    graph = tutor.graph
+    commLibrary = tutor.commLibrary
+    CTAT_CORRECT = tutor.CTAT_CORRECT
+    CTAT_INCORRECT = tutor.CTAT_INCORRECT
+    CTAT_ACTION = tutor.CTAT_ACTION
+    if(free_authoring){
+        query_user_startstate();
+    }else{
+        start_state_history.push(tutor.get_state());//{append_ele:false}));
+        query_apprentice();    
+    }
+}
+
 function runWhenReady(){
     console.log("runWhenReady");
     if(typeof iframe_content.CTAT == "undefined" || iframe_content.CTAT == null ||
@@ -1303,7 +1330,7 @@ function runWhenReady(){
         if(free_authoring){
             query_user_startstate();
         }else{
-            start_state_history.push(get_state());//{append_ele:false}));
+            start_state_history.push(tutor.get_state());//{append_ele:false}));
             query_apprentice();    
         }
 		
@@ -1438,7 +1465,7 @@ function serve_next_problem(){
 	        }
 
             if(!interactive){
-                document.getElementById("prompt_text").innerHTML = agent_description + "question_file:" + prob_obj["question_file"];     
+                //! document.getElementById("prompt_text").innerHTML = agent_description + "question_file:" + prob_obj["question_file"];     
             }
 	        
 
@@ -1502,8 +1529,16 @@ function serve_next_problem(){
 	        };
 	        params = Object.assign({},qf,logging_params) //Merge dictionaries
 	        
-	        iframe.onload = runWhenReady;
+
+
+            //TODO MAKES THESE PROPS~~~
+	        // iframe.onload = runWhenReady;
+            tutor.HTML_PATH = HTML_PATH
+            tutor.init_callback = onTutorInitialized
+            iframe.onload = tutor.componentDidUpdate;
 	        iframe.src = HTML_PATH + "?" + jQuery.param( params );
+
+            // tutor.componentDidUpdate(null,null)
             
             if(interactive){
                 clear_highlights()
@@ -1584,20 +1619,20 @@ function generate_nools(evt) {
 }
 
 ground_truth_requests = [];
-$.ajax({
-    url: "ground_truth.json",
-    dataType: 'text',
-    async: true,
-    success: function (data){
-        data.toString().split("\n").forEach(function(line, index, arr) {
-            if (index === arr.length - 1 && line === "") { return; }
-            json = JSON.parse(line)
-            ground_truth_requests.push(json)
-            // console.log(json['state']);
-        });  
-    },
-    error : ajax_retry_on_error
-});
+// $.ajax({
+//     url: "ground_truth.json",
+//     dataType: 'text',
+//     async: true,
+//     success: function (data){
+//         data.toString().split("\n").forEach(function(line, index, arr) {
+//             if (index === arr.length - 1 && line === "") { return; }
+//             json = JSON.parse(line)
+//             ground_truth_requests.push(json)
+//             // console.log(json['state']);
+//         });  
+//     },
+//     error : ajax_retry_on_error
+// });
 // reader.readAsText("ground_truth_777.json");
 
 function gen_completeness_profile(evt) {
@@ -1690,7 +1725,9 @@ function main() {
 
 
 
-    iframe = document.getElementById("tutor_iframe")
+    // iframe = document.getElementById("tutor_iframe")
+    iframe = ctat_webview.frameRef
+    // iframe_content = iframe.contentWindow
     iframe_content = iframe.contentWindow
 
     // Grab the the path to the training .json file and the url for the AL server from the query string
@@ -1735,7 +1772,7 @@ function main() {
         window.setButtonsState(window.state_machine)
         window.setSkillWindowState({});
     }else{
-        document.getElementById("prompt_text").setAttribute("class", "prompt_text");
+        //! document.getElementById("prompt_text").setAttribute("class", "prompt_text");
     
     }
 
