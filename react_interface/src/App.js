@@ -6,6 +6,7 @@ import Buttons from './components/buttons';
 import CTAT_Tutor from './ReactCTAT_Tutor';
 import { vw, vh, vmin, vmax } from 'react-native-expo-viewport-units';
 import ButtonsMachine from './state_machine.js'
+import NonInteractive_SM from './state_machine.js'
 import { interpret } from 'xstate';
 
 
@@ -29,12 +30,31 @@ var state_machine = ButtonsMachine.initialState
 var state_machine_service = interpret(ButtonsMachine)
 state_machine_service.start()
 
+var ctat_state_machine = NonInteractive_SM.initialState
+var ctat_state_machine_service = interpret(NonInteractive_SM)
+ctat_state_machine_service.start()
+
+// ctat_state_machine_service.onTr
+
+// ctat_state_machine_service.onTransition(current => {
+//     setButtonsState(current,window.debugmode)
+    
+//     // this.setState({ current : current })
+//     }
+//   );
+
 
 const HomeScreen = () => {
   return (
 	<View style={styles.container}>
 		<View style={styles.ctat_tutor}>
-			<CTAT_Tutor/>
+			<CTAT_Tutor
+        ref={function(tutor) {window.tutor = tutor; console.log("TUTOR IS:",tutor)}}
+        id="tutor_iframe"
+        current_state={ctat_state_machine}
+        sm_service={ctat_state_machine_service}
+        interactive={false}
+      />
 		</View>
 		<View style={styles.controls}>
 			<View style={styles.skill_panel}>

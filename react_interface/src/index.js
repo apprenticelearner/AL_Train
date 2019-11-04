@@ -5,6 +5,7 @@ import SkillPanel from './components/skill_panel';
 import Buttons from './components/buttons';
 import * as serviceWorker from './serviceWorker';
 import ButtonsMachine from './state_machine.js'
+
 import { interpret } from 'xstate';
 import CTAT_Tutor from './ReactCTAT_Tutor';
 import App from './App';
@@ -14,6 +15,10 @@ import App from './App';
 ReactDOM.render(
 		<App style={{"height":"100%"}}/>
 		, document.getElementById('root'));	
+
+
+
+
 
 if(false){
 	// function setSkillWindowState(evt){
@@ -27,14 +32,14 @@ if(false){
 	// const state = {
 	//   current: 
 	// };
-	window.state_machine_service.onTransition(current => {
-		console.log("current.value")
-		console.log(current.value)
-		setButtonsState(current,window.debugmode)
+	// window.state_machine_service.onTransition(current => {
+	// 	console.log("current.value")
+	// 	console.log(current.value)
+	// 	setButtonsState(current,window.debugmode)
 	  
-	  // this.setState({ current : current })
-	  }
-	);
+	//   // this.setState({ current : current })
+	//   }
+	// );
 
 
 
