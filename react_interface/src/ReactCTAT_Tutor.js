@@ -42,7 +42,7 @@ export default class CTAT_Tutor extends React.Component {
   constructor(props){
     super(props);
     // this.webview_loaded = this.webview_loaded.bind(this)
-    this.onTransition = this.onTransition.bind(this)
+    // this.onTransition = this.onTransition.bind(this)
     this.lockElement = this.lockElement.bind(this)
     this.unlockElement = this.unlockElement.bind(this)
     this.colorElement = this.colorElement.bind(this)
@@ -50,6 +50,9 @@ export default class CTAT_Tutor extends React.Component {
     this.clearHighlights = this.clearHighlights.bind(this)
     this._triggerWhenInitialized = this._triggerWhenInitialized.bind(this)
     this.componentDidUpdate = this.componentDidUpdate.bind(this)
+    this.applySAI = this.applySAI.bind(this)
+    this.apply_skill_application = this.apply_skill_application.bind(this)
+    this.apply_next_example = this.apply_next_example.bind(this)
     this.relative_pos_cache = {};
 
     this.color_class_map = {
@@ -131,11 +134,70 @@ export default class CTAT_Tutor extends React.Component {
       window.setTimeout(() => {this._triggerWhenInitialized()}, 500);
     }
   }
+  
 
+  //---------- Xstate API with promises ----------------
+  apply_skill_application(context,event){
+    const promise = new Promise((resolve, reject) => {
+      // try {
+        const resp = context.response
+        var currentElement = this.iframe_content.document.getElementById(resp.selection);
+        const CTAT_CORRECT = this.CTAT_CORRECT
+        const CTAT_INCORRECT = this.CTAT_INCORRECT
 
-  onTransition(state){
+        function handle_ctat_feedback(evt){
+          currentElement.removeEventListener(CTAT_CORRECT, handle_ctat_feedback);
+          currentElement.removeEventListener(CTAT_INCORRECT, handle_ctat_feedback);
+          resolve({...resp,reward: evt.type == CTAT_CORRECT ? 1 : -1})            
+        }
 
+        currentElement.addEventListener(CTAT_CORRECT, handle_ctat_feedback);
+        currentElement.addEventListener(CTAT_INCORRECT, handle_ctat_feedback);    
+        this.applySAI(resp)  
+      // }catch(err){
+      //   reject(err)
+      // }
+      
+
+    });
+    return promise
   }
+  apply_next_example(context,event){
+    const promise = new Promise((resolve, reject) => {
+      // try{
+        this.applyHint()
+        var sai = this.getDefaultSAI()
+        this.colorElement(sai.selection, "EXAMPLE")
+        this.applySAI(sai)    
+        resolve({...sai, reward : 1})
+    //   }catch(err){
+    //     reject(err)
+    //   }
+    });
+    return promise
+  }
+  //----------------------------------------------------
+
+
+  applySAI(sai){
+    var sel_elm = this.iframe_content.document.getElementById(sai.selection)
+    if((sel_elm["data-ctat-enabled"] || 'true') == 'false'){
+      //Force incorrect if try to edit uneditaable
+        var incorrect_event = new CustomEvent(this.CTAT_INCORRECT, {detail:{'sai':sai, 'component':sel_elm}, bubbles:true, cancelable:true});
+        sel_elm.dispatchEvent(incorrect_event);
+    }
+
+
+    if(sai.action == "ButtonPressed"){
+        sai.inputs = {"value" : -1}
+    }
+
+    // last_action = sai
+    const CTATSAI = this.iframe_content.CTATSAI
+    var sai_obj = new CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
+    this.iframe_content.CTATCommShell.commShell.processComponentAction(sai_obj,true)
+  }
+
 
   lockElement(name){
     var comp = this.iframe_content.CTATShellTools.findComponent(name)[0];
@@ -167,7 +229,13 @@ export default class CTAT_Tutor extends React.Component {
   }
 
   getDefaultSAI(){
-    return this.graph.getExampleTracer().getBestNextLink().getDefaultSAI();
+    var sai = this.graph.getExampleTracer().getBestNextLink().getDefaultSAI();
+    sai = {
+      selection: sai.getSelection(),
+      action: sai.getAction(),
+      inputs: {value: sai.getInput()},
+    }
+    return sai
   }
 
   executeSAI(sai){
@@ -176,6 +244,18 @@ export default class CTAT_Tutor extends React.Component {
     comp.executeSAI(sai_obj);
     comp.setEnabled(false);
   }
+
+  applyHint(){
+  
+    var message = "<message><properties>" +
+                    "<MessageType>InterfaceAction</MessageType>" +
+                    "<Selection><value>hint</value></Selection>" +
+                    "<Action><value>ButtonPressed</value></Action>" +
+                    "<Input><value><![CDATA[hint request]]></value></Input>" +
+                "</properties></message>";
+    // console.log("MESSAGE",message);
+    this.commLibrary.sendXML(message);   
+}
 
   get_state({encode_relative=true,strip_offsets=true, use_offsets=true, use_class=true, use_id=true,append_ele=true}={}){
     var relative_pos_cache = this.relative_pos_cache

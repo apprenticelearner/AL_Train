@@ -7,6 +7,7 @@ import CTAT_Tutor from './ReactCTAT_Tutor';
 import { vw, vh, vmin, vmax } from 'react-native-expo-viewport-units';
 import ButtonsMachine from './state_machine.js'
 import NonInteractive_SM from './state_machine.js'
+import NetworkLayer from './network_layer.js'
 import { interpret } from 'xstate';
 
 
@@ -33,6 +34,12 @@ state_machine_service.start()
 var ctat_state_machine = NonInteractive_SM.initialState
 var ctat_state_machine_service = interpret(NonInteractive_SM)
 ctat_state_machine_service.start()
+window.ctat_state_machine = ctat_state_machine
+window.ctat_state_machine_service = ctat_state_machine_service
+
+var urlParams = new URLSearchParams(window.location.search);
+var AL_URL = urlParams.get('al_url');
+window.network_layer = new NetworkLayer(AL_URL)
 
 // ctat_state_machine_service.onTr
 

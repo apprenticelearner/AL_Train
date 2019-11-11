@@ -13,7 +13,9 @@ import App from './App';
 
 
 ReactDOM.render(
-		<App style={{"height":"100%"}}/>
+		<App 
+		// ref={(app) => {window.app = app}}
+		style={{"height":"100%"}}/>
 		, document.getElementById('root'));	
 
 
