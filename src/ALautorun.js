@@ -1025,6 +1025,7 @@ function checkTypes(element, types){
 
 
 function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, use_class=true, use_id=true,append_ele=true}={}){
+    alert("NOT SUPPOSED TO HAPPEN: get_state")
     var state_array = iframe_content.$('div').toArray();
     // state_array.push({current_task: current_task});
 
@@ -1260,6 +1261,7 @@ function get_state({encode_relative=true,strip_offsets=true, use_offsets=true, u
 
     
 // }
+var sms = null
 
 function onTutorInitialized(tutorRef){
     graph = tutor.graph
@@ -1267,16 +1269,22 @@ function onTutorInitialized(tutorRef){
     CTAT_CORRECT = tutor.CTAT_CORRECT
     CTAT_INCORRECT = tutor.CTAT_INCORRECT
     CTAT_ACTION = tutor.CTAT_ACTION
-    if(free_authoring){
-        query_user_startstate();
-    }else{
-        start_state_history.push(tutor.get_state());//{append_ele:false}));
-        query_apprentice();    
-    }
+
+    sms = window.new_nonInteractiveMachine()
+    console.log("SMS",sms)
+
+
+    // if(free_authoring){
+    //     query_user_startstate();
+    // }else{
+    //     start_state_history.push(tutor.get_state());//{append_ele:false}));
+    //     query_apprentice();    
+    // }
 }
 
 function runWhenReady(){
     console.log("runWhenReady");
+    alert("NOT SUPPOSED TO HAPPEN: runWhenReady")
     if(typeof iframe_content.CTAT == "undefined" || iframe_content.CTAT == null ||
      	typeof iframe_content.CTATCommShell == "undefined" || iframe_content.CTATCommShell == null || 
      	typeof iframe_content.CTATCommShell.commShell == "undefined" || iframe_content.CTATCommShell.commShell == null ||
@@ -1390,6 +1398,7 @@ function serve_next_agent(){
         console.log("CREATING AGENT", agent_obj["agent_name"]);
         var callback = function(resp){
             agent_id = resp["agent_id"];
+            window.agent_id = agent_id;
             request_history = [];
             serve_next_problem();
         }
@@ -1741,6 +1750,7 @@ function main() {
 
     AL_URL = urlParams.get('al_url');
     verbosity = urlParams.get('verbosity') || 0;
+
 
     if(!training_file){console.error('training must be set in url query <CTAT URL>?training=<myfile>.json');return;};
     if(!AL_URL){console.error('al_url must be set in url query <CTAT URL>?al_url=<url of AL server>'); return;};
