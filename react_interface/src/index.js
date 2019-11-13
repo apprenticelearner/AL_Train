@@ -4,7 +4,7 @@ import './index.css';
 import SkillPanel from './components/skill_panel';
 import Buttons from './components/buttons';
 import * as serviceWorker from './serviceWorker';
-import ButtonsMachine from './state_machine.js'
+import ButtonsMachine from './interactions.js'
 
 import { interpret } from 'xstate';
 import CTAT_Tutor from './ReactCTAT_Tutor';
