@@ -135,6 +135,32 @@ function logError(context,event){
 	// alert("FAIL")
 }
 
+var color_map = { 
+	"EXAMPLE" : "0;33;44m",
+	"CORRECT" : "0;30;42m",
+	"INCORRECT" : "0;30;41m",
+}
+
+function _kill_this(context,event){
+	var nl = context.network_layer
+	nl.network_layer(event.data.toString())
+}
+
+
+function _term_print(context,event){
+	var nl = context.network_layer
+	var last_action = context.last_action
+	var inps = last_action.inputs['value'] || ""
+	var type  = context.action_type 
+	if(type == "ATTEMPT"){
+		type = last_action.reward > 0 ? "CORRECT" : "INCORRECT"
+	}
+
+	var color = color_map[type]
+	
+	nl.term_print('\x1b[' + color + type + ": " + last_action.selection + " -> " + inps + '\x1b[0m')
+}
+
 
 function build_SM_NonInteractive(tutor,network_layer,agent_id){
 	const context = {
@@ -144,7 +170,8 @@ function build_SM_NonInteractive(tutor,network_layer,agent_id){
 		// state : tutor.get_state(),
 		last_correct : null,
 		last_action : null,
-		agent_id : agent_id
+		agent_id : agent_id,
+		action_type : null
 	}
 	const NonInteractive_SM = Machine({
 		context : context,
@@ -170,7 +197,7 @@ function build_SM_NonInteractive(tutor,network_layer,agent_id){
 			        	{target: "Applying_Next_Example", cond: "noApplicableSkills"},
 			        	{target: "Applying_Skill_Application"},
 			        ],
-			        onError: {target: 'Fail',actions: "kill_this"}
+			        onError: 'Fail',
 				},
 				exit: "assignResponse",
 			},
@@ -179,9 +206,9 @@ function build_SM_NonInteractive(tutor,network_layer,agent_id){
 			        id: "apply_skill_application",
 			        src: "apply_skill_application",
 			        onDone: "Sending_Feedback",
-			        onError: {target: 'Fail',actions: "kill_this"}
+			        onError: 'Fail',
 				},
-				exit: "assignLastAction"
+				exit: ["assignLastAction","assignAttempt"]
 			},
 
 			Applying_Next_Example : {
@@ -189,12 +216,13 @@ function build_SM_NonInteractive(tutor,network_layer,agent_id){
 			        id: "apply_next_example",
 			        src: "apply_next_example",
 			        onDone: "Sending_Feedback",
-			        onError: {target: 'Fail',actions: "kill_this"}
+			        onError: 'Fail'
 				},
-				exit: "assignLastAction"
+				exit: ["assignLastAction","assignExample"]
 			},
 
 			Sending_Feedback : {
+				entry : 'term_print',
 				invoke : {
 			        id: "send_feedback",
 			        src: "send_feedback",
@@ -202,7 +230,7 @@ function build_SM_NonInteractive(tutor,network_layer,agent_id){
 				        {target: "Done", cond : "saiIsCorrectDone"},
 				        {target: "Querying_Apprentice"},
 			        ],
-			        onError: {target: 'Fail', actions: "kill_this"}
+			        onError: 'Fail',
 				},
 				exit:["stateRecalc","assignResponse"]
 			},
@@ -211,7 +239,7 @@ function build_SM_NonInteractive(tutor,network_layer,agent_id){
 				entry : "done",
 			},
 			Fail : {
-				entry : "logError"
+				entry : ["logError","kill_this"]
 			}
 			
 		}
@@ -227,10 +255,13 @@ function build_SM_NonInteractive(tutor,network_layer,agent_id){
 		actions: {
 			logError : logError,
 			stateRecalc : stateRecalc,
-			kill_this : network_layer.kill_this,
 			assignResponse : assign({response: (context,event) => event.data}),
 			assignLastAction : assign({last_action: (context,event) => event.data}) ,
+			assignExample : assign({action_type: (context,event) => "EXAMPLE"}) ,
+			assignAttempt : assign({action_type: (context,event) => "ATTEMPT"}) ,
 			done : window.signal_done,
+			term_print : _term_print,
+			kill_this : _kill_this,
 			// assignLastCorrect : assign({last_correct: (context,event) => true}) 
 			// assignLastIncorrect : assign({last_correct: (context,event) => false}) 
 		},

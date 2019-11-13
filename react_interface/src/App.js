@@ -39,7 +39,8 @@ window.ctat_state_machine_service = ctat_state_machine_service
 
 var urlParams = new URLSearchParams(window.location.search);
 var AL_URL = urlParams.get('al_url');
-window.network_layer = new NetworkLayer(AL_URL)
+var HOST_URL = window.location.origin
+window.network_layer = new NetworkLayer(AL_URL,HOST_URL)
 
 // ctat_state_machine_service.onTr
 

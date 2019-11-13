@@ -28,8 +28,9 @@ const JSON_HEADERS = {
 
 
 export default class NetworkLayer {
-	constructor(AL_URL){
+	constructor(AL_URL,HOST_URL){
 		this.AL_URL = AL_URL
+		this.HOST_URL = HOST_URL
 	}
 
 	send_feedback(context,event,reward, explicit=false){
@@ -151,6 +152,21 @@ export default class NetworkLayer {
 	    		.then(res => res.json())
 
 	}
+
+	term_print(data){
+	    return fetch_retry(this.HOST_URL,
+		    		{method: "PRINT",
+		    		 headers: {"Content-type": "text/plain; charset=utf-8"},
+		    		 body:data})
+	}
+
+	kill_this(data){
+	    return fetch_retry(this.HOST_URL,
+		    		{method: "QUIT",
+		    		 headers: {"Content-type": "text/plain; charset=utf-8"},
+		    		 body:data})
+	}
+
 }
 	    // console.log("STATE",state);
 
@@ -241,4 +257,3 @@ export default class NetworkLayer {
 	    // }
 	// }
 
-	
