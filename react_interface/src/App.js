@@ -5,8 +5,8 @@ import SkillPanel from './components/skill_panel.js'
 import Buttons from './components/buttons';
 import CTAT_Tutor from './ReactCTAT_Tutor';
 import { vw, vh, vmin, vmax } from 'react-native-expo-viewport-units';
-import ButtonsMachine from './state_machine.js'
-import NonInteractive_SM from './state_machine.js'
+import ButtonsMachine from './interactions.js'
+import NonInteractive_SM from './interactions.js'
 import NetworkLayer from './network_layer.js'
 import { interpret } from 'xstate';
 

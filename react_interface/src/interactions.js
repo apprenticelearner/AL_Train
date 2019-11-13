@@ -289,59 +289,140 @@ const serve_next_problem = () => {};
 const runWhenReady = () => {};
 const query_outerloop = () => {};
 
-const TrainingJSON_SM= Machine({
-  "initial": "Loading_Training_File",
-  "states": {
-  	"Loading_Training_File": {
-  		entry: load_training_file,
-  		on: { "TRAINING_FILE_LOADED": "Serving_Training_Sets" },
-  	},	
-  	"All_Done" : {},
-    "Serving_Training_Sets": {
-    	entry: serve_next_training_set,
-      	on: { "TRAINING_SET_LOADED": "Serving_Agents",
-      		  "NO_MORE_TRAINING_SETS" : "All_Done"},
-    },
-    "Serving_Agents": {
-    	entry: serve_next_agent,
-    	on: {"AGENT_CREATED": "Serving_Problem",
-      		 "NO_MORE_AGENTS" : "Serving_Training_Sets"},
-    },
-    "Serving_Problems": {
-    	entry: serve_next_problem,
-    	on: {"PROBLEM_START_LOAD": "Waiting_Problem_Load",
-    		 "QUERY_OUTERLOOP": "Waiting_For_OuterLoop",
-      		 "NO_MORE_PROBLEMS" : "Serving_Agents"},
-    },
-    "Waiting_Problem_Load":{
-    	entry: runWhenReady,
-    	on: {"PROBLEM_LOADED": "Training"}
-    },
-    "Waiting_For_OuterLoop": {
-    	entry: query_outerloop,
-    	on: {"PROBLEM_START_LOAD": "Waiting_Problem_Load"}
-    },
 
-    "Training": {
-    	on: {"PROBLEM_DONE": "Serving_Problems"},
-    },
-    "Explantions_Displayed": {
-      on: {
-        "NEXT_PRESSED": "Query_Demonstrate",
-        "DEMONSTRATE": "Request_Foci",
-        "DONE": "Specify_Start_State"
-      },
+// function make_training_handler(){
+// 	const sm= Machine({
+// 		initial: "Loading_Training_File",
+// 		states: {
+// 			Loading_Training_File: {
+// 				invoke : {
+// 					id: "load_training_file",
+// 					src: "load_training_file",
+// 					onDone: "Serving_Training_Sets",
+// 					onError: 'Fail',
+// 				}
+// 			},	
+// 			Serving_Training_Sets: {
+// 				invoke : {
+// 					id: "serve_next_training_set",
+// 					src: "serve_next_training_set",
+// 					onDone: [{target : "All_Done", cond : "iteratorEmpty"},
+// 							 {target : "Serving_Agents"}],
+// 					onError: 'Fail',
+// 					}
+// 			},
+// 			Serving_Agents: {
+// 				invoke : {
+// 					id: "serve_next_agent",
+// 					src: "serve_next_agent",
+// 					onDone: [{target : "Serving_Training_Sets", cond : "iteratorEmpty"},
+// 							 {target : "Serving_Problems"}],
+// 					onError: 'Fail',
+// 				}
+// 			},
+// 			Serving_Problems: {
+// 				invoke : {
+// 					id: "serve_next_problem",
+// 					src: "serve_next_problem",
+// 					onDone: [{target : "Serving_Agents", cond : "iteratorEmpty"},
+// 							 {target : "Waiting_Problem_Load"}],
+// 					onError: 'Fail',
+// 				}
+// 			},
+// 			Waiting_Problem_Load:{
+// 				invoke : {
+// 					id: "set_problem_src",
+// 					src: "set_problem_src",
+// 					onDone: "Training",
+// 					onError: 'Fail',
+// 				}
+// 			},
+
+// 		// "Waiting_For_OuterLoop": {
+// 		// 	entry: query_outerloop,
+// 		// 	on: {"PROBLEM_START_LOAD": "Waiting_Problem_Load"}
+// 		// },
+
+// 			Training: {
+// 				invoke : {
+// 					id: "training_state_machine",
+// 					src: "training_state_machine",
+// 					onDone: "Serving_Problems",
+// 					onError: 'Fail',
+// 				}
+// 			},
+// 		// "Explantions_Displayed": {
+// 		//   on: {
+// 		//     "NEXT_PRESSED": "Query_Demonstrate",
+// 		//     "DEMONSTRATE": "Request_Foci",
+// 		//     "DONE": "Specify_Start_State"
+// 		//   },
+		  
+// 		// },
+// 			All_Done : {
+// 				type : 'final',
+// 			},
+// 			Fail : {
+// 				entry : ["logError","kill_this"]
+// 			}
+// 		}
+// 	})
+// }
+
+
+// const TrainingJSON_SM= Machine({
+//   "initial": "Loading_Training_File",
+//   "states": {
+//   	"Loading_Training_File": {
+//   		entry: load_training_file,
+//   		on: { "TRAINING_FILE_LOADED": "Serving_Training_Sets" },
+//   	},	
+//   	"All_Done" : {},
+//     "Serving_Training_Sets": {
+//     	entry: serve_next_training_set,
+//       	on: { "TRAINING_SET_LOADED": "Serving_Agents",
+//       		  "NO_MORE_TRAINING_SETS" : "All_Done"},
+//     },
+//     "Serving_Agents": {
+//     	entry: serve_next_agent,
+//     	on: {"AGENT_CREATED": "Serving_Problem",
+//       		 "NO_MORE_AGENTS" : "Serving_Training_Sets"},
+//     },
+//     "Serving_Problems": {
+//     	entry: serve_next_problem,
+//     	on: {"PROBLEM_START_LOAD": "Waiting_Problem_Load",
+//     		 "QUERY_OUTERLOOP": "Waiting_For_OuterLoop",
+//       		 "NO_MORE_PROBLEMS" : "Serving_Agents"},
+//     },
+//     "Waiting_Problem_Load":{
+//     	entry: runWhenReady,
+//     	on: {"PROBLEM_LOADED": "Training"}
+//     },
+//     "Waiting_For_OuterLoop": {
+//     	entry: query_outerloop,
+//     	on: {"PROBLEM_START_LOAD": "Waiting_Problem_Load"}
+//     },
+
+//     "Training": {
+//     	on: {"PROBLEM_DONE": "Serving_Problems"},
+//     },
+//     "Explantions_Displayed": {
+//       on: {
+//         "NEXT_PRESSED": "Query_Demonstrate",
+//         "DEMONSTRATE": "Request_Foci",
+//         "DONE": "Specify_Start_State"
+//       },
       
-    },
-  }
-},
-{
-	actions: {
-		query_apprentice : (context,event) => {
-			window.query_apprentice()
-		}
-	}
-}
-)
+//     },
+//   }
+// },
+// {
+// 	actions: {
+// 		query_apprentice : (context,event) => {
+// 			window.query_apprentice()
+// 		}
+// 	}
+// }
+// )
 
 export default ButtonsMachine;
