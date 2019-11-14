@@ -33,6 +33,22 @@ export default class NetworkLayer {
 		this.HOST_URL = HOST_URL
 	}
 
+	create_agent(context, event){
+
+		var data = {
+            'name': context.agent_name,
+            'agent_type': context.agent_type,
+            'project_id': context.project_id
+        }
+    	data = {...context.other_agent_data, ...data}
+
+    	return fetch_retry(this.AL_URL + '/create/', 
+    		{method: "POST",
+    		 headers: JSON_HEADERS,
+    		 body:JSON.stringify(data)})
+    		 .then(res => res.json())
+	}
+
 	send_feedback(context,event,reward, explicit=false){
 		console.log("SEND_FEEDBACK")
 		const last_action = context.last_action;

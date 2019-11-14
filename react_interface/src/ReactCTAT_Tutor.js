@@ -10,6 +10,9 @@ import {
   // WebView
 } from 'react-native';
 
+const queryString = require('query-string');
+const path = require("path")
+
 var $ = require('jquery');
 
 // const post_message = 
@@ -70,7 +73,9 @@ export default class CTAT_Tutor extends React.Component {
 
   componentDidMount(){
     window.ctat_webview = this.ctat_webview
+    this.iframe = this.ctat_webview
     this.iframe_content = this.ctat_webview.frameRef.contentWindow;
+    
     console.log("THIS",this)
     // this.graph = this.iframe_content.CTAT.ToolTutor.tutor.getGraph() || false;
   }
@@ -84,6 +89,76 @@ export default class CTAT_Tutor extends React.Component {
 
     this._triggerWhenInitialized()
 
+  }
+
+  loadProblem(context){
+    const prob_obj = context.prob_obj
+    const nl = context.network_layer
+    const interactive = context.interactive
+    const promise = new Promise((resolve,reject) => {
+      var HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
+
+      var domain_name = prob_obj["domain_name"] || HTML_name;
+      
+
+      // Point the iframe to the HTML and question_file (brd or nools) for the next problem
+
+      // iframe_content.CTAT = null;
+      // iframe_content.CTATCommShell = null;
+
+
+
+      var HTML_PATH = prob_obj["HTML"];
+      if(!path.isAbsolute(HTML_PATH)){
+          HTML_PATH = context.working_dir + "/" + HTML_PATH  
+      }
+      // console.log("working_dir: ", working_dir)
+      // console.log("HTML_PATH: ", HTML_PATH)
+
+
+      // if(session_id == null){
+      //     user_guid = "Stu_" + CTATGuid.guid();
+      //     session_id = CTATGuid.guid();
+      // }
+
+      var qf_exists = prob_obj["question_file"] != undefined && prob_obj["question_file"].toUpperCase() != "INTERACTIVE";
+      var BRD_name, free_authoring;
+      if(qf_exists){
+          BRD_name = prob_obj["question_file"].substring(prob_obj["question_file"].lastIndexOf('/')+1).replace(".brd", "").replace(".nools", "");  
+            free_authoring = false;
+      }else{
+          BRD_name = "FREE AUTHORING"
+            free_authoring = true;
+      }
+        // term_print(prob_obj["question_file"])
+        
+
+      nl.term_print('\x1b[0;30;47m' + "Starting Problem: " + BRD_name +  '\x1b[0m');
+
+      var qf = qf_exists  ? {"question_file" : prob_obj["question_file"]} : {"question_file" : "/src/empty.nools"} ;
+
+        console.log(qf)
+        if(!interactive && qf["question_file"].includes(".nools")){
+            nl.kill_this('\x1b[0;30;47m' +'Question file cannot be nools in non-interactive mode. Use example tracing.\x1b[0m')
+        }
+      var logging_params = {
+          "problem_name": BRD_name,
+          "dataset_level_name1" : domain_name,
+          "dataset_level_type1" : "Domain",
+          "SessionLog" : "true",
+          "Logging" : "ClientToLogServer",
+          "log_service_url" : window.location.origin,
+          "user_guid" : context.agent_id,
+          "session_id" : context.session_id
+      };
+      var params = Object.assign({},qf,logging_params) //Merge dictionaries
+      
+      this.HTML_PATH = HTML_PATH
+      this.init_callback = resolve
+      this.iframe.onload = this.componentDidUpdate;
+      this.iframe.src = HTML_PATH + "?" + queryString.stringify( params ).search;
+    })
+    return promise;
   }
 
   _triggerWhenInitialized(){

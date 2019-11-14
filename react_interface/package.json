@@ -21,6 +21,7 @@
   "dependencies": {
     "jquery": "^3.4.1",
     "node-fetch": "^2.6.0",
+    "query-string": "^6.9.0",
     "react": "^16.6.x",
     "react-app-polyfill": "^0.1.3",
     "react-art": "^16.6.x",
