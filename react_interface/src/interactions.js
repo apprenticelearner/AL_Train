@@ -162,7 +162,7 @@ function _term_print(context,event){
 }
 
 
-function build_SM_NonInteractive(tutor,network_layer,agent_id){
+export function build_SM_NonInteractive(tutor,network_layer){
 	const context = {
 		interactive : false,
 		tutor : tutor,
@@ -170,7 +170,7 @@ function build_SM_NonInteractive(tutor,network_layer,agent_id){
 		// state : tutor.get_state(),
 		last_correct : null,
 		last_action : null,
-		agent_id : agent_id,
+		agent_id : null,
 		action_type : null
 	}
 	const NonInteractive_SM = Machine({
