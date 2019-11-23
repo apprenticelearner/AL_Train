@@ -1,4 +1,6 @@
 const AL_RETRY_LIMIT = 3;
+const TIMEOUT = 100;
+
 // var $ = require('jquery');
 
 // var fetch = require("node-fetch");
@@ -8,8 +10,14 @@ function ignoreKeys(key,value){
     else return value;
 }
 
+async function wait(ms) {
+  return new Promise(resolve => {
+    setTimeout(resolve, ms);
+  });
+}
+
 //https://dev.to/ycmjason/javascript-fetch-retry-upon-failure-3p6g
-const fetch_retry = async (url, options, n=AL_RETRY_LIMIT) => {
+const fetch_retry = async (url, options, n=AL_RETRY_LIMIT,t=TIMEOUT,exp=true) => {
     for (let i = 0; i < n; i++) {
         try {
             return await fetch(url, options);
@@ -17,6 +25,8 @@ const fetch_retry = async (url, options, n=AL_RETRY_LIMIT) => {
         	console.log("AL ERROR Retrying",err)
             const isLastAttempt = i + 1 === n;
             if (isLastAttempt) throw err;
+            console.log("waiting",exp ? t * Math.pow(2,i) : t)
+        	await wait(exp ? t * Math.pow(2,i) : t)
         }
     }
 };
@@ -31,6 +41,13 @@ export default class NetworkLayer {
 	constructor(AL_URL,HOST_URL){
 		this.AL_URL = AL_URL
 		this.HOST_URL = HOST_URL
+
+		this.create_agent = this.create_agent.bind(this)
+		this.send_feedback = this.send_feedback.bind(this)
+		this.send_training_data = this.send_training_data.bind(this)
+		this.query_apprentice = this.query_apprentice.bind(this)
+		this.term_print = this.term_print.bind(this)
+		this.kill_this = this.kill_this.bind(this)
 	}
 
 	create_agent(context, event){
@@ -42,10 +59,12 @@ export default class NetworkLayer {
         }
     	data = {...context.other_agent_data, ...data}
 
+    	console.log(this.AL_URL + '/create/')
+
     	return fetch_retry(this.AL_URL + '/create/', 
     		{method: "POST",
     		 headers: JSON_HEADERS,
-    		 body:JSON.stringify(data)})
+    		 body:JSON.stringify(data)}, 4)
     		 .then(res => res.json())
 	}
 

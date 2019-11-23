@@ -69,25 +69,30 @@ export default class CTAT_Tutor extends React.Component {
 
     this.ctat_webview = React.createRef();
 
+    this.state = {
+      "source" : "../../examples/FracPreBake/FractionArithmetic/HTML/fraction_arithmetic.html?question_file=../mass_production/mass_production_brds/AD 5_9_plus_3_7.brd"
+    }
+
   }
 
   componentDidMount(){
-    window.ctat_webview = this.ctat_webview
-    this.iframe = this.ctat_webview
-    this.iframe_content = this.ctat_webview.frameRef.contentWindow;
+    // window.ctat_webview = this.ctat_webview.current
+
+    
     
     console.log("THIS",this)
     // this.graph = this.iframe_content.CTAT.ToolTutor.tutor.getGraph() || false;
   }
 
   componentDidUpdate(prevProps,prevState){
-    console.log("UPDATED", prevProps)
-
+    console.log("UPDATED", this.state)
+    this.iframe = this.ctat_webview.current
+    
     if(!this.init_callback){
       this.init_callback = (x) => {};
     }
 
-    this._triggerWhenInitialized()
+    // this._triggerWhenInitialized()
 
   }
 
@@ -109,7 +114,7 @@ export default class CTAT_Tutor extends React.Component {
 
 
       var HTML_PATH = prob_obj["HTML"];
-      if(!path.isAbsolute(HTML_PATH)){
+      if(!path.isAbsolute(HTML_PATH) && context.working_dir){
           HTML_PATH = context.working_dir + "/" + HTML_PATH  
       }
       // console.log("working_dir: ", working_dir)
@@ -155,14 +160,24 @@ export default class CTAT_Tutor extends React.Component {
       
       this.HTML_PATH = HTML_PATH
       this.init_callback = resolve
-      this.iframe.onload = this.componentDidUpdate;
-      this.iframe.src = HTML_PATH + "?" + queryString.stringify( params ).search;
+      var source = HTML_PATH + "?" + queryString.stringify( params );
+      console.log("source", source)
+      this.graph = null
+      this.commLibrary = null
+      this.hasConfig = null
+      this.setState({"source" : source,
+            "onLoad" : this._triggerWhenInitialized
+        })
+      // this.iframe.onLoad = this._triggerWhenInitialized;
+      // this.iframe.src = HTML_PATH + "?" + queryString.stringify( params ).search;
+      // setTimout(this._triggerWhenInitialized(),10)
     })
     return promise;
   }
 
   _triggerWhenInitialized(){
     console.log("TRIGGER WHEN INITIALIZED")
+    this.iframe_content = this.iframe.frameRef.contentWindow;
     const iframe_content = this.iframe_content
 
     if(typeof iframe_content.CTAT == "undefined" || iframe_content.CTAT == null ||
@@ -202,6 +217,7 @@ export default class CTAT_Tutor extends React.Component {
       this.CTAT_INCORRECT = iframe_content.CTAT.Component.Base.Tutorable.EventType.incorrect;
       this.CTAT_ACTION = iframe_content.CTAT.Component.Base.Tutorable.EventType.action;    
 
+      console.log("INITIALIZED!")
       this.init_callback(this)
     }else{
       // term_print('\x1b[0;30;47m' + "BLEHH2" + '\x1b[0m');
@@ -537,10 +553,9 @@ export default class CTAT_Tutor extends React.Component {
   //   // window.document.domain = "http://0.0.0.0:8000"
   // }
 
-  setRef = webview => {
-    this.ctat_webview = webview; 
-    this.iframe_content = webview.frameRef.contentWindow;
-  }
+  // setRef = webview => {
+  //   this.ctat_webview = webview; 
+  // }
   render() {
     return (
       <WebView
@@ -550,11 +565,12 @@ export default class CTAT_Tutor extends React.Component {
             //                        console.log("THIS",this)
             //                        // this.graph = this.iframe_content.CTAT.ToolTutor.tutor.getGraph() || false;
              //                       console.log("MOOP",webview)}}
-            ref={this.setRef}
+            ref={this.ctat_webview}
             // style={{ height: 700, width: 400 }}
             originWhitelist={['*']}
             // source={{"uri": "http://0.0.0.0:8000/HTML/fraction_arithmetic.html?question_file=../mass_production/mass_production_brds/AD 5_9_plus_3_7.brd"}}
-            source={{"uri": "../../examples/FracPreBake/FractionArithmetic/HTML/fraction_arithmetic.html?question_file=../mass_production/mass_production_brds/AD 5_9_plus_3_7.brd"}}
+            source={{"uri": this.state.source}}
+            onLoad={this.state.onLoad}
             // source={{"html": "<!DOCTYPE html><html><head></head><body> HERE IS THE TUTOR... ARE YOU LEARNING YET? </body></html>"}}
             // source={{"html": "<? echo file_get_contents('http://0.0.0.0:8000/HTML/fraction_arithmetic.html'); ?>"}}
             // injectedJavaScript={"window.booger = document"}

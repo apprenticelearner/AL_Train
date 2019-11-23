@@ -6,7 +6,7 @@ import Buttons from './components/buttons';
 import CTAT_Tutor from './ReactCTAT_Tutor';
 import { vw, vh, vmin, vmax } from 'react-native-expo-viewport-units';
 import ButtonsMachine from './interactions.js'
-import {build_SM_NonInteractive} from './interactions.js'
+import {build_interactions_sm} from './interactions.js'
 import {make_training_handler} from './training_handler.js'
 import NetworkLayer from './network_layer.js'
 import { interpret } from 'xstate';
@@ -55,17 +55,32 @@ state_machine_service.start()
 export default class ALReactInterface extends React.Component {
   constructor(props){
     super(props);
-    this.urlParams = new URLSearchParams(window.location.search);
-    this.AL_URL = this.urlParams.get('al_url');
-    this.HOST_URL = window.location.origin
-    this.network_layer = new NetworkLayer(this.AL_URL,this.HOST_URL)
+    // this.urlParams = new URLSearchParams(window.location.search);
+
+    // this.AL_URL = this.urlParams.get('al_url');
+    // this.HOST_URL = window.location.origin
+    // console.log(this.AL_URL + '/create/',this.HOST_URL)
+    this.network_layer = new NetworkLayer(props.AL_URL,props.HOST_URL)
+    
+    // this.training_file = this.urlParams.get('training');
+    // this.interactive = this.urlParams.get('interactive') == "true";
+    // this.use_foci = this.urlParams.get('use_foci') == "true";
+
+    // var working_dir = this.urlParams.get('wd')
+    if(props.working_dir == null){
+        var match = props.training_file.match(/(.*)[\/\\]/)
+        props.working_dir =  !!match ? match[1] : ''; //The directory of the training.json
+    }
     this.tutor = React.createRef()
     // this.state = {prob_obj : null};
   }
   componentDidMount(){
     console.log("MOUNTED")
-    this.interactions_sm = build_SM_NonInteractive(this.tutor.current,this.network_layer)
-    this.training_machine = make_training_handler(this.interactions_sm,this.network_layer)
+    var tutor, nl, wd,tf
+    [tutor, nl, wd,tf] = [this.tutor.current,this.network_layer,this.props.working_dir,this.props.training_file]
+      
+    this.interactions_sm = build_interactions_sm(tutor,nl,this.props.interactive)  
+    this.training_machine = make_training_handler(this.interactions_sm, nl, tf, tutor, wd)
     this.training_machine_service = interpret(this.training_machine)
     this.training_machine_service.start()
     console.log("T MACHINE!", this.training_machine_service)
