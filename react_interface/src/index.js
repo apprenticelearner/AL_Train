@@ -12,10 +12,30 @@ import App from './App';
 
 
 
+function getWebProps(){
+	var urlParams = new URLSearchParams(window.location.search.substring(1));
+	console.log(window.location.search)
+	console.log(urlParams)
+
+	var props = {AL_URL : urlParams.get('al_url'),
+				 HOST_URL : window.location.origin,
+				 training_file : urlParams.get('training'),
+				 interactive : urlParams.get('interactive') == "true",
+				 use_foci : urlParams.get('use_foci') == "true",
+			}
+
+	console.log(props)
+	return props
+	
+}
+
+var props = getWebProps()
+
 ReactDOM.render(
 		<App 
 		ref={(app) => {window.react_interface = app}}
-		style={{"height":"100%"}}/>
+		style={{"height":"100%"}}
+		{...props}/>
 		, document.getElementById('root'));	
 
 

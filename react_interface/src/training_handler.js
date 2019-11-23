@@ -10,26 +10,31 @@ const CTATGuid = {s4:function s4() {
 }};
 
 function load_training_file (context,event){
-	var promise = new Promise((resolve, reject) => {
-		try{
-			let file_name = context.training_json
-			let rawdata = fs.readFileSync(file_name)
-			let training_json_obj = JSON.parse(rawdata);
-			var training_iterator = Object.entries(training_json_obj);	
-		}catch(error){
-			console.error(error)
-			reject(error)
-		}
-		resolve(training_iterator)
-	});
-	return promise
+	console.log("TRAINING JSON:", context.training_file)
+	return fetch(context.training_file)
+			.then((response) => response.json())
+			.then((response) => Object.entries(response))
+			.then((response) => {return {updateContext : {training_iterator : response}}})
+	// var promise = new Promise((resolve, reject) => {
+		// try{
+		// 	let file_name = context.training_json
+		// 	let rawdata = fs.readFileSync(file_name)
+		// 	let training_json_obj = JSON.parse(rawdata);
+		// 	var training_iterator = Object.entries(training_json_obj);	
+		// }catch(error){
+		// 	console.error(error)
+		// 	reject(error)
+		// }
+		// resolve(training_iterator)
+	// });
+	// return promise
 };
 
 function serve_next_training_set (context,event){
-	var training_iterator = context.training_iterator
+	var promise = new Promise((resolve, reject) => {
+		var training_iterator = context.training_iterator
 	var file_params = context.file_params || {};
 	console.log("TRAINING ITERATOR", training_iterator.length);
-	var promise = new Promise((resolve, reject) => {
 		if(training_iterator.length > 0){
 			var out = training_iterator.shift()
 			var name = out[0];
@@ -56,9 +61,9 @@ function serve_next_training_set (context,event){
 };
 
 function serve_next_agent(context,event){
-	var agent_iterator = context.agent_iterator;
-    console.log("AGENT ITERATOR", agent_iterator.length);
     var promise = new Promise((resolve, reject) => {
+    	var agent_iterator = context.agent_iterator;
+    	console.log("AGENT ITERATOR", agent_iterator.length);
 	    if(context.agent_iterator.length > 0){
 	        var agent_obj = agent_iterator.shift();
 	        var agent_params = agent_obj["set_params"] || {}
@@ -106,6 +111,7 @@ function _next_prob_obj(problem_iterator,agent_params,file_params){
     // console.log(prob_obj)
 
     prob_obj = {...file_params,...agent_params,...prob_obj}
+    console.log(prob_obj,agent_params)
     return [prob_obj, agent_params]
 }
 
@@ -119,6 +125,7 @@ function serve_next_problem (context,event){
 		var interactive = context.interactive
 		if(problem_iterator.length > 0){
 	        [prob_obj, agent_params] = _next_prob_obj(problem_iterator,agent_params,file_params);
+	        console.log(prob_obj,agent_params)
 	        // console.log("SLOOOP")
 	        // console.log(prob_obj)
 	        if(prob_obj){
@@ -133,105 +140,13 @@ function serve_next_problem (context,event){
 		            }
 		        }
 
-	            // if(!interactive){
-	                //! document.getElementById("prompt_text").innerHTML = agent_description + "question_file:" + prob_obj["question_file"];     
-	            // }
-		        
-
-		        // console.log(prob_obj)
 		        var EXAMPLES_ONLY = prob_obj["examples_only"] || false;
 
-		        // tutor.loadProblem(prob_obj)
-
-		        // var HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
-
-		        // var domain_name = prob_obj["domain_name"] || HTML_name;
-		        
-
-		        // // Point the iframe to the HTML and question_file (brd or nools) for the next problem
-
-		        // // iframe_content.CTAT = null;
-		        // // iframe_content.CTATCommShell = null;
-
-
-
-		        // var HTML_PATH = prob_obj["HTML"];
-		        // if(!path.isAbsolute(HTML_PATH)){
-		        //     HTML_PATH = context.working_dir + "/" + HTML_PATH  
-		        // }
-		        // // console.log("working_dir: ", working_dir)
-		        // // console.log("HTML_PATH: ", HTML_PATH)
-
-
-		        // // if(session_id == null){
-		        // //     user_guid = "Stu_" + CTATGuid.guid();
-		        // //     session_id = CTATGuid.guid();
-		        // // }
-
-		        // var qf_exists = prob_obj["question_file"] != undefined && prob_obj["question_file"].toUpperCase() != "INTERACTIVE";
-		        // var BRD_name, free_authoring;
-		        // if(qf_exists){
-		        //     BRD_name = prob_obj["question_file"].substring(prob_obj["question_file"].lastIndexOf('/')+1).replace(".brd", "").replace(".nools", "");  
-	         //        free_authoring = false;
-		        // }else{
-		        //     BRD_name = "FREE AUTHORING"
-	         //        free_authoring = true;
-		        // }
-	         //    // term_print(prob_obj["question_file"])
-	            
-
-		        // nl.term_print('\x1b[0;30;47m' + "Starting Problem: " + BRD_name +  '\x1b[0m');
-
-		        // var qf = qf_exists  ? {"question_file" : prob_obj["question_file"]} : {"question_file" : "/src/empty.nools"} ;
-
-	         //    console.log(qf)
-	         //    if(!interactive && qf["question_file"].includes(".nools")){
-	         //        nl.kill_this('\x1b[0;30;47m' +'Question file cannot be nools in non-interactive mode. Use example tracing.\x1b[0m')
-	         //    }
-		        // var logging_params = {
-		        //     "problem_name": BRD_name,
-		        //     "dataset_level_name1" : domain_name,
-		        //     "dataset_level_type1" : "Domain",
-		        //     "SessionLog" : "true",
-		        //     "Logging" : "ClientToLogServer",
-		        //     "log_service_url" : window.location.origin,
-		        //     "user_guid" : context.agent_id,
-		        //     "session_id" : context.session_id
-		        // };
-		        // var params = Object.assign({},qf,logging_params) //Merge dictionaries
-		        
-
-
-	         //    //TODO MAKES THESE PROPS~~~
-		        // // iframe.onload = runWhenReady;
-	         //    tutor.HTML_PATH = HTML_PATH
-	         //    tutor.init_callback = onTutorInitialized
-	         //    iframe.onload = tutor.componentDidUpdate;
-		        // iframe.src = HTML_PATH + "?" + jQuery.param( params );
-
-	            // tutor.componentDidUpdate(null,null)
-	            
-	            /*
-	            if(context.interactive){
-	                clear_highlights()
-	                window.setSkillWindowState({});
-	                feedback_queue = {};
-	            }
-	            */
-
-	            resolve({"updateContext" : {
+		        resolve({"updateContext" : {
 	            	EXAMPLES_ONLY : EXAMPLES_ONLY,
 	            	agent_params : agent_params,
 	            	problem_iterator : problem_iterator,
 	            	prob_obj : prob_obj
-
-		        	// HTML_name : HTML_name,
-		        	// domain_name : domain_name,
-		        	// HTML_PATH : HTML_PATH,
-		        	// BRD_name : BRD_name,
-		        	// free_authoring : free_authoring,
-		        	// logging_params : logging_params,
-		        	
 		        }})
 
 		    }else{
@@ -253,14 +168,29 @@ function query_outerloop (context,event){
 function iteratorEmpty(context,event){
 	return event.data == null;
 }
+function AAID(interactions_state_machine){
+	var boop = (context,event) => {
+		console.log("MOOOP")
+		return {...interactions_state_machine.context, ...{"agent_id": context.agent_id}}
+	}
+}
+
+function gerp(event){
+	console.log("GERP")
+	return event.data['agent_id']
+}
 
 
-export function make_training_handler(interactions_state_machine,network_layer){
+export function make_training_handler(interactions_state_machine,network_layer,training_file,tutor,working_dir){
 	var nl = network_layer;
 	const context = {
 		file_params : null,
 		agent_params : null,
 		prob_obj : null,
+		training_file : training_file,
+		tutor : tutor,
+		network_layer : network_layer,
+		working_dir : working_dir
 	}
 	const sm = Machine({
 		context : context,
@@ -271,7 +201,7 @@ export function make_training_handler(interactions_state_machine,network_layer){
 					id: "load_training_file",
 					src: "load_training_file",
 					onDone: {target : "Serving_Training_Sets", actions: "updateContext"},
-					onError: 'Fail',
+					onError: {target :'Fail', actions : "logError"}
 				}
 			},	
 			Serving_Training_Sets: {
@@ -280,7 +210,7 @@ export function make_training_handler(interactions_state_machine,network_layer){
 					src: "serve_next_training_set",
 					onDone: [{target : "All_Done", cond : "iteratorEmpty"},
 							 {target : "Serving_Agents", actions: "updateContext"}],
-					onError: 'Fail',
+					onError: {target :'Fail', actions : "logError"}
 				}
 			},
 			Serving_Agents: {
@@ -289,15 +219,15 @@ export function make_training_handler(interactions_state_machine,network_layer){
 					src: "serve_next_agent",
 					onDone: [{target : "Serving_Training_Sets", cond : "iteratorEmpty"},
 							 {target : "Creating_Agent",actions: "updateContext"}],
-					onError: 'Fail',
+					onError: {target :'Fail', actions : "logError"}
 				}
 			},
 			Creating_Agent: {
 				invoke : {
 					id: "create_agent",
 					src: "create_agent",
-					onDone: {target : "Serving_Problems",actions: "assignAgentId"},
-					onError: 'Fail',
+					onDone: {target : "Serving_Problems",actions: "assignAgentId" },
+					onError: {target :'Fail', actions : "logError"}
 				}
 			},
 			Serving_Problems: {
@@ -305,8 +235,8 @@ export function make_training_handler(interactions_state_machine,network_layer){
 					id: "serve_next_problem",
 					src: "serve_next_problem",
 					onDone: [{target : "Serving_Agents", cond : "iteratorEmpty"},
-							 {target : "Waiting_Problem_Load"}],
-					onError: 'Fail',
+							 {target : "Waiting_Problem_Load",  actions: "updateContext"}],
+					onError: {target :'Fail', actions : "logError"}
 				}
 			},
 			Waiting_Problem_Load:{
@@ -314,17 +244,18 @@ export function make_training_handler(interactions_state_machine,network_layer){
 					id: "load_problem",
 					src: "load_problem",
 					onDone: "Training",
-					onError: 'Fail',
+					onError: {target :'Fail', actions : "logError"}
 				}
 			},
 			Training: {
 				invoke : {
 					id: "interactions_state_machine",
 					src: "interactions_state_machine",
-					data : (context, event) => ({agent_id: context.agent_id}),
+					data : (context, event) => ({...interactions_state_machine.context, ...{"agent_id": context.agent_id}}),
 					onDone: "Serving_Problems",
-					onError: 'Fail',
-				}
+					onError: {target :'Fail', actions : "logError"}
+				},
+				// entry : send({type: "ASSIGN_AGENT", "agent_id" : agent_id})
 			},
 			All_Done : {
 				type : 'final',
@@ -336,6 +267,7 @@ export function make_training_handler(interactions_state_machine,network_layer){
 	},
 	{
 		services : {
+			
 			load_training_file : load_training_file,
 			serve_next_training_set : serve_next_training_set,
 			serve_next_agent : serve_next_agent,
@@ -343,16 +275,21 @@ export function make_training_handler(interactions_state_machine,network_layer){
 			serve_next_problem : serve_next_problem,
 			load_problem : load_problem,
 			interactions_state_machine : interactions_state_machine,
-			assignAgentId : assign({agent_id : (context, event) => event.data['agent_id']})
+			
 		},
 		actions : {
+			logError : (context,event) => {console.error(event.data)},
 			updateContext : assign((context, event) => {
-			    return event.data.contextUpdate
+			    return event.data.updateContext
+			}),
+			assignAgentId : assign((context, event) => {
+				return {agent_id : gerp(event)}
 			})
 		},
 		guards : {
 			iteratorEmpty : iteratorEmpty,
 		}
 	});
+	// console.log("JSON MACHINE",sm)
 	return sm
 }
