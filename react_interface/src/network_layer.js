@@ -68,22 +68,24 @@ export default class NetworkLayer {
     		 .then(res => res.json())
 	}
 
-	send_feedback(context,event,reward, explicit=false){
+	send_feedback(context,event,explicit=false){
 		console.log("SEND_FEEDBACK")
 		const last_action = context.last_action;
 		const agent_id = context.agent_id;
 		const state = context.state
 
-		if(!reward){
-			reward = last_action.reward
-		}
+		// if(!reward){
+		// 	reward = last_action.reward
+		// }
 		// var last_action = context.last_action
 
 	    if (last_action === null) {
 	        console.error('cannot give feedback on no action.');
 	    }
 
-	    last_action.reward = reward
+	    var reward = last_action.reward
+
+	    // last_action.reward = reward
 	    if(!explicit){
 	        last_action.state = state
 	        return this.send_training_data(context, event, last_action)   

@@ -88,7 +88,32 @@ function print_feedback(context,event){
 	nl.term_print('\x1b[' + color + type + ": " + last_action.selection + " -> " + inps + '\x1b[0m')
 }
 
-function get_machine_actions(tutor,network_layer){
+
+function fillSkillPanel(context,event){
+
+	context.app.setState({skill_panel_props : {
+		skill_set : event.data['responses']
+		//select_callback 
+		//correctness_callback
+		//initial_select
+		//where_colors
+	}})
+}
+
+// skill_set={skill_set}
+			//						select_callback={select_callback}
+			//						correctness_callback={correctness_callback}
+		//							initial_select={initial_select}
+		//							where_colors={where_colors || undefined}
+	//								current = {window.state_machine}
+	//								service = {window.state_machine_service}
+
+function get_machine_actions(app){
+	var tutor = app.tutor.current
+	var skill_panel = app.skill_panel.current
+	var buttons = app.network_layer.current
+	var network_layer = app.network_layer
+
 	return {
 		services: {
 			send_feedback : (context,event) => network_layer.send_feedback(context,event,false),
@@ -104,27 +129,45 @@ function get_machine_actions(tutor,network_layer){
 			assignLastAction : assign({last_action: (context,event) => event.data}) ,
 			assignExample : assign({action_type: (context,event) => "EXAMPLE"}) ,
 			assignAttempt : assign({action_type: (context,event) => "ATTEMPT"}) ,
-			done : window.signal_done,
+			// done : window.signal_done,
 			print_feedback : print_feedback,
 			kill_this : _kill_this,
+
+			fillSkillPanel : fillSkillPanel,
+			done : (context,event) => {context.app.training_service.send("PROBLEM_DONE");}, 
+
+			enter_set_start_state_mode : tutor.enter_set_start_state_mode,
+			exit_set_start_state_mode : tutor.exit_set_start_state_mode,
+			enter_feedback_mode : tutor.enter_feedback_mode,
+			exit_feedback_mode : tutor.exit_feedback_mode,
+			enter_foci_mode : tutor.enter_foci_mode,
+			exit_foci_mode : tutor.exit_foci_mode,
+
 		},
 		guards: {
 			saiIsCorrectDone : saiIsCorrectDone,
-			noApplicableSkills : noApplicableSkills
+			noApplicableSkills : noApplicableSkills,
+			isFreeAuthor : (context,event) => {return context.free_author || false},
 		}
 	}
 }
 
-export function build_interactions_sm(tutor,network_layer, interactive=false, free_author=false){
+export function build_interactions_sm(app, interactive=false, free_author=false){
 	const context = {
-		interactive : interactive,
-		free_author : free_author,
-		tutor : tutor,
-		network_layer : network_layer,
-		// state : tutor.get_state(),
+		app : app,
+		tutor : app.tutor.current,
+		skill_panel : app.skill_panel.current,
+		buttons : app.buttons.current,
+		network_layer : app.network_layer,
+
+		//Inherited
+		agent_id : null,
+		interactive : null,
+		free_author : null,
+		
+		//Dynamic
 		last_correct : null,
 		last_action : null,
-		agent_id : null,
 		action_type : null
 	}
 	var sm = interactive ? interactive_sm : non_interactive_sm
@@ -132,7 +175,7 @@ export function build_interactions_sm(tutor,network_layer, interactive=false, fr
 
 	const interaction_sm = Machine(
 		{...{"context" : context}, ...sm},
-		get_machine_actions(tutor,network_layer)
+		get_machine_actions(app)
 	);	
 	return interaction_sm
 }
@@ -205,80 +248,7 @@ var non_interactive_sm = {
 
 
 
-const feedbackStates = {
-	initial: "Waiting_For_Applicable_Skills",
-	states: {
-		"Waiting_For_Applicable_Skills" :{
-			entry : ['query_apprentice'],
-			on : {
-				"APPLICABLE_SKILLS_RECIEVED" : "Query_Yes_No_Feedback",
-				"NO_SKILLS_RECIEVED" : "No_Query_Feedback"
-			}
-		},
-		"Waiting_For_Training_Recieved" :{
-			on : {
-				"TRAINING_RECIEVED" : "Waiting_For_Applicable_Skills",
-			}	
-		},
-		"No_Query_Feedback" : {
-			on : {
-				"SKILL_PANEL_FEEDBACK_NONEMPTY" : "Query_Submit_Feedback"
-			}
-		},
-		"Query_Yes_No_Feedback" : {
-			on : {
-				"SKILL_PANEL_FEEDBACK_NONEMPTY" : "Query_Submit_Feedback",
-				"YES_PRESSED" : "Waiting_For_Training_Recieved",
-				"NO_PRESSED" : "Waiting_For_Training_Recieved",
-			}	
-		},
-		"Query_Submit_Feedback" : {
-			on : {
-				"SKILL_PANEL_FEEDBACK_EMPTY" : [
-					{target : "Query_Yes_No_Feedback", },
-					{target : "No_Query_Feedback"}
-				],
-				"SUBMIT_SKILL_FEEDBACK": "Waiting_For_Training_Recieved"
-			}	
-		}
-	}
-}
 
-const ButtonsMachine = Machine({
-  "initial": "Specify_Start_State",
-  "states": {
-  	"Specify_Start_State": {
-  		on: { "START_STATE_SET": "Query_Demonstrate" },
-  	},	
-    "Query_Demonstrate": {
-      on: { "DEMONSTRATE": "Request_Foci",
-       		"DONE": "Specify_Start_State" },
-      
-      ...feedbackStates
-    },
-    "Request_Foci": {
-      on: {
-        "FOCI_DONE": "Query_Demonstrate",
-      },
-    },
-    "Explantions_Displayed": {
-      on: {
-        "NEXT_PRESSED": "Query_Demonstrate",
-        "DEMONSTRATE": "Request_Foci",
-        "DONE": "Specify_Start_State"
-      },
-      
-    },
-  }
-},
-{
-	actions: {
-		query_apprentice : (context,event) => {
-			window.query_apprentice()
-		}
-	}
-}
-)
 
 // ------------------------------- INTERACTIVE ----------------------------
 
@@ -288,48 +258,59 @@ var interactive_sm = {
 		Start:{
 			entry : "stateRecalc",
 			on : {
-				"" : "Querying_Apprentice",
+				"" : [
+					{"target" : "Setting_Start_State", cond : "isFreeAuthor"},
+					{"target" : "Querying_Apprentice"}
+				]
 			}
 		},
+		"Setting_Start_State": {
+			entry : "enter_set_start_state_mode",
+  			on: { "START_STATE_SET": "Querying_Apprentice" },
+  			exit : "exit_set_start_state_mode",
+  		},
 		Querying_Apprentice: {
 			invoke : {
 		        id: "query_apprentice",
 		        src: "query_apprentice",
-		        onDone: [
-		        	{target: "Applying_Next_Example", cond: "noApplicableSkills"},
-		        	{target: "Applying_Skill_Application"},
-		        ],
+		        onDone: {target: "Waiting_User_Feedback", "actions" : "fillSkillPanel"},
 		        onError: 'Fail',
 			},
 			exit: "assignResponse",
 		},
-		Applying_Skill_Application : {
-			invoke : {
-		        id: "apply_skill_application",
-		        src: "apply_skill_application",
-		        onDone: "Sending_Feedback",
-		        onError: 'Fail',
-			},
-			exit: ["assignLastAction","assignAttempt"]
+		Waiting_User_Feedback : {
+			entry : "enter_feedback_mode",
+			on : {"DEMONSTRATE" : "Waiting_Select_Foci"},
+				"Waiting_Yes_No_Feedback" : {
+					on : {
+						"SKILL_PANEL_FEEDBACK_NONEMPTY" : "Waiting_Submit_Feedback",
+						"YES_PRESSED" : "Sending_Feedback",
+						"NO_PRESSED" : "Sending_Feedback",
+					}	
+				},
+				"Waiting_Submit_Feedback" : {
+					on : {
+						"SKILL_PANEL_FEEDBACK_EMPTY" : "Waiting_Yes_No_Feedback",
+						"SUBMIT_SKILL_FEEDBACK": "Sending_Feedback"
+					}	
+				},
+			exit : "exit_feedback_mode",
 		},
-
-		Applying_Next_Example : {
-			invoke : {
-		        id: "apply_next_example",
-		        src: "apply_next_example",
-		        onDone: "Sending_Feedback",
-		        onError: 'Fail'
+		"Waiting_Select_Foci": {
+			entry : "enter_foci_mode",
+			on: {
+				"FOCI_DONE": "Sending_Feedback",
 			},
-			exit: ["assignLastAction","assignExample"]
-		},
-
+			exit : "exit_foci_mode",
+	    },
 		Sending_Feedback : {
 			entry : 'print_feedback',
 			invoke : {
 		        id: "send_feedback",
 		        src: "send_feedback",
 		        onDone: [
-			        {target: "Done", cond : "saiIsCorrectDone"},
+			        {target: "Setting_Start_State", cond : ["saiIsCorrectDone","isFreeAuthor"]},
+			        {target: "Done", cond : ["saiIsCorrectDone"]},
 			        {target: "Querying_Apprentice"},
 		        ],
 		        onError: 'Fail',
@@ -345,6 +326,82 @@ var interactive_sm = {
 		}
 	}
 };
+
+
+// const feedbackStates = {
+// 	initial: "Waiting_For_Applicable_Skills",
+// 	states: {
+// 		"Waiting_For_Applicable_Skills" :{
+// 			entry : ['query_apprentice'],
+// 			on : {
+// 				"APPLICABLE_SKILLS_RECIEVED" : "Query_Yes_No_Feedback",
+// 				"NO_SKILLS_RECIEVED" : "No_Query_Feedback"
+// 			}
+// 		},
+// 		"Waiting_For_Training_Recieved" :{
+// 			on : {
+// 				"TRAINING_RECIEVED" : "Waiting_For_Applicable_Skills",
+// 			}	
+// 		},
+// 		"No_Query_Feedback" : {
+// 			on : {
+// 				"SKILL_PANEL_FEEDBACK_NONEMPTY" : "Query_Submit_Feedback"
+// 			}
+// 		},
+// 		"Query_Yes_No_Feedback" : {
+// 			on : {
+// 				"SKILL_PANEL_FEEDBACK_NONEMPTY" : "Query_Submit_Feedback",
+// 				"YES_PRESSED" : "Waiting_For_Training_Recieved",
+// 				"NO_PRESSED" : "Waiting_For_Training_Recieved",
+// 			}	
+// 		},
+// 		"Query_Submit_Feedback" : {
+// 			on : {
+// 				"SKILL_PANEL_FEEDBACK_EMPTY" : [
+// 					{target : "Query_Yes_No_Feedback", },
+// 					{target : "No_Query_Feedback"}
+// 				],
+// 				"SUBMIT_SKILL_FEEDBACK": "Waiting_For_Training_Recieved"
+// 			}	
+// 		}
+// 	}
+// }
+
+// const ButtonsMachine = Machine({
+//   "initial": "Specify_Start_State",
+//   "states": {
+//   	"Specify_Start_State": {
+//   		on: { "START_STATE_SET": "Query_Demonstrate" },
+//   	},	
+//     "Query_Demonstrate": {
+//       on: { "DEMONSTRATE": "Request_Foci",
+//        		"DONE": "Specify_Start_State" },
+      
+//       ...feedbackStates
+//     },
+//     "Request_Foci": {
+//       on: {
+//         "FOCI_DONE": "Query_Demonstrate",
+//       },
+//     },
+//     "Explantions_Displayed": {
+//       on: {
+//         "NEXT_PRESSED": "Query_Demonstrate",
+//         "DEMONSTRATE": "Request_Foci",
+//         "DONE": "Specify_Start_State"
+//       },
+      
+//     },
+//   }
+// },
+// {
+// 	actions: {
+// 		query_apprentice : (context,event) => {
+// 			window.query_apprentice()
+// 		}
+// 	}
+// }
+// )
 
 // window.new_nonInteractiveMachine = () => {
 // 	var machine = build_SM_NonInteractive(window.tutor,window.network_layer,window.agent_id)
@@ -498,4 +555,4 @@ var interactive_sm = {
 // }
 // )
 
-export default ButtonsMachine;
+export default build_interactions_sm;

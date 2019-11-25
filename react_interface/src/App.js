@@ -5,9 +5,9 @@ import SkillPanel from './components/skill_panel.js'
 import Buttons from './components/buttons';
 import CTAT_Tutor from './ReactCTAT_Tutor';
 import { vw, vh, vmin, vmax } from 'react-native-expo-viewport-units';
-import ButtonsMachine from './interactions.js'
+// import ButtonsMachine from './interactions.js'
 import {build_interactions_sm} from './interactions.js'
-import {make_training_handler} from './training_handler.js'
+import {build_training_sm} from './training_handler.js'
 import NetworkLayer from './network_layer.js'
 import { interpret } from 'xstate';
 
@@ -28,9 +28,9 @@ import { TouchableHighlight,ScrollView,View, Text, Platform, StyleSheet,SectionL
 //     "Shake or press menu button for dev menu",
 //   web: "Your browser will automatically refresh as soon as you save the file."
 // });
-var state_machine = ButtonsMachine.initialState
-var state_machine_service = interpret(ButtonsMachine)
-state_machine_service.start()
+// var state_machine = ButtonsMachine.initialState
+// var state_machine_service = interpret(ButtonsMachine)
+// state_machine_service.start()
 
 // var NonInteractive_SM = build_SM_NonInteractive()
 // var ctat_state_machine = NonInteractive_SM.initialState
@@ -55,6 +55,7 @@ state_machine_service.start()
 export default class ALReactInterface extends React.Component {
   constructor(props){
     super(props);
+    this.onInteractionTransition = this.onInteractionTransition.bind(this)
     // this.urlParams = new URLSearchParams(window.location.search);
 
     // this.AL_URL = this.urlParams.get('al_url');
@@ -72,18 +73,45 @@ export default class ALReactInterface extends React.Component {
         props.working_dir =  !!match ? match[1] : ''; //The directory of the training.json
     }
     this.tutor = React.createRef()
+    this.skill_panel = React.createRef()
+    this.buttons = React.createRef()
+
+    this.state = {
+      skill_panel_props : {},
+      buttons_props : {}
+    }
     // this.state = {prob_obj : null};
   }
+
+  onInteractionTransition(current){
+    console.log("CURRENT:", current)
+
+    var standard_props = {interactions_state: current,
+                          interactions_service : this.interactions_service}
+    this.setState({
+      buttons_props: standard_props,
+      tutor_props: standard_props,
+      skill_panel_props: standard_props,
+    })
+  }
+
   componentDidMount(){
     console.log("MOUNTED")
     var tutor, nl, wd,tf
     [tutor, nl, wd,tf] = [this.tutor.current,this.network_layer,this.props.working_dir,this.props.training_file]
       
-    this.interactions_sm = build_interactions_sm(tutor,nl,this.props.interactive)  
-    this.training_machine = make_training_handler(this.interactions_sm, nl, tf, tutor, wd)
-    this.training_machine_service = interpret(this.training_machine)
-    this.training_machine_service.start()
-    console.log("T MACHINE!", this.training_machine_service)
+    this.interactions_sm = build_interactions_sm(this,this.props.interactive)  
+    this.interactions_service = null //Will be spawned in training_sm 
+
+    this.training_machine = build_training_sm(this,this.interactions_sm, tf, wd)
+    this.training_service = interpret(this.training_machine)
+
+    this.training_service.start()
+
+    const sub = this.training_service.subscribe(state => {
+      console.log("SUBSCRIBE:",state);
+    });
+    console.log("T MACHINE!", this.training_service)
 
   }
 
@@ -98,19 +126,17 @@ export default class ALReactInterface extends React.Component {
           //current_state={ctat_state_machine}
           //sm_service={ctat_state_machine_service}
           interactive={false}
+          {...this.state.tutor_props}
         />
   		</View>
   		<View style={styles.controls}>
   			<View style={styles.skill_panel}>
-  				<SkillPanel/>
+  				<SkillPanel ref={this.skill_panel}
+          {...this.state.skill_panel_props}/>
   			</View>
   			<View style={styles.buttons}>
-  				<Buttons
-  				current={state_machine}
-  				service={state_machine_service}
-  				debugmode={true}
-  				callbacks={window.button_callbacks}
-  				nools_callback={window.nools_callback}/>
+  				<Buttons ref={this.buttons}
+          {...this.state.buttons_props}/>
   			</View>
   		</View>
   	</View>
@@ -118,6 +144,11 @@ export default class ALReactInterface extends React.Component {
   }
 }
 
+//current={state_machine}
+//service={state_machine_service}
+//debugmode={true}
+//callbacks={window.button_callbacks}
+//nools_callback={window.nools_callback}/>
 
 const styles = StyleSheet.create({
 	container : {
