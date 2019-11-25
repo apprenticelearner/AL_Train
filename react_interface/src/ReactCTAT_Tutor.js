@@ -56,6 +56,19 @@ export default class CTAT_Tutor extends React.Component {
     this.applySAI = this.applySAI.bind(this)
     this.apply_skill_application = this.apply_skill_application.bind(this)
     this.apply_next_example = this.apply_next_example.bind(this)
+
+    this.handle_user_set_state = this.handle_user_set_state.bind(this)
+    this.enter_set_start_state_mode = this.enter_set_start_state_mode.bind(this)
+    this.exit_set_start_state_mode = this.exit_set_start_state_mode.bind(this)
+
+    this.handle_user_example = this.handle_user_example.bind(this)
+    this.enter_feedback_mode = this.enter_feedback_mode.bind(this)
+    this.exit_feedback_mode = this.exit_feedback_mode.bind(this)
+    
+    this.handle_foci_select = this.handle_foci_select.bind(this)
+    this.enter_foci_mode = this.enter_foci_mode.bind(this)
+    this.exit_foci_mode = this.exit_foci_mode.bind(this)
+
     this.relative_pos_cache = {};
 
     this.color_class_map = {
@@ -72,6 +85,7 @@ export default class CTAT_Tutor extends React.Component {
     this.state = {
       "source" : "../../examples/FracPreBake/FractionArithmetic/HTML/fraction_arithmetic.html?question_file=../mass_production/mass_production_brds/AD 5_9_plus_3_7.brd"
     }
+    this.start_state_history = []
 
   }
 
@@ -100,6 +114,7 @@ export default class CTAT_Tutor extends React.Component {
     const prob_obj = context.prob_obj
     const nl = context.network_layer
     const interactive = context.interactive
+    this.interactive = context.interactive
     const promise = new Promise((resolve,reject) => {
       var HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
 
@@ -114,8 +129,8 @@ export default class CTAT_Tutor extends React.Component {
 
 
       var HTML_PATH = prob_obj["HTML"];
-      if(!path.isAbsolute(HTML_PATH) && context.working_dir){
-          HTML_PATH = context.working_dir + "/" + HTML_PATH  
+      if(!path.isAbsolute(HTML_PATH)){
+          HTML_PATH = context.app.props.HOST_URL + "/" + path.join(context.working_dir, HTML_PATH)  
       }
       // console.log("working_dir: ", working_dir)
       // console.log("HTML_PATH: ", HTML_PATH)
@@ -135,6 +150,7 @@ export default class CTAT_Tutor extends React.Component {
           BRD_name = "FREE AUTHORING"
             free_authoring = true;
       }
+      // this.free_authoring = 
         // term_print(prob_obj["question_file"])
         
 
@@ -142,10 +158,10 @@ export default class CTAT_Tutor extends React.Component {
 
       var qf = qf_exists  ? {"question_file" : prob_obj["question_file"]} : {"question_file" : "/src/empty.nools"} ;
 
-        console.log(qf)
-        if(!interactive && qf["question_file"].includes(".nools")){
-            nl.kill_this('\x1b[0;30;47m' +'Question file cannot be nools in non-interactive mode. Use example tracing.\x1b[0m')
-        }
+      console.log("qf",qf,interactive)
+      if(!interactive && qf["question_file"].includes(".nools")){
+          nl.kill_this('\x1b[0;30;47m' +'Question file cannot be nools in non-interactive mode. Use example tracing.\x1b[0m')
+      }
       var logging_params = {
           "problem_name": BRD_name,
           "dataset_level_name1" : domain_name,
@@ -159,7 +175,7 @@ export default class CTAT_Tutor extends React.Component {
       var params = Object.assign({},qf,logging_params) //Merge dictionaries
       
       this.HTML_PATH = HTML_PATH
-      this.init_callback = resolve
+      this.init_callback = () => {resolve({"updateContext": {free_author : free_authoring}})}
       var source = HTML_PATH + "?" + queryString.stringify( params );
       console.log("source", source)
       this.graph = null
@@ -201,7 +217,7 @@ export default class CTAT_Tutor extends React.Component {
     // console.log(hasConfig)
     
 
-    if(this.graph && this.commLibrary && this.hasConfig){
+    if((this.graph || this.interactive) && this.commLibrary && this.hasConfig){
       var link = iframe_content.document.createElement('link');
       link.setAttribute('rel', 'stylesheet');
       link.setAttribute('type', 'text/css');
@@ -225,7 +241,166 @@ export default class CTAT_Tutor extends React.Component {
       window.setTimeout(() => {this._triggerWhenInitialized()}, 500);
     }
   }
+
+  handle_user_set_state(evt){
+    var sai = evt.detail.sai;
+    var sel = sai.getSelection()
+
+    // var elm = );
+    // elm = this.iframe_content.document.getElementById(sai.getSelection());
+    // console.log(sai.getInput())
+    if(sai.getInput() != ""){
+        this.colorElement(sel,"START_STATE")
+        //elm.firstChild.classList.add("CTAT--AL_start");
+        this.start_state_elements.push(sel);
+    }else{
+        // elm.firstChild.classList.remove("CTAT--AL_start");
+        this.colorElement(sel,"DEFAULT")
+        if(this.start_state_elements.includes(sel)){
+            this.start_state_elements.remove(sel);
+        }
+    }
+    
+  }
   
+  enter_set_start_state_mode(){
+    this.start_state_elements = []
+    this.iframe_content.document.addEventListener(this.CTAT_ACTION, this.handle_user_set_state); 
+  }
+
+  exit_set_start_state_mode(){
+    this.iframe_content.document.removeEventListener(this.CTAT_ACTION, this.handle_user_set_state); 
+
+    console.log("START DONE")
+    for (var i in this.start_state_elements){
+        var sel = this.start_state_elements[i]
+        var elm = this.iframe_content.document.getElementById(sel);
+        if(elm.firstChild.value){
+            this.lockElement(sel)
+            // elm.setAttribute("data-ctat-enabled","false")
+            // elm.firstChild.setAttribute("contentEditable","false")
+            // elm.firstChild.disabled = true;    
+        }
+        this.colorElement(sel,"DEFAULT")
+        // elm.firstChild.classList.remove("CTAT--AL_start");
+        // console.log("BOOP",elm);
+    }
+    //Take away focus from whatever is there so it isn't treated as an example
+    // document.activeElement.blur();
+    // console.log("STAT",get_state())
+    this.start_state_history.push(this.get_state());
+    // last_action = last_proposal = null;
+  }
+
+  handle_user_example(evt){
+    var sai = evt.detail.sai
+    var sel = sai.getSelection();
+
+    var elm = this.iframe_content.document.getElementById(sel)
+    if(elm.firstChild.contentEditable == "false"){
+        console.log("BAIL")
+        return
+    }
+    
+
+    // console.log("%cUSER_EXAMPLE: " + sai.getSelection() + " -> " + sai.getInput(), 'color: #2222bb; background: #DDDDDD;');
+    // term_print('\x1b[0;33;44m' + "USER_EXAMPLE:" + sai.getSelection() + " -> " + sai.getInput() + '\x1b[0m')
+    // this.iframe_content.document.removeEventListener(CTAT_ACTION, handle_user_example);
+    // this.iframe_content.document.getElementById("done").removeEventListener("click", _done_clicked); 
+
+    var sai = {
+        selection: sai.getSelection(),
+        action: sai.getAction(),
+        inputs: {value: sai.getInput()},
+    };
+
+    
+    // apply_sai(sai_data);
+    this.lockElement(sel)
+    // var comp = iframe_content.CTATShellTools.findComponent(sai.getSelection())[0];
+    // comp.setEnabled(false);
+    // elm.contentEditable = "false";
+    // console.log(elm.firstElementChild);
+    // elm.firstElementChild.setAttribute("class", "CTAT--example");
+    // console.log(elm.firstElementChild);
+    this.colorElement(sel,"EXAMPLE")
+
+    // last_correct = true;
+
+    this.props.interactions_service.send({
+      type : "DEMONSTRATE",
+      sai : {...sai,reward : 1},
+    })
+
+    // this.clear_last_proposal();
+
+    // if(use_foci && sai_data.selection != 'done'){
+    //     if(interactive){window.state_machine_service.send("DEMONSTRATE");}
+    //     current_sai_data = sai_data;
+    //     // console.log("current_sai_data",current_sai_data)
+    //     query_user_foci();
+    // }else{
+    //     send_training_data(sai_data);    
+    // }
+    // console.log(sai_data);
+    
+  }
+
+
+
+  enter_feedback_mode(){
+    this.iframe_content.document.addEventListener(this.CTAT_ACTION, this.handle_user_example); 
+  }
+
+  exit_feedback_mode(){
+    this.iframe_content.document.removeEventListener(this.CTAT_ACTION, this.handle_user_example); 
+  }
+
+
+  handle_foci_select(evt){
+    console.log("FOCI SELECT!")
+    for(var ele of evt.path){
+        console.log("EELE", ele)
+        if(ele.classList != undefined && ele.classList.contains("CTATComponent")){
+            var indx = this.current_foci.indexOf(ele)
+            // console.log(current_foci)
+            if(indx == -1){
+                this.current_foci.push(ele)
+                ele.classList.add("CTAT--AL_highlight1");
+            }else{
+                this.current_foci.splice(indx,1)
+                ele.classList.remove("CTAT--AL_highlight1");
+            }
+            console.log(this.current_foci)
+
+            break
+        }    
+    }
+    
+  }
+
+  enter_foci_mode(){
+    console.log("FOCI START!")
+    this.clearHighlights()
+    this.current_foci = []
+    this.iframe_content.document.addEventListener("click", this.handle_foci_select)
+  }
+
+  exit_foci_mode(){
+    this.clearHighlights();
+    console.log("FOCI DONE!")
+    var foci_of_attention = [];
+    for(var ele of this.current_foci){
+        // ele.classList.remove("CTAT--AL_highlight1");
+        this.colorElement(ele.id)
+        foci_of_attention.push(ele.id);
+    }
+    // console.log(foci_of_attention)
+    // current_sai_data.foci_of_attention = foci_of_attention;
+    this.current_foci = []
+    this.iframe_content.document.removeEventListener("click", this.handle_foci_select)
+
+  }
 
   //---------- Xstate API with promises ----------------
   apply_skill_application(context,event){

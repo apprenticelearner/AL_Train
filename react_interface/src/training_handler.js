@@ -180,18 +180,50 @@ function gerp(event){
 	return event.data['agent_id']
 }
 
+function start_training_interaction(context,event){
+	var app = context.app
 
-export function make_training_handler(interactions_state_machine,network_layer,training_file,tutor,working_dir){
-	var nl = network_layer;
+	var pass_along_context = {
+		"agent_id": context.agent_id,
+		"interactive": context.interactive,
+		"free_author": context.free_author,
+	}
+
+	var interactions_sm = context.interactions_sm
+		.withContext({...context.interactions_sm.context, ...pass_along_context});
+	var interactions_service = interpret(interactions_sm)
+	context.app.interactions_service = interactions_service
+	interactions_service.onTransition(app.onInteractionTransition)
+	interactions_service.start()
+}
+
+
+export function build_training_sm(app,interactions_sm){
+	// interactions_state_machine,network_layer,training_file,tutor,working_dir
+	var nl = app.network_layer;
 	const context = {
+		//Utils
+		app : app,
+		tutor : app.tutor.current,
+		skill_panel : app.skill_panel.current,
+		buttons : app.buttons.current,
+		network_layer : app.network_layer,
+
+		//Inherited
+		interactive : app.props.interactive,
+		training_file : app.props.training_file,
+		working_dir : app.props.working_dir,
+		interactions_sm : interactions_sm,
+
+		//Dynamic
 		file_params : null,
 		agent_params : null,
 		prob_obj : null,
-		training_file : training_file,
-		tutor : tutor,
-		network_layer : network_layer,
-		working_dir : working_dir
+		free_author : null,
 	}
+
+	
+	
 	const sm = Machine({
 		context : context,
 		initial: "Loading_Training_File",
@@ -243,18 +275,20 @@ export function make_training_handler(interactions_state_machine,network_layer,t
 				invoke : {
 					id: "load_problem",
 					src: "load_problem",
-					onDone: "Training",
+					onDone: {target : "Training",  actions: "updateContext"},
 					onError: {target :'Fail', actions : "logError"}
 				}
 			},
 			Training: {
-				invoke : {
-					id: "interactions_state_machine",
-					src: "interactions_state_machine",
-					data : (context, event) => ({...interactions_state_machine.context, ...{"agent_id": context.agent_id}}),
-					onDone: "Serving_Problems",
-					onError: {target :'Fail', actions : "logError"}
-				},
+				entry : "start_training_interaction",
+				on : {PROBLEM_DONE : "Serving_Problems"}
+				// invoke : {
+				// 	id: "interactions_state_machine",
+				// 	src: "interactions_state_machine",
+				// 	data : (context, event) => ({...interactions_state_machine.context, ...{"agent_id": context.agent_id}}),
+				// 	onDone: "Serving_Problems",
+				// 	onError: {target :'Fail', actions : "logError"}
+				// },
 				// entry : send({type: "ASSIGN_AGENT", "agent_id" : agent_id})
 			},
 			All_Done : {
@@ -274,10 +308,11 @@ export function make_training_handler(interactions_state_machine,network_layer,t
 			create_agent : nl.create_agent,
 			serve_next_problem : serve_next_problem,
 			load_problem : load_problem,
-			interactions_state_machine : interactions_state_machine,
+			// interactions_state_machine : interactions_state_machine,
 			
 		},
 		actions : {
+			start_training_interaction : start_training_interaction,
 			logError : (context,event) => {console.error(event.data)},
 			updateContext : assign((context, event) => {
 			    return event.data.updateContext

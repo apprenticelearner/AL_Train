@@ -40,16 +40,21 @@ class Buttons extends Component{
 
 
 	render(){ 
-    const current = this.props.current;
-    console.log(current)
-    const matches = (x) => current.matches ? current.matches(x) : x == "Specify_Start_State";
+    // const current = this.props.interactions_state || {"value" : ""};
+    // const current = this.props.interactions_state || {"value" : ""};
+    // var service = this.props.interactions_service
+    var current = this.props.interactions_state
+    console.log("CURRENT_MCGIGGER",this.props.interactions_state)
+    const matches = (x) => current && current.matches ? current.matches(x) : x == "Setting_Start_State";
+    console.log("props",this.props)
+    // const matches = (x) => current.matches(x)
     const send  = (action_str) => {
       console.log(action_str)
       console.log(this.props.callbacks)
       if(this.props.callbacks && action_str in this.props.callbacks){
         this.props.callbacks[action_str]();
       }
-      this.props.service.send(action_str);
+      this.props.interactions_service.send(action_str);
     }
     // console.log(send)
 
@@ -58,18 +63,18 @@ class Buttons extends Component{
           <View style={styles.container}>
             <View style={styles.button_wrapper1}>
               <Text style={styles.prompt1}> 
-              {matches("Specify_Start_State") &&
+              {matches("Setting_Start_State") &&
                "Set the start state."}
-              {matches("Query_Demonstrate") &&
+              {matches("Waiting_User_Feedback") &&
                "Demonstrate the next step."}
               {matches("Explantions_Displayed") &&
                "Press next to continue. Or demonstrate the next step."}
-              {matches("Request_Foci") &&
+              {matches("Waiting_Select_Foci") &&
                "Select any interface elements that were used to compute this result."}
               
               </Text>
 
-              {matches("Request_Foci") &&
+              {matches("Waiting_Select_Foci") &&
               <TouchableHighlight style={styles.next_button} underlayColor="#CCCCCC"
                                 onPress={() => send('FOCI_DONE')}>
                <Text style={styles.next_button_text}>{"Next"}</Text>
@@ -83,7 +88,7 @@ class Buttons extends Component{
               </TouchableHighlight>
               }
 
-              {matches("Specify_Start_State") &&
+              {matches("Setting_Start_State") &&
               <TouchableHighlight style={styles.startstate_button} underlayColor="#CCCCCC"
                                 onPress={ ()=> send("START_STATE_SET")}>
                <Text style={styles.startstate_button_text}>{"Start State Done"}</Text>
@@ -96,16 +101,16 @@ class Buttons extends Component{
               
               
 
-            {(matches({"Query_Demonstrate":"Query_Yes_No_Feedback"})
-             || matches({"Query_Demonstrate":"Query_Submit_Feedback"})) &&
+            {(matches({"Waiting_User_Feedback":"Waiting_Yes_No_Feedback"})
+             || matches({"Waiting_User_Feedback":"Waiting_Submit_Feedback"})) &&
 
             <View style={styles.button_wrapper2}>
               <Text style={styles.prompt2}> 
-              {matches({"Query_Demonstrate":"Query_Yes_No_Feedback"}) && query_text}
-              {matches({"Query_Demonstrate":"Query_Submit_Feedback"}) &&
+              {matches({"Waiting_User_Feedback":"Waiting_Yes_No_Feedback"}) && query_text}
+              {matches({"Waiting_User_Feedback":"Waiting_Submit_Feedback"}) &&
                 "Or press submit to send the feedback from the skill panel."}
               </Text>
-              {matches({"Query_Demonstrate":"Query_Yes_No_Feedback"}) &&
+              {matches({"Waiting_User_Feedback":"Waiting_Yes_No_Feedback"}) &&
               <View style={styles.yes_no}>
                 <TouchableHighlight style={styles.yes_button} underlayColor="#CCCCCC" 
                                   onPress={() => send('YES_PRESSED')}>
@@ -117,7 +122,7 @@ class Buttons extends Component{
                 </TouchableHighlight>
               </View>
               }
-              {matches({"Query_Demonstrate":"Query_Submit_Feedback"}) &&
+              {matches({"Waiting_User_Feedback":"Waiting_Submit_Feedback"}) &&
                 <TouchableHighlight style={styles.submit_button} underlayColor="#CCCCCC" 
                                   onPress={() => send('SUBMIT_SKILL_FEEDBACK')}>
                  <Text style={styles.submit_button_text}>{"Submit"}</Text>

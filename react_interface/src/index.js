@@ -4,7 +4,7 @@ import './index.css';
 import SkillPanel from './components/skill_panel';
 import Buttons from './components/buttons';
 import * as serviceWorker from './serviceWorker';
-import ButtonsMachine from './interactions.js'
+// import ButtonsMachine from './interactions.js'
 
 import { interpret } from 'xstate';
 import CTAT_Tutor from './ReactCTAT_Tutor';
@@ -24,7 +24,7 @@ function getWebProps(){
 				 use_foci : urlParams.get('use_foci') == "true",
 			}
 
-	console.log(props)
+	console.log(props,urlParams.get('interactive'))
 	return props
 	
 }
@@ -46,9 +46,9 @@ if(false){
 	// function setSkillWindowState(evt){
 
 	// }
-	window.state_machine = ButtonsMachine.initialState
-	window.state_machine_service = interpret(ButtonsMachine)
-	window.state_machine_service.start()
+	// window.state_machine = ButtonsMachine.initialState
+	// window.state_machine_service = interpret(ButtonsMachine)
+	// window.state_machine_service.start()
 
 
 	// const state = {
