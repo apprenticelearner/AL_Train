@@ -113,7 +113,7 @@ def _fill_from_elm(log_dict, elm,typ='tutor'):
                 # print(log_dict[LOG_HEADERS["tutor_event_time"]])
             else:
                 log_dict[LOG_HEADERS[name]] = next(elm.iter("value")).text 
-    elif(elm.tag == "event_descriptor"):
+    elif(elm.tag == "event_descriptor" and typ == "tool"):
         log_dict[LOG_HEADERS["selection"]] = next(elm.iter("selection")).text 
         log_dict[LOG_HEADERS["action"]] = next(elm.iter("action")).text 
         log_dict[LOG_HEADERS["input"]] = next(elm.iter("input")).text 
@@ -342,6 +342,7 @@ def handle_post(post_data):
                 for elm in list(msg):
                     _fill_from_elm(context_dict,elm)
 
+
                 c_dict = get_context_dict(session_id,context_id)
                 c_dict['context'] = context_dict
                 # context_data_lock.acquire()
@@ -374,16 +375,21 @@ def handle_post(post_data):
             for msg in payload.iter("tutor_message"):
                 context_id = msg.attrib['context_message_id']
                 log_dict = {}
+
+                sel = None
                 for elm in list(msg):
                     _fill_from_elm(log_dict, elm,"tutor")
+                    if(elm.tag == "event_descriptor"):
+                        sel = next(elm.iter("selection")).text 
+                    # print("tag", elm.tag)
                 # print("SWERPT",log_dict,log_dict['Transaction Id'])
-                # print(log_dict)
+                # print("SEL",sel)
 
                 c_dict = get_context_dict(session_id,context_id)
                 c_dict['tutor'][log_dict['Transaction Id']] = log_dict
                 # session_dicts[session_id]['tutor'][log_dict['Transaction Id']] = log_dict
 
-                if(log_dict.get("Selection",None) == "done" and log_dict.get("Outcome",None) == "CORRECT"):
+                if(sel == "done" and log_dict.get("Outcome",None) == "CORRECT"):
                     timer = threading.Timer(1,lambda :write_queue.put((session_id,context_id)))
                     timer.start()
                     # session_end_event.set()
