@@ -85,6 +85,7 @@ function serve_next_agent(context,event){
 	        	agent_name : agent_obj["agent_name"],
 				agent_type	: agent_obj["agent_type"],        	
 	        	agent_description : agent_description,
+	        	other_agent_data : other_data,
 
 	        	agent_iterator:  agent_iterator,
 	        	problem_iterator : problem_iterator,

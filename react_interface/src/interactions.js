@@ -46,11 +46,20 @@ const stateRecalc = assign({state: (context,event) => {
 	}
 }});
 
+const assignFoci = assign({last_action: (context,event) => {
+	Object.assign(context.last_action,{"foci_of_attention" : context.tutor.get_current_foci()})
+	return context.last_action
+}});
 
 //CONDITIONS 
 function saiIsCorrectDone(context,event){
+	console.log("saiIsCorrectDone")
 	const sai_data = context.last_action
 	return (sai_data.selection === "done" && (sai_data.reward == null || sai_data.reward  > 0))
+}
+
+function isFreeAuthor(context,event){
+	return context.free_author || false
 }
 
 function noApplicableSkills(context,event){
@@ -115,39 +124,40 @@ function get_machine_actions(app){
 	var network_layer = app.network_layer
 
 	return {
-		services: {
+		services : {
 			send_feedback : (context,event) => network_layer.send_feedback(context,event,false),
 			send_feedback_explicit : (context,event) => network_layer.send_feedback(context,event,true),
 			apply_next_example : tutor.apply_next_example,
 			apply_skill_application : tutor.apply_skill_application,
 			query_apprentice : network_layer.query_apprentice,
 		},
-		actions: {
-			logError : logError,
-			stateRecalc : stateRecalc,
-			assignResponse : assign({response: (context,event) => event.data}),
-			assignLastAction : assign({last_action: (context,event) => event.data}) ,
-			assignExample : assign({action_type: (context,event) => "EXAMPLE"}) ,
-			assignAttempt : assign({action_type: (context,event) => "ATTEMPT"}) ,
-			// done : window.signal_done,
-			print_feedback : print_feedback,
-			kill_this : _kill_this,
+		actions : {
+				logError : logError,
+				stateRecalc : stateRecalc,
+				assignResponse : assign({response: (context,event) => event.data}),
+				assignLastAction : assign({last_action: (context,event) => event.data}) ,
+				assignExample : assign({action_type: (context,event) => "EXAMPLE"}) ,
+				assignAttempt : assign({action_type: (context,event) => "ATTEMPT"}) ,
+				assignFoci : assignFoci,
+				// done : window.signal_done,
+				print_feedback : print_feedback,
+				kill_this : _kill_this,
+				printEvent : (context,event) => {console.log("P_EVT:",event)},
 
-			fillSkillPanel : fillSkillPanel,
-			done : (context,event) => {context.app.training_service.send("PROBLEM_DONE");}, 
+				fillSkillPanel : fillSkillPanel,
+				done : (context,event) => {context.app.training_service.send("PROBLEM_DONE");}, 
 
-			enter_set_start_state_mode : tutor.enter_set_start_state_mode,
-			exit_set_start_state_mode : tutor.exit_set_start_state_mode,
-			enter_feedback_mode : tutor.enter_feedback_mode,
-			exit_feedback_mode : tutor.exit_feedback_mode,
-			enter_foci_mode : tutor.enter_foci_mode,
-			exit_foci_mode : tutor.exit_foci_mode,
-
+				enter_set_start_state_mode : tutor.enter_set_start_state_mode,
+				exit_set_start_state_mode : tutor.exit_set_start_state_mode,
+				enter_feedback_mode : tutor.enter_feedback_mode,
+				exit_feedback_mode : tutor.exit_feedback_mode,
+				enter_foci_mode : tutor.enter_foci_mode,
+				exit_foci_mode : tutor.exit_foci_mode,
 		},
-		guards: {
+		guards : {
 			saiIsCorrectDone : saiIsCorrectDone,
 			noApplicableSkills : noApplicableSkills,
-			isFreeAuthor : (context,event) => {return context.free_author || false},
+			isFreeAuthor : isFreeAuthor,
 		}
 	}
 }
@@ -196,7 +206,7 @@ var non_interactive_sm = {
 		        id: "query_apprentice",
 		        src: "query_apprentice",
 		        onDone: [
-		        	{target: "Applying_Next_Example", cond: "noApplicableSkills"},
+		        	{target: "Applying_Next_Example", conds: "noApplicableSkills"},
 		        	{target: "Applying_Skill_Application"},
 		        ],
 		        onError: 'Fail',
@@ -229,7 +239,7 @@ var non_interactive_sm = {
 		        id: "send_feedback",
 		        src: "send_feedback",
 		        onDone: [
-			        {target: "Done", cond : "saiIsCorrectDone"},
+			        {target: "Done", conds : "saiIsCorrectDone"},
 			        {target: "Querying_Apprentice"},
 		        ],
 		        onError: 'Fail',
@@ -259,7 +269,7 @@ var interactive_sm = {
 			entry : "stateRecalc",
 			on : {
 				"" : [
-					{"target" : "Setting_Start_State", cond : "isFreeAuthor"},
+					{"target" : "Setting_Start_State", conds : "isFreeAuthor"},
 					{"target" : "Querying_Apprentice"}
 				]
 			}
@@ -280,7 +290,6 @@ var interactive_sm = {
 		},
 		Waiting_User_Feedback : {
 			entry : "enter_feedback_mode",
-			on : {"DEMONSTRATE" : "Waiting_Select_Foci"},
 				"Waiting_Yes_No_Feedback" : {
 					on : {
 						"SKILL_PANEL_FEEDBACK_NONEMPTY" : "Waiting_Submit_Feedback",
@@ -294,12 +303,14 @@ var interactive_sm = {
 						"SUBMIT_SKILL_FEEDBACK": "Sending_Feedback"
 					}	
 				},
+			on : {"DEMONSTRATE" : {target : "Waiting_Select_Foci", actions : ["assignLastAction","printEvent"]}},
 			exit : "exit_feedback_mode",
 		},
 		"Waiting_Select_Foci": {
 			entry : "enter_foci_mode",
 			on: {
-				"FOCI_DONE": "Sending_Feedback",
+				"" : 		 {target : "Sending_Feedback", actions : "assignFoci", cond : "saiIsCorrectDone"},
+				"FOCI_DONE": {target : "Sending_Feedback", actions : "assignFoci"},
 			},
 			exit : "exit_foci_mode",
 	    },
@@ -309,8 +320,8 @@ var interactive_sm = {
 		        id: "send_feedback",
 		        src: "send_feedback",
 		        onDone: [
-			        {target: "Setting_Start_State", cond : ["saiIsCorrectDone","isFreeAuthor"]},
-			        {target: "Done", cond : ["saiIsCorrectDone"]},
+			        // {target: "Setting_Start_State", cond : },
+			        {target: "Done", cond : "saiIsCorrectDone"},
 			        {target: "Querying_Apprentice"},
 		        ],
 		        onError: 'Fail',
@@ -320,6 +331,9 @@ var interactive_sm = {
 		Done : {
 			type : 'final',
 			entry : "done",
+			// on : {
+			// 	"" : {target  : "Setting_Start_State", cond : "isFreeAuthor"},
+			// },
 		},
 		Fail : {
 			entry : ["logError","kill_this"]
