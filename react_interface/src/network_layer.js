@@ -64,7 +64,7 @@ export default class NetworkLayer {
     	return fetch_retry(this.AL_URL + '/create/', 
     		{method: "POST",
     		 headers: JSON_HEADERS,
-    		 body:JSON.stringify(data)}, 4)
+    		 body:JSON.stringify(data)}, 6)
     		 .then(res => res.json())
 	}
 

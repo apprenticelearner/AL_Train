@@ -1,5 +1,7 @@
 import React from 'react';
 import WebView  from 'react-native-web-webview';
+import autobind from 'class-autobind';
+
 // import WebViewFile from '../../examples/FracPreBake/FractionArithmetic/HTML/fraction_arithmetic.html';
 import {
   Icon,
@@ -41,33 +43,41 @@ function checkTypes(element, types){
   return ok;
 }
 
-export default class CTAT_Tutor extends React.Component {
+
+class CTAT_Tutor extends React.Component {
   constructor(props){
     super(props);
+    autobind(this)
     // this.webview_loaded = this.webview_loaded.bind(this)
     // this.onTransition = this.onTransition.bind(this)
-    this.lockElement = this.lockElement.bind(this)
-    this.unlockElement = this.unlockElement.bind(this)
-    this.colorElement = this.colorElement.bind(this)
-    this.makeHighlights = this.makeHighlights.bind(this)
-    this.clearHighlights = this.clearHighlights.bind(this)
-    this._triggerWhenInitialized = this._triggerWhenInitialized.bind(this)
-    this.componentDidUpdate = this.componentDidUpdate.bind(this)
-    this.applySAI = this.applySAI.bind(this)
-    this.apply_skill_application = this.apply_skill_application.bind(this)
-    this.apply_next_example = this.apply_next_example.bind(this)
+    // this.lockElement = this.lockElement.bind(this)
+    // this.unlockElement = this.unlockElement.bind(this)
+    // this.colorElement = this.colorElement.bind(this)
 
-    this.handle_user_set_state = this.handle_user_set_state.bind(this)
-    this.enter_set_start_state_mode = this.enter_set_start_state_mode.bind(this)
-    this.exit_set_start_state_mode = this.exit_set_start_state_mode.bind(this)
+    // this.highlightElement = this.highlightElement.bind(this)
+    // this.unhighlightElement = this.unhighlightElement.bind(this)
+    // this.highlightSAI = this.highlightSAI.bind(this)
+    // this.unhighlightAll = this.unhighlightAll.bind(this)
 
-    this.handle_user_example = this.handle_user_example.bind(this)
-    this.enter_feedback_mode = this.enter_feedback_mode.bind(this)
-    this.exit_feedback_mode = this.exit_feedback_mode.bind(this)
+    // this._triggerWhenInitialized = this._triggerWhenInitialized.bind(this)
+    // this.componentDidUpdate = this.componentDidUpdate.bind(this)
+    // this.applySAI = this.applySAI.bind(this)
+    // this.apply_skill_application = this.apply_skill_application.bind(this)
+    // this.apply_next_example = this.apply_next_example.bind(this)
+
+    // this.handle_user_set_state = this.handle_user_set_state.bind(this)
+    // this.enter_set_start_state_mode = this.enter_set_start_state_mode.bind(this)
+    // this.exit_set_start_state_mode = this.exit_set_start_state_mode.bind(this)
+
+    // this.handle_user_example = this.handle_user_example.bind(this)
+    // this.enter_feedback_mode = this.enter_feedback_mode.bind(this)
+    // this.exit_feedback_mode = this.exit_feedback_mode.bind(this)
     
-    this.handle_foci_select = this.handle_foci_select.bind(this)
-    this.enter_foci_mode = this.enter_foci_mode.bind(this)
-    this.exit_foci_mode = this.exit_foci_mode.bind(this)
+    // this.handle_foci_select = this.handle_foci_select.bind(this)
+    // this.enter_foci_mode = this.enter_foci_mode.bind(this)
+    // this.exit_foci_mode = this.exit_foci_mode.bind(this)
+
+    this.where_colors = [  "darkorchid",  "#ff884d",  "#52d0e0", "#feb201",  "#e44161", "#ed3eea", "#2f85ee",  "#562ac6", "#cc24cc"]
 
     this.relative_pos_cache = {};
 
@@ -86,6 +96,7 @@ export default class CTAT_Tutor extends React.Component {
       "source" : "../../examples/FracPreBake/FractionArithmetic/HTML/fraction_arithmetic.html?question_file=../mass_production/mass_production_brds/AD 5_9_plus_3_7.brd"
     }
     this.start_state_history = []
+    this.highlighted_elements = []
 
   }
 
@@ -115,6 +126,7 @@ export default class CTAT_Tutor extends React.Component {
     const nl = context.network_layer
     const interactive = context.interactive
     this.interactive = context.interactive
+    this.setState({"source" : {"html":LOAD_SCREEN}})
     const promise = new Promise((resolve,reject) => {
       var HTML_name = prob_obj["HTML"].substring(prob_obj["HTML"].lastIndexOf('/')+1).replace(".html", "");
 
@@ -181,7 +193,7 @@ export default class CTAT_Tutor extends React.Component {
       this.graph = null
       this.commLibrary = null
       this.hasConfig = null
-      this.setState({"source" : source,
+      this.setState({"source" : {"uri":source},
             "onLoad" : this._triggerWhenInitialized
         })
       // this.iframe.onLoad = this._triggerWhenInitialized;
@@ -329,7 +341,7 @@ export default class CTAT_Tutor extends React.Component {
 
     this.props.interactions_service.send({
       type : "DEMONSTRATE",
-      sai : {...sai,reward : 1},
+      data : {...sai,reward : 1},
     })
 
     // this.clear_last_proposal();
@@ -346,14 +358,18 @@ export default class CTAT_Tutor extends React.Component {
     
   }
 
-
+  _done_clicked(evt){
+    this.handle_user_example({detail:{sai:new this.iframe_content.CTATSAI("done", "ButtonPressed", "-1")}})
+  }
 
   enter_feedback_mode(){
     this.iframe_content.document.addEventListener(this.CTAT_ACTION, this.handle_user_example); 
+    this.iframe_content.document.getElementById("done").addEventListener("click", this._done_clicked); 
   }
 
   exit_feedback_mode(){
     this.iframe_content.document.removeEventListener(this.CTAT_ACTION, this.handle_user_example); 
+    this.iframe_content.document.getElementById("done").removeEventListener("click", this._done_clicked); 
   }
 
 
@@ -366,10 +382,12 @@ export default class CTAT_Tutor extends React.Component {
             // console.log(current_foci)
             if(indx == -1){
                 this.current_foci.push(ele)
-                ele.classList.add("CTAT--AL_highlight1");
+                this.highlightElement(ele.id,1)
+                // ele.classList.add("CTAT--AL_highlight1");
             }else{
                 this.current_foci.splice(indx,1)
-                ele.classList.remove("CTAT--AL_highlight1");
+                // ele.classList.remove("CTAT--AL_highlight1");
+                this.unhighlightElement(ele.id)
             }
             console.log(this.current_foci)
 
@@ -381,20 +399,28 @@ export default class CTAT_Tutor extends React.Component {
 
   enter_foci_mode(){
     console.log("FOCI START!")
-    this.clearHighlights()
+    this.unhighlightAll()
     this.current_foci = []
     this.iframe_content.document.addEventListener("click", this.handle_foci_select)
   }
 
-  exit_foci_mode(){
-    this.clearHighlights();
-    console.log("FOCI DONE!")
-    var foci_of_attention = [];
-    for(var ele of this.current_foci){
-        // ele.classList.remove("CTAT--AL_highlight1");
-        this.colorElement(ele.id)
-        foci_of_attention.push(ele.id);
+  get_current_foci(){
+    if(this.current_foci){
+      return this.current_foci.map((elm) => elm.id)
+    }else{
+      return []
     }
+  }
+
+  exit_foci_mode(){
+    this.unhighlightAll();
+    console.log("FOCI DONE!")
+    // var foci_of_attention = [];
+    // for(var ele of this.current_foci){
+    //     // ele.classList.remove("CTAT--AL_highlight1");
+    //     this.colorElement(ele.id)
+    //     // foci_of_attention.push(ele.id);
+    // }
     // console.log(foci_of_attention)
     // current_sai_data.foci_of_attention = foci_of_attention;
     this.current_foci = []
@@ -476,9 +502,70 @@ export default class CTAT_Tutor extends React.Component {
   }
 
   colorElement(name,type){
-    console.log("THIS1",this)
-    var elm = this.iframe_content.document.getElementById(name)
-    elm.firstElementChild.setAttribute("class", this.color_class_map[type]);
+    var elm = this.iframe_content.document.getElementById(name);
+    // if(type == "DEFAULT"){
+    //   for (const [key, value] of Object.entries(this.color_class_map)) {
+    //     if(elm.firstElementChild.classList.contains(value)){
+    //       elm.firstElementChild.classList.remove(value);     
+    //     }
+    //   }
+    // }else{
+      // this.colorElement(name,"DEFAULT")
+    if(elm && elm.firstElementChild){
+      elm.firstElementChild.setAttribute("class", this.color_class_map[type]); 
+    }
+      // elm.firstElementChild.classList.add(this.color_class_map[type]); 
+  //   }
+  }
+
+  highlightSAI(sai){
+    if(sai.mapping){
+        Object.entries(sai.mapping).forEach(function(v,index){
+            const [var_str, elem_str] = v
+            var colorIndex = 1
+            if(var_str != "?sel"){
+                colorIndex = 2 + ((index-1) % (this.where_colors.length-1));
+                console.log(colorIndex)
+            }
+            // elm = this.iframe_content.document.getElementById(elem_str.replace('?ele-',""));
+            this.highlightElement(elem_str,colorIndex)
+        });
+    }else{
+      alert("IDK WHAT THIS IS")
+        // this.highlighted_elements.push(elm.firstElementChild.id)
+        // elm.firstElementChild.classList.add("CTAT--AL_highlight1")
+    }
+  }
+
+  highlightElement(name,colorIndex=1){
+    this.unhighlightElement(name)
+    var elm = this.iframe_content.document.getElementById(name.replace('?ele-',""));
+    elm.firstElementChild.classList.add("CTAT--AL_highlight"+colorIndex)
+    this.highlighted_elements.push(name)
+    console.log("H", this.highlighted_elements)
+  }
+
+  unhighlightElement(name){
+
+    if(this.highlighted_elements.includes(name)){
+
+      var elm = this.iframe_content.document.getElementById(name.replace('?ele-',""));
+      var before = elm.firstElementChild.classList.toString()
+      for (var i = 1; i <= this.where_colors.length; i++) { 
+          var c = "CTAT--AL_highlight"+i;
+          // console.log(c)
+          if(elm.firstElementChild.classList.contains(c)) {
+            elm.firstElementChild.classList.remove(c)
+          }
+      }
+      var after = elm.firstElementChild.classList.toString()
+      console.log("BEF-AFT:", before,after)
+      var index = this.highlighted_elements.indexOf(name)
+      if(index > -1){
+        this.highlighted_elements.splice(index,1)  
+      }
+      
+    }
   }
 
   clearElement(name){
@@ -486,12 +573,31 @@ export default class CTAT_Tutor extends React.Component {
     elm.firstElementChild.value = "";
   }
 
-  makeHighlights(sai){
-    
+  highlightSAI(sai){
+    if(sai.mapping){
+        Object.entries(sai.mapping).forEach(function(v,index){
+            const [var_str, elem_str] = v
+            var colorIndex = 1
+            if(var_str != "?sel"){
+                colorIndex = 2 + ((index-1) % (this.where_colors.length-1));
+                console.log(colorIndex)
+            }
+            // elm = this.iframe_content.document.getElementById(elem_str.replace('?ele-',""));
+            this.highlightElement(elem_str,colorIndex)
+            this.highlighted_elements.push(elem_str)
+        });
+    }else{
+      alert("IDK WHAT THIS IS")
+        // this.highlighted_elements.push(elm.firstElementChild.id)
+        // elm.firstElementChild.classList.add("CTAT--AL_highlight1")
+    }
   }
 
-  clearHighlights(){
-    
+  unhighlightAll(){
+    console.log("HIGHLIGHTED_/", this.highlighted_elements)
+    for(var elem_str of [...this.highlighted_elements]){
+      this.unhighlightElement(elem_str);
+    }
   }
 
   getDefaultSAI(){
@@ -610,8 +716,9 @@ export default class CTAT_Tutor extends React.Component {
         const elm_list = Object.entries(state_json);
         // console.log(elm_list);
 
+        var rel_objs;
         if(! (HTML_PATH in relative_pos_cache) ){
-            var rel_objs = {};
+            rel_objs = {};
             for (var i = 0; i < elm_list.length; i++) {
                 // console.log(elm_list[i][0])
                 rel_objs[elm_list[i][0]] = {
@@ -684,32 +791,35 @@ export default class CTAT_Tutor extends React.Component {
             // console.log(rel_objs)
             relative_pos_cache[HTML_PATH] = rel_objs;
         }else{
-            for (var i = 0; i < elm_list.length; i++) {
-                var obj = state_json[elm_list[i][0]];
-                var rel_obj = relative_pos_cache[HTML_PATH][elm_list[i][0]];
-                // console.log(rel_obj)
-                // console.log(elm_list[i][0])
-                // console.log(relative_pos_cache[HTML_PATH])
-
-                obj["below"] = rel_obj["below"];
-                obj["above"] = rel_obj["above"];
-                obj["to_right"] = rel_obj["to_right"];
-                obj["to_left"] = rel_obj["to_left"];
-                if(strip_offsets){
-                    delete obj["offsetTop"];
-                    delete obj["offsetLeft"];
-                    delete obj["offsetWidth"];
-                    delete obj["offsetHeight"];
-                }
-
-                state_json[elm_list[i][0]] = obj;
-            }
+            rel_objs = relative_pos_cache[HTML_PATH];
         }
+
+        for (var i = 0; i < elm_list.length; i++) {
+            var obj = state_json[elm_list[i][0]];
+            var rel_obj = rel_objs[elm_list[i][0]];
+            // console.log(rel_obj)
+            // console.log(elm_list[i][0])
+            // console.log(relative_pos_cache[HTML_PATH])
+
+            obj["below"] = rel_obj["below"];
+            obj["above"] = rel_obj["above"];
+            obj["to_right"] = rel_obj["to_right"];
+            obj["to_left"] = rel_obj["to_left"];
+            if(strip_offsets){
+                delete obj["offsetTop"];
+                delete obj["offsetLeft"];
+                delete obj["offsetWidth"];
+                delete obj["offsetHeight"];
+            }
+
+            state_json[elm_list[i][0]] = obj;
+        }
+        
 
 
     }
 
-    // console.log(state_json);
+    console.log("STATE JSON", state_json);
     return state_json;
 
 }
@@ -744,7 +854,7 @@ export default class CTAT_Tutor extends React.Component {
             // style={{ height: 700, width: 400 }}
             originWhitelist={['*']}
             // source={{"uri": "http://0.0.0.0:8000/HTML/fraction_arithmetic.html?question_file=../mass_production/mass_production_brds/AD 5_9_plus_3_7.brd"}}
-            source={{"uri": this.state.source}}
+            source={ this.state.source}
             onLoad={this.state.onLoad}
             // source={{"html": "<!DOCTYPE html><html><head></head><body> HERE IS THE TUTOR... ARE YOU LEARNING YET? </body></html>"}}
             // source={{"html": "<? echo file_get_contents('http://0.0.0.0:8000/HTML/fraction_arithmetic.html'); ?>"}}
@@ -756,3 +866,46 @@ export default class CTAT_Tutor extends React.Component {
   }
   
 }
+
+const LOAD_SCREEN = '<!DOCTYPE html> \
+<html>\
+<head>\
+<meta name="viewport" content="width=device-width, initial-scale=1">\
+<style>\
+.loader {\
+  border: 16px solid #f3f3f3;\
+  border-radius: 50%;\
+  border-top: 16px solid #3498db;\
+  width: 120px;\
+  height: 120px;\
+  -webkit-animation: spin 2s linear infinite; /* Safari */\
+  animation: spin 2s linear infinite;\
+  position: absolute;\
+  left: 50%;\
+  top: 50%;\
+  transform: translate(-50%, -50%);*/\
+}\
+\
+/* Safari */\
+@-webkit-keyframes spin {\
+  0% { -webkit-transform: rotate(0deg); }\
+  100% { -webkit-transform: rotate(360deg); }\
+}\
+\
+@keyframes spin {\
+  0% { transform: rotate(0deg); }\
+  100% { transform: rotate(360deg); }\
+}\
+</style>\
+</head>\
+<body>\
+\
+<h2>How To Create A Loader</h2>\
+\
+<div class="loader"></div>\
+\
+</body>\
+</html>\
+'
+
+export default CTAT_Tutor;

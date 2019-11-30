@@ -19,6 +19,7 @@
     "coverage:native": "node scripts/test.js --config \"./config/native.jest.config.js\" --coverage"
   },
   "dependencies": {
+    "class-autobind": "^0.1.4",
     "jquery": "^3.4.1",
     "node-fetch": "^2.6.0",
     "query-string": "^6.9.0",
