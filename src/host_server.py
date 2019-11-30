@@ -38,6 +38,8 @@ session_dicts = {}
 POST_THREADS = 4
 WRITE_THREADS = 1
 
+GLOBAL_TICKER = 0
+OVERRIDE_TIME = True
 
 #defining function to run on shutdown
 def cleanup():
@@ -224,8 +226,10 @@ def write_problem(session_id,context_id,order=None):
     # session_data_lock.release()
     # print("COUNT(%d) %d:%d" % (write_count, len(tool_logs.keys()),len(tutor_logs.keys())))
     if(order is None):
-        order = list(tool_logs.keys())
-
+        order = sorted([k for k,v in c_dict["time"].items()], key=lambda x: c_dict["time"][x])
+        # print(c_dict["time"])
+        # print(order)
+         
     rows = []
     default_dict = {**{key: None for key in LOG_HEADERS.values()},
                      **session_start_dict,
@@ -265,9 +269,25 @@ def get_context_dict(session_id,context_id):
     return c_dict
 
 
+def assign_time(context_dict,d,T):
+    global context_data_lock
+    global GLOBAL_TICKER
+    global OVERRIDE_TIME
+    transaction_id = d['Transaction Id']
+    context_data_lock.acquire()
+    if('time' not in context_dict): context_dict['time'] = {}
+    if(transaction_id not in context_dict['time']):
+        context_dict['time'][transaction_id] = T
+    if(OVERRIDE_TIME): d['Time'] = GLOBAL_TICKER * 1000
+    context_data_lock.release()
+
+
+
+
 
 #####################
-def handle_post(post_data):
+def handle_post(post_data,T):
+
     # x = post_item.xml_tree
     # session_id = post_item.session_id
     # print("POST")
@@ -365,7 +385,9 @@ def handle_post(post_data):
                 for elm in list(msg):
                     _fill_from_elm(tool_dict, elm,"tool")
 
+                
                 c_dict = get_context_dict(session_id,context_id)
+                assign_time(c_dict,tool_dict,T)
                 c_dict['tool'][tool_dict['Transaction Id']] = tool_dict
                 # session_dicts[session_id]['tool'] = tool_dict
                 
@@ -384,11 +406,11 @@ def handle_post(post_data):
                     # print("tag", elm.tag)
                 # print("SWERPT",log_dict,log_dict['Transaction Id'])
                 # print("SEL",sel)
-
                 c_dict = get_context_dict(session_id,context_id)
+                assign_time(c_dict,log_dict,T)
                 c_dict['tutor'][log_dict['Transaction Id']] = log_dict
-                # session_dicts[session_id]['tutor'][log_dict['Transaction Id']] = log_dict
 
+                # session_dicts[session_id]['tutor'][log_dict['Transaction Id']] = log_dict
                 if(sel == "done" and log_dict.get("Outcome",None) == "CORRECT"):
                     timer = threading.Timer(1,lambda :write_queue.put((session_id,context_id)))
                     timer.start()
@@ -496,7 +518,8 @@ def work_on_post_queue():
     while True:
         data = post_queue.get()
         # print("TYYPE", type(data))
-        handle_post(data)
+        post_data, T = data
+        handle_post(post_data, T)
         post_queue.task_done()
 
 for i in range(POST_THREADS):
@@ -544,9 +567,15 @@ def do_GEN_NOOLS():
     return ""
 
 
+
+
 # counter = 0
-# threadLock = threading.Lock()
+ticker_lock = threading.Lock()
 def do_POST ():
+    global GLOBAL_TICKER
+    ticker_lock.acquire()
+    GLOBAL_TICKER += 1    
+    ticker_lock.release()
     # global session_counter
     # global session_dicts
     # global counter
@@ -562,7 +591,7 @@ def do_POST ():
         return
     
     post_data = request.get_data()
-    post_queue.put(post_data)
+    post_queue.put((post_data,GLOBAL_TICKER))
 
 
 
