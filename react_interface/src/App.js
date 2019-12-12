@@ -77,21 +77,24 @@ export default class ALReactInterface extends React.Component {
     this.buttons = React.createRef()
 
     this.state = {
-      skill_panel_props : {},
-      buttons_props : {}
+      default_props: {},
+      buttons_props: {},
+      tutor_props: {},
+      skill_panel_props: {},
     }
     // this.state = {prob_obj : null};
   }
 
   onInteractionTransition(current){
-    console.log("CURRENT:", current)
+    console.log("#",current.value, ":", current.context, current)
 
     var standard_props = {interactions_state: current,
                           interactions_service : this.interactions_service}
     this.setState({
-      buttons_props: standard_props,
-      tutor_props: standard_props,
-      skill_panel_props: standard_props,
+      default_props : standard_props
+      // buttons_props: standard_props,
+      // tutor_props: standard_props,
+      // skill_panel_props: standard_props,
     })
   }
 
@@ -126,17 +129,20 @@ export default class ALReactInterface extends React.Component {
           //current_state={ctat_state_machine}
           //sm_service={ctat_state_machine_service}
           interactive={false}
+          {...this.state.default_props}
           {...this.state.tutor_props}
         />
   		</View>
   		<View style={styles.controls}>
   			<View style={styles.skill_panel}>
   				<SkillPanel ref={this.skill_panel}
+          {...this.state.default_props}
           {...this.state.skill_panel_props}/>
   			</View>
   			<View style={styles.buttons}>
   				<Buttons ref={this.buttons}
-          {...this.state.buttons_props}/>
+          {...this.state.default_props}
+          { ...this.state.buttons_props}/>
   			</View>
   		</View>
   	</View>

@@ -101,7 +101,9 @@ function print_feedback(context,event){
 function fillSkillPanel(context,event){
 
 	context.app.setState({skill_panel_props : {
-		skill_set : event.data['responses']
+		skill_set : {"Applicable Skills" : event.data['responses']},
+		select_callback : context.tutor.sai
+		// update_count : (context.app.skill_panel_props.update_count || 0) + 1//
 		//select_callback 
 		//correctness_callback
 		//initial_select
@@ -125,8 +127,8 @@ function get_machine_actions(app){
 
 	return {
 		services : {
-			send_feedback : (context,event) => network_layer.send_feedback(context,event,false),
-			send_feedback_explicit : (context,event) => network_layer.send_feedback(context,event,true),
+			send_feedback : (context,event) => network_layer.send_feedback(context,event),
+			send_feedback_explicit : (context,event) => network_layer.send_feedback_explicit(context,event),
 			apply_next_example : tutor.apply_next_example,
 			apply_skill_application : tutor.apply_skill_application,
 			query_apprentice : network_layer.query_apprentice,
@@ -139,6 +141,15 @@ function get_machine_actions(app){
 				assignExample : assign({action_type: (context,event) => "EXAMPLE"}) ,
 				assignAttempt : assign({action_type: (context,event) => "ATTEMPT"}) ,
 				assignFoci : assignFoci,
+				clearFeedbackData : assign((context,event) => {	
+					return {"reward" : null,
+				   			"rewards" : null,
+				   			"last_action" : null,
+							"skill_applications": null};
+				}),
+				assignSkillApplications : assign((context,event) => {
+					return {"skill_applications" : app.skill_panel.queuedSkillApplicationFeedback()}
+				}),
 				// done : window.signal_done,
 				print_feedback : print_feedback,
 				kill_this : _kill_this,
@@ -153,6 +164,7 @@ function get_machine_actions(app){
 				exit_feedback_mode : tutor.exit_feedback_mode,
 				enter_foci_mode : tutor.enter_foci_mode,
 				exit_foci_mode : tutor.exit_foci_mode,
+
 		},
 		guards : {
 			saiIsCorrectDone : saiIsCorrectDone,
@@ -244,7 +256,7 @@ var non_interactive_sm = {
 		        ],
 		        onError: 'Fail',
 			},
-			exit:["stateRecalc","assignResponse"]
+			exit:["stateRecalc","assignResponse","clearFeedbackData"]
 		},
 		Done : {
 			type : 'final',
@@ -277,7 +289,7 @@ var interactive_sm = {
 		"Setting_Start_State": {
 			entry : "enter_set_start_state_mode",
   			on: { "START_STATE_SET": "Querying_Apprentice" },
-  			exit : "exit_set_start_state_mode",
+  			exit : ["exit_set_start_state_mode","stateRecalc"]
   		},
 		Querying_Apprentice: {
 			invoke : {
@@ -300,7 +312,7 @@ var interactive_sm = {
 				"Waiting_Submit_Feedback" : {
 					on : {
 						"SKILL_PANEL_FEEDBACK_EMPTY" : "Waiting_Yes_No_Feedback",
-						"SUBMIT_SKILL_FEEDBACK": "Sending_Feedback"
+						"SUBMIT_SKILL_FEEDBACK": {target : "Sending_Feedback_Explicit", actions : "assignSkillApplications"}
 					}	
 				},
 			on : {"DEMONSTRATE" : {target : "Waiting_Select_Foci", actions : ["assignLastAction","printEvent"]}},
@@ -326,7 +338,21 @@ var interactive_sm = {
 		        ],
 		        onError: 'Fail',
 			},
-			exit:["stateRecalc","assignResponse"]
+			exit:["stateRecalc","assignResponse","clearFeedbackData"]
+		},
+		Sending_Feedback_Explicit : {
+			entry : 'print_feedback',
+			invoke : {
+		        id: "send_feedback_explicit",
+		        src: "send_feedback_explicit",
+		        onDone: [
+			        // {target: "Setting_Start_State", cond : },
+			        {target: "Done", cond : "saiIsCorrectDone"},
+			        {target: "Querying_Apprentice"},
+		        ],
+		        onError: 'Fail',
+			},
+			exit:["stateRecalc","assignResponse","clearFeedbackData"]
 		},
 		Done : {
 			type : 'final',

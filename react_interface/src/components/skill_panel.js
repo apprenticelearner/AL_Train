@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { TouchableHighlight,ScrollView,View, Text, StyleSheet } from "react-native";
 import Panel from './panel.js'
+var deep_equal = require('fast-deep-equal');
 
 
 
@@ -69,6 +70,7 @@ class SkillPanel extends Component{
           selected_skill: select,
           selected_match: select,
           correctness_map:{},
+          s_skill_set : {"" : []}
         };
       this.handleClickSkillItem = this.handleClickSkillItem.bind(this)
       this.handleClickCorrectnessButton = this.handleClickCorrectnessButton.bind(this)
@@ -157,10 +159,10 @@ class SkillPanel extends Component{
     let now_empty = Object.keys(new_correctness_map).length === 0
     if(!was_empty && now_empty){
       console.log("EMPTY")
-      this.props.service.send("SKILL_PANEL_FEEDBACK_EMPTY")
+      this.props.interactions_service.send("SKILL_PANEL_FEEDBACK_EMPTY")
     }else if(was_empty && !now_empty){
       console.log("NOT EMPTY")
-      this.props.service.send("SKILL_PANEL_FEEDBACK_NONEMPTY")
+      this.props.interactions_service.send("SKILL_PANEL_FEEDBACK_NONEMPTY")
     }
 
     this.setState({correctness_map : new_correctness_map});
@@ -170,27 +172,38 @@ class SkillPanel extends Component{
     if(this.props.correctness_callback){
       this.props.correctness_callback(match || skill,new_label)
     }
-
-
   }
-  componentWillReceiveProps(nextProps){
-    this.s_skill_set = this.structure_skills(nextProps.skill_set)
-    let s_keys = Object.keys(this.s_skill_set)
-    this.setState({
-      correctness_map: {}
-    })
 
-    if(s_keys.length > 0){// && !this.state.selected_skill || !this.state.selected_skill){
-      let select = this.s_skill_set[s_keys[0]][0]
+  queuedSkillApplicationFeedback(){
+    var feedback_queue = {}
+    let cm = {...this.state.correctness_map}
+    for (var key in cm) {
+      cm[key] = cm[key] === "correct" ? 1 :-1 
+    }
+    return cm
+  }
+
+  componentDidUpdate(prevProps, prevState){
+    if(!deep_equal(prevProps.skill_set,this.props.skill_set)){
+      let s_skill_set = this.structure_skills(this.props.skill_set)
       this.setState({
-          selected_skill: select,
-          selected_match: select,
+        correctness_map: {},
+        s_skill_set : s_skill_set
       })
-    }else{
-      this.setState({
-          selected_skill: null,
-          selected_match: null,
-      })
+
+      let s_keys = Object.keys(s_skill_set)
+      if(s_keys.length > 0){// && !this.state.selected_skill || !this.state.selected_skill){
+        let select = s_skill_set[s_keys[0]][0]
+        this.setState({
+            selected_skill: select,
+            selected_match: select,
+        })
+      }else{
+        this.setState({
+            selected_skill: null,
+            selected_match: null,
+        })
+      }
     }
     // }
   }
@@ -208,12 +221,12 @@ class SkillPanel extends Component{
 		      
           <View style={liststyles.skill_list}>
           <ScrollView>
-            {Object.keys(this.s_skill_set).map((title, index) => {
+            {Object.keys(this.state.s_skill_set).map((title, index) => {
               let header = <TouchableHighlight underlayColor="#fff" >
                  <Text style={liststyles.sectionHeader}>{title}</Text>
               </TouchableHighlight> 
               // let itemStyle = liststyles.item;
-              let rest = this.s_skill_set[title].map((skill, index) => {
+              let rest = this.state.s_skill_set[title].map((skill, index) => {
                   const skill_eq = this.state.selected_skill && this.state.selected_skill['_id']===skill['_id'];
                   // console.log(skill_eq)
                   // console.log("IS",itemStyle)
