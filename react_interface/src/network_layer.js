@@ -68,8 +68,22 @@ export default class NetworkLayer {
     		 .then(res => res.json())
 	}
 
-	send_feedback(context,event,explicit=false){
+	send_feedback(context,event){
 		console.log("SEND_FEEDBACK")
+		if (context.last_action === null) {
+	        console.error('cannot give feedback on no action.');
+	    }
+
+	    var data = {...context.last_action,"state":context.state}
+	    if(context.interactive){
+	        data['kwargs'] = {'add_skill_info':true}
+	    }
+	    
+		return this.send_training_data(data,context.agent_id)   
+	}
+
+	send_feedback_explicit(context,event){
+		console.log("SEND_FEEDBACK EXPLICIT")
 		const last_action = context.last_action;
 		const agent_id = context.agent_id;
 		const state = context.state
@@ -79,37 +93,40 @@ export default class NetworkLayer {
 		// }
 		// var last_action = context.last_action
 
-	    if (last_action === null) {
+	    if (last_action === null && context.explanations == null) {
 	        console.error('cannot give feedback on no action.');
 	    }
 
-	    var reward = last_action.reward
+	    // var reward = 
 
 	    // last_action.reward = reward
-	    if(!explicit){
-	        last_action.state = state
-	        return this.send_training_data(context, event, last_action)   
-	    }
-
-	    var data = {state: state,
-	                explanations: [{
+	    // if(!explicit){
+	    //     last_action.state = state
+	        
+	    // }
+	    var rewards = context.rewards || [last_action.reward]
+	    var skill_applications = context.skill_applications || [{
 	                    "rhs_id" : last_action["rhs_id"],
 	                    "mapping" : last_action["mapping"]
-	                }],
-	                rewards:[reward],
-	                selection : last_action.selection,
-	                reward : reward,
-	                };
+	                }];
+
+	    var data = {state: state,
+	                skill_applications: skill_applications,
+	                rewards: rewards
+	            	}
+	    console.log("EXPLICIT DATA",data)
 	    if(context.interactive){
 	        data['kwargs'] = {'add_skill_info':true}
 	    }
 
-	    const URL = this.AL_URL + '/train/' + context.agent_id + '/'
-    	return fetch_retry(URL, 
-    		{method: "POST",
-    		 headers: JSON_HEADERS,
-    		 body:JSON.stringify(data)})
-    		 .then(res => res.json())
+	    return this.send_training_data(data,context.agent_id)
+
+	    // const URL = this.AL_URL + '/train/' + context.agent_id + '/'
+    	// return fetch_retry(URL, 
+    	// 	{method: "POST",
+    	// 	 headers: JSON_HEADERS,
+    	// 	 body:JSON.stringify(data)})
+    	// 	 .then(res => res.json())
 		    // $.ajax({
 		    //     type: 'POST',
 		    //     url: AL_URL + '/train/' + agent_id + '/',
@@ -124,20 +141,17 @@ export default class NetworkLayer {
 	}
 	
 
-	send_training_data(context, event, sai_data) {
+	send_training_data(data,agent_id) {
 		console.log("SEND_TRAINING_DATA")
 	    // console.log("SAI: ", sai_data)
 
 	    // loggingLibrary.logResponse (transactionID,"textinput1","UpdateTextField","Hello World","RESULT","CORRECT","You got it!");
-	    if(context.interactive){
-	        sai_data['kwargs'] = {'add_skill_info':true}
-	    }
-	    console.log(sai_data)
-	    const URL = this.AL_URL + '/train/' + context.agent_id + '/'
+	    // console.log(sai_data)
+	    const URL = this.AL_URL + '/train/' + agent_id + '/'
 	    return fetch_retry(URL, 
 	    		{method: "POST",
 	    		 headers: JSON_HEADERS,
-	    		 body:JSON.stringify(sai_data,ignoreKeys)})
+	    		 body:JSON.stringify(data,ignoreKeys)})
 	    		.then(res => res.json())
 		// $.ajax({
 	 //        type: 'POST',

@@ -610,7 +610,21 @@ class CTAT_Tutor extends React.Component {
     return sai
   }
 
-  executeSAI(sai){
+  clearLastProposal(){
+    if(this.last_proposal){
+        this.tutor.clearElement(this.last_proposal.selection)
+        this.tutor.lockElement(this.last_proposal.selection.replace('?ele-',""))
+    }
+  }
+
+  proposeSAI(sai){
+    this.clearLastProposal()
+    this.last_proposal = {...sai}
+    this.highlightSAI(sai)
+    this.stageSAI(sai)
+  }
+
+  stageSAI(sai){
     var comp = this.iframe_content.CTATShellTools.findComponent(sai.selection)[0];
     var sai_obj =  new this.iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
     comp.executeSAI(sai_obj);

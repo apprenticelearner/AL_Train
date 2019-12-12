@@ -44,7 +44,7 @@ class Buttons extends Component{
     // const current = this.props.interactions_state || {"value" : ""};
     // var service = this.props.interactions_service
     var current = this.props.interactions_state
-    console.log("CURRENT_MCGIGGER",this.props.interactions_state)
+    // console.log("CURRENT_MCGIGGER",this.props.interactions_state)
     const matches = (x) => current && current.matches ? current.matches(x) : x == "Setting_Start_State";
     console.log("props",this.props)
     // const matches = (x) => current.matches(x)
