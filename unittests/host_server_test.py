@@ -187,7 +187,7 @@ def log_test(self,sleep_interval):
     print(" ".join([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path]))
     with open('log/term_out.txt', "w") as outfile:
       # host_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=sys.stdout)#stdout=subprocess.PIPE)#
-      host_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=subprocess.PIPE)
+      host_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     # sleep(3)
     while True:
         line = host_process.stdout.readline()
@@ -242,7 +242,9 @@ def log_test(self,sleep_interval):
       x.join()
     
     sleep(2)
+    
     host_process.terminate()
+    
     # sleep(2)
 
     with open(log_path,'r') as f:
