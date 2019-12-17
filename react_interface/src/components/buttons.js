@@ -45,7 +45,7 @@ class Buttons extends Component{
     // var service = this.props.interactions_service
     var current = this.props.interactions_state
     // console.log("CURRENT_MCGIGGER",this.props.interactions_state)
-    const matches = (x) => current && current.matches ? current.matches(x) : x == "Setting_Start_State";
+    const matches = (x) => current && current.matches ? current.matches(x) : x == "Waiting_Select_Foci";
     console.log("props",this.props)
     // const matches = (x) => current.matches(x)
     const send  = (action_str) => {
@@ -175,6 +175,7 @@ const styles = StyleSheet.create({
 
   "container": {
     display: "flex",
+    flexWrap: "wrap",
     "height" : "100%",
   },
 
@@ -182,12 +183,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
     "textAlign":"center",
     margin : 5,
+    flexWrap: "wrap",
   },
 
   "prompt2" : {
     fontSize: 20,
     "textAlign":"center",
     margin : 5,
+    flexWrap: "wrap",
   },
 
   "button_wrapper1":{

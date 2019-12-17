@@ -68,7 +68,7 @@ export default class ALReactInterface extends React.Component {
     // this.use_foci = this.urlParams.get('use_foci') == "true";
 
     // var working_dir = this.urlParams.get('wd')
-    if(props.working_dir == null){
+    if(props.working_dir == null && props.training_file != null){
         var match = props.training_file.match(/(.*)[\/\\]/)
         props.working_dir =  !!match ? match[1] : ''; //The directory of the training.json
     }
@@ -185,7 +185,8 @@ const styles = StyleSheet.create({
       	// flexGrow: 1,
       	// flexBasis: 300,
         // display: "flex",
-        // width : 
+        // width : "35%",
+        flex: 1,
         
         flexDirection: "row",
         // flexWrap: "wrap",
@@ -197,10 +198,11 @@ const styles = StyleSheet.create({
       },
       
       skill_panel : {
-      	width: "65%",
+      	// width: "65%",
       	// height: 300,
         // height: vh(35),
-        // flexBasis: 6,
+        flex : 1,
+        flexBasis: 65,
         // flexGrow : 0
         // flexDirection: "row",
         // flexShrink: 1,
@@ -217,8 +219,10 @@ const styles = StyleSheet.create({
         // flexBasis: 2,
         flexDirection: "column",
         // height: vh(35),
+        // width: "35%",
+        flexBasis : 35,
         /*width:300px;*/
-        flexWrap: "wrap",
+        // flexWrap: "wrap",
         justifySelf : "space-around",
         
         // flexBasis: 32,
