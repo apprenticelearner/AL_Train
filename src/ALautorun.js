@@ -210,6 +210,7 @@ function post_next_example(){
     elm.firstElementChild.setAttribute("class", "CTAT--example");
     console.log(elm.firstElementChild);
 
+    sai_data['next_state'] = get_state()
 
 	// console.log(sai_data);
 	if(TEST_MODE){
