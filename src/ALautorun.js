@@ -514,6 +514,7 @@ function send_feedback(reward){
 
 
     data.state = state;
+    data.next_state = get_state()
     send_training_data(data);
 }
 
