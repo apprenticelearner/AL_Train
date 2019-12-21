@@ -203,6 +203,38 @@ class CTAT_Tutor extends React.Component {
     return promise;
   }
 
+  _inject_element(elm_type,attributes={}){
+      var elm = this.iframe_content.document.createElement(elm_type);
+      for (var attr in attributes){
+        elm.setAttribute(attr, attributes[attr])
+      }
+      this.iframe_content.document.getElementsByTagName('head')[0].appendChild(elm);
+
+  }
+
+  /*
+  _checkAndStartTrigger(){
+      this.iframe_content = this.iframe.frameRef.contentWindow;
+    // if(this.iframe_content.document){
+      this._inject_element('link',   {href:'/CTAT/CTAT.css',type: "text/css",rel: "stylesheet"})
+      this._inject_element('link',   {href:'/CTAT/normalize.css',type: "text/css",rel: "stylesheet"})
+      this._inject_element('link',   {href:'/CTAT/front-end.css',type: "text/css",rel: "stylesheet"})
+      this._inject_element('script', {"data-silex-static" : true, type:'text/javascript', src : "/CTAT/jquery.min.js"})
+      this._inject_element('script', {"data-silex-static" : true, type:'text/javascript', src : "/CTAT/nools.js"})
+      this._inject_element('script', {"data-silex-static" : true, type:'text/javascript', src : "/CTAT/ctat.min.js"})
+      
+      window.setTimeout(() => {
+        this._inject_element('script', {"data-silex-static" : true, type:'text/javascript', src : "/CTAT/ctatloader.js"})
+        this._triggerWhenInitialized()      
+      }, 100);
+      
+    // }else{
+    //   window.setTimeout(() => {this._checkAndStartTrigger()}, 200);
+    // }
+    
+    
+  }*/
+
   _triggerWhenInitialized(){
     console.log("TRIGGER WHEN INITIALIZED")
     this.iframe_content = this.iframe.frameRef.contentWindow;
@@ -221,7 +253,9 @@ class CTAT_Tutor extends React.Component {
     this.graph = iframe_content.CTAT.ToolTutor.tutor.getGraph() || false;
     this.commLibrary = iframe_content.CTATCommShell.commShell.getCommLibrary();
     this.hasConfig = iframe_content.CTATConfiguration != undefined
-  
+    
+
+
     // console.log("graph")
     // console.log(graph)
     // console.log("comm")
@@ -230,12 +264,13 @@ class CTAT_Tutor extends React.Component {
     
 
     if((this.graph || this.interactive) && this.commLibrary && this.hasConfig){
-      var link = iframe_content.document.createElement('link');
-      link.setAttribute('rel', 'stylesheet');
-      link.setAttribute('type', 'text/css');
-      // link.setAttribute('href', "../".repeat(working_dir.split('/').length+1) + 'css/AL_colors.css');
-      link.setAttribute('href', document.location.origin + '/css/AL_colors.css');
-      iframe_content.document.getElementsByTagName('head')[0].appendChild(link);
+      this._inject_element('link',{href:'/css/AL_colors.css',type: "text/css",rel: "stylesheet"})
+      // var link = iframe_content.document.createElement('link');
+      // link.setAttribute('rel', 'stylesheet');
+      // link.setAttribute('type', 'text/css');
+      // // link.setAttribute('href', "../".repeat(working_dir.split('/').length+1) + 'css/AL_colors.css');
+      // link.setAttribute('href', document.location.origin + '/css/AL_colors.css');
+      // iframe_content.document.getElementsByTagName('head')[0].appendChild(link);
 
       //Gets rid of annyoing sai printout on every call to sendXML
       iframe_content.flashVars.setParams({"deliverymode" : "bleehhhh"})
@@ -518,31 +553,32 @@ class CTAT_Tutor extends React.Component {
   //   }
   }
 
-  highlightSAI(sai){
-    if(sai.mapping){
-        Object.entries(sai.mapping).forEach(function(v,index){
-            const [var_str, elem_str] = v
-            var colorIndex = 1
-            if(var_str != "?sel"){
-                colorIndex = 2 + ((index-1) % (this.where_colors.length-1));
-                console.log(colorIndex)
-            }
-            // elm = this.iframe_content.document.getElementById(elem_str.replace('?ele-',""));
-            this.highlightElement(elem_str,colorIndex)
-        });
-    }else{
-      alert("IDK WHAT THIS IS")
-        // this.highlighted_elements.push(elm.firstElementChild.id)
-        // elm.firstElementChild.classList.add("CTAT--AL_highlight1")
-    }
-  }
+  // highlightSAI(sai){
+
+  //   if(sai.mapping){
+  //       Object.entries(sai.mapping).forEach(function(v,index){
+  //           const [var_str, elem_str] = v
+  //           var colorIndex = 1
+  //           if(var_str != "?sel"){
+  //               colorIndex = 2 + ((index-1) % (this.where_colors.length-1));
+  //               console.log(colorIndex)
+  //           }
+  //           // elm = this.iframe_content.document.getElementById(elem_str.replace('?ele-',""));
+  //           this.highlightElement(elem_str,colorIndex)
+  //       });
+  //   }else{
+  //     alert("IDK WHAT THIS IS")
+  //       // this.highlighted_elements.push(elm.firstElementChild.id)
+  //       // elm.firstElementChild.classList.add("CTAT--AL_highlight1")
+  //   }
+  // }
 
   highlightElement(name,colorIndex=1){
     this.unhighlightElement(name)
     var elm = this.iframe_content.document.getElementById(name.replace('?ele-',""));
     elm.firstElementChild.classList.add("CTAT--AL_highlight"+colorIndex)
     this.highlighted_elements.push(name)
-    console.log("H", this.highlighted_elements)
+    // console.log("H", this.highlighted_elements)
   }
 
   unhighlightElement(name){
@@ -559,7 +595,7 @@ class CTAT_Tutor extends React.Component {
           }
       }
       var after = elm.firstElementChild.classList.toString()
-      console.log("BEF-AFT:", before,after)
+      // console.log("BEF-AFT:", before,after)
       var index = this.highlighted_elements.indexOf(name)
       if(index > -1){
         this.highlighted_elements.splice(index,1)  
@@ -575,17 +611,18 @@ class CTAT_Tutor extends React.Component {
 
   highlightSAI(sai){
     if(sai.mapping){
-        Object.entries(sai.mapping).forEach(function(v,index){
-            const [var_str, elem_str] = v
+        var index = 0
+        for (var var_str in sai.mapping){
+            var elem_str = sai.mapping[var_str]
             var colorIndex = 1
             if(var_str != "?sel"){
                 colorIndex = 2 + ((index-1) % (this.where_colors.length-1));
-                console.log(colorIndex)
+                // console.log(colorIndex)
             }
             // elm = this.iframe_content.document.getElementById(elem_str.replace('?ele-',""));
             this.highlightElement(elem_str,colorIndex)
-            this.highlighted_elements.push(elem_str)
-        });
+            index++
+        }
     }else{
       alert("IDK WHAT THIS IS")
         // this.highlighted_elements.push(elm.firstElementChild.id)
@@ -594,7 +631,7 @@ class CTAT_Tutor extends React.Component {
   }
 
   unhighlightAll(){
-    console.log("HIGHLIGHTED_/", this.highlighted_elements)
+    // console.log("HIGHLIGHTED_/", this.highlighted_elements)
     for(var elem_str of [...this.highlighted_elements]){
       this.unhighlightElement(elem_str);
     }
@@ -612,12 +649,15 @@ class CTAT_Tutor extends React.Component {
 
   clearLastProposal(){
     if(this.last_proposal){
-        this.tutor.clearElement(this.last_proposal.selection)
-        this.tutor.lockElement(this.last_proposal.selection.replace('?ele-',""))
+        this.clearElement(this.last_proposal.selection)
+        this.lockElement(this.last_proposal.selection.replace('?ele-',""))
+        this.unhighlightAll()
     }
   }
 
   proposeSAI(sai){
+    // console.log("EVDA", event.data)
+    // var sai = event.data
     this.clearLastProposal()
     this.last_proposal = {...sai}
     this.highlightSAI(sai)

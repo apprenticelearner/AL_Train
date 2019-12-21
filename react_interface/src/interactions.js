@@ -102,7 +102,7 @@ function fillSkillPanel(context,event){
 
 	context.app.setState({skill_panel_props : {
 		skill_set : {"Applicable Skills" : event.data['responses']},
-		select_callback : context.tutor.sai
+		select_callback : context.tutor.proposeSAI,
 		// update_count : (context.app.skill_panel_props.update_count || 0) + 1//
 		//select_callback 
 		//correctness_callback
@@ -164,6 +164,7 @@ function get_machine_actions(app){
 				exit_feedback_mode : tutor.exit_feedback_mode,
 				enter_foci_mode : tutor.enter_foci_mode,
 				exit_foci_mode : tutor.exit_foci_mode,
+				proposeSAI : (context,event) => tutor.proposeSAI(event.data),
 
 		},
 		guards : {
@@ -295,13 +296,22 @@ var interactive_sm = {
 			invoke : {
 		        id: "query_apprentice",
 		        src: "query_apprentice",
-		        onDone: {target: "Waiting_User_Feedback", "actions" : "fillSkillPanel"},
+		        onDone: [
+		        	{target: "Waiting_User_Feedback.Waiting_Demonstrate_Only", cond: "noApplicableSkills", "actions" : ["fillSkillPanel"]},
+		        	{target: "Waiting_User_Feedback.Waiting_Yes_No_Feedback", "actions" : ["fillSkillPanel","proposeSAI"]},
+		        ],
 		        onError: 'Fail',
 			},
 			exit: "assignResponse",
 		},
 		Waiting_User_Feedback : {
 			entry : "enter_feedback_mode",
+			//
+			initial : "Waiting_Demonstrate_Only",
+			states : {
+				"Waiting_Demonstrate_Only" : {
+
+				},
 				"Waiting_Yes_No_Feedback" : {
 					on : {
 						"SKILL_PANEL_FEEDBACK_NONEMPTY" : "Waiting_Submit_Feedback",
@@ -315,6 +325,8 @@ var interactive_sm = {
 						"SUBMIT_SKILL_FEEDBACK": {target : "Sending_Feedback_Explicit", actions : "assignSkillApplications"}
 					}	
 				},
+			},
+			//
 			on : {"DEMONSTRATE" : {target : "Waiting_Select_Foci", actions : ["assignLastAction","printEvent"]}},
 			exit : "exit_feedback_mode",
 		},
