@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
       	// height: 300,
         // height: vh(35),
         flex : 1,
-        flexBasis: "65%",
+        flexBasis: "60%",
         // flexGrow : 0
         // flexDirection: "row",
         // flexShrink: 1,
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
         flexDirection: "column",
         // height: vh(35),
         // width: "35%",
-        flexBasis : "35%",
+        flexBasis : "40%",
         /*width:300px;*/
         // flexWrap: "wrap",
         justifySelf : "space-around",
