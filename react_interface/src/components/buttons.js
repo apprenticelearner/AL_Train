@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { TouchableHighlight,ScrollView,View, Text, StyleSheet } from "react-native";
 import Panel from './panel.js'
+var deep_equal = require('fast-deep-equal');
 
 
 // import { useMachine } from '@xstate/react';
@@ -45,7 +46,7 @@ class Buttons extends Component{
     // var service = this.props.interactions_service
     var current = this.props.interactions_state
     // console.log("CURRENT_MCGIGGER",this.props.interactions_state)
-    const matches = (x) => current && current.matches ? current.matches(x) : x == "Waiting_Select_Foci";
+    const matches = (x) => current && current.matches ? current.matches(x) : deep_equal(x , {"Waiting_User_Feedback":"Waiting_Yes_No_Feedback"});
     console.log("props",this.props)
     // const matches = (x) => current.matches(x)
     const send  = (action_str) => {
@@ -65,7 +66,7 @@ class Buttons extends Component{
               <Text style={styles.prompt1}> 
               {matches("Setting_Start_State") &&
                "Set the start state."}
-              {matches("Waiting_User_Feedback") &&
+              {(matches("Waiting_User_Feedback")  || matches({"Waiting_User_Feedback":"Waiting_Yes_No_Feedback"})) &&
                "Demonstrate the next step."}
               {matches("Explantions_Displayed") &&
                "Press next to continue. Or demonstrate the next step."}
@@ -174,22 +175,26 @@ class Buttons extends Component{
 const styles = StyleSheet.create({
 
   "container": {
-    display: "flex",
-    flexWrap: "wrap",
-    "height" : "100%",
+    flex : 1,
+    flexDirection : "column",
+    justifyContent: "spaceBetween",
+    // marginBottom : 40
+    // display: "flex",
+    // flexWrap: "wrap",
+    // "height" : "100%",
   },
 
   "prompt1" : {
     fontSize: 20,
     "textAlign":"center",
-    margin : 5,
+    // marginBottom : 20,
     flexWrap: "wrap",
   },
 
   "prompt2" : {
     fontSize: 20,
     "textAlign":"center",
-    margin : 5,
+    margin : 20,
     flexWrap: "wrap",
   },
 
@@ -197,17 +202,20 @@ const styles = StyleSheet.create({
     display:"flex",
     flexDirection: "column",
     alignItems: "center",
-    flexBasis : "40%",
+
+    // flexBasis : "40%",
     // "pointerEvents": "none",
 
   },
 
   "button_wrapper2":{
+    // justifyContent: "spaceBetween",
     display:"flex",
     flexDirection: "column",
     alignItems: "center",
     // flexBasis : "40%",
     flexShrink: 1,
+    // marginBottom : 70,
     // "pointerEvents": "none",
 
   },

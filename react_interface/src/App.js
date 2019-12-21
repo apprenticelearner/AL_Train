@@ -157,19 +157,19 @@ export default class ALReactInterface extends React.Component {
 //nools_callback={window.nools_callback}/>
 
 const styles = StyleSheet.create({
-	container : {
-	  justifyContent: "stretch",
-      // padding: 20,
-      // alignItems:'center',
-      // backgroundColor: "blue",
-      flex: 1,
+	     container : {
+        // justifyContent: "stretch",
+        // padding: 20,
+        // alignItems:'center',
+        // backgroundColor: "blue",
+        flex: 1,
         flexDirection: "column",
         // flexWrap: "wrap"
       },
       ctat_tutor: {
 
       	// backgroundColor: 'powderblue',
-      	// flexBasis: 600,
+      	
       	// flexGrow: 1,
       	// height : "65%",
       	// width : "100%",
@@ -177,7 +177,9 @@ const styles = StyleSheet.create({
         // height: vh(64),
         // flexGrow: 100,
         margin: 4,
+        flexBasis: "65%",
         flex: 1,
+        
 
       },
       controls :{
@@ -185,9 +187,9 @@ const styles = StyleSheet.create({
       	// flexGrow: 1,
       	// flexBasis: 300,
         // display: "flex",
-        // width : "35%",
+        // height : "35%",
         flex: 1,
-        
+        flexBasis: "35%",
         flexDirection: "row",
         // flexWrap: "wrap",
         // width : 600,
@@ -202,7 +204,7 @@ const styles = StyleSheet.create({
       	// height: 300,
         // height: vh(35),
         flex : 1,
-        flexBasis: 65,
+        flexBasis: "65%",
         // flexGrow : 0
         // flexDirection: "row",
         // flexShrink: 1,
@@ -220,7 +222,7 @@ const styles = StyleSheet.create({
         flexDirection: "column",
         // height: vh(35),
         // width: "35%",
-        flexBasis : 35,
+        flexBasis : "35%",
         /*width:300px;*/
         // flexWrap: "wrap",
         justifySelf : "space-around",

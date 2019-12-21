@@ -128,7 +128,7 @@ class SkillPanel extends Component{
     // console.log(title,index,match)
     // this.selectSkill(this.props.skill_set[title][index],match)
     this.selectSkill(skill,match)
-    console.log(this.props.select_callback)
+    // console.log(this.props.select_callback)
     if(this.props.select_callback){
       this.props.select_callback(match || skill)   
     }
@@ -357,13 +357,15 @@ class SkillPanel extends Component{
 
 const skillbox_styles = StyleSheet.create({
   content: {
-    "display": "flex",
-    "height" : "100%",
+    // "display": "flex",
+    flex : 1,
+    
+    // "height" : "100%",
     // "flexDirection":"row-reverse",
     "flexDirection":"row",
     
     backgroundColor: "#F5FCFF",
-    "width":"100%",
+    // "width":"100%",
     borderRadius: 4,
     borderWidth: 0.5,
     borderColor: '#d6d7da',
