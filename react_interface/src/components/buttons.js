@@ -188,13 +188,16 @@ const styles = StyleSheet.create({
     fontSize: 20,
     "textAlign":"center",
     // marginBottom : 20,
+    margin : 3,
     flexWrap: "wrap",
   },
 
   "prompt2" : {
     fontSize: 20,
     "textAlign":"center",
-    margin : 20,
+    margin : 7,
+    marginTop : 25,
+    marginBottom : 12,
     flexWrap: "wrap",
   },
 
