@@ -1,15 +1,15 @@
-import { Machine,assign,interpret } from 'xstate';
+import { Machine,assign,interpret,send } from 'xstate';
 
 
 
 
-// const send_feedback = (context,event,explicit=false) => {
+// const sendFeedback = (context,event,explicit=false) => {
 // 	if(event.response_type == "CORRECT"){
-// 		context.network_layer.send_feedback(context,event,1,explicit)
+// 		context.network_layer.sendFeedback(context,event,1,explicit)
 // 	}else if(event.response_type == "INCORRECT"){
-// 		context.network_layer.send_feedback(context,event,-1,explicit)
+// 		context.network_layer.sendFeedback(context,event,-1,explicit)
 // 	}else if(event.response_type == "NO_RESPONSE"){
-// 		context.network_layer.send_feedback(context,event,0,explicit)
+// 		context.network_layer.sendFeedback(context,event,0,explicit)
 // 	}	
 // }
 
@@ -17,44 +17,44 @@ import { Machine,assign,interpret } from 'xstate';
 
 // }
 
-// const query_apprentice = () => {};
+// const queryApprentice = () => {};
 // const post_next_example = () => {};
 // const apply_sai = () => {};
-// const query_apprentice = () => {};
-// const query_apprentice = () => {};
-// const query_apprentice = () => {};
-// const query_apprentice = () => {};
+// const queryApprentice = () => {};
+// const queryApprentice = () => {};
+// const queryApprentice = () => {};
+// const queryApprentice = () => {};
 
-function apply_skill_application(context,event){
-	context.tutor.apply_skill_application()
-}
+// function apply_skill_application(context,event){
+// 	context.tutor.apply_skill_application()
+// }
 
-function apply_next_example(context,event){
-	const tutor = context.tutor
-	var sai = tutor.getDefaultSAI()
-	var data = {state: context.state, reward: 1,...sai}
-	context.network_layer.send_training_data(data)
+// function apply_next_example(context,event){
+// 	const tutor = context.tutor
+// 	var sai = tutor.getDefaultSAI()
+// 	var data = {state: context.state, reward: 1,...sai}
+// 	context.network_layer.sendTrainingData(data)
 
-}
+// }
 
 const stateRecalc = assign({state: (context,event) => {
 	console.log("RECALC")
-	if(context.last_action == null || context.last_action.reward == 1){
+	if(context.staged_SAI == null || context.staged_SAI.reward > 0){
 		return context.tutor.get_state()
 	}else{
 		return context.state
 	}
 }});
 
-const assignFoci = assign({last_action: (context,event) => {
-	Object.assign(context.last_action,{"foci_of_attention" : context.tutor.get_current_foci()})
-	return context.last_action
+const assignFoci = assign({staged_SAI: (context,event) => {
+	Object.assign(context.staged_SAI,{"foci_of_attention" : context.tutor.get_current_foci()})
+	return context.staged_SAI
 }});
 
 //CONDITIONS 
 function saiIsCorrectDone(context,event){
 	console.log("saiIsCorrectDone")
-	const sai_data = context.last_action
+	const sai_data = context.staged_SAI
 	return (sai_data.selection === "done" && (sai_data.reward == null || sai_data.reward  > 0))
 }
 
@@ -83,18 +83,19 @@ function _kill_this(context,event){
 }
 
 
-function print_feedback(context,event){
+function printFeedback(context,event){
 	var nl = context.network_layer
-	var last_action = context.last_action
-	var inps = last_action.inputs['value'] || ""
+	var staged_SAI = context.staged_SAI
+	var inps = staged_SAI.inputs['value'] || ""
 	var type  = context.action_type 
+	// var reward = staged_SAI.reward 
 	if(type == "ATTEMPT"){
-		type = last_action.reward > 0 ? "CORRECT" : "INCORRECT"
+		type = staged_SAI.reward > 0 ? "CORRECT" : "INCORRECT"
 	}
 
 	var color = color_map[type]
 	
-	nl.term_print('\x1b[' + color + type + ": " + last_action.selection + " -> " + inps + '\x1b[0m')
+	nl.term_print('\x1b[' + color + type + ": " + staged_SAI.selection + " -> " + inps + '\x1b[0m')
 }
 
 
@@ -102,7 +103,7 @@ function fillSkillPanel(context,event){
 
 	context.app.setState({skill_panel_props : {
 		skill_set : {"Applicable Skills" : event.data['responses']},
-		select_callback : context.tutor.proposeSAI,
+		// select_callback : context.tutor.proposeSAI,
 		// update_count : (context.app.skill_panel_props.update_count || 0) + 1//
 		//select_callback 
 		//correctness_callback
@@ -110,6 +111,67 @@ function fillSkillPanel(context,event){
 		//where_colors
 	}})
 }
+
+const recalcFeedbackMap = send((context,event) => {
+	// const promise = new Promise((resolve,reject) => {
+	var skill = event.skill;
+	var match = event.match;
+	var label = event.label;
+
+	let match_id = match["_id"];
+    // console.log(match["_id"])
+    // console.log(this.state.feedback_map)
+    let feedback_map = context.feedback_map || {} 
+    let new_label = (feedback_map[match_id]
+           && label === feedback_map[match_id]) ? null : label;
+    
+    let new_feedback_map = {...feedback_map};
+    if(new_label === null){
+      delete new_feedback_map[match_id];
+    }else{
+      new_feedback_map[match_id] = new_label;
+    }
+
+    let was_empty = Object.keys(feedback_map).length === 0
+    let now_empty = Object.keys(new_feedback_map).length === 0
+
+    return {type : "FEEBACK_MAP_UPDATE" ,
+    		feedback_map : new_feedback_map,
+    		was_empty : was_empty,
+    		now_empty : now_empty
+    	   }
+    // if(!was_empty && now_empty){
+    //   	console.log("EMPTY")
+    //   	return {type: "SKILL_PANEL_FEEDBACK_EMPTY"}
+    // }else if(was_empty && !now_empty){
+    //   	console.log("NOT EMPTY")
+    //   	return {type :"SKILL_PANEL_FEEDBACK_NONEMPTY"}
+    // }
+    // return undefined
+	// });
+	// return promise;
+})
+
+const assignFeedbackMap = assign({"feedback_map" : (context,event) =>  {
+	if(context.skill_panel.updateFeedbackMap){
+		context.skill_panel.updateFeedbackMap(event.feedback_map);	
+	}
+	if(context.tutor.updateFeedbackMap){
+		context.tutor.updateFeedbackMap(event.feedback_map)
+	}
+	return event.feedback_map
+}})
+
+const toggleFeedbackStyle = send((context,event) => {
+	if(!event.was_empty && event.now_empty){
+      	console.log("EMPTY")
+      	return {type: "SKILL_PANEL_FEEDBACK_EMPTY"}
+    }else if(event.was_empty && !event.now_empty){
+      	console.log("NOT EMPTY")
+      	return {type :"SKILL_PANEL_FEEDBACK_NONEMPTY"}
+    }
+    return {type :""}
+})
 
 // skill_set={skill_set}
 			//						select_callback={select_callback}
@@ -127,45 +189,57 @@ function get_machine_actions(app){
 
 	return {
 		services : {
-			send_feedback : (context,event) => network_layer.send_feedback(context,event),
-			send_feedback_explicit : (context,event) => network_layer.send_feedback_explicit(context,event),
-			apply_next_example : tutor.apply_next_example,
-			apply_skill_application : tutor.apply_skill_application,
-			query_apprentice : network_layer.query_apprentice,
+			sendFeedback : (context,event) => network_layer.sendFeedback(context,event),
+			sendFeedbackExplicit : (context,event) => network_layer.sendFeedbackExplicit(context,event),
+			applyNextExample : tutor.applyNextExample,
+			attemptStagedSAI : tutor.attemptStagedSAI,
+			queryApprentice : network_layer.queryApprentice,
 		},
 		actions : {
 				logError : logError,
+				
 				stateRecalc : stateRecalc,
 				assignResponse : assign({response: (context,event) => event.data}),
-				assignLastAction : assign({last_action: (context,event) => event.data}) ,
+				assignStagedSAI : assign({staged_SAI: (context,event) => event.data}) ,
 				assignExample : assign({action_type: (context,event) => "EXAMPLE"}) ,
 				assignAttempt : assign({action_type: (context,event) => "ATTEMPT"}) ,
+				assignCorrect : assign({staged_SAI: (context,event) => {
+					return {...context.staged_SAI, ...{reward: 1}}
+				}}),
+				assignIncorrect : assign({staged_SAI: (context,event) => {
+					return {...context.staged_SAI, ...{reward: -1}}	
+				}}),
 				assignFoci : assignFoci,
 				clearFeedbackData : assign((context,event) => {	
 					return {"reward" : null,
 				   			"rewards" : null,
-				   			"last_action" : null,
+				   			"staged_SAI" : null,
 							"skill_applications": null};
 				}),
-				assignSkillApplications : assign((context,event) => {
-					return {"skill_applications" : app.skill_panel.queuedSkillApplicationFeedback()}
-				}),
+				assignSkillApplications : assign({skill_applications: (context,event) =>
+					event.data.responses || event.data.skill_applications}),
 				// done : window.signal_done,
-				print_feedback : print_feedback,
+				printFeedback : printFeedback,
 				kill_this : _kill_this,
 				printEvent : (context,event) => {console.log("P_EVT:",event)},
 
 				fillSkillPanel : fillSkillPanel,
 				done : (context,event) => {context.app.training_service.send("PROBLEM_DONE");}, 
 
-				enter_set_start_state_mode : tutor.enter_set_start_state_mode,
-				exit_set_start_state_mode : tutor.exit_set_start_state_mode,
-				enter_feedback_mode : tutor.enter_feedback_mode,
-				exit_feedback_mode : tutor.exit_feedback_mode,
-				enter_foci_mode : tutor.enter_foci_mode,
-				exit_foci_mode : tutor.exit_foci_mode,
+				enterSetStartStateMode : tutor.enterSetStartStateMode,
+				exitSetStartStateMode : tutor.exitSetStartStateMode,
+				enterFeedbackMode : tutor.enterFeedbackMode,
+				exitFeedbackMode : tutor.exitFeedbackMode,
+				enterFociMode : tutor.enterFociMode,
+				exitFociMode : tutor.exitFociMode,
+				applyStagedSAI : (context,event) => {tutor.applySAI(context.staged_SAI);},
 				proposeSAI : (context,event) => tutor.proposeSAI(event.data),
+				confirmProposedSAI : (context,event) => {tutor.confirmProposedSAI();},
+				clearProposedSAI : (context,event) => {tutor.clearProposedSAI();},
 
+				recalcFeedbackMap : recalcFeedbackMap,
+				assignFeedbackMap : assignFeedbackMap,
+				toggleFeedbackStyle : toggleFeedbackStyle,
 		},
 		guards : {
 			saiIsCorrectDone : saiIsCorrectDone,
@@ -189,8 +263,8 @@ export function build_interactions_sm(app, interactive=false, free_author=false)
 		free_author : null,
 		
 		//Dynamic
-		last_correct : null,
-		last_action : null,
+		// last_correct : null,
+		staged_SAI : null,
 		action_type : null
 	}
 	var sm = interactive ? interactive_sm : non_interactive_sm
@@ -216,41 +290,43 @@ var non_interactive_sm = {
 		},
 		Querying_Apprentice: {
 			invoke : {
-		        id: "query_apprentice",
-		        src: "query_apprentice",
+		        id: "queryApprentice",
+		        src: "queryApprentice",
 		        onDone: [
-		        	{target: "Applying_Next_Example", conds: "noApplicableSkills"},
-		        	{target: "Applying_Skill_Application"},
+		        	{target: "Applying_Next_Example", conds: "noApplicableSkills",
+		        	 actions : ["assignStagedSAI","assignExample"]},
+		        	{target: "Applying_Staged_SAI",
+		        	actions : ["assignStagedSAI","assignAttempt"]},
 		        ],
 		        onError: 'Fail',
 			},
 			exit: "assignResponse",
 		},
-		Applying_Skill_Application : {
+		Applying_Staged_SAI : {
 			invoke : {
-		        id: "apply_skill_application",
-		        src: "apply_skill_application",
+		        id: "attemptStagedSAI",
+		        src: "attemptStagedSAI",
 		        onDone: "Sending_Feedback",
 		        onError: 'Fail',
 			},
-			exit: ["assignLastAction","assignAttempt"]
+			// exit: ["assignStagedSAI","assignAttempt"]
 		},
 
 		Applying_Next_Example : {
 			invoke : {
-		        id: "apply_next_example",
-		        src: "apply_next_example",
+		        id: "applyNextExample",
+		        src: "applyNextExample",
 		        onDone: "Sending_Feedback",
 		        onError: 'Fail'
 			},
-			exit: ["assignLastAction","assignExample"]
+			// exit: ["assignStagedSAI","assignExample"]
 		},
 
 		Sending_Feedback : {
-			entry : 'print_feedback',
+			entry : 'printFeedback',
 			invoke : {
-		        id: "send_feedback",
-		        src: "send_feedback",
+		        id: "sendFeedback",
+		        src: "sendFeedback",
 		        onDone: [
 			        {target: "Done", conds : "saiIsCorrectDone"},
 			        {target: "Querying_Apprentice"},
@@ -276,6 +352,7 @@ var non_interactive_sm = {
 // ------------------------------- INTERACTIVE ----------------------------
 
 var interactive_sm = {
+	id : "interactive",
 	initial : "Start",
 	states: {
 		Start:{
@@ -288,24 +365,26 @@ var interactive_sm = {
 			}
 		},
 		"Setting_Start_State": {
-			entry : "enter_set_start_state_mode",
+			entry : "enterSetStartStateMode",
   			on: { "START_STATE_SET": "Querying_Apprentice" },
-  			exit : ["exit_set_start_state_mode","stateRecalc"]
+  			exit : ["exitSetStartStateMode","stateRecalc"]
   		},
 		Querying_Apprentice: {
 			invoke : {
-		        id: "query_apprentice",
-		        src: "query_apprentice",
+		        id: "queryApprentice",
+		        src: "queryApprentice",
 		        onDone: [
-		        	{target: "Waiting_User_Feedback.Waiting_Demonstrate_Only", cond: "noApplicableSkills", "actions" : ["fillSkillPanel"]},
-		        	{target: "Waiting_User_Feedback.Waiting_Yes_No_Feedback", "actions" : ["fillSkillPanel","proposeSAI"]},
+		        	{target: "Waiting_User_Feedback.Waiting_Demonstrate_Only",
+		        	 cond: "noApplicableSkills", "actions" : ["fillSkillPanel"]},
+		        	{target: "Waiting_User_Feedback.Waiting_Yes_No_Feedback",
+		        	 "actions" : ["fillSkillPanel","proposeSAI", "assignStagedSAI"]},
 		        ],
 		        onError: 'Fail',
 			},
-			exit: "assignResponse",
+			exit: "assignSkillApplications",
 		},
 		Waiting_User_Feedback : {
-			entry : "enter_feedback_mode",
+			entry : "enterFeedbackMode",
 			//
 			initial : "Waiting_Demonstrate_Only",
 			states : {
@@ -315,34 +394,54 @@ var interactive_sm = {
 				"Waiting_Yes_No_Feedback" : {
 					on : {
 						"SKILL_PANEL_FEEDBACK_NONEMPTY" : "Waiting_Submit_Feedback",
-						"YES_PRESSED" : "Sending_Feedback",
-						"NO_PRESSED" : "Sending_Feedback",
+						// "YES_PRESSED" : {target : "#interactive.Sending_Feedback",
+						"YES_PRESSED" : {target : "#interactive.Sending_Feedback",
+							actions : ["assignCorrect","assignAttempt","confirmProposedSAI"]},
+						"NO_PRESSED" : {target :"#interactive.Sending_Feedback",
+							actions : ["assignIncorrect","assignAttempt","clearProposedSAI"]},
 					}	
 				},
 				"Waiting_Submit_Feedback" : {
 					on : {
 						"SKILL_PANEL_FEEDBACK_EMPTY" : "Waiting_Yes_No_Feedback",
-						"SUBMIT_SKILL_FEEDBACK": {target : "Sending_Feedback_Explicit", actions : "assignSkillApplications"}
+						"SUBMIT_SKILL_FEEDBACK": {target : "#interactive.Sending_Feedback_Explicit",
+						 	actions : ["clearProposedSAI"]},
 					}	
 				},
 			},
 			//
-			on : {"DEMONSTRATE" : {target : "Waiting_Select_Foci", actions : ["assignLastAction","printEvent"]}},
-			exit : "exit_feedback_mode",
+			on : {
+				"STAGE_SAI" : {actions : ["assignStagedSAI","proposeSAI"]},
+				//
+				"TOGGLE_FEEDBACK" : {actions : "recalcFeedbackMap"},//, onDone:{actions :"callSend"}, onError: 'Fail'}},
+				"FEEBACK_MAP_UPDATE" : {actions : ["assignFeedbackMap","toggleFeedbackStyle",]},//, onDone:{actions :"callSend"}, onError: 'Fail'}},
+				//
+				"DEMONSTRATE" : {target : "Waiting_Select_Foci",
+				   	actions : ["assignStagedSAI","assignExample","printEvent","clearProposedSAI"]},
+				 },
+			exit : ["exitFeedbackMode"]
 		},
+		// "Applying_Staged_SAI" : {
+		// 	invoke : {
+		//         id: "attemptStagedSAI",
+		//         src: "attemptStagedSAI",
+		//         onDone: "Sending_Feedback",
+		//         onError: 'Fail',
+		// 	},
+		// },
 		"Waiting_Select_Foci": {
-			entry : "enter_foci_mode",
+			entry : "enterFociMode",
 			on: {
 				"" : 		 {target : "Sending_Feedback", actions : "assignFoci", cond : "saiIsCorrectDone"},
 				"FOCI_DONE": {target : "Sending_Feedback", actions : "assignFoci"},
 			},
-			exit : "exit_foci_mode",
+			exit : "exitFociMode",
 	    },
 		Sending_Feedback : {
-			entry : 'print_feedback',
+			entry : ['printFeedback'],
 			invoke : {
-		        id: "send_feedback",
-		        src: "send_feedback",
+		        id: "sendFeedback",
+		        src: "sendFeedback",
 		        onDone: [
 			        // {target: "Setting_Start_State", cond : },
 			        {target: "Done", cond : "saiIsCorrectDone"},
@@ -353,10 +452,10 @@ var interactive_sm = {
 			exit:["stateRecalc","assignResponse","clearFeedbackData"]
 		},
 		Sending_Feedback_Explicit : {
-			entry : 'print_feedback',
+			entry : 'printFeedback',
 			invoke : {
-		        id: "send_feedback_explicit",
-		        src: "send_feedback_explicit",
+		        id: "sendFeedbackExplicit",
+		        src: "sendFeedbackExplicit",
 		        onDone: [
 			        // {target: "Setting_Start_State", cond : },
 			        {target: "Done", cond : "saiIsCorrectDone"},
@@ -384,7 +483,7 @@ var interactive_sm = {
 // 	initial: "Waiting_For_Applicable_Skills",
 // 	states: {
 // 		"Waiting_For_Applicable_Skills" :{
-// 			entry : ['query_apprentice'],
+// 			entry : ['queryApprentice'],
 // 			on : {
 // 				"APPLICABLE_SKILLS_RECIEVED" : "Query_Yes_No_Feedback",
 // 				"NO_SKILLS_RECIEVED" : "No_Query_Feedback"
@@ -448,8 +547,8 @@ var interactive_sm = {
 // },
 // {
 // 	actions: {
-// 		query_apprentice : (context,event) => {
-// 			window.query_apprentice()
+// 		queryApprentice : (context,event) => {
+// 			window.queryApprentice()
 // 		}
 // 	}
 // }
@@ -600,8 +699,8 @@ var interactive_sm = {
 // },
 // {
 // 	actions: {
-// 		query_apprentice : (context,event) => {
-// 			window.query_apprentice()
+// 		queryApprentice : (context,event) => {
+// 			window.queryApprentice()
 // 		}
 // 	}
 // }

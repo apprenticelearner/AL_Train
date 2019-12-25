@@ -69,11 +69,11 @@ class SkillPanel extends Component{
         this.state = {
           selected_skill: select,
           selected_match: select,
-          correctness_map:{},
+          feedback_map:{},
           s_skill_set : {"" : []}
         };
       this.handleClickSkillItem = this.handleClickSkillItem.bind(this)
-      this.handleClickCorrectnessButton = this.handleClickCorrectnessButton.bind(this)
+      this.handleToggleFeedbackButton = this.handleToggleFeedbackButton.bind(this)
   }
 
   starting_selection(){
@@ -130,53 +130,59 @@ class SkillPanel extends Component{
     this.selectSkill(skill,match)
     // console.log(this.props.select_callback)
     if(this.props.select_callback){
-      this.props.select_callback(match || skill)   
+      this.props.interactions_service.send({type :"STAGE_SAI",data : match || skill})
+      // this.props.select_callback(match || skill)   
     }
     if(callback){
       callback(rest)
     }
     
   }
-  handleClickCorrectnessButton(evt,rest){
+  handleToggleFeedbackButton(evt,rest){
     const [skill,match,label] = rest;
+    this.props.interactions_service.send(
+        {type: "TOGGLE_FEEDBACK",skill:skill, match:match, label:label})
     // console.log(skill)
     // console.log(match)
     // console.log(label)
-    let match_id = match["_id"];
-    // console.log(match["_id"])
-    // console.log(this.state.correctness_map)
-    let new_label = (this.state.correctness_map[match_id]
-           && label === this.state.correctness_map[match_id]) ? null : label;
+    // let match_id = match["_id"];
+    // // console.log(match["_id"])
+    // // console.log(this.state.feedback_map)
+    // let new_label = (this.state.feedback_map[match_id]
+    //        && label === this.state.feedback_map[match_id]) ? null : label;
     
-    let new_correctness_map = {...this.state.correctness_map};
-    if(new_label === null){
-      delete new_correctness_map[match_id];
-    }else{
-      new_correctness_map[match_id] = new_label;
-    }
+    // let new_feedback_map = {...this.state.feedback_map};
+    // if(new_label === null){
+    //   delete new_feedback_map[match_id];
+    // }else{
+    //   new_feedback_map[match_id] = new_label;
+    // }
+  }
+
+  updateFeedbackMap(new_feedback_map){
     
-    let was_empty = Object.keys(this.state.correctness_map).length === 0
-    let now_empty = Object.keys(new_correctness_map).length === 0
-    if(!was_empty && now_empty){
-      console.log("EMPTY")
-      this.props.interactions_service.send("SKILL_PANEL_FEEDBACK_EMPTY")
-    }else if(was_empty && !now_empty){
-      console.log("NOT EMPTY")
-      this.props.interactions_service.send("SKILL_PANEL_FEEDBACK_NONEMPTY")
-    }
+    // let was_empty = Object.keys(this.state.feedback_map).length === 0
+    // let now_empty = Object.keys(new_feedback_map).length === 0
+    // if(!was_empty && now_empty){
+    //   console.log("EMPTY")
+    //   this.props.interactions_service.send("SKILL_PANEL_FEEDBACK_EMPTY")
+    // }else if(was_empty && !now_empty){
+    //   console.log("NOT EMPTY")
+    //   this.props.interactions_service.send("SKILL_PANEL_FEEDBACK_NONEMPTY")
+    // }
 
-    this.setState({correctness_map : new_correctness_map});
+    this.setState({feedback_map : new_feedback_map});
 
-    console.log(new_correctness_map)
+    console.log(new_feedback_map)
 
-    if(this.props.correctness_callback){
-      this.props.correctness_callback(match || skill,new_label)
-    }
+    // if(this.props.correctness_callback){
+    //   this.props.correctness_callback(match || skill,new_label)
+    // }
   }
 
   queuedSkillApplicationFeedback(){
     var feedback_queue = {}
-    let cm = {...this.state.correctness_map}
+    let cm = {...this.state.feedback_map}
     for (var key in cm) {
       cm[key] = cm[key] === "correct" ? 1 :-1 
     }
@@ -187,7 +193,7 @@ class SkillPanel extends Component{
     if(!deep_equal(prevProps.skill_set,this.props.skill_set)){
       let s_skill_set = this.structure_skills(this.props.skill_set)
       this.setState({
-        correctness_map: {},
+        feedback_map: {},
         s_skill_set : s_skill_set
       })
 
@@ -256,29 +262,29 @@ class SkillPanel extends Component{
                           // innerHTML = colorItems(innerHTML,{"B1":'red',"A1":'green'}); // innerHTML = cramBtw( innerHTML.split("A1"),<Text style={{"color":"red"}}>A1</Text>);
                           // console.log(match_text_by_action,match.action)
                           let innerHTML = (match_text_by_action[match.action] || match_text_by_action["UpdateTextField"])(match,this.props.where_colors)
-                          let correct = this.state.correctness_map[match["_id"]] === "correct";
-                          let incorrect = this.state.correctness_map[match["_id"]] === "incorrect";
-                          // console.log(this.state.correctness_map)
+                          let correct = this.state.feedback_map[match["_id"]] === "correct";
+                          let incorrect = this.state.feedback_map[match["_id"]] === "incorrect";
+                          // console.log(this.state.feedback_map)
                           let match_view = <View style={liststyles.match_container}> 
 
                             <TouchableHighlight underlayColor="#919191"  
-                            onPress = {this.daisyChain(this.handleClickCorrectnessButton,[skill,match,"correct"])}
+                            onPress = {this.daisyChain(this.handleToggleFeedbackButton,[skill,match,"correct"])}
 
                                  // onPress={ this.daisyChain(this.handleClickSkillItem,[skill,match], 
                                                            // match['callback'])} >
                                                            >
-                                <Text style={[liststyles.correctness_button, correct && liststyles.correct_selected]}>{
+                                <Text style={[liststyles.feedback_button, correct && liststyles.correct_selected]}>{
                                   String.fromCharCode(10004)
                                   // innerHTML
                                   // String.fromCharCode(8226)+ " "+Object.values(match['mapping'] || {}).map(.join(", ")
                                 }</Text>
                             </TouchableHighlight>
                             <TouchableHighlight underlayColor="#919191"  
-                            onPress = {this.daisyChain(this.handleClickCorrectnessButton,[skill,match,"incorrect"])}
+                            onPress = {this.daisyChain(this.handleToggleFeedbackButton,[skill,match,"incorrect"])}
                                  // onPress={ this.daisyChain(this.handleClickSkillItem,[skill,match], 
                                                            // match['callback'])} >
                                                            >
-                                <Text style={[liststyles.correctness_button, incorrect && liststyles.incorrect_selected]}>{
+                                <Text style={[liststyles.feedback_button, incorrect && liststyles.incorrect_selected]}>{
                                   String.fromCharCode(10006)
                                   // innerHTML
                                   // String.fromCharCode(8226)+ " "+Object.values(match['mapping'] || {}).map(.join(", ")
@@ -359,7 +365,7 @@ const skillbox_styles = StyleSheet.create({
   content: {
     // "display": "flex",
     flex : 1,
-    
+
     // "height" : "100%",
     // "flexDirection":"row-reverse",
     "flexDirection":"row",
@@ -406,7 +412,7 @@ const liststyles = StyleSheet.create({
     borderColor: 'gray',
     backgroundColor: "'rgba(247,0,0,0.0)'",
   },
-  correctness_button:{
+  feedback_button:{
     fontSize: 20,
     width:27,
     textAlign:"center",

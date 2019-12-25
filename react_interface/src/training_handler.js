@@ -306,7 +306,7 @@ export function build_training_sm(app,interactions_sm){
 			load_training_file : load_training_file,
 			serve_next_training_set : serve_next_training_set,
 			serve_next_agent : serve_next_agent,
-			create_agent : nl.create_agent,
+			create_agent : nl.createAgent,
 			serve_next_problem : serve_next_problem,
 			load_problem : load_problem,
 			// interactions_state_machine : interactions_state_machine,

@@ -1,3 +1,4 @@
+import autobind from 'class-autobind';
 const AL_RETRY_LIMIT = 3;
 const TIMEOUT = 100;
 
@@ -41,16 +42,16 @@ export default class NetworkLayer {
 	constructor(AL_URL,HOST_URL){
 		this.AL_URL = AL_URL
 		this.HOST_URL = HOST_URL
-
-		this.create_agent = this.create_agent.bind(this)
-		this.send_feedback = this.send_feedback.bind(this)
-		this.send_training_data = this.send_training_data.bind(this)
-		this.query_apprentice = this.query_apprentice.bind(this)
-		this.term_print = this.term_print.bind(this)
-		this.kill_this = this.kill_this.bind(this)
+		autobind(this)
+		// this.createAgent = this.createAgent.bind(this)
+		// this.sendFeedback = this.sendFeedback.bind(this)
+		// this.sendTrainingData = this.sendTrainingData.bind(this)
+		// this.queryApprentice = this.queryApprentice.bind(this)
+		// this.term_print = this.term_print.bind(this)
+		// this.kill_this = this.kill_this.bind(this)
 	}
 
-	create_agent(context, event){
+	createAgent(context, event){
 
 		var data = {
             'name': context.agent_name,
@@ -68,58 +69,76 @@ export default class NetworkLayer {
     		 .then(res => res.json())
 	}
 
-	send_feedback(context,event){
-		console.log("SEND_FEEDBACK")
-		if (context.last_action === null) {
+	sendFeedback(context,event){
+		console.log("sendFeedback")
+		if (context.staged_SAI === null) {
 	        console.error('cannot give feedback on no action.');
 	    }
 
-	    var data = {...context.last_action,"state":context.state}
+	    var data = {...context.staged_SAI,"state":context.state}
+	    // if(data.reward == null && context.reward != null){
+	    // 	data.reward = context.reward
+	    // }
 	    if(context.interactive){
 	        data['kwargs'] = {'add_skill_info':true}
 	    }
 	    
-		return this.send_training_data(data,context.agent_id)   
+		return this.sendTrainingData(data,context.agent_id)   
 	}
 
-	send_feedback_explicit(context,event){
-		console.log("SEND_FEEDBACK EXPLICIT")
-		const last_action = context.last_action;
+	sendFeedbackExplicit(context,event){
+		console.log("sendFeedback EXPLICIT")
+		// const staged_SAI = context.staged_SAI;
 		const agent_id = context.agent_id;
 		const state = context.state
+		const skill_applications = context.skill_applications
+		const feedback_map = context.feedback_map
 
+		var skill_applications_subset = []
+		var rewards = []
+		for (var index in feedback_map){
+			var skill = skill_applications[index]
+			skill_applications_subset.push({
+				"rhs_id" : skill["rhs_id"],
+                "mapping" : skill["mapping"]
+			})
+			var reward = feedback_map[index].toLowerCase() == "correct" ? 1 : -1
+			rewards.push(reward);
+		}
 		// if(!reward){
-		// 	reward = last_action.reward
+		// 	reward = staged_SAI.reward
 		// }
-		// var last_action = context.last_action
+		// var staged_SAI = context.staged_SAI
 
-	    if (last_action === null && context.explanations == null) {
-	        console.error('cannot give feedback on no action.');
-	    }
+	    // if (staged_SAI === null && context.explanations == null) {
+	    //     console.error('cannot give feedback on no action.');
+	    // }
 
 	    // var reward = 
 
-	    // last_action.reward = reward
+	    // staged_SAI.reward = reward
 	    // if(!explicit){
-	    //     last_action.state = state
+	    //     staged_SAI.state = state
 	        
 	    // }
-	    var rewards = context.rewards || [last_action.reward]
-	    var skill_applications = context.skill_applications || [{
-	                    "rhs_id" : last_action["rhs_id"],
-	                    "mapping" : last_action["mapping"]
-	                }];
+	    // var rewards = context.rewards || [staged_SAI.reward]
+	    // var skill_applications = context.skill_applications || [{
+	    //                 "rhs_id" : staged_SAI["rhs_id"],
+	    //                 "mapping" : staged_SAI["mapping"]
+	    //             }];
 
 	    var data = {state: state,
-	                skill_applications: skill_applications,
-	                rewards: rewards
+	                skill_applications: skill_applications_subset,
+	                rewards: rewards,
+	                // selection : staged_SAI.selection,
+	                // reward : rewards[0],
 	            	}
 	    console.log("EXPLICIT DATA",data)
 	    if(context.interactive){
 	        data['kwargs'] = {'add_skill_info':true}
 	    }
 
-	    return this.send_training_data(data,context.agent_id)
+	    return this.sendTrainingData(data,context.agent_id)
 
 	    // const URL = this.AL_URL + '/train/' + context.agent_id + '/'
     	// return fetch_retry(URL, 
@@ -141,8 +160,8 @@ export default class NetworkLayer {
 	}
 	
 
-	send_training_data(data,agent_id) {
-		console.log("SEND_TRAINING_DATA")
+	sendTrainingData(data,agent_id) {
+		console.log("sendTrainingData")
 	    // console.log("SAI: ", sai_data)
 
 	    // loggingLibrary.logResponse (transactionID,"textinput1","UpdateTextField","Hello World","RESULT","CORRECT","You got it!");
@@ -169,10 +188,10 @@ export default class NetworkLayer {
 	 //    });
 	}
 
-	query_apprentice(context,event) {
-		console.log("QUERY_APPRENTICE")
+	queryApprentice(context,event) {
+		console.log("queryApprentice")
 
-	    // if(interactive && last_action && last_action.selection == "done" && (last_action.reward || 1) > 0){
+	    // if(interactive && staged_SAI && staged_SAI.selection == "done" && (staged_SAI.reward || 1) > 0){
 	    //     return
 	    // }
 	    // if (agent_id == null) {
@@ -272,7 +291,7 @@ export default class NetworkLayer {
 	            //         }
 	                    
 
-	            //     	// last_action = resp;
+	            //     	// staged_SAI = resp;
 
 	            //         if(verbosity > 0) console.log('action to take!');
 	            //         console.log("RESPONSE: ", resp);
@@ -302,7 +321,7 @@ export default class NetworkLayer {
 	            //     }
 	            // },
 	            // error: function (resp){
-	            // 	create_agent(query_apprentice);
+	            // 	createAgent(queryApprentice);
 	            // }
 	        // });
 	    // }
