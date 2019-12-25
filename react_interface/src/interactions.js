@@ -86,29 +86,40 @@ function _kill_this(context,event){
 function printFeedback(context,event){
 	var nl = context.network_layer
 	var staged_SAI = context.staged_SAI
-	var inps = staged_SAI.inputs['value'] || ""
+	
 	var type  = context.action_type 
 	// var reward = staged_SAI.reward 
-	if(type == "ATTEMPT"){
-		type = staged_SAI.reward > 0 ? "CORRECT" : "INCORRECT"
-	}
+	if(Object.keys(context.feedback_map).length === 0){
 
-	var color = color_map[type]
+		if(type == "ATTEMPT"){
+			type = staged_SAI.reward > 0 ? "CORRECT" : "INCORRECT"
+		}
+
+		var color = color_map[type]
+		var inps = staged_SAI.inputs['value'] || ""
+		
+		nl.term_print('\x1b[' + color + type + ": " + staged_SAI.selection + " -> " + inps + '\x1b[0m')
+	}else{
+		for (var index in context.feedback_map){
+			var skill_app = context.skill_applications[index]
+			var type = context.feedback_map[index].toUpperCase() 
+			var color = color_map[type]
+			var inps = skill_app.inputs['value'] || ""
+			nl.term_print('\x1b[' + color + type + ": " + skill_app.selection + " -> " + inps + '\x1b[0m')
+		}
+	}
 	
-	nl.term_print('\x1b[' + color + type + ": " + staged_SAI.selection + " -> " + inps + '\x1b[0m')
 }
 
+function clearSkillPanel(context,event){
+	context.app.setState({skill_panel_props : {
+		skill_set : {"Applicable Skills" :  {}},
+	}})
+}
 
 function fillSkillPanel(context,event){
-
 	context.app.setState({skill_panel_props : {
-		skill_set : {"Applicable Skills" : event.data['responses']},
-		// select_callback : context.tutor.proposeSAI,
-		// update_count : (context.app.skill_panel_props.update_count || 0) + 1//
-		//select_callback 
-		//correctness_callback
-		//initial_select
-		//where_colors
+		skill_set : {"Applicable Skills" : event.data['responses'] || {}},
 	}})
 }
 
@@ -224,6 +235,7 @@ function get_machine_actions(app){
 				printEvent : (context,event) => {console.log("P_EVT:",event)},
 
 				fillSkillPanel : fillSkillPanel,
+				clearSkillPanel : clearSkillPanel,
 				done : (context,event) => {context.app.training_service.send("PROBLEM_DONE");}, 
 
 				enterSetStartStateMode : tutor.enterSetStartStateMode,
@@ -467,7 +479,7 @@ var interactive_sm = {
 		},
 		Done : {
 			type : 'final',
-			entry : "done",
+			entry : ['clearSkillPanel',"done"],
 			// on : {
 			// 	"" : {target  : "Setting_Start_State", cond : "isFreeAuthor"},
 			// },

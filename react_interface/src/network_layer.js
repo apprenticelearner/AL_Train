@@ -97,10 +97,10 @@ export default class NetworkLayer {
 		var skill_applications_subset = []
 		var rewards = []
 		for (var index in feedback_map){
-			var skill = skill_applications[index]
+			var skill_app = skill_applications[index]
 			skill_applications_subset.push({
-				"rhs_id" : skill["rhs_id"],
-                "mapping" : skill["mapping"]
+				"rhs_id" : skill_app["rhs_id"],
+                "mapping" : skill_app["mapping"]
 			})
 			var reward = feedback_map[index].toLowerCase() == "correct" ? 1 : -1
 			rewards.push(reward);
@@ -171,7 +171,18 @@ export default class NetworkLayer {
 	    		{method: "POST",
 	    		 headers: JSON_HEADERS,
 	    		 body:JSON.stringify(data,ignoreKeys)})
-	    		.then(res => res.json())
+	    		.then(response => response.text())
+				.then(text => {
+				    try {
+				        const data = JSON.parse(text);
+				        return data
+				        // Do your JSON handling here
+				    } catch(err) {
+				    	return {}
+				       // It is text, do you text handling here
+				    }
+				});
+	    		
 		// $.ajax({
 	 //        type: 'POST',
 	 //        url: AL_URL + '/train/' + agent_id + '/',
