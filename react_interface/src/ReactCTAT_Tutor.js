@@ -48,34 +48,6 @@ class CTAT_Tutor extends React.Component {
   constructor(props){
     super(props);
     autobind(this)
-    // this.webview_loaded = this.webview_loaded.bind(this)
-    // this.onTransition = this.onTransition.bind(this)
-    // this.lockElement = this.lockElement.bind(this)
-    // this.unlockElement = this.unlockElement.bind(this)
-    // this.colorElement = this.colorElement.bind(this)
-
-    // this.highlightElement = this.highlightElement.bind(this)
-    // this.unhighlightElement = this.unhighlightElement.bind(this)
-    // this.highlightSAI = this.highlightSAI.bind(this)
-    // this.unhighlightAll = this.unhighlightAll.bind(this)
-
-    // this._triggerWhenInitialized = this._triggerWhenInitialized.bind(this)
-    // this.componentDidUpdate = this.componentDidUpdate.bind(this)
-    // this.applySAI = this.applySAI.bind(this)
-    // this.apply_skill_application = this.apply_skill_application.bind(this)
-    // this.apply_next_example = this.apply_next_example.bind(this)
-
-    // this.handle_user_set_state = this.handle_user_set_state.bind(this)
-    // this.enter_set_start_state_mode = this.enter_set_start_state_mode.bind(this)
-    // this.exit_set_start_state_mode = this.exit_set_start_state_mode.bind(this)
-
-    // this.handle_user_example = this.handle_user_example.bind(this)
-    // this.enter_feedback_mode = this.enter_feedback_mode.bind(this)
-    // this.exit_feedback_mode = this.exit_feedback_mode.bind(this)
-    
-    // this.handle_foci_select = this.handle_foci_select.bind(this)
-    // this.enter_foci_mode = this.enter_foci_mode.bind(this)
-    // this.exit_foci_mode = this.exit_foci_mode.bind(this)
 
     this.where_colors = [  "darkorchid",  "#ff884d",  "#52d0e0", "#feb201",  "#e44161", "#ed3eea", "#2f85ee",  "#562ac6", "#cc24cc"]
 
@@ -310,12 +282,12 @@ class CTAT_Tutor extends React.Component {
     
   }
   
-  enter_set_start_state_mode(){
+  enterSetStartStateMode(){
     this.start_state_elements = []
     this.iframe_content.document.addEventListener(this.CTAT_ACTION, this.handle_user_set_state); 
   }
 
-  exit_set_start_state_mode(){
+  exitSetStartStateMode(){
     this.iframe_content.document.removeEventListener(this.CTAT_ACTION, this.handle_user_set_state); 
 
     console.log("START DONE")
@@ -336,10 +308,10 @@ class CTAT_Tutor extends React.Component {
     // document.activeElement.blur();
     // console.log("STAT",get_state())
     this.start_state_history.push(this.get_state());
-    // last_action = last_proposal = null;
+    // last_action = proposed_SAI = null;
   }
 
-  handle_user_example(evt){
+  handleUserExample(evt){
     var sai = evt.detail.sai
     var sel = sai.getSelection();
 
@@ -352,7 +324,7 @@ class CTAT_Tutor extends React.Component {
 
     // console.log("%cUSER_EXAMPLE: " + sai.getSelection() + " -> " + sai.getInput(), 'color: #2222bb; background: #DDDDDD;');
     // term_print('\x1b[0;33;44m' + "USER_EXAMPLE:" + sai.getSelection() + " -> " + sai.getInput() + '\x1b[0m')
-    // this.iframe_content.document.removeEventListener(CTAT_ACTION, handle_user_example);
+    // this.iframe_content.document.removeEventListener(CTAT_ACTION, handleUserExample);
     // this.iframe_content.document.getElementById("done").removeEventListener("click", _done_clicked); 
 
     var sai = {
@@ -379,7 +351,7 @@ class CTAT_Tutor extends React.Component {
       data : {...sai,reward : 1},
     })
 
-    // this.clear_last_proposal();
+    // this.clear_proposed_SAI();
 
     // if(use_foci && sai_data.selection != 'done'){
     //     if(interactive){window.state_machine_service.send("DEMONSTRATE");}
@@ -394,16 +366,16 @@ class CTAT_Tutor extends React.Component {
   }
 
   _done_clicked(evt){
-    this.handle_user_example({detail:{sai:new this.iframe_content.CTATSAI("done", "ButtonPressed", "-1")}})
+    this.handleUserExample({detail:{sai:new this.iframe_content.CTATSAI("done", "ButtonPressed", "-1")}})
   }
 
-  enter_feedback_mode(){
-    this.iframe_content.document.addEventListener(this.CTAT_ACTION, this.handle_user_example); 
+  enterFeedbackMode(){
+    this.iframe_content.document.addEventListener(this.CTAT_ACTION, this.handleUserExample); 
     this.iframe_content.document.getElementById("done").addEventListener("click", this._done_clicked); 
   }
 
-  exit_feedback_mode(){
-    this.iframe_content.document.removeEventListener(this.CTAT_ACTION, this.handle_user_example); 
+  exitFeedbackMode(){
+    this.iframe_content.document.removeEventListener(this.CTAT_ACTION, this.handleUserExample); 
     this.iframe_content.document.getElementById("done").removeEventListener("click", this._done_clicked); 
   }
 
@@ -432,7 +404,7 @@ class CTAT_Tutor extends React.Component {
     
   }
 
-  enter_foci_mode(){
+  enterFociMode(){
     console.log("FOCI START!")
     this.unhighlightAll()
     this.current_foci = []
@@ -447,7 +419,7 @@ class CTAT_Tutor extends React.Component {
     }
   }
 
-  exit_foci_mode(){
+  exitFociMode(){
     this.unhighlightAll();
     console.log("FOCI DONE!")
     // var foci_of_attention = [];
@@ -464,23 +436,23 @@ class CTAT_Tutor extends React.Component {
   }
 
   //---------- Xstate API with promises ----------------
-  apply_skill_application(context,event){
+  attemptStagedSAI(context,event){
     const promise = new Promise((resolve, reject) => {
       // try {
-        const resp = context.response
-        var currentElement = this.iframe_content.document.getElementById(resp.selection);
+        const sai = context.staged_SAI;
+        var currentElement = this.iframe_content.document.getElementById(sai.selection);
         const CTAT_CORRECT = this.CTAT_CORRECT
         const CTAT_INCORRECT = this.CTAT_INCORRECT
 
         function handle_ctat_feedback(evt){
           currentElement.removeEventListener(CTAT_CORRECT, handle_ctat_feedback);
           currentElement.removeEventListener(CTAT_INCORRECT, handle_ctat_feedback);
-          resolve({...resp,reward: evt.type == CTAT_CORRECT ? 1 : -1})            
+          resolve({...sai,reward: evt.type == CTAT_CORRECT ? 1 : -1})            
         }
 
         currentElement.addEventListener(CTAT_CORRECT, handle_ctat_feedback);
         currentElement.addEventListener(CTAT_INCORRECT, handle_ctat_feedback);    
-        this.applySAI(resp)  
+        this.applySAI(sai)  
       // }catch(err){
       //   reject(err)
       // }
@@ -489,7 +461,7 @@ class CTAT_Tutor extends React.Component {
     });
     return promise
   }
-  apply_next_example(context,event){
+  applyNextExample(context,event){
     const promise = new Promise((resolve, reject) => {
       // try{
         this.applyHint()
@@ -524,6 +496,8 @@ class CTAT_Tutor extends React.Component {
     var sai_obj = new CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
     this.iframe_content.CTATCommShell.commShell.processComponentAction(sai_obj,true)
   }
+
+
 
 
   lockElement(name){
@@ -647,19 +621,20 @@ class CTAT_Tutor extends React.Component {
     return sai
   }
 
-  clearLastProposal(){
-    if(this.last_proposal){
-        this.clearElement(this.last_proposal.selection)
-        this.lockElement(this.last_proposal.selection.replace('?ele-',""))
+  clearProposedSAI(){
+    if(this.proposed_SAI){
+        this.clearElement(this.proposed_SAI.selection)
+        this.unlockElement(this.proposed_SAI.selection.replace('?ele-',""))
         this.unhighlightAll()
+        this.proposed_SAI = null;
     }
   }
 
   proposeSAI(sai){
     // console.log("EVDA", event.data)
     // var sai = event.data
-    this.clearLastProposal()
-    this.last_proposal = {...sai}
+    this.clearProposedSAI()
+    this.proposed_SAI = {...sai}
     this.highlightSAI(sai)
     this.stageSAI(sai)
   }
@@ -668,7 +643,14 @@ class CTAT_Tutor extends React.Component {
     var comp = this.iframe_content.CTATShellTools.findComponent(sai.selection)[0];
     var sai_obj =  new this.iframe_content.CTATSAI(sai.selection, sai.action,sai.inputs["value"]);
     comp.executeSAI(sai_obj);
-    comp.setEnabled(false);
+    this.lockElement(sai.selection)
+  }
+
+  confirmProposedSAI(){
+    if(this.proposed_SAI){
+      this.unhighlightAll()
+      this.proposed_SAI = null  
+    }
   }
 
   applyHint(){

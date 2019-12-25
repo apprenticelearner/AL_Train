@@ -292,7 +292,7 @@ function clear_last_proposal(){
     console.log("CLEAR",last_proposal)
     if(last_proposal){
         tutor.clearElement(last_proposal.selection)
-        tutor.lockElement(last_proposal.selection.replace('?ele-',""))
+        tutor.unlockElement(last_proposal.selection.replace('?ele-',""))
         // elm = iframe_content.document.getElementById(last_proposal.selection.replace('?ele-',""));    
         // elm.firstElementChild.value = "";
         // comp = iframe_content.CTATShellTools.findComponent(last_proposal.selection)[0];
