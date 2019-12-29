@@ -89,7 +89,7 @@ function printFeedback(context,event){
 	
 	var type  = context.action_type 
 	// var reward = staged_SAI.reward 
-	if(Object.keys(context.feedback_map).length === 0){
+	if(!context.feedback_map || Object.keys(context.feedback_map).length === 0){
 
 		if(type == "ATTEMPT"){
 			type = staged_SAI.reward > 0 ? "CORRECT" : "INCORRECT"
@@ -225,7 +225,8 @@ function get_machine_actions(app){
 					return {"reward" : null,
 				   			"rewards" : null,
 				   			"staged_SAI" : null,
-							"skill_applications": null};
+							"skill_applications": null,
+							"feedback_map" : null};
 				}),
 				assignSkillApplications : assign({skill_applications: (context,event) =>
 					event.data.responses || event.data.skill_applications}),
