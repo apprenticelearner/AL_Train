@@ -1,7 +1,7 @@
 {
 	"training_set1" : [{
 		"agent_name":"myAgent1",
-		"agent_type":"ModularAgent",
+		"agent_type":"SoartechAgent",
 		"output_dir":"out/myAgent1",
 
 		"stay_active": true,
@@ -9,13 +9,9 @@
 		"no_ops_parse" : true,
 		
 		"feature_set" : [],
-		"function_set" : ["add","add3","mod10","div10"],
+		"function_set" : [],
 
 		"args": {
-			"search_depth" : 2,
-			"where_learner": "MostSpecific",
-			"when_learner": "decisiontree",
-			"planner" : "vectorized"
 		},
 		"problem_set" : [
 			{"set_params" : 

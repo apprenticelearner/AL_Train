@@ -344,6 +344,7 @@ function handle_user_example(evt){
         action: sai.getAction(),
         inputs: {value: sai.getInput()},
         state: state,
+        next_state: get_state(),
         feedback_type: "example",
         reward: 1
     };
