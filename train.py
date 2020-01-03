@@ -168,6 +168,10 @@ def parse_args(argv):
     parser.add_argument('--broswer-args' , default='', dest = "browser_args",     metavar="<browser_args>",
         help="Shell arguements to pass to the browser."
         )
+
+    parser.add_argument('-t', '--tutor' , default=None, dest = "tutor",     metavar="<tutor>",
+        help="The type of tutor (e.g. 'ctat' or 'stylus')")
+    
     parser.add_argument('-l', '--log-dir' , default=None, dest = "log_dir",     metavar="<log_dir>",
         help="The directory where tab deliminated logging files are written. Overridden by -o/--output.")
     parser.add_argument('-o', '--output' ,  default=None, dest = "output",      metavar="<output>",
@@ -257,6 +261,7 @@ def main(args):
     if(args.interactive): ctat_url += "&interactive=true"
     if(args.use_foci): ctat_url += "&use_foci=true"
     if(args.nools_dir): ctat_url += "&nools_dir=%s" % args.nools_dir
+    if(args.tutor): ctat_url += "&tutor=%s" % args.tutor
 
     
     if(args.browser != None and "selenium" in args.browser):

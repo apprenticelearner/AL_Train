@@ -3,7 +3,6 @@
 // import CollapsibleList from './collapsible_list.js'
 import SkillPanel from './components/skill_panel.js'
 import Buttons from './components/buttons';
-import CTAT_Tutor from './ReactCTAT_Tutor';
 import { vw, vh, vmin, vmax } from 'react-native-expo-viewport-units';
 // import ButtonsMachine from './interactions.js'
 import {build_interactions_sm} from './interactions.js'
@@ -79,7 +78,7 @@ export default class ALReactInterface extends React.Component {
     this.state = {
       default_props: {},
       buttons_props: {},
-      tutor_props: {},
+      tutor_props: this.props.tutor_props || {},
       skill_panel_props: {},
     }
     // this.state = {prob_obj : null};
@@ -119,10 +118,12 @@ export default class ALReactInterface extends React.Component {
   }
 
   render(){
+    const Tutor = this.props.tutorClass
+
     return (
   	<View style={styles.container}>
   		<View style={styles.ctat_tutor}>
-  			<CTAT_Tutor
+  			<Tutor
           //tutor_props = {this.state.prob_obj}
           ref={this.tutor}//{function(tutor) {window.tutor = tutor; console.log("TUTOR IS:",tutor)}}
           id="tutor_iframe"

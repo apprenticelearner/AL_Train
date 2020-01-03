@@ -7,10 +7,32 @@ import * as serviceWorker from './serviceWorker';
 // import ButtonsMachine from './interactions.js'
 
 import { interpret } from 'xstate';
-import CTAT_Tutor from './ReactCTAT_Tutor';
+import CTAT_Tutor from './tutors/CTAT/ReactCTAT_Tutor';
+import StylusTutor from './tutors/Stylus/StylusTutor';
 import App from './App';
 
+const tutor_map =  {
+	"ctatttutor" : CTAT_Tutor,
+	"ctat" : CTAT_Tutor,
+	"stylustutor" : StylusTutor,
+	"stylus" : StylusTutor,
+}
 
+function load_training_file (training_file){
+	console.log("SLOOPERZ",training_file)
+	return fetch(training_file)
+			.then((str) => str.json())
+}
+
+function safeParse(json){
+	var parsed;
+	try {
+    	parsed = JSON.parse(json)
+	} catch (e) {
+	    parsed = null;
+	}
+	return parsed;
+}
 
 function getWebProps(){
 	var urlParams = new URLSearchParams(window.location.search.substring(1));
@@ -20,23 +42,46 @@ function getWebProps(){
 	var props = {AL_URL : urlParams.get('al_url'),
 				 HOST_URL : window.location.origin,
 				 training_file : urlParams.get('training'),
-				 interactive : urlParams.get('interactive') == "true",
-				 use_foci : urlParams.get('use_foci') == "true",
+				 interactive : safeParse((urlParams.get('interactive')||"").toLowerCase()),
+				 use_foci : safeParse((urlParams.get('use_foci')||"").toLowerCase()),
+				 tutor : urlParams.get('tutor')
 			}
 
 	console.log(props,urlParams.get('interactive'))
 	return props
-	
 }
 
-var props = getWebProps()
+function removeEmpty(obj){
+  var out = {}
+  console.log(obj)
+  Object.keys(obj).forEach((key) => {
+  	console.log(key)
+  	if(obj[key] != null){
+  		out[key] = obj[key]
+  	}
+  });
+  return out
+};
 
-ReactDOM.render(
-		<App 
-		ref={(app) => {window.react_interface = app}}
-		style={{"height":"100%"}}
-		{...props}/>
-		, document.getElementById('root'));	
+var props = getWebProps()
+load_training_file(props.training_file).then(function(training_json){
+	console.log("BOOPERSZ", training_json)
+	var training_file_props = training_json.set_params	
+	props = {...training_file_props, ...removeEmpty(props)}
+	props.tutor = (props.tutor || 'ctat').toLowerCase().replace("_","");
+	ReactDOM.render(
+			<App 
+			ref={(app) => {window.react_interface = app}}
+			style={{"height":"100%"}}
+			tutorClass={tutor_map[props.tutor]}
+			{...props}/>
+			, document.getElementById('root'));	
+});
+
+
+
+
+
 
 
 
