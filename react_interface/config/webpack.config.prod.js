@@ -318,6 +318,7 @@ module.exports = {
                     },
                   },
                 ],
+                '@babel/plugin-syntax-import-meta'
               ],
               cacheDirectory: true,
               // Save disk space when time isn't as important

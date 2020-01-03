@@ -1,4 +1,10 @@
-{
+{	
+	"set_params" : {
+		"interactive" : true,
+		"free_author" : true,
+		"tutor" : "CTAT",
+		"use_foci" : true
+	},
 	"training_set1" : [{
 		"agent_name":"myAgent1",
 		"agent_type":"ModularAgent",

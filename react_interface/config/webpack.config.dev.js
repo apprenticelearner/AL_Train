@@ -199,6 +199,7 @@ module.exports = {
             options: {
               formatter: require.resolve('react-dev-utils/eslintFormatter'),
               eslintPath: require.resolve('eslint'),
+              emitWarning: true,
 
             },
             loader: require.resolve('eslint-loader'),
@@ -245,6 +246,7 @@ module.exports = {
                   },
                 ],
                 'react-hot-loader/babel',
+                '@babel/plugin-syntax-import-meta'
               ],
               // This is a feature of `babel-loader` for webpack (not Babel itself).
               // It enables caching results in ./node_modules/.cache/babel-loader/
@@ -271,7 +273,7 @@ module.exports = {
                 ],
               ],
               cacheDirectory: true,
-              plugins: ['react-hot-loader/babel'],
+              plugins: ['react-hot-loader/babel','@babel/plugin-syntax-import-meta'],
               // Don't waste time on Gzipping the cache
               cacheCompression: false,
 

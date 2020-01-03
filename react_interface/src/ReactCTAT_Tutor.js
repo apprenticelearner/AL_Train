@@ -404,6 +404,15 @@ class CTAT_Tutor extends React.Component {
     
   }
 
+
+  getCurrentFoci(){
+    if(this.current_foci){
+      return this.current_foci.map((elm) => elm.id)
+    }else{
+      return []
+    }
+  }
+
   enterFociMode(){
     console.log("FOCI START!")
     this.unhighlightAll()
@@ -411,13 +420,7 @@ class CTAT_Tutor extends React.Component {
     this.iframe_content.document.addEventListener("click", this.handle_foci_select)
   }
 
-  get_current_foci(){
-    if(this.current_foci){
-      return this.current_foci.map((elm) => elm.id)
-    }else{
-      return []
-    }
-  }
+  
 
   exitFociMode(){
     this.unhighlightAll();
@@ -665,7 +668,7 @@ class CTAT_Tutor extends React.Component {
     this.commLibrary.sendXML(message);   
 }
 
-  get_state({encode_relative=true,strip_offsets=true, use_offsets=true, use_class=true, use_id=true,append_ele=true}={}){
+  getState({encode_relative=true,strip_offsets=true, use_offsets=true, use_class=true, use_id=true,append_ele=true}={}){
     var relative_pos_cache = this.relative_pos_cache
     var HTML_PATH = this.HTML_PATH
     var state_array = this.iframe_content.$('div').toArray();
