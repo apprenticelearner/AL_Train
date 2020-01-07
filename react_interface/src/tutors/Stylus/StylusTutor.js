@@ -42,6 +42,10 @@ import {
 import autobind from 'class-autobind';
 import BezierFit from './c_modules/bezier_fit/bezier_fit'
 
+const MAX_STROKE_LENGTH = 512
+const MIN_DIST = 4.0
+
+
 
 
 /////
@@ -211,7 +215,7 @@ export default class StylusTutor extends React.Component {
   penDown(e){
     console.log("HERE",typeof(e.target.className),e.target.className.baseVal == "svg_canvas" || false)
     console.log("DOWN")
-    if(e.target.className.baseVal == "svg_canvas"){
+    if(e.target.className.baseVal == "svg_canvas" || e.target.parentNode.className.baseVal == "svg_canvas"){
       var strokes = this.state.strokes
       var L = Object.keys(strokes).length
       strokes[L] = {}
@@ -245,18 +249,23 @@ export default class StylusTutor extends React.Component {
     //   X,Y = 
     // }
 
-    console.log(this.state.pen_down)
+    // console.log(this.state.pen_down)
     if(this.state.pen_down){
       var strokes = this.state.strokes 
       var stroke = strokes[this.state.n_strokes]
-      var point = [e.clientX,e.clientY]
-      stroke.points.push(point)
-      stroke.points_str += " " + e.clientX.toString()+","+e.clientY.toString()
-      stroke.bezier_splines = this.fitCurve(stroke.points)
+      var p = [e.clientX,e.clientY]
+      var lp = stroke.points[stroke.points.length-1]
+      // console.log("DIST", (p[0]-lp[0])**2 + (p[1]-lp[1])**2)
 
-      this.setState({"strokes":strokes})
-      // var evt = e.nativeEvent;
-      console.log(strokes);  
+      if( (p[0]-lp[0])**2 + (p[1]-lp[1])**2 >= MIN_DIST*MIN_DIST && stroke.points.length < MAX_STROKE_LENGTH){
+        stroke.points.push(p)
+        stroke.points_str += " " + e.clientX.toString()+","+e.clientY.toString()
+        stroke.bezier_splines = this.fitCurve(stroke.points)
+
+        this.setState({"strokes":strokes})
+        // var evt = e.nativeEvent;
+        // console.log(strokes);  
+      }
     }
   }
 
@@ -329,10 +338,11 @@ export default class StylusTutor extends React.Component {
 
   render() {
     let svg_content = []
+    // svg_content.push( <Circle cx={300} cy={200} r="50" fill="red" />);
     for (let i=0; i<this.state.n_strokes+this.state.pen_down;i++){
         var stroke = this.state.strokes[i]
         // if(this.state.mode != "debug"){
-         
+                 
         // }else{
           svg_content.push(<Polyline
             points= {stroke['points_str']}
@@ -340,22 +350,37 @@ export default class StylusTutor extends React.Component {
             stroke={pen_color_map[stroke['evaluation']] || pen_color_map["DEFAULT"]}
             strokeWidth={this.state.mode == "debug" ? ".5" :"3"}
           />);   
-          var curve_str = "";
+          // var curve_str = "";
           var splines = stroke['bezier_splines'] || [];
           var circles = []
           for (let j=0; j<splines.length;j++){
             var b = splines[j];
           // for (const b of splines){
-            curve_str += "M"+b[0]+" "+b[1]+" C"+b[2]+" "+b[3]+" "+b[4]+" " +b[5]+" "+b[6]+" "+b[7]+" ";
-            circles.push( <Circle cx={b[0]+""} cy={b[1]+""} r="3" fill="red" />);
-          }
-          
-          svg_content.push(<Path
+            var curve_str = "M"+b[0]+" "+b[1]+" C"+b[2]+" "+b[3]+" "+b[4]+" " +b[5]+" "+b[6]+" "+b[7]+" ";
+            svg_content.push(<Path
             d= {curve_str}
             fill="none"
             stroke={'blue'}
             strokeWidth="3"
-          />);
+            />);
+
+            circles.push( <Circle cx={b[0]+""} cy={b[1]+""} r="3" fill="red" />);
+          }
+          
+          // svg_content.push(<Path
+          //   d= {curve_str}
+          //   fill="none"
+          //   stroke={'blue'}
+          //   strokeWidth="3"
+          // />);
+
+          var points = stroke['points'] || [];
+          for (let j=0; j<points.length;j++){
+            var p = points[j];
+          // for (const b of splines){
+            // curve_str += "M"+b[0]+" "+b[1]+" C"+b[2]+" "+b[3]+" "+b[4]+" " +b[5]+" "+b[6]+" "+b[7]+" ";
+            circles.push( <Circle cx={p[0]+""} cy={p[1]+""} r="1" fill="red" />);
+          }
           svg_content = svg_content.concat(circles);   
         // }
         
