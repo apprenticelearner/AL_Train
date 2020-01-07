@@ -15,6 +15,7 @@ from "Graphics Gems", Academic Press, 1990
 #include <math.h>
 #include <list>
 #include <chrono> 
+#include <limits>
 
 using namespace std::chrono; 
 
@@ -23,8 +24,16 @@ typedef Point2 *BezierCurve;
 /* Forward declarations */
 extern "C" {
     int c_FitCurve(double *points, int nPts, double error, double *output);
+    void c_InflectionPoints(double *d, int nPts);
+
 }
 std::list<BezierCurve>  FitCurve(Point2  *d, int nPts, double  error);    
+std::list<int> InflectionPoints(Point2  *d,int nPts);
+std::list<int> CurveAvgInflectionPoints(Point2  *d,int nPts);
+std::list<BezierCurve> FitCurve_Inflections(Point2  *d, int nPts, double  error);
+double RegionDiff(int region1, int region2);
+double AngleDiff(double angle1, double angle2);
+int AngleRegion(double angle);
 static  std::list<BezierCurve>  FitCubic(Point2 *d, int first, int last,  Vector2 tHat1, Vector2 tHat2, double error);
 static  double      *Reparameterize(Point2 *d, int first, int last, double *u, BezierCurve bezCurve);
 static  double      NewtonRaphsonRootFind(BezierCurve Q,Point2 P,double u);
@@ -122,27 +131,53 @@ int main()
 
 
 int c_FitCurve(double *points, int nPts, double error, double *output){
-    Point2 *bloop = (Point2 *) points;
-    printf("Points:\n");
-    for(int i=0; i < nPts; i++){
-        Point2 p = bloop[i];
-        printf("%i: %f,%f\n",i, p.x, p.y);
+    // Point2 *bloop = (Point2 *) points;
+    // printf("Points:\n");
+    // for(int i=0; i < nPts; i++){
+    //     Point2 p = bloop[i];
+    //     printf("%i: %f,%f\n",i, p.x, p.y);
         
-    }
-    std::list<BezierCurve> curves = FitCurve( (Point2 *) points , nPts, error);
+    // }
+    auto start = high_resolution_clock::now(); 
+    std::list<BezierCurve> curves = FitCurve_Inflections( (Point2 *) points , nPts, error);
+    auto end = high_resolution_clock::now(); 
+    printf("duration %lli microseconds\n", duration_cast<std::chrono::microseconds>(end - start).count());
+    
     // BezierCurve *out = (BezierCurve *) malloc(4 * sizeof(Point2) * curves.size());
     // BezierCurve *out = (BezierCurve *)output;
     int i = 0;
-    printf("Curves:\n");
+    // printf("Curves:\n");
     for (BezierCurve const &curve: curves) {
         BezierCurve b = curve;
-        printf("%f,%f %f,%f %f,%f %f,%f\n", b[0].x, b[0].y, b[1].x, b[1].y, b[2].x, b[2].y, b[3].x, b[3].y);
+        // printf("%f,%f %f,%f %f,%f %f,%f\n", b[0].x, b[0].y, b[1].x, b[1].y, b[2].x, b[2].y, b[3].x, b[3].y);
         std::memcpy(&output[i*8],curve,4 * sizeof(Point2));
         i++;
     }
     // std::copy(curves.begin(), curves.end(), out);
     return i;
 }
+
+void c_InflectionPoints(double *d, int nPts){
+    std::list<int> inflections = InflectionPoints((Point2 *) d, nPts);
+    for (int const &inf: inflections) {
+        printf("Inflection %i\n", inf);
+    }
+}
+
+std::list<BezierCurve> FitCurve_Inflections(Point2  *d, int nPts, double  error){
+    std::list<BezierCurve> out = {};
+    std::list<int> inflections = CurveAvgInflectionPoints((Point2 *) d, nPts);
+    int prev = 0;
+    std::list<int> last = {nPts-1};
+    inflections.splice(inflections.end(),last);
+    for (int const &inf: inflections) {
+        std::list<BezierCurve> curve = FitCurve(&d[prev], inf-prev+1, error);
+        out.splice(out.end(),curve);
+        prev = inf;
+    }
+    return out;
+}
+
 /*
  *  FitCurve :
  *      Fit a Bezier curve to a set of digitized points 
@@ -154,9 +189,361 @@ std::list<BezierCurve> FitCurve(Point2  *d, int nPts, double  error)
 {
     Vector2 tHat1, tHat2;   /*  Unit tangent vectors at endpoints */
 
+    // std::list<BezierCurve> out = {};
+    // std::list<int> inflections = InflectionPoints((Point2 *) d, nPts);
+    // int prev = 0;
+    // for (int const &inf: inflections) {
+    //     tHat1 = ComputeLeftTangent(d, 0);
+    //     tHat2 = ComputeRightTangent(d, nPts - 1);
+    //     return FitCubic(d, 0, nPts - 1, tHat1, tHat2, error);
+    //     prev = inf;
+    // }
+
     tHat1 = ComputeLeftTangent(d, 0);
     tHat2 = ComputeRightTangent(d, nPts - 1);
     return FitCubic(d, 0, nPts - 1, tHat1, tHat2, error);
+}
+
+const int CONV_WIDTH = 5;
+const double EPSILON = 1e-6;
+
+
+// Point2 FindCenter(Point2 &p1, Point2 &p2, double angle){
+//     // Vector2 diff = { p1.x-p0.x, p1.y-p0.y};
+//     double dx = p1.x-p2.x;
+//     double dy = p1.y-p2.y;
+//     double s = sin(angle);
+//     double c = cos(angle);
+//     double L = sqrt(dx*dx + dy*dx);
+//     double radius = (sin((PI-abs(angle))/2.0)/s)*L;
+//     printf("RADIUS: %f %f %f\n", radius, sin(PI-angle/2.0),sin(angle));
+//     double x = (p1.x + p2.x)/2.0 - radius*(dy/L)*c;
+//     double y = (p1.y + p2.y)/2.0 + radius*(dx/L)*c;
+//     Point2 out = {x,y};
+//     printf("%f %f\n", p1.x,p1.y);
+//     printf("%f %f\n", p2.x,p2.y);
+//     printf("%f\n", angle);
+//     printf("CENTER: %f %f\n", x,y);
+//     return out;
+// }
+
+int AngleRegion(double angle){
+    angle = angle + 22.5*(PI/180);
+    if(angle < 0){angle += 2*PI;}
+    if(angle >= 2*PI){angle -= 2*PI;}
+    // printf("%f %f\n",angle, angle / (45*(PI/180)));
+    return floor(angle / (45.0*(PI/180.0)));
+
+}
+
+double AngleDiff(double angle1, double angle2){
+    double diff = angle1-angle2;
+    if(diff < -PI){diff += 2*PI;}
+    if(diff > PI){diff -= 2*PI;}
+    return diff;
+}
+
+double RegionDiff(int region1, int region2){
+    int diff = region1 - region2;
+    if(diff < -4){diff += 8;}
+    if(diff > 4){diff -= 8;}
+    return diff;
+}
+
+const int STRIDE = 2;
+std::list<int> CurveAvgInflectionPoints(Point2  *d,int nPts){
+    printf("NPOINTS : %i\n", nPts);
+    std::list<int> out = {};
+    std::list<int> inf_list;
+
+    // double *u = ChordLengthParameterize(d, 0, nPts);
+
+    
+    // double avgDiffAngle = 0.0;
+    double totalAngle = 0.0;
+    // double totalChord = 0.0;
+
+    double start_ang;
+    const int c = STRIDE;
+    double  *angles = (double *)malloc((nPts-c) * sizeof(double));
+    for(int i=0; i<nPts-c; i++){
+        // printf("%i\n", i);
+        // Point2 p0 = d[i-c];
+        Point2 p1 = d[i];
+        Point2 p2 = d[i+c];
+        // printf("HERE1\n");
+        // Vector2 diff1 = { p1.x-p0.x, p1.y-p0.y};
+        // Vector2 diff2 = { p2.x-p1.x, p2.y-p1.y};
+        Vector2 diff = { p2.x-p1.x, p2.y-p1.y};
+        // V2Normalize(&diff1);
+        // V2Normalize(&diff2);
+        V2Normalize(&diff);
+        // double cross = diff2.x*diff1.y - diff2.y * diff1.x;
+
+        // double diff_ang = angles[i-c] = asin(cross);//atan2(diff.y,diff.x);
+        angles[i] = atan2(diff.y,diff.x);
+        // if(i==c){
+            // start_ang = atan2(diff1.y,diff1.x);
+        // }
+        // printf("HERE1.5 %f \n", angles[i]*180/PI);
+        // double chord = u[i];
+
+    }
+
+    double  *diffs = (double *)malloc((nPts-c) * sizeof(double));
+    for(int i=1; i<nPts-c; i++){
+        diffs[i] = AngleDiff(angles[i],angles[i-1]);
+    }
+
+    // double  *conv_angles = (double *)malloc((nPts-2-(CONV_WIDTH-1)) * sizeof(double));
+    // const int c = (CONV_WIDTH-1)/2;
+    // for(int i=c;i<nPts-2-c; i++){
+    //     double conv_ang = 0.0;
+    //     for(int j=-c;j<=c; j++){
+    //         conv_ang += angles[i+j];
+    //     }
+    //     conv_angles[i-c] = conv_ang / CONV_WIDTH;
+    //     printf("CONV ANGLES %i : %f\n",i-c,conv_angles[i-c]*(180/PI));
+    // }
+
+    // double totalAngle = 0.0;
+    int inf = 0;
+    int j_start = 0;
+    int prevInfRegion = AngleRegion(angles[0]);
+    int cw;
+    double minAD = std::numeric_limits<double>::max();
+    int minAD_i = -1;
+    int start_mins = -1;
+    int end_mins = -1;
+    for(int i=1; i<nPts-c;i++){
+        // totalAngle += angles[i-c];//* chord;
+        double diff = AngleDiff(angles[inf],angles[i]);
+        cw = diff > 0 ? 1 : -1;
+        // diff = abs(diff)
+        // int region1 = AngleRegion(angles[i-1]);
+        int region = AngleRegion(angles[i]);
+
+        // totalChord += chord;
+        // printf("HERE1.55 %f %f\n", totalAngle, 90.0/(2.0*PI));
+        // printf("ANGLE %f %f %f\n",(start_ang+totalAngle)*180/PI,totalAngle*180/PI, angles[i-1]*(180/PI));
+
+
+
+
+        int rd = abs(RegionDiff(region,prevInfRegion));
+        double ad = cw*AngleDiff(region*45*(PI/180),angles[i]);
+        // printf("%i:ANGLE %f %f %i %i %f \n",i,angles[i]*(180/PI), diff*(180/PI), region , rd, ad*(180/PI));
+        printf("%i:CONDS %i %i %f %f\n", i, region , rd, ad*(180/PI),diffs[i]*(180/PI));
+
+        // printf("%i:DIFF %f\n", i, diff*(180/PI));
+        // if(i > 2 && AngleDiff(angles[i],angles[i-1]);)
+        // double 
+        // if(diff)
+        if(i-inf>=3){
+            // double diff = 
+            double d0 = diffs[i];
+            double d1 = diffs[i-1];
+            double d2 = diffs[i-2];
+            double dl = abs(d0) > abs(d2) ? d0 : d2;
+            if(abs(d1+dl) > 70 * (PI/180)){
+                // if(abs(d1) > abs(dl)){
+                    inf  = i;
+                    inf_list = {inf};
+                    out.splice(out.end(), inf_list); 
+                    int next = fmin(nPts-1,i+1);
+                    prevInfRegion = AngleRegion(angles[next]);;
+                    minAD = std::numeric_limits<double>::max();
+                    minAD_i = -1;
+                    start_mins = -1;
+                    end_mins = -1;
+                    printf("BIG %i\n", inf); 
+                    continue;
+                // }
+                
+            }
+        }
+
+        if(abs(diff) > 30.0 * (PI/180) && (rd >= 1 && region % 2 == 0)){
+            if(abs(ad)+rd*PI < minAD) {minAD_i = i;minAD = abs(ad)+rd*PI;}
+            if(abs(ad) <= 5 * (PI/180) && start_mins == -1){start_mins = i;}                
+            if(abs(ad) > 5 * (PI/180) && start_mins != -1){end_mins = i;}                
+        }             
+        if(rd >= 1){
+            
+            if(ad > 10 * (PI/180) || rd > 2){
+                if(minAD_i != -1){
+                    if(start_mins != -1 && end_mins != -1){
+                        inf = ceil( (start_mins + end_mins)/2);
+                        // printf("MINS : %i %i %i\n", start_mins,end_mins,inf);
+                    }else{
+                        inf = minAD_i;   
+                        // printf("MIN %i\n", inf); 
+                    }
+                    inf_list = {inf};
+                    out.splice(out.end(), inf_list); 
+                    prevInfRegion = AngleRegion(angles[inf]);;
+                    minAD = std::numeric_limits<double>::max();
+                    minAD_i = -1;
+                    start_mins = -1;
+                    end_mins = -1;
+                }
+            }
+        }
+        // if(abs(angles[i-c])*(180/PI) > 45.0) {
+        //     inf = i;
+        //     inf_list = {inf};
+        //     out.splice(out.end(), inf_list); 
+        //     totalAngle = 0.0;
+        // }
+
+        // if(abs(totalAngle)*(180/PI) > 45.0){
+        //     j_start = i;
+        // }
+        
+        // if(abs(totalAngle)*(180/PI) > 90.0){
+        //     // Point2 center = FindCenter(d[0],d[i],totalAngle);
+            
+        //     // printf("HERE1.6\n");
+        //     // double maxDot = 0.0;
+        //     // int j_start = inf;
+        //     double minX = d[j_start].x;
+        //     double maxX = d[j_start].x;
+        //     double minY = d[j_start].y;
+        //     double maxY = d[j_start].y;
+
+        //     int minX_i = j_start;
+        //     int maxX_i = j_start;
+        //     int minY_i = j_start;
+        //     int maxY_i = j_start;
+
+        //     int m_i;
+
+        //     // int max_j = 0;
+        //     for(int j=j_start; j<=i+1; j++){
+        //         Point2 p = d[j];
+        //         if(p.x < minX){ minX = p.x; minX_i = j;}
+        //         if(p.x > maxX){ maxX = p.x; maxX_i = j;}
+        //         if(p.y < minY){ minY = p.y; minY_i = j;}
+        //         if(p.y > maxY){ maxY = p.y; maxY_i = j;}
+        //     }
+
+        //     double minX_d = V2DistanceBetween2Points(&d[j_start],&d[minX_i]);
+        //     double maxX_d = V2DistanceBetween2Points(&d[j_start],&d[maxX_i]);
+        //     double minY_d = V2DistanceBetween2Points(&d[j_start],&d[minY_i]);
+        //     double maxY_d = V2DistanceBetween2Points(&d[j_start],&d[maxY_i]);
+        //     double md;
+        //     inf = minX_i; md = std::numeric_limits<double>::max();
+        //     if(minX_d < md){inf = minX_i; md = minX_d;}
+        //     if(maxX_d < md){inf = maxX_i; md = maxX_d;}
+        //     if(minY_d < md){inf = minY_i; md = minY_d;}
+        //     if(maxY_d < md){inf = maxY_i; md = maxY_d;}
+
+        //     printf("SQSH %f %f %f %f\n", minX_d, minY_d, maxX_d, maxY_d);
+
+            
+
+        //     // maxDot = dot;
+        //     inf_list = {inf};
+        //     out.splice(out.end(), inf_list); 
+
+
+
+
+                
+
+        //         // printf("%i %i %i\n", j, i,nPts);
+        //         // printf("HERE1.7\n");
+        //         // Point2 p = d[j];
+        //         // Vector2 diff = { p.x-center.x, p.y-center.y};
+        //         // V2Normalize(&diff);
+        //         // double dx = p.x-center.x;
+        //         // double dy = p.y-center.y;
+        //         // Vector2
+        //         // double dot = fmax(abs(diff.x),abs(diff.y));
+        //         // if(dot > maxDot){
+        //         //     maxDot = dot;
+        //         //     max_j = j;
+        //         // }
+        //     // }
+        //     totalAngle = 0.0;
+        //     for(int j=inf; j<=i; j++){
+        //         totalAngle += angles[j];
+        //     }
+        //     // start_ang = 
+        //     printf("OUT TOTAL ANGLE %i %i %f\n",inf,i, totalAngle*180/PI);
+        //     // i = minX_i-1;
+        //     // printf("OUT: %i\n", max_j);
+        //     // inf_i = {max_j};
+        //     // out.splice(out.end(), inf_i); 
+        //     // printf("HERE2\n" );
+        // }
+        // printf("HERE2.1\n");
+    }
+    // printf("RETURN\n");
+    // for (int const &inf: out) {
+    //     printf("Inflection %i\n", inf);
+    // }
+    // printf("RETURN2\n");
+    free((void *)angles);
+    free((void *)diffs);
+    return out;
+}
+
+std::list<int> InflectionPoints(Point2  *d,int nPts){
+    // double np = (double)nPts;
+    // int conv_width = fmax(np * .05 , 5);
+    // if(conv_width % 2 == 0){
+    //     conv_width -= 1;
+    // }
+    // printf("conv_width %i, %f\n", conv_width,np * .05);
+    double  *infs = (double *)malloc(nPts * sizeof(double));
+    const int c = (CONV_WIDTH-1)/2;
+    for(int i=0;i<c; i++){
+        infs[i] = 0;
+    }
+    for(int i=c; i<nPts-c; i++){
+        Point2 l = d[i-c];
+        Point2 r = d[i+c];
+        Point2 p = d[i];
+
+        Vector2 ld = { l.x-p.x, l.y-p.y};
+        Vector2 rd = { r.x-p.x, r.y-p.y};
+
+        V2Normalize(&ld);
+        V2Normalize(&rd);
+
+        double x_inf = fmax(abs(ld.x + rd.x),EPSILON)/fmax(abs(ld.x) + abs(rd.x),1.0);
+        double y_inf = fmax(abs(ld.y + rd.y),EPSILON)/fmax(abs(ld.y) + abs(rd.y),1.0);
+
+        infs[i] = fmax(abs(x_inf-.1*y_inf),abs(y_inf-.1*x_inf));
+    }
+    for(int i=nPts-c;i<nPts; i++){
+        infs[i] = 0;
+    }
+
+    // bool  *infs = (bool *)malloc(nPts * sizeof(bool));
+    std::list<int> out = {};
+    std::list<int> inf_i;
+    int c2 = c*2;
+    for(int i=c2; i<nPts-c2; i++){
+        double max = 0.0;
+        int max_i;
+        for(int j=-c2; j<=c2; j++){
+            // printf("%i\n", j);
+            if(infs[i+j] > max){
+                max = infs[i+j];
+                max_i = i+j;
+            }
+        }
+        double thresh = .5;
+        if(max_i == i && infs[i] >= thresh){
+            inf_i = {i};
+            out.splice(out.end(), inf_i); 
+        }
+        printf("%f %i\n", infs[i],max_i == i && infs[i] >= thresh);
+    }
+    return out;
+
 }
 
 
