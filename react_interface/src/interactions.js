@@ -38,7 +38,6 @@ import { Machine,assign,interpret,send } from 'xstate';
 // }
 
 const stateRecalc = assign({state: (context,event) => {
-	console.log("RECALC")
 	if(context.staged_SAI == null || context.staged_SAI.reward > 0){
 		return context.tutor.get_state()
 	}else{
@@ -53,7 +52,6 @@ const assignFoci = assign({staged_SAI: (context,event) => {
 
 //CONDITIONS 
 function saiIsCorrectDone(context,event){
-	console.log("saiIsCorrectDone")
 	const sai_data = context.staged_SAI
 	return (sai_data.selection === "done" && (sai_data.reward == null || sai_data.reward  > 0))
 }
@@ -306,10 +304,8 @@ var non_interactive_sm = {
 		        id: "queryApprentice",
 		        src: "queryApprentice",
 		        onDone: [
-		        	{target: "Applying_Next_Example", conds: "noApplicableSkills",
-		        	 actions : ["assignStagedSAI","assignExample"]},
-		        	{target: "Applying_Staged_SAI",
-		        	actions : ["assignStagedSAI","assignAttempt"]},
+		        	{target: "Applying_Next_Example", cond: "noApplicableSkills"},
+		        	{target: "Applying_Staged_SAI", actions : ["assignStagedSAI"]},
 		        ],
 		        onError: 'Fail',
 			},
@@ -319,20 +315,18 @@ var non_interactive_sm = {
 			invoke : {
 		        id: "attemptStagedSAI",
 		        src: "attemptStagedSAI",
-		        onDone: "Sending_Feedback",
+		        onDone: {target: "Sending_Feedback", actions : ["assignStagedSAI","assignAttempt"]},
 		        onError: 'Fail',
 			},
-			// exit: ["assignStagedSAI","assignAttempt"]
 		},
 
 		Applying_Next_Example : {
 			invoke : {
 		        id: "applyNextExample",
 		        src: "applyNextExample",
-		        onDone: "Sending_Feedback",
+		        onDone: {target: "Sending_Feedback", actions : ["assignStagedSAI","assignExample"]},
 		        onError: 'Fail'
 			},
-			// exit: ["assignStagedSAI","assignExample"]
 		},
 
 		Sending_Feedback : {
@@ -341,7 +335,7 @@ var non_interactive_sm = {
 		        id: "sendFeedback",
 		        src: "sendFeedback",
 		        onDone: [
-			        {target: "Done", conds : "saiIsCorrectDone"},
+			        {target: "Done", cond : "saiIsCorrectDone"},
 			        {target: "Querying_Apprentice"},
 		        ],
 		        onError: 'Fail',
@@ -372,7 +366,7 @@ var interactive_sm = {
 			entry : "stateRecalc",
 			on : {
 				"" : [
-					{"target" : "Setting_Start_State", conds : "isFreeAuthor"},
+					{"target" : "Setting_Start_State", cond : "isFreeAuthor"},
 					{"target" : "Querying_Apprentice"}
 				]
 			}

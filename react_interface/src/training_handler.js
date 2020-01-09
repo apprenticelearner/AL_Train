@@ -45,7 +45,7 @@ function serve_next_training_set (context,event){
 	            name = out[0];
 	        }
 
-	        console.log("START TRAINING SET: ", name);
+	        console.log("START TRAINING SET: ", name, file_params);
 	        var agent_iterator = out[1];        
 
 	        resolve({"updateContext" : {
@@ -65,7 +65,10 @@ function serve_next_agent(context,event){
     	var agent_iterator = context.agent_iterator;
     	console.log("AGENT ITERATOR", agent_iterator.length);
 	    if(context.agent_iterator.length > 0){
-	        var agent_obj = agent_iterator.shift();
+	        var agent_obj = {...(context.file_params['agent'] || {}),...agent_iterator.shift() }
+	        if(context.file_params['agent']['args']){
+	        	agent_obj['args'] = {...context.file_params['agent']['args'], ...agent_obj['args']};
+	        }
 	        var agent_params = agent_obj["set_params"] || {}
 	        var agent_description = "Agent Name:" + agent_obj["agent_name"] + "<br>Agent Type:" + agent_obj["agent_type"] +"<br>"
 	        var problem_iterator = agent_obj["problem_set"];
