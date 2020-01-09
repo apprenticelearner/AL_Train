@@ -24,8 +24,7 @@ typedef Point2 *BezierCurve;
 /* Forward declarations */
 extern "C" {
     int c_FitCurve(double *points, int nPts, double error, double *output);
-    void c_InflectionPoints(double *d, int nPts);
-
+    void c_ML_EncodeCurves(double *curves, int nCurves, double *output);
 }
 std::list<BezierCurve>  FitCurve(Point2  *d, int nPts, double  error);    
 std::list<int> InflectionPoints(Point2  *d,int nPts);
@@ -130,6 +129,8 @@ int main()
 #endif                       /* TESTMODE */
 
 
+
+
 int c_FitCurve(double *points, int nPts, double error, double *output){
     // Point2 *bloop = (Point2 *) points;
     // printf("Points:\n");
@@ -157,12 +158,58 @@ int c_FitCurve(double *points, int nPts, double error, double *output){
     return i;
 }
 
-void c_InflectionPoints(double *d, int nPts){
-    std::list<int> inflections = InflectionPoints((Point2 *) d, nPts);
-    for (int const &inf: inflections) {
-        printf("Inflection %i\n", inf);
+void c_ML_EncodeCurves(double *curves, int nCurves, double *output){
+    Point2 *p_curves = (Point2 *)curves;
+
+    const int encoding_width = 9;
+    for (int i=0; i < nCurves; i++) {
+        Point2 p1 = p_curves[i*4];
+        Point2 c1 = p_curves[i*4+1];
+        Point2 c2 = p_curves[i*4+2];
+        Point2 p2 = p_curves[i*4+3];
+        printf("p1 :%f %f\n, c1: %f %f\n c2: %f %f\n p2: %f %f\n" , p1.x,p1.y,c1.x,c1.y,c2.x,c2.y,p2.x,p2.y);
+
+        double dx = p2.x-p1.x;
+        double dy = p2.y-p1.y;
+        double L = sqrt(dx * dx + dy * dy);
+        double ndx = dx/L;
+        double ndy = dy/L;
+
+        double dc1x = c1.x - p1.x;
+        double dc1y = c1.y - p1.y;
+        double dc1L = sqrt(dc1x * dc1x + dc1y * dc1y);
+        dc1x /= dc1L; dc1y /= dc1L;
+
+        double dc2x = c2.x - p2.x;
+        double dc2y = c2.y - p2.y;
+        double dc2L = sqrt(dc2x * dc2x + dc2y * dc2y);
+        dc2x /= dc2L; dc2y /= dc2L;
+
+        double theta1 = asin(dc1x*ndy - dc1y*ndx);
+        double theta2 = asin(dc2x*ndy - dc2y*ndx);
+
+        double *out_i = &output[i*encoding_width];
+        out_i[0] = p1.x;
+        out_i[1] = p1.y;
+        out_i[2] = dx;
+        out_i[3] = dy;
+        out_i[4] = theta1;
+        out_i[5] = theta2;
+        out_i[6] = dc1L;
+        out_i[7] = dc2L;
+        out_i[8] = 0; //penup / pendown?
+        printf("INDEX: %i\n",((int)out_i)>>3);
+        printf("v :%f %f\n, o: %f %f\n L: %f %f\n", dx, dy, theta1*(180/PI), theta2*(180/PI),dc1L,dc2L);
+
     }
 }
+
+// void c_InflectionPoints(double *d, int nPts){
+//     std::list<int> inflections = InflectionPoints((Point2 *) d, nPts);
+//     for (int const &inf: inflections) {
+//         printf("Inflection %i\n", inf);
+//     }
+// }
 
 std::list<BezierCurve> FitCurve_Inflections(Point2  *d, int nPts, double  error){
     std::list<BezierCurve> out = {};

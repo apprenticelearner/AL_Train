@@ -14,8 +14,12 @@ class BezierFit {
       const output_ptr = Module._malloc((max_stroke_length * 2)  * 
                            HEAPF64.BYTES_PER_ELEMENT); // 1
 
-      const input_buffer = new Float64Array(HEAPF64.buffer,input_ptr,max_stroke_length * 2)
-      const output_buffer = new Float64Array(HEAPF64.buffer,output_ptr,max_stroke_length * 2)
+      const ml_ptr = Module._malloc((max_stroke_length * 9)  * 
+                           HEAPF64.BYTES_PER_ELEMENT); // 1
+
+      const input_buffer = new Float64Array(HEAPF64.buffer, input_ptr, max_stroke_length * 2)
+      const output_buffer = new Float64Array(HEAPF64.buffer, output_ptr, max_stroke_length * 2)
+      const ml_buffer = new Float64Array(HEAPF64.buffer, ml_ptr, max_stroke_length * 9)
 
 
       this.c_module = Module
@@ -24,6 +28,7 @@ class BezierFit {
         var nPts = points.length / 2
         input_buffer.set(points.flat())
         var n_curves = Module._c_FitCurve(input_ptr,nPts,error*error,output_ptr)
+        Module._c_ML_EncodeCurves(output_ptr,n_curves,ml_ptr);
         // Module._c_InflectionPoints(input_ptr,nPts)
         var out = []
         var it = output_buffer.entries()
