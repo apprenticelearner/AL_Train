@@ -8,9 +8,10 @@
 	"training_set1" : [{
 		"agent_name":"myAgent1",
 		"agent_type":"ModularAgent",
-		"output_dir":"out/myAgent1",
 		"stay_active": true,
       	"dont_save": true,
+      	"function_set" : ["Add","Add3","Mod10","Div10"],
+		"feature_set" : [],
 		"args": {
 			"search_depth" : 2,
 			"when_learner": "decisiontree",

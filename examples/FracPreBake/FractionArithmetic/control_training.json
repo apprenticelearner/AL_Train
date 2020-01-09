@@ -1,4 +1,18 @@
 {
+  "set_params" : {
+      "agent" : {
+        "agent_type": "ModularAgent",
+        "stay_active": true,
+        "dont_save": true,
+        "function_set" : ["Add", "Subtract", "Multiply", "Divide"],
+        "feature_set" : ["Equals"],
+        "args": {
+          "when_learner": "trestle",
+          "where_learner": "MostSpecific",
+          "state_variablization" : "whereswap"
+        }
+      }
+  },
   "training_set1": [
     {
       "agent_name": "Control_Stu_01266dfb27cc2e1a087884753dbe4f67",
