@@ -167,7 +167,7 @@ void c_ML_EncodeCurves(double *curves, int nCurves, double *output){
         Point2 c1 = p_curves[i*4+1];
         Point2 c2 = p_curves[i*4+2];
         Point2 p2 = p_curves[i*4+3];
-        printf("p1 :%f %f\n, c1: %f %f\n c2: %f %f\n p2: %f %f\n" , p1.x,p1.y,c1.x,c1.y,c2.x,c2.y,p2.x,p2.y);
+        // printf("p1 :%f %f\n, c1: %f %f\n c2: %f %f\n p2: %f %f\n" , p1.x,p1.y,c1.x,c1.y,c2.x,c2.y,p2.x,p2.y);
 
         double dx = p2.x-p1.x;
         double dy = p2.y-p1.y;
@@ -198,8 +198,8 @@ void c_ML_EncodeCurves(double *curves, int nCurves, double *output){
         out_i[6] = dc1L;
         out_i[7] = dc2L;
         out_i[8] = 0; //penup / pendown?
-        printf("INDEX: %i\n",((int)out_i)>>3);
-        printf("v :%f %f\n, o: %f %f\n L: %f %f\n", dx, dy, theta1*(180/PI), theta2*(180/PI),dc1L,dc2L);
+        // printf("INDEX: %i\n",((int)out_i)>>3);
+        // printf("v :%f %f\n, o: %f %f\n L: %f %f\n", dx, dy, theta1*(180/PI), theta2*(180/PI),dc1L,dc2L);
 
     }
 }
@@ -380,7 +380,7 @@ std::list<int> CurveAvgInflectionPoints(Point2  *d,int nPts){
         int rd = abs(RegionDiff(region,prevInfRegion));
         double ad = cw*AngleDiff(region*45*(PI/180),angles[i]);
         // printf("%i:ANGLE %f %f %i %i %f \n",i,angles[i]*(180/PI), diff*(180/PI), region , rd, ad*(180/PI));
-        printf("%i:CONDS %i %i %f %f\n", i, region , rd, ad*(180/PI),diffs[i]*(180/PI));
+        // printf("%i:CONDS %i %i %f %f\n", i, region , rd, ad*(180/PI),diffs[i]*(180/PI));
 
         // printf("%i:DIFF %f\n", i, diff*(180/PI));
         // if(i > 2 && AngleDiff(angles[i],angles[i-1]);)
@@ -403,7 +403,7 @@ std::list<int> CurveAvgInflectionPoints(Point2  *d,int nPts){
                     minAD_i = -1;
                     start_mins = -1;
                     end_mins = -1;
-                    printf("BIG %i\n", inf); 
+                    // printf("BIG %i\n", inf); 
                     continue;
                 // }
                 

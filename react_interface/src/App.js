@@ -3,7 +3,7 @@
 // import CollapsibleList from './collapsible_list.js'
 import SkillPanel from './components/skill_panel.js'
 import Buttons from './components/buttons';
-import { vw, vh, vmin, vmax } from 'react-native-expo-viewport-units';
+// import { vw, vh, vmin, vmax } from 'react-native-expo-viewport-units';
 // import ButtonsMachine from './interactions.js'
 import {build_interactions_sm} from './interactions.js'
 import {build_training_sm} from './training_handler.js'

@@ -64,6 +64,10 @@ function removeEmpty(obj){
 };
 
 var props = getWebProps()
+
+props.training_file = props.training_file || "/stylus_author.json"
+console.log("WEE", props.training_file)
+
 load_training_file(props.training_file).then(function(training_json){
 	console.log("BOOPERSZ", training_json)
 	var training_file_props = training_json.set_params	
@@ -73,7 +77,7 @@ load_training_file(props.training_file).then(function(training_json){
 			<App 
 			ref={(app) => {window.react_interface = app}}
 			style={{"height":"100%"}}
-			tutorClass={tutor_map[props.tutor]}
+			tutorClass={tutor_map[props.tutor] || StylusTutor}
 			{...props}/>
 			, document.getElementById('root'));	
 });

@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   "container": {
     flex : 1,
     flexDirection : "column",
-    justifyContent: "spaceBetween",
+    // justifyContent: "spaceBetween",
     // marginBottom : 40
     // display: "flex",
     // flexWrap: "wrap",
