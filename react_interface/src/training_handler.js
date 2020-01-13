@@ -66,7 +66,7 @@ function serve_next_agent(context,event){
     	console.log("AGENT ITERATOR", agent_iterator.length);
 	    if(context.agent_iterator.length > 0){
 	        var agent_obj = {...(context.file_params['agent'] || {}),...agent_iterator.shift() }
-	        if(context.file_params['agent']['args']){
+	        if(context.file_params['agent'] && context.file_params['agent']['args']){
 	        	agent_obj['args'] = {...context.file_params['agent']['args'], ...agent_obj['args']};
 	        }
 	        var agent_params = agent_obj["set_params"] || {}
