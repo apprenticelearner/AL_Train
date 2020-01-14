@@ -330,6 +330,22 @@ export default class StylusTutor extends React.Component {
       this.setState({pen_down : false,n_strokes: this.state.n_strokes+1});
 
     }
+    var groups = this.groupStrokes(this.state.strokes)
+    this.elements = []
+    const get_min = (key,strokes) => Math.min(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
+    const get_max = (key,strokes) => Math.max(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
+    for (var i=0; i < groups.length; i++){
+      var elm = {}
+
+      elm.strokes = groups[i].map((indx)=>this.state.strokes[indx])
+      console.log("CLOOOO",elm.strokes,Object.values(elm.strokes))
+      console.log("CLOOOO",Object.values(elm.strokes).map((stroke)=>stroke.bounds["minX"]))
+      elm.bounds = {minX: get_min("minX",elm.strokes),
+                    maxX: get_max("maxX",elm.strokes),
+                    minY: get_min("minY",elm.strokes),
+                    maxY: get_max("maxY",elm.strokes)}
+      this.elements.push(elm);
+    }
     console.log(this.groupStrokes(this.state.strokes))
 
   }
@@ -366,7 +382,7 @@ export default class StylusTutor extends React.Component {
 
         this.setState({"strokes":strokes})
         // var evt = e.nativeEvent;
-        // console.log(strokes);  
+        // console.log("BEZ",stroke.bezier_splines);  
       }
     }
   }
@@ -529,37 +545,53 @@ export default class StylusTutor extends React.Component {
           />);   
         }
 
+        if(stroke.points.length > 1){
           svg_content.push(<Polyline
             points= {stroke['points_str']} fill="none"
             stroke={pen_color_map[stroke['evaluation']] || pen_color_map["DEFAULT"]}
             strokeWidth={strokeWidth}
           />);   
-          
-          // var curve_str = "";
-          if(this.state.mode == "debug"){
-            var splines = stroke['bezier_splines'] || [];
-            var circles = []
-            for (let j=0; j<splines.length;j++){
-              var b = splines[j];
-            // for (const b of splines){
-              var curve_str = "M"+b[0]+" "+b[1]+" C"+b[2]+" "+b[3]+" "+b[4]+" " +b[5]+" "+b[6]+" "+b[7]+" ";
-              svg_content.push(<Path
-                d= {curve_str}
-                fill="none"
-                stroke={'blue'}
-                strokeWidth="3"
-              />);
+        }else{
+          svg_content.push(<Circle
+            cx= {stroke.points[0][0]}
+            cy= {stroke.points[0][1]}
+            r={strokeWidth}
+            fill = {pen_color_map[stroke['evaluation']] || pen_color_map["DEFAULT"]}
+          />);   
+        }
+        
+        // var curve_str = "";
+        if(this.state.mode == "debug"){
+          var splines = stroke['bezier_splines'] || [];
+          var circles = []
+          for (let j=0; j<splines.length;j++){
+            var b = splines[j];
+          // for (const b of splines){
+            var curve_str = "M"+b[0]+" "+b[1]+" C"+b[2]+" "+b[3]+" "+b[4]+" " +b[5]+" "+b[6]+" "+b[7]+" ";
+            svg_content.push(<Path
+              d= {curve_str}
+              fill="none"
+              stroke={'blue'}
+              strokeWidth="3"
+            />);
 
-              circles.push( <Circle cx={b[0]+""} cy={b[1]+""} r="3" fill="red" />);
-            }
-            
-            var points = stroke['points'] || [];
-            for (let j=0; j<points.length;j++){
-              var p = points[j];
-              circles.push( <Circle cx={p[0]+""} cy={p[1]+""} r="1" fill="red" />);
-            }
-            svg_content = svg_content.concat(circles);   
+            circles.push( <Circle cx={b[0]+""} cy={b[1]+""} r="3" fill="red" />);
           }
+          
+          var points = stroke['points'] || [];
+          for (let j=0; j<points.length;j++){
+            var p = points[j];
+            circles.push( <Circle cx={p[0]+""} cy={p[1]+""} r="1" fill="red" />);
+          }
+          svg_content = svg_content.concat(circles);   
+
+          var elems = this.elements || [];
+          for (let j=0; j<elems.length;j++){
+             var b = elems[j].bounds;
+              svg_content.push( <Rect x={b.minX} y={b.minY} width={b.maxX-b.minX} height={b.maxY-b.minY}
+                                  stroke='orange' strokeWidth=".5" fill='none'/> ); 
+          }
+        }
     }
 
 
