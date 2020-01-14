@@ -44,6 +44,7 @@ class BezierFit {
           out[i] = [nxt(),nxt(),nxt(),nxt(),nxt(),nxt(),nxt(),nxt()]
           // console.log("Bezier: ", i, out[i])
         }
+        return out;
       }
 
       this.groupStrokes = (strokes) => {
@@ -59,7 +60,7 @@ class BezierFit {
           lens.push(stroke.points.length);
           points = points.concat(stroke.points);
         } 
-        console.log(points,lens, strokes.length)
+        // console.log(points,lens, strokes.length)
         len_buffer.set(lens);
         const stroke_ptr = Module._malloc(2*points.length*HEAPF64.BYTES_PER_ELEMENT);
         const stroke_buffer = new Float64Array(HEAPF64.buffer, stroke_ptr, points.length*2); 
@@ -67,8 +68,8 @@ class BezierFit {
 
         const out_ptr = Module._malloc(2*strokes.length*HEAP32.BYTES_PER_ELEMENT);
         const out_buffer = new Int32Array(HEAP32.buffer, out_ptr, 2*strokes.length); 
-        var nGroups = Module._c_GroupStrokes(stroke_ptr,len_ptr,strokes.length,out_ptr);
-        console.log("NGRPS",nGroups,strokes.length)
+        var nGroups = Module._c_GroupStrokes(stroke_ptr,len_ptr,strokes.length,out_ptr,.1,.5,50.0);
+        // console.log("NGRPS",nGroups,strokes.length)
         var out = [];
         var it = out_buffer.entries()
         const nxt = () => it.next().value[1]
@@ -80,7 +81,7 @@ class BezierFit {
           }
           out.push(grp);
         }
-        console.log("OUT", out)
+        // console.log("OUT", out)
 
         Module._free(stroke_ptr);
         Module._free(len_ptr);
