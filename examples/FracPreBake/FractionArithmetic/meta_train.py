@@ -3,17 +3,17 @@ import os
 import random
 import subprocess
 
+from functools import partial
+from typing import Iterable
 from itertools import chain, combinations
 from os.path import join as join_path
-from typing import Iterable
 from hyperopt import hp
+from hyperopt import fmin, tpe, space_eval
 
 from examples.FracPreBake.FractionArithmetic.gen_training import (
-    gen_training,
     parse_file,
     get_problem_orders,
 )
-from train import main, parse_args
 
 
 def powerset(iterable: Iterable):
@@ -34,14 +34,24 @@ space = {
 }
 
 
-def gen_control_training(
+def get_sequences( transaction_file= "./ds_1190_Study2_sorted_cleaned.csv"):
+    return get_problem_orders(parse_file(transaction_file))
+
+
+def gen_control_for_agent(
     agent_args,
-    transaction_file="./ds_1190_Study2_sorted_cleaned.csv",
-    problem_html="HTML/fraction_arithmetic.html",
+    agent,
+    sequences,
     problem_brds_relative="../mass_production/mass_production_brds/",
+    problem_html="HTML/fraction_arithmetic.html",
     agent_type="SoartechAgent",
+    max_problems= None
 ):
-    sequences = get_problem_orders(parse_file(transaction_file))
+    problems = []
+    if max_problems:
+        problems = sequences[agent][:max_problems]
+    else:
+        problems = sequences[agent]
 
     control = [
         {
@@ -59,47 +69,48 @@ def gen_control_training(
             ]
             + [
                 {"question_file": join_path(problem_brds_relative, prob + ".brd")}
-                for prob in sequences[agent]
+                for prob in problems
             ],
         }
-        for agent in sequences
     ]
 
     return {"training_set1": control}
 
 
-gen_filename = 'hyperopt_control.json'
+gen_filename = "hyperopt_control.json"
 
 
 def dump_training_json(control, filename=gen_filename):
+    #from pprint import PrettyPrinter
+    #pp = PrettyPrinter()
+    #pp.pprint(control)
     with open(filename, "w") as out:
         json.dump(control, out)
 
 
 def call_train():
-    wd = os.getcwd()
-    print(wd)
     subprocess.run(["python3", "../../../train.py", gen_filename])
 
 
-
-
-def objective(args):
-    print(args)
-    training_json = gen_control_training(args)
-    dump_training_json(training_json)
+def per_agent_objective(args, agent=None, max_problems=None):
+    if not agent:
+        return dummy_eval()
+    json = gen_control_for_agent(args, agent, sequences, max_problems=max_problems)
+    dump_training_json(json)
     call_train()
     return dummy_eval()
 
-import hyperopt.pyll.stochastic
 
-#x = gen_control_training(hyperopt.pyll.stochastic.sample(space))
-#from pprint import PrettyPrinter
 
-#pp = PrettyPrinter()
-#pp.pprint(x)
 
-from hyperopt import fmin, tpe, space_eval
-best = fmin(objective, space, algo=tpe.suggest, max_evals=1)
-print(best)
-print(space_eval(best))
+if __name__=="__main__":
+    sequences = get_sequences()
+    for agent in sequences:
+        agent_objective = partial(per_agent_objective, agent=agent, max_problems=1)
+        best = fmin(agent_objective, space, algo=tpe.suggest, max_evals=10)
+        print(best)
+        break
+
+
+
+
