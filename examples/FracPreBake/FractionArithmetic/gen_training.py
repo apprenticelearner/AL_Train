@@ -5,7 +5,7 @@ from operator import itemgetter
 from os import listdir, getcwd
 from os.path import join as join_path
 from os.path import relpath,dirname, isfile
-from isomorphic import gen_iso_brds, gen_substep_brds
+from examples.FracPreBake.FractionArithmetic.isomorphic import gen_iso_brds, gen_substep_brds
 
 
 def parse_file(filename):
