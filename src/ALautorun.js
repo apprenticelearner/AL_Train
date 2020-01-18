@@ -772,7 +772,8 @@ function checkTypes(element, types){
 
 
 function get_state({encode_relative=false,strip_offsets=true,
-    use_offsets=false, use_class=false, use_id=true,append_ele=true}={}){
+    use_offsets=false, use_class=false,
+    use_id=true,append_ele=true,include_incorrect=false}={}){
     var state_array = iframe_content.$('div').toArray();
     // state_array.push({current_task: current_task});
 
@@ -798,6 +799,10 @@ function get_state({encode_relative=false,strip_offsets=true,
 
     		if(checkTypes(element, ["CTATTextInput","CTATComboBox","CTATTable--cell"])){
     			obj["value"] = element.firstElementChild.value;
+                if(!include_incorrect && checkTypes(element.firstElementChild, ["CTAT--incorrect"])){
+                    console.log("ELE TO CHECK", element);
+    			    obj["value"] = "";
+                }
     			obj["contentEditable"] = (element.firstElementChild.contentEditable == 'true');
     			// obj["name"] = element.id
     		}
