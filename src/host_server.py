@@ -43,6 +43,7 @@ OVERRIDE_TIME = True
 
 #defining function to run on shutdown
 def cleanup():
+    time.sleep(2)
     post_queue.join()
     write_queue.join()
     log_file_handle.close()
