@@ -80,9 +80,9 @@ def get_first_attempt_correctness(transactions):
         else:
             hint = False
 
-        if step not in correctness and not prev_hint:
+        if step not in correctness[student][problem] and not prev_hint:
             correctness[student][problem][step] = d['Outcome']
-        if step not in correctness and prev_hint:
+        if step not in correctness[student][problem] and prev_hint:
             correctness[student][problem][step] = 'INCORRECT'
 
     for student in correctness:
