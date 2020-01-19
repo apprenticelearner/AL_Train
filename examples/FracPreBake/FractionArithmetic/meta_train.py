@@ -26,9 +26,16 @@ dic2 = {'num3': 'num5', 'den3': 'den5'}
 def get_first_attempt_correctness(transactions):
     data = [r for r in transactions]
 
+    for d in data:
+        if d['Time'].isnumeric():
+            d['Time'] = int(d['Time'])
+
     # This comes from never trusting the order of a datashop transaction file
     # but its probably unnecessary
     data.sort(key=itemgetter('Anon Student Id', 'Time'))
+    if len(data) < 200:
+        print(data)
+
     hint = False
 
     correctness = {}
@@ -135,10 +142,10 @@ def call_eval(human_correctness, agent_file, agent):
     return sum(error)
 
 
-skills = [# "click_done",
-          # "check",
+skills = ["click_done",
+          "check",
           "equal",
-          # "update_answer", "update_convert",
+          "update_answer", "update_convert",
           "add",
           "multiply"]
 
