@@ -285,7 +285,7 @@ if __name__ == "__main__":
         agent_objective = partial(
             per_agent_objective, transaction_file=transaction_file,
             human_correctness=human_correctness,
-            agent=agent, max_problems=2)
-        best = fmin(agent_objective, space, algo=tpe.suggest, max_evals=1)
+            agent=agent, max_problems=1)
+        best = fmin(agent_objective, space, algo=tpe.suggest, max_evals=5)
         print(best)
         break
