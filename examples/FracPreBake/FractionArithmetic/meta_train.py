@@ -142,12 +142,25 @@ def call_eval(human_correctness, agent_file, agent):
     return sum(error)
 
 
-skills = ["click_done",
-          "check",
-          "equal",
-          "update_answer", "update_convert",
-          "add",
-          "multiply"]
+skills = [# "click_done",
+          # "check",
+          # "equal",
+          # "update_answer", "update_convert",
+          # "add",
+          # "multiply"
+          'correct_multiply_num',
+          'correct_multiply_denom',
+          'correct_done',
+          'correct_add_same_num',
+          'correct_copy_same_denom',
+          'correct_check',
+          'correct_convert_num1',
+          'correct_convert_num2',
+          'correct_convert_denom1',
+          'correct_convert_denom2',
+          'correct_add_convert_num',
+          'correct_copy_convert_denom'
+          ]
 
 
 space = {
@@ -271,7 +284,7 @@ if __name__ == "__main__":
         agent_objective = partial(
             per_agent_objective, transaction_file=transaction_file,
             human_correctness=human_correctness,
-            agent=agent, max_problems=2)
-        best = fmin(agent_objective, space, algo=tpe.suggest, max_evals=1)
+            agent=agent, max_problems=1)
+        best = fmin(agent_objective, space, algo=tpe.suggest, max_evals=5)
         print(best)
         break
