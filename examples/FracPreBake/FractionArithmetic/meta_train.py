@@ -142,17 +142,31 @@ def call_eval(human_correctness, agent_file, agent):
     return sum(error)
 
 
+def boolean_choice(name):
+    return hp.choice(name, [True, False])
+
 skills = ["click_done",
           "check",
           "equal",
           "update_answer", "update_convert",
           "add",
-          "multiply"]
-
+          "multiply",
+          'correct_multiply_num',
+          'correct_multiply_denom',
+          'correct_done',
+          'correct_add_same_num',
+          'correct_copy_same_denom',
+          'correct_check',
+          'correct_convert_num1',
+          'correct_convert_num2',
+          'correct_convert_denom1',
+          'correct_convert_denom2',
+          'correct_add_convert_num',
+          'correct_copy_convert_denom']
 
 space = {
     # "prior_skills": hp.choice("prior_skills", list(powerset(skills))),
-    "prior_skills": skills,
+    "prior_skills": {skill: boolean_choice(skill) for skill in skills},
     "request_epsilon": hp.uniform("request_epsilon", 0.01, 0.99),
     "train_epsilon": hp.uniform("train_epsilon", 0.01, 0.99),
     "action_penalty": hp.uniform('action_penalty', -1, 0)
