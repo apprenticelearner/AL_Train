@@ -80,6 +80,9 @@ def get_first_attempt_correctness(transactions):
         else:
             hint = False
 
+        if step in ["blankProblem", "blankAnswer", "operation2"]:
+            continue
+
         if step not in correctness[student][problem] and not prev_hint:
             correctness[student][problem][step] = d['Outcome']
         if step not in correctness[student][problem] and prev_hint:
@@ -284,7 +287,7 @@ if __name__ == "__main__":
         agent_objective = partial(
             per_agent_objective, transaction_file=transaction_file,
             human_correctness=human_correctness,
-            agent=agent, max_problems=1)
+            agent=agent, max_problems=100)
         best = fmin(agent_objective, space, algo=tpe.suggest, max_evals=5)
         print(best)
         break
