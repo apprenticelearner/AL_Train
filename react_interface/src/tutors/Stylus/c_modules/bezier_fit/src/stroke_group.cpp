@@ -70,7 +70,7 @@ int c_GroupBounds(void *b, int n, int *output){
 
     std::list<AxisElm *> workingSet = {};
     for (int i = 0; i < n*2; i++) {
-    	Bound b = *(*sorted_xs[i]).bound;
+    	// Bound b = *(*sorted_xs[i]).bound;
     	// printf("%i, %f %f\n", b.id, b.minX, xs[i].val);
 
     	if((*sorted_xs[i]).isMin){
@@ -194,7 +194,7 @@ int c_GroupStrokes(double *d,int *lens, int n_strokes,int *output,double inflate
 	Point2 *points = (Point2 *)d;
 	Bound *bounds = (Bound *)malloc(sizeof(Bound) * (n_strokes) );
 	for (int i = 0; i < n_strokes; i++) { 
-		int prev;
+		// int prev;
 		Bound b = GetBounds((double *)&points[cumLens[i]], cumLens[i+1]-cumLens[i], inflate, squareFactor, minWH);
 		b.id = i;
 		bounds[i] = b;

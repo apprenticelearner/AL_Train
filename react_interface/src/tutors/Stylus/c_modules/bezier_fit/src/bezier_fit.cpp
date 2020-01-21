@@ -16,6 +16,8 @@ from "Graphics Gems", Academic Press, 1990
 #include <list>
 #include <chrono> 
 #include <limits>
+#include <cstring>
+#include <iostream>
 
 using namespace std::chrono; 
 
@@ -122,9 +124,9 @@ int main()
         // BezierCurve bez = curves[i];
         printf("%f,%f %f,%f %f,%f %f,%f\n", b[0].x, b[0].y, b[1].x, b[1].y, b[2].x, b[2].y, b[3].x, b[3].y);
     }
-    printf("duration %lli\n", duration_cast<std::chrono::milliseconds>(end - start).count());
+    std::cout << "duration" << duration_cast<std::chrono::milliseconds>(end - start).count() << "microseconds";
     // printf("duration %f", duration.count());
-    free(&curves);
+    // free(&curves);
 }
 #endif                       /* TESTMODE */
 
@@ -142,14 +144,14 @@ int c_FitCurve(double *points, int nPts, double error, double *output){
     auto start = high_resolution_clock::now(); 
     std::list<BezierCurve> curves = FitCurve_Inflections( (Point2 *) points , nPts, error);
     auto end = high_resolution_clock::now(); 
-    printf("duration %lli microseconds\n", duration_cast<std::chrono::microseconds>(end - start).count());
+    std::cout << "duration" << duration_cast<std::chrono::milliseconds>(end - start).count() << "microseconds";
     
     // BezierCurve *out = (BezierCurve *) malloc(4 * sizeof(Point2) * curves.size());
     // BezierCurve *out = (BezierCurve *)output;
     int i = 0;
     // printf("Curves:\n");
     for (BezierCurve const &curve: curves) {
-        BezierCurve b = curve;
+        // BezierCurve b = curve;
         // printf("%f,%f %f,%f %f,%f %f,%f\n", b[0].x, b[0].y, b[1].x, b[1].y, b[2].x, b[2].y, b[3].x, b[3].y);
         std::memcpy(&output[i*8],curve,4 * sizeof(Point2));
         i++;
@@ -197,7 +199,7 @@ void c_ML_EncodeCurves(double *curves, int nCurves, double *output){
         out_i[5] = theta2;
         out_i[6] = dc1L;
         out_i[7] = dc2L;
-        out_i[8] = 0; //penup / pendown?
+        out_i[8] = i==0 || i==nCurves-1 ? (i==0 ? 1 : -1) : 0 ; //penup == -1; pendown == 1; else 0;
         // printf("INDEX: %i\n",((int)out_i)>>3);
         // printf("v :%f %f\n, o: %f %f\n L: %f %f\n", dx, dy, theta1*(180/PI), theta2*(180/PI),dc1L,dc2L);
 
@@ -307,10 +309,10 @@ std::list<int> CurveAvgInflectionPoints(Point2  *d,int nPts){
 
     
     // double avgDiffAngle = 0.0;
-    double totalAngle = 0.0;
+    // double totalAngle = 0.0;
     // double totalChord = 0.0;
 
-    double start_ang;
+    // double start_ang;
     const int c = STRIDE;
     double  *angles = (double *)malloc((nPts-c) * sizeof(double));
     for(int i=0; i<nPts-c; i++){
@@ -355,7 +357,7 @@ std::list<int> CurveAvgInflectionPoints(Point2  *d,int nPts){
 
     // double totalAngle = 0.0;
     int inf = 0;
-    int j_start = 0;
+    // int j_start = 0;
     int prevInfRegion = AngleRegion(angles[0]);
     int cw;
     double minAD = std::numeric_limits<double>::max();
