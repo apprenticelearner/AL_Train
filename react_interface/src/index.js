@@ -44,10 +44,11 @@ function getWebProps(){
 				 training_file : urlParams.get('training'),
 				 interactive : safeParse((urlParams.get('interactive')||"").toLowerCase()),
 				 use_foci : safeParse((urlParams.get('use_foci')||"").toLowerCase()),
-				 tutor : urlParams.get('tutor')
+				 tutor : urlParams.get('tutor'),
+				 nools_dir : urlParams.get('nools_dir'), 
 			}
 
-	console.log(props,urlParams.get('interactive'))
+	console.log("PROPS",props,urlParams.get('interactive'))
 	return props
 }
 

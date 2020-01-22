@@ -529,7 +529,7 @@ export default class StylusTutor extends React.Component {
         // if(this.state.mode != "debug"){
                  
         // }else{
-        strokeWidth = this.state.mode == "debug" ? ".5" :(stroke.id == this.state.elmUnderPointID ?  "4": "3")
+        var strokeWidth = this.state.mode == "debug" ? ".5" :(stroke.id == this.state.elmUnderPointID ?  "4": "3")
         if(stroke.highlight != null){
           svg_content.push(<Polyline
             points= {stroke['points_str']} fill="none"

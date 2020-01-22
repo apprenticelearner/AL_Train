@@ -139,7 +139,7 @@ class Buttons extends Component{
             {!this.props.debugmode && 
             <View style={styles.button_wrapper3}>
               <TouchableHighlight style={styles.nools_button} underlayColor="#CCCCCC" 
-                                  onPress={this.props.nools_callback}>
+                                  onPress={() => send("GEN_NOOLS")}>
                <Text style={styles.nools_button_text}>{"Generate Nools"}</Text>
               </TouchableHighlight>
             </View>
