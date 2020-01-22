@@ -36,6 +36,14 @@ import { Machine,assign,interpret,send } from 'xstate';
 // 	context.network_layer.sendTrainingData(data)
 
 // }
+const appendStartHistory = assign({start_state_history: (context,event) => {
+	var state = context.tutor.get_state()
+	var history = context.start_state_history || []
+	history.push(state)
+	return history
+}});
+	
+	
 
 const stateRecalc = assign({state: (context,event) => {
 	if(context.staged_SAI == null || context.staged_SAI.reward > 0){
@@ -229,6 +237,7 @@ function get_machine_actions(app){
 				assignSkillApplications : assign({skill_applications: (context,event) =>
 					event.data.responses || event.data.skill_applications}),
 				// done : window.signal_done,
+				
 				printFeedback : printFeedback,
 				kill_this : _kill_this,
 				printEvent : (context,event) => {console.log("P_EVT:",event)},
@@ -251,6 +260,9 @@ function get_machine_actions(app){
 				recalcFeedbackMap : recalcFeedbackMap,
 				assignFeedbackMap : assignFeedbackMap,
 				toggleFeedbackStyle : toggleFeedbackStyle,
+
+				generate_nools : network_layer.generate_nools,
+				appendStartHistory : appendStartHistory,
 		},
 		guards : {
 			saiIsCorrectDone : saiIsCorrectDone,
@@ -373,7 +385,7 @@ var interactive_sm = {
 		},
 		"Setting_Start_State": {
 			entry : "enterSetStartStateMode",
-  			on: { "START_STATE_SET": "Querying_Apprentice" },
+  			on: { "START_STATE_SET": {target : "Querying_Apprentice", actions: ["appendStartHistory"] }},
   			exit : ["exitSetStartStateMode","stateRecalc"]
   		},
 		Querying_Apprentice: {
@@ -425,7 +437,9 @@ var interactive_sm = {
 				//
 				"DEMONSTRATE" : {target : "Waiting_Select_Foci",
 				   	actions : ["assignStagedSAI","assignExample","printEvent","clearProposedSAI"]},
+				"GEN_NOOLS" : {actions : ["generate_nools"]}
 				 },
+				 
 			exit : ["exitFeedbackMode"]
 		},
 		// "Applying_Staged_SAI" : {

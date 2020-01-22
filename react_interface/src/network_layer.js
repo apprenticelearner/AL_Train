@@ -42,6 +42,7 @@ export default class NetworkLayer {
 	constructor(AL_URL,HOST_URL){
 		this.AL_URL = AL_URL
 		this.HOST_URL = HOST_URL
+		this.request_history = []
 		autobind(this)
 		// this.createAgent = this.createAgent.bind(this)
 		// this.sendFeedback = this.sendFeedback.bind(this)
@@ -62,6 +63,7 @@ export default class NetworkLayer {
 
     	console.log(this.AL_URL + '/create/')
 
+    	this.request_history = []
     	return fetch_retry(this.AL_URL + '/create/', 
     		{method: "POST",
     		 headers: JSON_HEADERS,
@@ -224,6 +226,8 @@ export default class NetworkLayer {
 	        data['kwargs'] = {'add_skill_info':true,'n':0}
 	    }
 
+	    this.request_history.push(data)
+
 	    const URL = this.AL_URL + '/request/' + context.agent_id + '/'
 
 	    return fetch_retry(URL,
@@ -246,6 +250,28 @@ export default class NetworkLayer {
 		    		{method: "QUIT",
 		    		 headers: {"Content-type": "text/plain; charset=utf-8"},
 		    		 body:data})
+	}
+
+	generate_nools(context,event){
+		const URL = this.AL_URL + '/get_skills/' + context.agent_id + '/'
+		var data = {'states':this.request_history.map(x => x['state'])}
+	    return fetch_retry(URL, 
+	    		{method: "POST",
+	    		 headers: JSON_HEADERS,
+	    		 body:JSON.stringify(data,ignoreKeys)})
+	    		.then(res => res.json())
+				.then(json => {
+					console.log("NOOLS DIR: ", context.nools_dir)
+				    var out_data = {"nools_dir": context.nools_dir,
+		                "problems": context.start_state_history,
+		                "skills" : json
+		                }
+		            return fetch(this.HOST_URL, {
+		            	method: "GEN_NOOLS",
+		            	headers: JSON_HEADERS,
+		            	body : JSON.stringify(out_data, ignoreKeys)
+		            	});
+				});
 	}
 
 }
