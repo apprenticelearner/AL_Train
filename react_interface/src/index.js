@@ -7,9 +7,10 @@ import * as serviceWorker from './serviceWorker';
 // import ButtonsMachine from './interactions.js'
 
 import { interpret } from 'xstate';
-import CTAT_Tutor from './tutors/CTAT/ReactCTAT_Tutor';
+import CTAT_Tutor from './tutors/CTAT/CTAT_Tutor';
 import StylusTutor from './tutors/Stylus/StylusTutor';
 import App from './App';
+import RJSON from 'relaxed-json'
 
 const tutor_map =  {
 	"ctatttutor" : CTAT_Tutor,
@@ -19,9 +20,10 @@ const tutor_map =  {
 }
 
 function load_training_file (training_file){
-	console.log("SLOOPERZ",training_file)
+	// console.log("SLOOPERZ",training_file)
 	return fetch(training_file)
-			.then((str) => str.json())
+			.then((str) => str.text())//str.json())
+			.then((str) => RJSON.parse(str))//str.json())
 }
 
 function safeParse(json){
@@ -67,10 +69,10 @@ function removeEmpty(obj){
 var props = getWebProps()
 
 props.training_file = props.training_file || "/stylus_author.json"
-console.log("WEE", props.training_file)
+// console.log("WEE", props.training_file)
 
 load_training_file(props.training_file).then(function(training_json){
-	console.log("BOOPERSZ", training_json)
+	// console.log("BOOPERSZ", training_json)
 	var training_file_props = training_json.set_params	
 	props = {...training_file_props, ...removeEmpty(props)}
 	props.tutor = (props.tutor || 'ctat').toLowerCase().replace("_","");

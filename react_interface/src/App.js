@@ -97,6 +97,13 @@ export default class ALReactInterface extends React.Component {
     })
   }
 
+  changeInteractionMode(d){
+    this.training_service.send({
+        type : "CHANGE_INTERACTION_MODE",
+        data : d,
+    })
+  }
+
   componentDidMount(){
     console.log("MOUNTED")
     var tutor, nl, wd,tf
@@ -114,6 +121,18 @@ export default class ALReactInterface extends React.Component {
       console.log("SUBSCRIBE:",state);
     });
     console.log("T MACHINE!", this.training_service)
+
+    window.setTutorMode = (x) => {
+      this.changeInteractionMode({"tutor_mode" : x})
+    }
+
+    window.setInteractive = (x) => {
+      this.changeInteractionMode({"interactive" : x})
+    }
+
+    window.setFreeAuthor = (x) => {
+      this.changeInteractionMode({"free_author" : x})
+    }
 
   }
 

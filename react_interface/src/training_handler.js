@@ -1,4 +1,6 @@
 import { Machine,assign,interpret } from 'xstate';
+import RJSON from 'relaxed-json'
+import {build_interactions_sm} from './interactions.js'
 var fs = require("fs")
 // const path = require("path")
 
@@ -12,7 +14,8 @@ const CTATGuid = {s4:function s4() {
 function load_training_file (context,event){
 	console.log("TRAINING JSON:", context.training_file)
 	return fetch(context.training_file)
-			.then((response) => response.json())
+			.then((response) => response.text())//response.json())
+			.then((response) => RJSON.parse(response))//response.json())
 			.then((response) => Object.entries(response))
 			.then((response) => {return {updateContext : {training_iterator : response}}})
 	// var promise = new Promise((resolve, reject) => {
@@ -29,6 +32,8 @@ function load_training_file (context,event){
 	// });
 	// return promise
 };
+
+
 
 function serve_next_training_set (context,event){
 	var promise = new Promise((resolve, reject) => {
@@ -71,7 +76,8 @@ function serve_next_agent(context,event){
 	        }
 	        var agent_params = agent_obj["set_params"] || {}
 	        var agent_description = "Agent Name:" + agent_obj["agent_name"] + "<br>Agent Type:" + agent_obj["agent_type"] +"<br>"
-	        var problem_iterator = agent_obj["problem_set"];
+	        var problem_set = agent_obj["problem_set"];
+	        var prior_knowledge = agent_obj["prior_knowledge"] || [];
 
 	        var other_data = {...agent_obj}
 	        delete other_data["problem_set"];
@@ -91,11 +97,37 @@ function serve_next_agent(context,event){
 	        	other_agent_data : other_data,
 
 	        	agent_iterator:  agent_iterator,
-	        	problem_iterator : problem_iterator,
+	        	problem_set : problem_set,
+	        	prior_knowledge : prior_knowledge,
 	        }})
 	    }else{
 	        resolve(null)
 	    }
+	});
+	return promise
+}
+
+function handle_prior_knowledge(context,event){
+	var promise = new Promise((resolve, reject) => {
+		console.log("WOOP?")
+		var prior_knowledge =  context.prior_knowledge;
+		while(prior_knowledge.length > 0){
+			console.log("CURRENT", prior_knowledge)
+			var current = prior_knowledge.shift();
+			//current.type == "Pik" || 
+			var type = current.type.toLowerCase().replace("_", "")
+			if(type == "bestintersect"){
+								
+
+			}else{
+
+			}
+		} 
+
+		resolve({"updateContext" : {
+	        	prior_knowledge : prior_knowledge,       	
+				problem_iterator : context.problem_set,
+	        }})
 	});
 	return promise
 }
@@ -119,6 +151,8 @@ function _next_prob_obj(problem_iterator,agent_params,file_params){
     return [prob_obj, agent_params]
 }
 
+
+
 function serve_next_problem (context,event){
 	var promise = new Promise((resolve, reject) => {
 		var prob_obj = null;
@@ -127,6 +161,7 @@ function serve_next_problem (context,event){
 		var problem_iterator = context.problem_iterator
 		var nl = context.network_layer
 		var interactive = context.interactive
+		console.log("PROBLEM ITERATOR", problem_iterator.length);
 		if(problem_iterator.length > 0){
 	        [prob_obj, agent_params] = _next_prob_obj(problem_iterator,agent_params,file_params);
 	        console.log(prob_obj,agent_params)
@@ -179,12 +214,13 @@ function AAID(interactions_state_machine){
 	}
 }
 
-function gerp(event){
-	console.log("GERP")
-	return event.data['agent_id']
-}
+// function gerp(event){
+// 	console.log("GERP")
+// 	return event.data['agent_id']
+// }
 
 function start_training_interaction(context,event){
+	console.log("START TRAINING INTERACTION")
 	var app = context.app
 
 	var pass_along_context = {
@@ -200,6 +236,37 @@ function start_training_interaction(context,event){
 	interactions_service.onTransition(app.onInteractionTransition)
 	interactions_service.start()
 }
+
+function allDone(context,event){
+	var nl = context.network_layer
+	console.log("ITS ALL DONE!");
+    nl.kill_this("\n TRAINING FINISHED SUCCESSFULLY! \n",'info');
+    // nl.term_print('\x1b[0;30;47m' + "TRAINING FINISHED SUCCESSFULLY!" + '\x1b[0m');
+}
+
+const assignInteractionSM = assign({"interactions_sm" : (context,event) =>  {
+	var d = {...{app:context.app,
+		    	 interactive:context.interactive,
+		    	 free_author:context.free_author,
+		    	 tutor_mode:context.tutor_mode},
+		     ...event.data}
+	console.log("assignInteractionSM", d)
+	var sm = build_interactions_sm(d.app, d.interactive, d.free_author, d.tutor_mode)
+	return sm
+}})
+
+
+
+
+
+
+// function create_agent(context,event){
+// 	var nl = context.network_layer;
+	
+
+// 	return nl.create_agent(context,event)
+
+// }
 
 
 export function build_training_sm(app,interactions_sm){
@@ -262,7 +329,15 @@ export function build_training_sm(app,interactions_sm){
 				invoke : {
 					id: "create_agent",
 					src: "create_agent",
-					onDone: {target : "Serving_Problems",actions: "assignAgentId" },
+					onDone: {target : "Handling_Prior_Knowledge",actions: "assignAgentId" },
+					onError: {target :'Fail', actions : "logError"}
+				}
+			},
+			Handling_Prior_Knowledge: {
+				invoke : {
+					id: "handle_prior_knowledge",
+					src: "handle_prior_knowledge",
+					onDone: {target : "Serving_Problems", actions: "updateContext" },
 					onError: {target :'Fail', actions : "logError"}
 				}
 			},
@@ -285,7 +360,8 @@ export function build_training_sm(app,interactions_sm){
 			},
 			Training: {
 				entry : "start_training_interaction",
-				on : {PROBLEM_DONE : "Serving_Problems"}
+				on : {PROBLEM_DONE : "Serving_Problems",
+					  CHANGE_INTERACTION_MODE : {target : "Serving_Problems", "actions" : "assignInteractionSM"}},
 				// invoke : {
 				// 	id: "interactions_state_machine",
 				// 	src: "interactions_state_machine",
@@ -296,6 +372,7 @@ export function build_training_sm(app,interactions_sm){
 				// entry : send({type: "ASSIGN_AGENT", "agent_id" : agent_id})
 			},
 			All_Done : {
+				entry : "allDone",
 				type : 'final',
 			},
 			Fail : {
@@ -312,6 +389,8 @@ export function build_training_sm(app,interactions_sm){
 			create_agent : nl.createAgent,
 			serve_next_problem : serve_next_problem,
 			load_problem : load_problem,
+			handle_prior_knowledge : handle_prior_knowledge,
+			
 			// interactions_state_machine : interactions_state_machine,
 			
 		},
@@ -322,13 +401,17 @@ export function build_training_sm(app,interactions_sm){
 			    return event.data.updateContext
 			}),
 			assignAgentId : assign((context, event) => {
-				return {agent_id : gerp(event)}
-			})
+				return {agent_id : event.data['agent_id']}
+			}),
+			allDone : allDone,
+			assignInteractionSM : assignInteractionSM
 		},
 		guards : {
 			iteratorEmpty : iteratorEmpty,
 		}
 	});
+
+	
 	// console.log("JSON MACHINE",sm)
 	return sm
 }
