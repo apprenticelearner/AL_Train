@@ -204,21 +204,6 @@ export default class NetworkLayer {
 	queryApprentice(context,event) {
 		console.log("queryApprentice")
 
-	    // if(interactive && staged_SAI && staged_SAI.selection == "done" && (staged_SAI.reward || 1) > 0){
-	    //     return
-	    // }
-	    // if (agent_id == null) {
-	    //     return;
-	    // }
-
-	    // if(verbosity > 0) console.log('querying agent');
-
-	    // if (last_correct){
-	    //     // console.log("SETTING STATE!");
-	    //     // console.log(last_correct);
-	    //     state = tutor.get_state();
-	    // }
-
 	    var data = {
 	        'state': context.state
 	    }
@@ -238,18 +223,40 @@ export default class NetworkLayer {
 
 	}
 
-	term_print(data){
-	    return fetch_retry(this.HOST_URL,
-		    		{method: "PRINT",
-		    		 headers: {"Content-type": "text/plain; charset=utf-8"},
-		    		 body:data})
+	checkApprentice(context,event) {
+		console.log("checkApprentice")
+
+	    var data = {
+	        'state': context.state,
+	        ...context.staged_SAI 
+	    }
+
+	    const URL = this.AL_URL + '/check/' + context.agent_id + '/'
+
+	    return fetch_retry(URL,
+	    		{method: "POST",
+	    		 headers: JSON_HEADERS,
+	    		 body:JSON.stringify(data)})
+	    		.then(res => res.json())
+	    		.then(json => (+ json['reward']))
+
 	}
 
-	kill_this(data){
+
+	term_print(message,type='default'){
+		var data = {message : message, type : type}
+	    return fetch_retry(this.HOST_URL,
+		    		{method: "PRINT",
+		    		headers: JSON_HEADERS,
+	    		 	body:JSON.stringify(data)})
+	}
+
+	kill_this(message,type="error"){
+		var data = {message : message, type : type}
 	    return fetch_retry(this.HOST_URL,
 		    		{method: "QUIT",
-		    		 headers: {"Content-type": "text/plain; charset=utf-8"},
-		    		 body:data})
+		    		headers: JSON_HEADERS,
+	    		 	body:JSON.stringify(data)})
 	}
 
 	generate_nools(context,event){

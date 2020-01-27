@@ -68,6 +68,10 @@ function isFreeAuthor(context,event){
 	return context.free_author || false
 }
 
+function checkIsCorrect(context,event){
+	return event.data > 0	
+} 
+
 function noApplicableSkills(context,event){
 	return !Object.keys(event.data).length;
 }
@@ -77,15 +81,15 @@ function logError(context,event){
 	// alert("FAIL")
 }
 
-var color_map = { 
-	"EXAMPLE" : "0;33;44m",
-	"CORRECT" : "0;30;42m",
-	"INCORRECT" : "0;30;41m",
-}
+// var color_map = { 
+// 	"EXAMPLE" : "0;33;44m",
+// 	"CORRECT" : "0;30;42m",
+// 	"INCORRECT" : "0;30;41m",
+// }
 
 function _kill_this(context,event){
 	var nl = context.network_layer
-	nl.network_layer(event.data.toString())
+	nl.kill_this(event.data.toString())
 }
 
 
@@ -101,17 +105,17 @@ function printFeedback(context,event){
 			type = staged_SAI.reward > 0 ? "CORRECT" : "INCORRECT"
 		}
 
-		var color = color_map[type]
+		// var color = color_map[type]
 		var inps = staged_SAI.inputs['value'] || ""
 		
-		nl.term_print('\x1b[' + color + type + ": " + staged_SAI.selection + " -> " + inps + '\x1b[0m')
+		nl.term_print(type + ": " + staged_SAI.selection + " -> " + inps, type)
 	}else{
 		for (var index in context.feedback_map){
 			var skill_app = context.skill_applications[index]
 			var type = context.feedback_map[index].toUpperCase() 
-			var color = color_map[type]
+			// var color = color_map[type]
 			var inps = skill_app.inputs['value'] || ""
-			nl.term_print('\x1b[' + color + type + ": " + skill_app.selection + " -> " + inps + '\x1b[0m')
+			nl.term_print(type + ": " + skill_app.selection + " -> " + inps, type)
 		}
 	}
 	
@@ -190,6 +194,10 @@ const toggleFeedbackStyle = send((context,event) => {
     return {type :""}
 })
 
+
+
+
+
 // skill_set={skill_set}
 			//						select_callback={select_callback}
 			//						correctness_callback={correctness_callback}
@@ -211,6 +219,7 @@ function get_machine_actions(app){
 			applyNextExample : tutor.applyNextExample,
 			attemptStagedSAI : tutor.attemptStagedSAI,
 			queryApprentice : network_layer.queryApprentice,
+			checkApprentice : network_layer.checkApprentice,
 		},
 		actions : {
 				logError : logError,
@@ -252,6 +261,9 @@ function get_machine_actions(app){
 				exitFeedbackMode : tutor.exitFeedbackMode,
 				enterFociMode : tutor.enterFociMode,
 				exitFociMode : tutor.exitFociMode,
+				enterTutoringMode : tutor.enterTutoringMode,
+				exitTutoringMode : tutor.exitTutoringMode,
+				displayCorrectness : tutor.displayCorrectness,
 				applyStagedSAI : (context,event) => {tutor.applySAI(context.staged_SAI);},
 				proposeSAI : (context,event) => tutor.proposeSAI(event.data),
 				confirmProposedSAI : (context,event) => {tutor.confirmProposedSAI();},
@@ -263,16 +275,18 @@ function get_machine_actions(app){
 
 				generate_nools : network_layer.generate_nools,
 				appendStartHistory : appendStartHistory,
+
 		},
 		guards : {
 			saiIsCorrectDone : saiIsCorrectDone,
 			noApplicableSkills : noApplicableSkills,
 			isFreeAuthor : isFreeAuthor,
+			checkIsCorrect : checkIsCorrect,
 		}
 	}
 }
 
-export function build_interactions_sm(app, interactive=false, free_author=false){
+export function build_interactions_sm(app, interactive=false, free_author=false, tutor_mode=false){
 	const context = {
 		app : app,
 		tutor : app.tutor.current,
@@ -290,7 +304,13 @@ export function build_interactions_sm(app, interactive=false, free_author=false)
 		staged_SAI : null,
 		action_type : null
 	}
-	var sm = interactive ? interactive_sm : non_interactive_sm
+	var sm;
+	if(tutor_mode){
+		sm = tutor_sm
+	}else{
+		sm = interactive ? interactive_sm : non_interactive_sm
+	}
+	
 	
 
 	const interaction_sm = Machine(
@@ -436,12 +456,12 @@ var interactive_sm = {
 				"FEEBACK_MAP_UPDATE" : {actions : ["assignFeedbackMap","toggleFeedbackStyle",]},//, onDone:{actions :"callSend"}, onError: 'Fail'}},
 				//
 				"DEMONSTRATE" : {target : "Waiting_Select_Foci",
-				   	actions : ["assignStagedSAI","assignExample","printEvent","clearProposedSAI"]},
-				"GEN_NOOLS" : {actions : ["generate_nools"]}
+				   	actions : ["assignStagedSAI", "assignExample", "printEvent", "clearProposedSAI"]},
+				"GEN_NOOLS" : {actions : ["generate_nools"]},
 				 },
 				 
 			exit : ["exitFeedbackMode"]
-		},
+		},		
 		// "Applying_Staged_SAI" : {
 		// 	invoke : {
 		//         id: "attemptStagedSAI",
@@ -498,6 +518,47 @@ var interactive_sm = {
 		}
 	}
 };
+
+const tutor_sm = {
+	id : "interactive",
+	initial : "Start",
+	states: {
+		Start:{
+			entry : "stateRecalc",
+			on : {
+				"" : [
+					{"target" : "Setting_Start_State", cond : "isFreeAuthor"},
+					{"target" : "Waiting_User_Attempt"}
+				]
+			}
+		},
+		"Setting_Start_State": {
+			entry : "enterSetStartStateMode",
+  			on: { "START_STATE_SET": {target : "Waiting_User_Attempt", actions: ["appendStartHistory"] }},
+  			exit : ["exitSetStartStateMode","stateRecalc"]
+  		},
+  		"Waiting_User_Attempt":{
+  			entry : "enterTutoringMode",
+  			on: {
+  				"ATTEMPT" : {target : "Checking_Against_Apprentice", actions : "assignStagedSAI"},
+  			},
+  			exit : "exitTutoringMode",
+  		},
+  		"Checking_Against_Apprentice" : {
+			invoke : {
+				id : "checkApprentice",
+				src : "checkApprentice",
+				onDone : [
+					{cond : "checkIsCorrect",
+					target : "Waiting_User_Attempt",
+					actions : ["displayCorrectness","stateRecalc"]},
+					{target : "Waiting_User_Attempt",
+					actions : "displayCorrectness"},
+				]
+			}
+		}
+	}
+}
 
 
 // const feedbackStates = {

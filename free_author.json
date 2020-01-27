@@ -3,13 +3,15 @@
 		"interactive" : true,
 		"free_author" : true,
 		"tutor" : "CTAT",
-		"use_foci" : true
-	},
+		"use_foci" : true,
+		"agent" : {
+			"stay_active": true,
+      		"dont_save": true,	
+		}
+	},//THIS IS A COMMENT
 	"training_set1" : [{
 		"agent_name":"myAgent1",
 		"agent_type":"ModularAgent",
-		"stay_active": true,
-      	"dont_save": true,
       	"function_set" : ["Add","Add3","Mod10","Div10"],
 		"feature_set" : [],
 		"args": {
