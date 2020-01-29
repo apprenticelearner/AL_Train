@@ -2,6 +2,7 @@
 .~lock.*
 ubprocess
 log/
+bprofiles/
 net.conf
 *.cprof
 

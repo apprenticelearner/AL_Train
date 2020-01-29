@@ -281,6 +281,136 @@ export default class NetworkLayer {
 				});
 	}
 
+	generateBehaviorProfile(context,event={}) {
+	    // data = {'states':request_history.map(x => x['state'])}
+	    // console.log(JSON.stringify(data))
+
+	    // requests = request_history
+	    event.data = event.data || {}
+	    var requests = event.data.requests || this.request_history
+	    var dir = event.data.out_dir || ((context.working_dir || ".") + "/bprofiles")
+	    var HOST_URL = this.HOST_URL
+	    var AL_URL = this.AL_URL
+	    // requests = ground_truth_requests
+
+	    // console.log(nools_dir)
+	    var start_data = {"dir": dir}
+
+	    var promise = fetch(HOST_URL, {
+	    	method : "START_BEHAVIOR_PROFILE",
+	    	headers : JSON_HEADERS,
+	    	body : JSON.stringify(start_data)})
+		.then(async function(whatever) {
+			for(let item of requests){
+	    	// requests.forEach(function (item, index) {
+	    		var s = item['state']
+                var data = {
+                    'state': s,
+                    'kwargs': {'add_skill_info':true,'n':-1}
+                }
+                var resp = await fetch_retry(AL_URL + '/request/' + context.agent_id + '/',{
+                	method : "POST",
+                	headers : JSON_HEADERS,
+                	body: JSON.stringify(data),
+                }).then(res => res.json())
+
+                var responses = []
+                if("responses" in resp){
+	                resp["responses"].forEach(function (r, index) {
+	                    var sai = {selection: r['selection'],
+	                           action: r['action'], 
+	                           inputs: r['inputs'], 
+	                    }
+	                    console.log(r)
+	                    console.log(r["selection"])
+	                    responses.push(sai)
+	                });
+	            }
+                var completeness_data = {
+                    'state' : s,
+                    'responses' : responses,
+                    'dir' : dir
+                }
+                await fetch(HOST_URL ,{
+                	method : "APPEND_BEHAVIOR_PROFILE",
+			    	headers : JSON_HEADERS,
+			    	body : JSON.stringify(completeness_data)})
+            }
+        })
+        return promise
+    }
+
+
+	//     	})
+	    	
+
+	//     })
+	//     $.ajax({
+	//         type: "START_COMPLETENESS",
+	//         url: window.location.origin,
+	//         data: JSON.stringify(start_data),
+	//         // contentType: "application/json; charset=utf-8",
+	//         // dataType: 'json',
+	//         error: ajax_retry_on_error,
+	//         success: function(whatever) {
+	//             console.log("STARTED")
+	//             requests.forEach(function (item, index) {
+	//                 s = item['state']
+	//                 var data = {
+	//                     'state': s,
+	//                     'kwargs': {'add_skill_info':true,'n':-1}
+	//                 }
+	//                 $.ajax({
+	//                     type: 'POST',
+	//                     url: AL_URL + '/request/' + agent_id + '/',
+	//                     crossdomain : true,
+	//                     data: JSON.stringify(data),
+	//                     contentType: "application/json; charset=utf-8",
+	//                     dataType: 'json',
+	//                     context:item,
+
+
+	//                     error: ajax_retry_on_error,
+
+	//                     success: function(resp) {
+	//                         console.log("WRITE")
+	//                         responses = []
+	//                         if("responses" in resp){
+	//                             resp["responses"].forEach(function (r, index) {
+	//                                 sai = {selection: r['selection'],
+	//                                        action: r['action'], 
+	//                                        inputs: r['inputs'], 
+	//                                 }
+	//                                 console.log(r)
+	//                                 console.log(r["selection"])
+	//                                 responses.push(sai)
+	//                             });
+	//                         }
+
+	//                         completeness_data = {
+	//                             'state' : this["state"],
+	//                             'responses' : responses,
+	//                             'dir' : nools_dir
+	//                         }
+	//                         $.ajax({
+	//                             type: "APPEND_COMPLETENESS",
+	//                             url: window.location.origin,
+	//                             data: JSON.stringify(completeness_data),
+	                            
+
+	//                             error: ajax_retry_on_error,
+
+	//                             success : function(){
+	//                                 console.log("WRITTEN")
+	//                             }
+	//                         });
+	//                     }
+	//                 });
+	//             });
+	//         }
+	//     });
+	// }
+
 }
 	    // console.log("STATE",state);
 

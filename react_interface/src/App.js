@@ -80,6 +80,9 @@ export default class ALReactInterface extends React.Component {
       buttons_props: {},
       tutor_props: this.props.tutor_props || {},
       skill_panel_props: {},
+      "training_description" : "????",
+      "agent_description" : "????",
+      "problem_description" : "????"
     }
     // this.state = {prob_obj : null};
   }
@@ -98,18 +101,29 @@ export default class ALReactInterface extends React.Component {
   }
 
   changeInteractionMode(d){
+    this.setState(d)
     this.training_service.send({
         type : "CHANGE_INTERACTION_MODE",
         data : d,
     })
+
   }
 
   componentDidMount(){
     console.log("MOUNTED")
     var tutor, nl, wd,tf
     [tutor, nl, wd,tf] = [this.tutor.current,this.network_layer,this.props.working_dir,this.props.training_file]
-      
-    this.interactions_sm = build_interactions_sm(this,this.props.interactive)  
+    
+
+    this.setState({
+      "interactive" : this.props.interactive,
+      "free_author" : this.props.free_author,
+      "tutor_mode" : this.props.tutor_mode,
+    })
+    this.interactions_sm = build_interactions_sm(this,
+                                                 this.props.interactive,
+                                                 this.props.free_author,
+                                                 this.props.tutor_mode)  
     this.interactions_service = null //Will be spawned in training_sm 
 
     this.training_machine = build_training_sm(this,this.interactions_sm, tf, wd)
@@ -134,10 +148,79 @@ export default class ALReactInterface extends React.Component {
       this.changeInteractionMode({"free_author" : x})
     }
 
+    //TODO MOVE TO NW_LAYER
+    window.generateBehaviorProfile = (ground_truth_path,out_dir="") => {
+      let f = this.network_layer.generateBehaviorProfile
+
+      let t_context = this.training_service._state.context
+      // let i_context = this.training_service.context
+      if(ground_truth_path != null){
+
+        let to_json_list = (in_list) => {
+          let out = []
+          for (let line of in_list){
+            if(line != ""){
+              let json = JSON.parse(line)
+              out.push(json)
+            }
+          }
+          return out;
+        }
+        // let rq_h = this.network_layer.return
+        // let path =  ground_truth_path
+        if(ground_truth_path[0] != "/"){
+          ground_truth_path = (t_context.working_dir|| "/") + ground_truth_path
+        }
+        return fetch(ground_truth_path)
+          .then((resp) => resp.text())
+          .then((text) => text.split("\n"))
+          .then((split) => to_json_list(split))
+          .then((resps) => f(t_context,{data:{requests:resps,out_dir: out_dir}}))
+
+      }else{
+        return f(t_context)  
+      }
+      
+    }
+
   }
 
   render(){
     const Tutor = this.props.tutorClass
+
+    var lower_display;
+    if(this.state.tutor_mode || !this.state.interactive){
+      var prompt_text
+      if(this.state.tutor_mode == true){
+        prompt_text = "TUTOR MODE\n"
+      }else if(!this.state.interactive){
+        prompt_text = 
+          this.state.training_description + "\n" +
+          this.state.agent_description + "\n" +
+          this.state.problem_description + "\n"
+      }
+
+      lower_display = 
+      <View style={styles.prompt}>
+        <Text>
+        {prompt_text}
+        </Text>
+      </View>
+    }else{
+      lower_display = 
+      <View style={styles.controls}>
+        <View style={styles.skill_panel}>
+          <SkillPanel ref={this.skill_panel}
+          {...this.state.default_props}
+          {...this.state.skill_panel_props}/>
+        </View>
+        <View style={styles.buttons}>
+          <Buttons ref={this.buttons}
+          {...this.state.default_props}
+          { ...this.state.buttons_props}/>
+        </View>
+      </View>
+    }
 
     return (
   	<View style={styles.container}>
@@ -153,18 +236,7 @@ export default class ALReactInterface extends React.Component {
           {...this.state.tutor_props}
         />
   		</View>
-  		<View style={styles.controls}>
-  			<View style={styles.skill_panel}>
-  				<SkillPanel ref={this.skill_panel}
-          {...this.state.default_props}
-          {...this.state.skill_panel_props}/>
-  			</View>
-  			<View style={styles.buttons}>
-  				<Buttons ref={this.buttons}
-          {...this.state.default_props}
-          { ...this.state.buttons_props}/>
-  			</View>
-  		</View>
+  		{lower_display}
   	</View>
     );
   }
@@ -201,6 +273,10 @@ const styles = StyleSheet.create({
         flex: 1,
         
 
+      },
+      prompt : {
+        flex: 1,
+        textAlign : "center"
       },
       controls :{
 
