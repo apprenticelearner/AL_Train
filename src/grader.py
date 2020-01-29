@@ -1,5 +1,11 @@
 import sys,json
 
+if(len(sys.argv) != 3):
+	print("Incorrect Usage")
+	print("Usage: <ground_truth.json> <comparison.json>")
+	sys.exit()
+
+
 count = 0
 ground_truth = {}
 with open(sys.argv[1],'r') as f:
