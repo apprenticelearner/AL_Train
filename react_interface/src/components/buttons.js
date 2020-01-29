@@ -57,8 +57,6 @@ class Buttons extends Component{
       }
       this.props.interactions_service.send(action_str);
     }
-    // console.log(send)
-
 
 		return (
           <View style={styles.container}>
@@ -72,6 +70,8 @@ class Buttons extends Component{
                "Press next to continue. Or demonstrate the next step."}
               {matches("Waiting_Select_Foci") &&
                "Select any interface elements that were used to compute this result."}
+              {matches("Waiting_User_Attempt") &&
+               "TUTOR MODE"}
               
               </Text>
 
@@ -98,10 +98,6 @@ class Buttons extends Component{
             </View>
 
             
-            
-              
-              
-
             {(matches({"Waiting_User_Feedback":"Waiting_Yes_No_Feedback"})
              || matches({"Waiting_User_Feedback":"Waiting_Submit_Feedback"})) &&
 
@@ -129,12 +125,8 @@ class Buttons extends Component{
                  <Text style={styles.submit_button_text}>{"Submit"}</Text>
                 </TouchableHighlight>
               }
-            
             </View>
             }
-            
-            
-
             
             {!this.props.debugmode && 
             <View style={styles.button_wrapper3}>
@@ -164,9 +156,6 @@ class Buttons extends Component{
             </View>
           }
         </View>
-
-        
-
 		  );
 	}
 

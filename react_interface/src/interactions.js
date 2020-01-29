@@ -538,7 +538,7 @@ const tutor_sm = {
   			exit : ["exitSetStartStateMode","stateRecalc"]
   		},
   		"Waiting_User_Attempt":{
-  			entry : "enterTutoringMode",
+  			entry : ["enterTutoringMode","stateRecalc"],
   			on: {
   				"ATTEMPT" : {target : "Checking_Against_Apprentice", actions : "assignStagedSAI"},
   			},
@@ -551,11 +551,12 @@ const tutor_sm = {
 				onDone : [
 					{cond : "checkIsCorrect",
 					target : "Waiting_User_Attempt",
-					actions : ["displayCorrectness","stateRecalc"]},
+					actions : ["displayCorrectness","assignCorrect"]},
 					{target : "Waiting_User_Attempt",
-					actions : "displayCorrectness"},
-				]
-			}
+					actions : ["displayCorrectness","assignIncorrect"]},
+				],
+			},
+			// exit : "stateRecalc"
 		}
 	}
 }

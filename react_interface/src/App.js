@@ -82,7 +82,11 @@ export default class ALReactInterface extends React.Component {
       skill_panel_props: {},
       "training_description" : "????",
       "agent_description" : "????",
-      "problem_description" : "????"
+      "problem_description" : "????",
+
+      "interactive" : this.props.interactive,
+      "free_author" : this.props.free_author,
+      "tutor_mode" : this.props.tutor_mode,
     }
     // this.state = {prob_obj : null};
   }
@@ -115,11 +119,9 @@ export default class ALReactInterface extends React.Component {
     [tutor, nl, wd,tf] = [this.tutor.current,this.network_layer,this.props.working_dir,this.props.training_file]
     
 
-    this.setState({
-      "interactive" : this.props.interactive,
-      "free_author" : this.props.free_author,
-      "tutor_mode" : this.props.tutor_mode,
-    })
+    // this.setState({
+     
+    // })
     this.interactions_sm = build_interactions_sm(this,
                                                  this.props.interactive,
                                                  this.props.free_author,
@@ -189,16 +191,17 @@ export default class ALReactInterface extends React.Component {
     const Tutor = this.props.tutorClass
 
     var lower_display;
-    if(this.state.tutor_mode || !this.state.interactive){
+    var use_prompt = false
+    if(!this.state.interactive){
+      use_prompt = true
       var prompt_text
-      if(this.state.tutor_mode == true){
-        prompt_text = "TUTOR MODE\n"
-      }else if(!this.state.interactive){
-        prompt_text = 
-          this.state.training_description + "\n" +
-          this.state.agent_description + "\n" +
-          this.state.problem_description + "\n"
-      }
+      // if(this.state.tutor_mode == true){
+      //   prompt_text = "TUTOR MODE\n"
+      // }else if(!this.state.interactive){
+      prompt_text = 
+        this.state.training_description + "\n" +
+        this.state.agent_description + "\n" +
+        this.state.problem_description + "\n"
 
       lower_display = 
       <View style={styles.prompt}>
@@ -209,11 +212,13 @@ export default class ALReactInterface extends React.Component {
     }else{
       lower_display = 
       <View style={styles.controls}>
+        {!this.state.tutor_mode &&
         <View style={styles.skill_panel}>
           <SkillPanel ref={this.skill_panel}
           {...this.state.default_props}
           {...this.state.skill_panel_props}/>
         </View>
+        }
         <View style={styles.buttons}>
           <Buttons ref={this.buttons}
           {...this.state.default_props}
