@@ -9,6 +9,7 @@ import {build_interactions_sm} from './interactions.js'
 import {build_training_sm} from './training_handler.js'
 import NetworkLayer from './network_layer.js'
 import { interpret } from 'xstate';
+import autobind from 'class-autobind';
 
 
 // 
@@ -54,6 +55,7 @@ import { TouchableHighlight,ScrollView,View, Text, Platform, StyleSheet,SectionL
 export default class ALReactInterface extends React.Component {
   constructor(props){
     super(props);
+    autobind(this);
     this.onInteractionTransition = this.onInteractionTransition.bind(this)
     // this.urlParams = new URLSearchParams(window.location.search);
 
@@ -104,6 +106,20 @@ export default class ALReactInterface extends React.Component {
     })
   }
 
+  onTrainingTransition(current){
+    var c = current.context
+    console.log("&", "HEY THIS IS THIS THING")
+    if(!c.interactive){
+      this.setState({
+        training_description : c.training_description || "???",
+        agent_description : c.agent_description || "???",
+        problem_description : c.problem_description || "???"
+      })  
+    }
+    
+
+  }
+
   changeInteractionMode(d){
     this.setState(d)
     this.training_service.send({
@@ -130,7 +146,7 @@ export default class ALReactInterface extends React.Component {
 
     this.training_machine = build_training_sm(this,this.interactions_sm, tf, wd)
     this.training_service = interpret(this.training_machine)
-
+    this.training_service.onTransition(this.onTrainingTransition)
     this.training_service.start()
 
     const sub = this.training_service.subscribe(state => {

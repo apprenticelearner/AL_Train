@@ -56,7 +56,8 @@ function serve_next_training_set (context,event){
 	        resolve({"updateContext" : {
 	        	training_iterator : training_iterator,
 				agent_iterator	: agent_iterator,        	
-				file_params : file_params
+				file_params : file_params,
+				training_description : context.training_file.replace(/^.*[\\\/]/, '') +" : " + name,
 	        }})
 		}else{
 			resolve(null)
@@ -75,7 +76,7 @@ function serve_next_agent(context,event){
 	        	agent_obj['args'] = {...context.file_params['agent']['args'], ...agent_obj['args']};
 	        }
 	        var agent_params = agent_obj["set_params"] || {}
-	        var agent_description = "Agent Name:" + agent_obj["agent_name"] + "<br>Agent Type:" + agent_obj["agent_type"] +"<br>"
+	        var agent_description = "Agent Name: " + agent_obj["agent_name"] + "\nAgent Type: " + agent_obj["agent_type"] //+"<br>"
 	        var problem_set = agent_obj["problem_set"];
 	        var prior_knowledge = agent_obj["prior_knowledge"] || [];
 
@@ -109,7 +110,7 @@ function serve_next_agent(context,event){
 
 function handle_prior_knowledge(context,event){
 	var promise = new Promise((resolve, reject) => {
-		console.log("WOOP?")
+		// console.log("WOOP?")
 		var prior_knowledge =  context.prior_knowledge;
 		while(prior_knowledge.length > 0){
 			console.log("CURRENT", prior_knowledge)
@@ -135,7 +136,7 @@ function handle_prior_knowledge(context,event){
 
 function _next_prob_obj(problem_iterator,agent_params,file_params){
     var prob_obj = problem_iterator.shift();
-    // console.log(prob_obj);
+    // console.log(prob_obj);trz
     if(!prob_obj){return null;}
 
 
@@ -145,8 +146,9 @@ function _next_prob_obj(problem_iterator,agent_params,file_params){
         if(!prob_obj){return null;}
     }
     // console.log(prob_obj)
-
-    prob_obj = {...file_params,...agent_params,...prob_obj}
+    var fp_clone = {...file_params}
+    delete fp_clone['agent']
+    prob_obj = {...fp_clone,...agent_params,...prob_obj}
     console.log(prob_obj,agent_params)
     return [prob_obj, agent_params]
 }
@@ -181,11 +183,15 @@ function serve_next_problem (context,event){
 
 		        var EXAMPLES_ONLY = prob_obj["examples_only"] || false;
 
+		        var problem_description = Object.keys(prob_obj).reduce(
+		        		(s,key) => {return s + key + ": " + prob_obj[key] +'\n'},"");
+
 		        resolve({"updateContext" : {
 	            	EXAMPLES_ONLY : EXAMPLES_ONLY,
 	            	agent_params : agent_params,
 	            	problem_iterator : problem_iterator,
-	            	prob_obj : prob_obj
+	            	prob_obj : prob_obj,
+	            	problem_description : problem_description
 		        }})
 
 		    }else{
