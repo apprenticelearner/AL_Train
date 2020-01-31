@@ -2,39 +2,41 @@
 <html> 
 <head>
     <script type="text/javascript">
-        // document.location.href = 'react-native/build/index.html' + document.location.search;
-        document.location.href = 'react_interface/build/index.html' + document.location.search;
+        function UrlExists(url)
+        {
+            var http = new XMLHttpRequest();
+            http.open('HEAD', url, false);
+            http.send();
+            return http.status!=404;
+        }
+        function handleErrors(response) {
+            if (!response.ok) {
+                throw Error(response.statusText);
+            }
+            return response;
+        }
+
+        var index = 'react_interface/build/index.html' + document.location.search
+
+        //We prefer to run the user built interface
+        if(UrlExists(index)){
+            document.location.href = index;    
+        //But we can fall back on a pre-built one
+        }else{
+            fetch('/react_interface/release/releases.txt')
+            .then(handleErrors)
+            .then((resp) => resp.text())
+            .then((releases) =>{
+                releases = releases.split(/[ ,\n\t]+/); 
+                releases.sort()
+                console.log(releases)
+                index = '/react_interface/release/'+releases[releases.length-1]+ '/index.html' + document.location.search
+                document.location.href = index;  
+            })
+            .catch((error)=>alert("Failed to find build and cannot load releases.txt"))
+            
+        }
+        
     </script>
-    <!-- <meta http-equiv="refresh" content="0; url=react-native/build/index.html" /> -->
 </head>
-<!-- <head> 
-    <script type="text/javascript" src="src/jquery.min.js"></script>
-    <script type="text/javascript" src="src/ALautorun.js"></script>
-    <link href="css/AL_colors.css" rel="stylesheet">
-</head> 
-<body> 
-
-<iframe id="tutor_iframe" src=""
-          height="650px" width="100%" scrolling="yes" frameborder="1">
-</iframe>
-<div id="prompt_text" class="hidden"></div>
-<div style="text-align:center">
-	<button type="button" id="yes_button" class="hidden" > yes</button>
-	<button type="button" id="no_button" class="hidden" > no </button>
-</div>
-<div style="text-align:center">
-	<button type="button" id="foci_done_button" class="hidden" > done </button>
-</div>
-<div style="text-align:center">
-	<button type="button" id="startstate_button" class="hidden" > Start State Done. </button>
-</div>
-<div style="text-align:center">
-	<button type="button" id="nools_gen_button" class="hidden" > Generate Nools </button>
-</div> -->
-
-<!-- <script> 
-var iframe = document.getElementById("tutor_iframe");
-iframe.setAttribute("src", "/model/HTML/FractionAddition.html?question_file=../CognitiveModel/FractionAddition.brd");
-</script> -->
-<!-- </body>  -->
 </html> 

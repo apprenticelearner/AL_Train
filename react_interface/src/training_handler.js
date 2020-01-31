@@ -100,6 +100,7 @@ function serve_next_agent(context,event){
 	        	agent_iterator:  agent_iterator,
 	        	problem_set : problem_set,
 	        	prior_knowledge : prior_knowledge,
+	        	agent_start_time : new Date(),
 	        }})
 	    }else{
 	        resolve(null)

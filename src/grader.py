@@ -10,6 +10,7 @@ count = 0
 ground_truth = {}
 with open(sys.argv[1],'r') as f:
 	for x in f:
+		if(x[0] == "#"): continue
 		count += 1
 		d = json.loads(x)
 		# print(json.dumps(d["state"]))
@@ -21,6 +22,7 @@ print(len(ground_truth.keys()),count)
 comparison = {}
 with open(sys.argv[2],'r') as f:
 	for x in f:
+		if(x[0] == "#"): continue
 		d = json.loads(x)
 		comparison[json.dumps(d["state"])] = d["responses"]
 		print([z.get('value',None) for k,z in d["state"].items()])
