@@ -294,7 +294,9 @@ export default class NetworkLayer {
 	    // requests = ground_truth_requests
 
 	    // console.log(nools_dir)
-	    var start_data = {"dir": dir}
+	    var now = new Date()
+	    var elapse = ((((now-context.agent_start_time) % 86400000) % 3600000) / 60000)
+	    var start_data = {"dir": dir,"elapse_minutes": elapse.toFixed(1)}
 
 	    var promise = fetch(HOST_URL, {
 	    	method : "START_BEHAVIOR_PROFILE",

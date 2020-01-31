@@ -453,7 +453,7 @@ def do_START_BEHAVIOR_PROFILE():
     post_data = request.get_data()
     d = json.loads(post_data)
     c_dir = d['dir']
-    del d["dir"]
+    elapse_minutes = d.get('elapse_minutes',None)
 
     completeness_dict = {}
     now = datetime.now() # current date and time
@@ -466,8 +466,8 @@ def do_START_BEHAVIOR_PROFILE():
             if exc.errno != errno.EEXIST:
                 raise
 
-    open(os.path.join(c_dir, completeness_file_name),'a').close()
-
+    with open(os.path.join(c_dir, completeness_file_name),'a') as f:
+        if(elapse_minutes != None): f.write("# Elapsed Minutes: %s\n" % elapse_minutes)
     return ""
 
 def do_APPEND_BEHAVIOR_PROFILE():
