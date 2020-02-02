@@ -106,7 +106,7 @@ function printFeedback(context,event){
 		}
 
 		// var color = color_map[type]
-		var inps = staged_SAI.inputs['value'] || ""
+		var inps = staged_SAI.inputs['value'] != null ? staged_SAI.inputs['value'] : ""
 		
 		nl.term_print(type + ": " + staged_SAI.selection + " -> " + inps, type)
 	}else{
@@ -114,7 +114,7 @@ function printFeedback(context,event){
 			var skill_app = context.skill_applications[index]
 			var type = context.feedback_map[index].toUpperCase() 
 			// var color = color_map[type]
-			var inps = skill_app.inputs['value'] || ""
+			var inps = skill_app.inputs['value'] != null ? skill_app.inputs['value'] : ""
 			nl.term_print(type + ": " + skill_app.selection + " -> " + inps, type)
 		}
 	}
@@ -499,7 +499,7 @@ var interactive_sm = {
 		        src: "sendFeedbackExplicit",
 		        onDone: [
 			        // {target: "Setting_Start_State", cond : },
-			        {target: "Done", cond : "saiIsCorrectDone"},
+			        // {target: "Done", cond : "saiIsCorrectDone"},
 			        {target: "Querying_Apprentice"},
 		        ],
 		        onError: 'Fail',
