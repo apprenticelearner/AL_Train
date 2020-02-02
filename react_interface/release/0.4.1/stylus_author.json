@@ -2,30 +2,26 @@
 	"set_params" : {
 		"interactive" : true,
 		"free_author" : true,
-		"tutor" : "CTAT",
+		"tutor" : "Stylus",
 		"use_foci" : true,
-		"agent" : {
-			"stay_active": true,
-      		"dont_save": true,	
-		}
-	},//THIS IS A COMMENT
+		"tutor_props" : {"mode" : "blarg"}
+	},
 	"training_set1" : [{
 		"agent_name":"myAgent1",
 		"agent_type":"ModularAgent",
+		"stay_active": true,
+      	"dont_save": true,
       	"function_set" : ["Add","Add3","Mod10","Div10"],
 		"feature_set" : [],
 		"args": {
 			"search_depth" : 2,
 			"when_learner": "decisiontree",
-			"planner" : "vectorized",
-			"when_args" : {"cross_rhs_inference" : "none"}
+			"planner" : "vectorized"
 		},
 		"problem_set" : [
-			{"set_params" : 
-				{"HTML": "model/HTML/MultiColumnArithmatic.html"}
-			},
 			{
-			"repetitions":-1}
+			"repetitions":-1
+			}
 		]
 	}]
 }
