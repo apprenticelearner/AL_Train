@@ -6,6 +6,10 @@ const TIMEOUT = 100;
 
 // var fetch = require("node-fetch");
 
+function sleep (time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
+
 function ignoreKeys(key,value){
     if(key=='matches') return undefined;
     else return value;
@@ -84,6 +88,7 @@ export default class NetworkLayer {
 	    if(feedback_map && Object.keys(feedback_map).length > 0){
 			// var skill_applications_subset = []
 			// var rewards = []
+			var d_list = []
 			for (var index in feedback_map){
 				var skill_app = skill_applications[index]
 				// skill_applications_subset.push({
@@ -94,12 +99,15 @@ export default class NetworkLayer {
 	                "reward" : feedback_map[index].toLowerCase() == "correct" ? 1 : -1
 	            }
 	            if(context.interactive){data['add_skill_info'] = true}
-	            if(out){
-	            	out.then(()=>this.sendTrainingData(data,context.agent_id))
-	            }else{
-	            	out = this.sendTrainingData(data,context.agent_id)
-	            }
+	            d_list.push(data)
+	            // if(out){
+	            // 	out = out.then((resp)=>this.sendTrainingData(data,context.agent_id))
+	            // 		 .then(()=>sleep(10))
+	            // }else{
+	            // 	out = this.sendTrainingData(data,context.agent_id)
+	            // }
 			}
+			out = this.sendTrainingData(d_list,context.agent_id)
 
 		    // if(data.reward == null && context.reward != null){
 		    // 	data.reward = context.reward
