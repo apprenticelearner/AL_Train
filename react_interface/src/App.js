@@ -79,7 +79,7 @@ export default class ALReactInterface extends React.Component {
 
     this.state = {
       default_props: {},
-      buttons_props: {},
+      buttons_props: {app: this},
       tutor_props: this.props.tutor_props || {},
       skill_panel_props: {},
       "training_description" : "????",
@@ -167,40 +167,44 @@ export default class ALReactInterface extends React.Component {
     }
 
     //TODO MOVE TO NW_LAYER
-    window.generateBehaviorProfile = (ground_truth_path,out_dir="") => {
-      let f = this.network_layer.generateBehaviorProfile
+    window.generateBehaviorProfile = this.generateBehaviorProfile
 
-      let t_context = this.training_service._state.context
-      // let i_context = this.training_service.context
-      if(ground_truth_path != null){
 
-        let to_json_list = (in_list) => {
-          let out = []
-          for (let line of in_list){
-            if(line != ""){
-              let json = JSON.parse(line)
-              out.push(json)
-            }
+  }
+
+  generateBehaviorProfile(ground_truth_path="/ground_truth.json",out_dir=""){
+    // window.generateBehaviorProfile = (ground_truth_path,out_dir="") => {
+    let f = this.network_layer.generateBehaviorProfile
+
+    let t_context = this.training_service._state.context
+    // let i_context = this.training_service.context
+    if(ground_truth_path != null){
+
+      let to_json_list = (in_list) => {
+        let out = []
+        for (let line of in_list){
+          if(line != ""){
+            let json = JSON.parse(line)
+            out.push(json)
           }
-          return out;
         }
-        // let rq_h = this.network_layer.return
-        // let path =  ground_truth_path
-        if(ground_truth_path[0] != "/"){
-          ground_truth_path = (t_context.working_dir|| "/") + ground_truth_path
-        }
-        return fetch(ground_truth_path)
-          .then((resp) => resp.text())
-          .then((text) => text.split("\n"))
-          .then((split) => to_json_list(split))
-          .then((resps) => f(t_context,{data:{requests:resps,out_dir: out_dir}}))
-
-      }else{
-        return f(t_context)  
+        return out;
       }
-      
-    }
+      // let rq_h = this.network_layer.return
+      // let path =  ground_truth_path
+      if(ground_truth_path[0] != "/"){
+        ground_truth_path = (t_context.working_dir|| "/") + ground_truth_path
+      }
+      return fetch(ground_truth_path)
+        .then((resp) => resp.text())
+        .then((text) => text.split("\n"))
+        .then((split) => to_json_list(split))
+        .then((resps) => f(t_context,{data:{requests:resps,out_dir: out_dir}}))
 
+    }else{
+      return f(t_context)  
+    }
+      
   }
 
   render(){
@@ -238,7 +242,8 @@ export default class ALReactInterface extends React.Component {
         <View style={styles.buttons}>
           <Buttons ref={this.buttons}
           {...this.state.default_props}
-          { ...this.state.buttons_props}/>
+          {...this.state.buttons_props}
+          {...{tutor_mode: this.state.tutor_mode}}/>
         </View>
       </View>
     }
