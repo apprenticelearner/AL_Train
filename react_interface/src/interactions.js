@@ -61,6 +61,7 @@ const assignFoci = assign({staged_SAI: (context,event) => {
 //CONDITIONS 
 function saiIsCorrectDone(context,event){
 	const sai_data = context.staged_SAI
+	if(context.feedback_map && Object.keys(context.feedback_map).length > 0) {return false}
 	return (sai_data.selection === "done" && (sai_data.reward == null || sai_data.reward  > 0))
 }
 
@@ -549,15 +550,24 @@ const tutor_sm = {
 				id : "checkApprentice",
 				src : "checkApprentice",
 				onDone : [
+					{cond : "saiIsCorrectDone",
+					target : "Done",
+					actions : ["displayCorrectness","assignCorrect"]},
 					{cond : "checkIsCorrect",
 					target : "Waiting_User_Attempt",
 					actions : ["displayCorrectness","assignCorrect"]},
 					{target : "Waiting_User_Attempt",
 					actions : ["displayCorrectness","assignIncorrect"]},
+
 				],
 			},
 			// exit : "stateRecalc"
+		},
+		"Done" :{
+			type : 'final',
+			entry : ['clearSkillPanel',"done"],
 		}
+
 	}
 }
 

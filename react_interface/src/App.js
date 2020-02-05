@@ -52,6 +52,19 @@ import { TouchableHighlight,ScrollView,View, Text, Platform, StyleSheet,SectionL
 //     // this.setState({ current : current })
 //     }
 //   );
+function shallow_diff(o1,o2,keys=null){
+  console.log(keys)
+  let diff = Object.keys(o2).reduce((diff, key) => {
+      if (o1[key] !== o2[key] && (keys == null || keys.includes(key))){
+        diff[key] = o2[key]
+      }
+      return diff
+    }, {})
+  return diff
+}
+
+
+
 export default class ALReactInterface extends React.Component {
   constructor(props){
     super(props);
@@ -122,11 +135,19 @@ export default class ALReactInterface extends React.Component {
 
   changeInteractionMode(d){
     this.setState(d)
-    this.training_service.send({
+  }
+
+  componentDidUpdate(prevProps,prevState){
+
+    //Update from changeInteractionMode
+    var d = shallow_diff(prevState,this.state,["interactive","free_author","tutor_mode"])
+    if(Object.keys(d).length > 0){
+      console.log("componentDidUpdate", d)
+      this.training_service.send({
         type : "CHANGE_INTERACTION_MODE",
         data : d,
-    })
-
+      })  
+    }
   }
 
   componentDidMount(){
