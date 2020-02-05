@@ -238,7 +238,7 @@ function get_machine_actions(app){
 				assignFoci : assignFoci,
 				clearFeedbackData : assign((context,event) => {	
 					return {"reward" : null,
-				   			"rewards" : null,
+				   			// "rewards" : null,
 				   			"staged_SAI" : null,
 							"skill_applications": null,
 							"feedback_map" : null};
@@ -443,7 +443,7 @@ var interactive_sm = {
 				"Waiting_Submit_Feedback" : {
 					on : {
 						"SKILL_PANEL_FEEDBACK_EMPTY" : "Waiting_Yes_No_Feedback",
-						"SUBMIT_SKILL_FEEDBACK": {target : "#interactive.Sending_Feedback_Explicit",
+						"SUBMIT_SKILL_FEEDBACK": {target : "#interactive.Sending_Feedback",
 						 	actions : ["clearProposedSAI"]},
 					}	
 				},
@@ -492,20 +492,20 @@ var interactive_sm = {
 			},
 			exit:["stateRecalc","assignResponse","clearFeedbackData"]
 		},
-		Sending_Feedback_Explicit : {
-			entry : 'printFeedback',
-			invoke : {
-		        id: "sendFeedbackExplicit",
-		        src: "sendFeedbackExplicit",
-		        onDone: [
-			        // {target: "Setting_Start_State", cond : },
-			        // {target: "Done", cond : "saiIsCorrectDone"},
-			        {target: "Querying_Apprentice"},
-		        ],
-		        onError: 'Fail',
-			},
-			exit:["stateRecalc","assignResponse","clearFeedbackData"]
-		},
+		// Sending_Feedback_Explicit : {
+		// 	entry : 'printFeedback',
+		// 	invoke : {
+		//         id: "sendFeedbackExplicit",
+		//         src: "sendFeedbackExplicit",
+		//         onDone: [
+		// 	        // {target: "Setting_Start_State", cond : },
+		// 	        // {target: "Done", cond : "saiIsCorrectDone"},
+		// 	        {target: "Querying_Apprentice"},
+		//         ],
+		//         onError: 'Fail',
+		// 	},
+		// 	exit:["stateRecalc","assignResponse","clearFeedbackData"]
+		// },
 		Done : {
 			type : 'final',
 			entry : ['clearSkillPanel',"done"],

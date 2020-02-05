@@ -77,89 +77,125 @@ export default class NetworkLayer {
 	        console.error('cannot give feedback on no action.');
 	    }
 
-	    var data = {...context.staged_SAI,"state":context.state}
-	    // if(data.reward == null && context.reward != null){
-	    // 	data.reward = context.reward
-	    // }
-	    if(context.interactive){
-	        data['kwargs'] = {'add_skill_info':true}
-	    }
-	    
-		return this.sendTrainingData(data,context.agent_id)   
-	}
-
-	sendFeedbackExplicit(context,event){
-		console.log("sendFeedback EXPLICIT")
-		// const staged_SAI = context.staged_SAI;
-		const agent_id = context.agent_id;
-		const state = context.state
-		const skill_applications = context.skill_applications
+	    const skill_applications = context.skill_applications
 		const feedback_map = context.feedback_map
 
-		var skill_applications_subset = []
-		var rewards = []
-		for (var index in feedback_map){
-			var skill_app = skill_applications[index]
-			skill_applications_subset.push({
+		var out 
+	    if(feedback_map && Object.keys(feedback_map).length > 0){
+			// var skill_applications_subset = []
+			// var rewards = []
+			for (var index in feedback_map){
+				var skill_app = skill_applications[index]
+				// skill_applications_subset.push({
+				var data = {
+					"state" : context.state,
+					"rhs_id" : skill_app["rhs_id"],
+	                "mapping" : skill_app["mapping"],
+	                "reward" : feedback_map[index].toLowerCase() == "correct" ? 1 : -1
+	            }
+	            if(context.interactive){data['add_skill_info'] = true}
+	            if(out){
+	            	out.then(()=>this.sendTrainingData(data,context.agent_id))
+	            }else{
+	            	out = this.sendTrainingData(data,context.agent_id)
+	            }
+			}
+
+		    // if(data.reward == null && context.reward != null){
+		    // 	data.reward = context.reward
+		    // }
+		    
+		}else{
+			var skill_app = context.staged_SAI
+			var data = {
+				"state":context.state,
+				"selection" : skill_app["selection"],
+				"action" : skill_app["action"],
+				"inputs" : skill_app["inputs"],
+				"foci_of_attention" : skill_app["foci_of_attention"],
 				"rhs_id" : skill_app["rhs_id"],
-                "mapping" : skill_app["mapping"]
-			})
-			var reward = feedback_map[index].toLowerCase() == "correct" ? 1 : -1
-			rewards.push(reward);
+				"mapping" : skill_app["mapping"],
+				"reward" : skill_app["reward"]
+			}
+			if(context.interactive){data['add_skill_info'] = true}
+			out = this.sendTrainingData(data,context.agent_id)   
 		}
-		// if(!reward){
-		// 	reward = staged_SAI.reward
-		// }
-		// var staged_SAI = context.staged_SAI
-
-	    // if (staged_SAI === null && context.explanations == null) {
-	    //     console.error('cannot give feedback on no action.');
-	    // }
-
-	    // var reward = 
-
-	    // staged_SAI.reward = reward
-	    // if(!explicit){
-	    //     staged_SAI.state = state
-	        
-	    // }
-	    // var rewards = context.rewards || [staged_SAI.reward]
-	    // var skill_applications = context.skill_applications || [{
-	    //                 "rhs_id" : staged_SAI["rhs_id"],
-	    //                 "mapping" : staged_SAI["mapping"]
-	    //             }];
-
-	    var data = {state: state,
-	                skill_applications: skill_applications_subset,
-	                rewards: rewards,
-	                // selection : staged_SAI.selection,
-	                // reward : rewards[0],
-	            	}
-	    console.log("EXPLICIT DATA",data)
-	    if(context.interactive){
-	        data['kwargs'] = {'add_skill_info':true}
-	    }
-
-	    return this.sendTrainingData(data,context.agent_id)
-
-	    // const URL = this.AL_URL + '/train/' + context.agent_id + '/'
-    	// return fetch_retry(URL, 
-    	// 	{method: "POST",
-    	// 	 headers: JSON_HEADERS,
-    	// 	 body:JSON.stringify(data)})
-    	// 	 .then(res => res.json())
-		    // $.ajax({
-		    //     type: 'POST',
-		    //     url: AL_URL + '/train/' + agent_id + '/',
-		    //     data: JSON.stringify(data),
-		    //     contentType: "application/json; charset=utf-8",
-		    //     retryLimit : AL_RETRY_LIMIT,
-		    //     tryCount : 0,
-		    //     error: ajax_retry_on_error,
-
-		    //     success: (resp) => {on_train_success(data,resp)}
-		    // });
+	    
+		return out
 	}
+
+	// sendFeedbackExplicit(context,event){
+	// 	console.log("sendFeedback EXPLICIT")
+	// 	// const staged_SAI = context.staged_SAI;
+	// 	// const agent_id = context.agent_id;
+	// 	const state = context.state
+	// 	const skill_applications = context.skill_applications
+	// 	const feedback_map = context.feedback_map
+
+	// 	var skill_applications_subset = []
+	// 	var rewards = []
+	// 	for (var index in feedback_map){
+	// 		var skill_app = skill_applications[index]
+	// 		skill_applications_subset.push({
+	// 			"rhs_id" : skill_app["rhs_id"],
+ //                "mapping" : skill_app["mapping"]
+	// 		})
+	// 		var reward = feedback_map[index].toLowerCase() == "correct" ? 1 : -1
+	// 		rewards.push(reward);
+	// 	}
+	// 	// if(!reward){
+	// 	// 	reward = staged_SAI.reward
+	// 	// }
+	// 	// var staged_SAI = context.staged_SAI
+
+	//     // if (staged_SAI === null && context.explanations == null) {
+	//     //     console.error('cannot give feedback on no action.');
+	//     // }
+
+	//     // var reward = 
+
+	//     // staged_SAI.reward = reward
+	//     // if(!explicit){
+	//     //     staged_SAI.state = state
+	        
+	//     // }
+	//     // var rewards = context.rewards || [staged_SAI.reward]
+	//     // var skill_applications = context.skill_applications || [{
+	//     //                 "rhs_id" : staged_SAI["rhs_id"],
+	//     //                 "mapping" : staged_SAI["mapping"]
+	//     //             }];
+
+	//     var data = {state: state,
+	//                 skill_applications: skill_applications_subset,
+	//                 rewards: rewards,
+	//                 // selection : staged_SAI.selection,
+	//                 // reward : rewards[0],
+	//             	}
+	//     console.log("EXPLICIT DATA",data)
+	//     if(context.interactive){
+	//         data['kwargs'] = {'add_skill_info':true}
+	//     }
+
+	//     return this.sendTrainingData(data,context.agent_id)
+
+	//     const URL = this.AL_URL + '/train/' + context.agent_id + '/'
+ //    	return fetch_retry(URL, 
+ //    		{method: "POST",
+ //    		 headers: JSON_HEADERS,
+ //    		 body:JSON.stringify(data)})
+ //    		 .then(res => res.json())
+	// 	    $.ajax({
+	// 	        type: 'POST',
+	// 	        url: AL_URL + '/train/' + agent_id + '/',
+	// 	        data: JSON.stringify(data),
+	// 	        contentType: "application/json; charset=utf-8",
+	// 	        retryLimit : AL_RETRY_LIMIT,
+	// 	        tryCount : 0,
+	// 	        error: ajax_retry_on_error,
+
+	// 	        success: (resp) => {on_train_success(data,resp)}
+	// 	    });
+	// }
 	
 
 	sendTrainingData(data,agent_id) {

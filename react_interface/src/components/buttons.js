@@ -129,11 +129,22 @@ class Buttons extends Component{
             }
             
             {!this.props.debugmode && 
+            
             <View style={styles.button_wrapper3}>
-              <TouchableHighlight style={styles.nools_button} underlayColor="#CCCCCC" 
+              {/*<TouchableHighlight style={styles.nools_button} underlayColor="#CCCCCC" 
                                   onPress={() => send("GEN_NOOLS")}>
                <Text style={styles.nools_button_text}>{"Generate Nools"}</Text>
               </TouchableHighlight>
+            */}
+              <TouchableHighlight style={styles.nools_button} underlayColor="#CCCCCC" 
+                                  onPress={() => this.props.app.changeInteractionMode({tutor_mode:!this.props.tutor_mode})}>
+               <Text style={styles.nools_button_text}>{(!this.props.tutor_mode && "Tutor Mode") || "Train Mode"}</Text>
+              </TouchableHighlight>
+              <TouchableHighlight style={styles.nools_button} underlayColor="#CCCCCC" 
+                                  onPress={()=>this.props.app.generateBehaviorProfile()}>
+               <Text style={styles.nools_button_text}>{"Gen bProfile"}</Text>
+              </TouchableHighlight>
+
             </View>
             }
 
@@ -213,11 +224,22 @@ const styles = StyleSheet.create({
   },
 
   "button_wrapper3":{
+
     display:"flex",
-    flexDirection: "column",
-    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-around",
+
+    // position: "absolute",
+    // bottom: 5,
+    padding: 5,
+
+    
+    // alignItems: "center",
     // flexBasis : "20%",
     marginTop: "auto",
+    // marginBottom: "auto",
+    
+    
     // justifySelf: "flex-end",
     // "pointerEvents": "none",
 
@@ -233,11 +255,11 @@ const styles = StyleSheet.create({
   },
 
   "nools_button" : {
-    position: "absolute",
-    bottom: 5,
+    // position: "absolute",
+    // bottom: 5,
     padding: 5,
     // "top":100,
-    "width":200,
+    "width":100,
     "backgroundColor": "#999999",
     // justifySelf: "bottom",
     borderRadius: 5,
@@ -245,7 +267,7 @@ const styles = StyleSheet.create({
   },
 
   "nools_button_text" : {
-    "fontSize":18,
+    // "fontSize":18,
     "textAlign":"center",
 
   },
