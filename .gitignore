@@ -5,6 +5,7 @@ log/
 bprofiles/
 net.conf
 *.cprof
+*.prof
 
 *.DS_Store
 __pycache__/
@@ -12,3 +13,4 @@ __pycache__/
 *.swp
 *.swo
 geckodriver.log
+
