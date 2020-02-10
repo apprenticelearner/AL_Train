@@ -18,6 +18,7 @@ import colorama
 from colorama import Fore, Back, Style
 import atexit
 import signal
+from glob import glob
 
 colorama.init(autoreset=True)
 
@@ -421,6 +422,12 @@ def do_QUIT():
     shutdown_server()
     return 'Server shutting down...'
 
+def do_GLOB():
+    r = json.loads(request.get_data())
+    print("GLOB IT", r)
+    g = glob(r.lstrip("/"))
+    return json.dumps(g)
+
 def do_GEN_NOOLS():
     post_data = request.get_data()
     d = json.loads(post_data)
@@ -524,7 +531,9 @@ do_switch = {"PRINT":do_PRINT,
              "POST": do_POST,
              "GET" : do_GET,
              "START_BEHAVIOR_PROFILE" : do_START_BEHAVIOR_PROFILE,
-             "APPEND_BEHAVIOR_PROFILE" : do_APPEND_BEHAVIOR_PROFILE}
+             "APPEND_BEHAVIOR_PROFILE" : do_APPEND_BEHAVIOR_PROFILE,
+             "GLOB" : do_GLOB
+             }
 
 @app.route('/', defaults={'path': ''},methods=list(do_switch.keys()))
 @app.route('/<path:path>')

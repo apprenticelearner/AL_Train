@@ -2,6 +2,7 @@ import { Machine,assign,interpret } from 'xstate';
 import RJSON from 'relaxed-json'
 import {build_interactions_sm} from './interactions.js'
 import {applyPriorKnowledge} from './prior_knowledge.js'
+import shuffle from "shuffle-array"
 var fs = require("fs")
 // const path = require("path")
 
@@ -78,19 +79,83 @@ function parseOuterLoopController(x,problem_set=null){
 	return {"outer_loop_controller" : x}
 }
 
+
+function resolveProblemSet(spec, context){
+	var promise = new Promise( async (resolve,reject) => {
+		var rez;
+		if(typeof(spec) == 'object'){
+        	spec = {...spec};
+
+			var key = Object.keys(spec)[0];
+			var val = spec[key]
+			if(key == "concatenate"){
+				var all = []
+				for(var g of val){
+					rez = await resolveProblemSet(g,context)
+					all = all.concat(rez)
+				}
+				resolve(all)
+			}else if(key == "shuffle"){
+				rez = await resolveProblemSet(val,context)
+				resolve(shuffle(rez))
+			}else if(key == "glob"){
+				var glob_key = val['key']
+				var pattern = val['pattern']
+				var matches = await context.network_layer.glob(pattern,context)
+				matches = matches.map(m => {var o = {}; o[glob_key]="/"+m; return o})
+				resolve(matches)
+			}else if(key == "from_file"){
+
+			}else{
+				resolve(spec)
+			}
+        }else{
+        	resolve([...spec]);
+        }
+
+
+	})
+	return promise
+}
+
 function serve_next_agent(context,event){
-    var promise = new Promise((resolve, reject) => {
+    var promise = new Promise(async (resolve, reject) => {
     	var agent_iterator = context.agent_iterator;
     	console.log("AGENT ITERATOR", agent_iterator.length);
 	    if(context.agent_iterator.length > 0){
-	        var agent_obj = {...(context.file_params['agent'] || {}),...agent_iterator.shift() }
+	    	var agent_obj = agent_iterator.shift()
+
+	        if("repetitions" in agent_obj){
+                if(agent_obj["repetitions"] < 0){
+                    agent_iterator.unshift({...agent_obj,...{"_rep_count" : (agent_obj['_rep_count'] || 1)+1}})
+                }else if(agent_obj["repetitions"] == 0){
+					agent_obj = agent_iterator.shift()	                
+	            }else if(agent_obj["repetitions"] >= 2){
+	                agent_obj["repetitions"] -= 1
+	                agent_iterator.unshift({...agent_obj,...{"_rep_count" : (agent_obj['_rep_count'] || 1)+1}})
+	            }
+	            agent_obj['_rep_count'] = agent_obj['_rep_count'] || 1
+	        }
+
+	        var problem_set = await resolveProblemSet(agent_obj["problem_set"],context)
+	        console.log("RESOLVED PROBLEM SET", problem_set)
+	        // if(typeof(agent_obj["problem_set"]) == 'object'){
+	        // 	var problem_set = {...agent_obj["problem_set"]};
+	        // 	problem_set = await resolveProblemSet(problem_set)
+	        // }else{
+	        // 	var problem_set = [...agent_obj["problem_set"]];
+	        // }
+
+	        agent_obj = {...(context.file_params['agent'] || {}),...agent_obj }
+
 	        if(context.file_params['agent'] && context.file_params['agent']['args']){
 	        	agent_obj['args'] = {...context.file_params['agent']['args'], ...agent_obj['args']};
 	        }
 	        var agent_params = agent_obj["set_params"] || {}
-	        var agent_description = "Agent Name: " + agent_obj["agent_name"] + "\nAgent Type: " + agent_obj["agent_type"] //+"<br>"
-	        var problem_set = agent_obj["problem_set"];
-	        var prior_knowledge = agent_obj["prior_knowledge"] || [];
+	        var rep_count_str = agent_obj["_rep_count"] != null ? ("(" + agent_obj["_rep_count"] + ")") : ""
+	        var agent_description = "Agent Name: " + agent_obj["agent_name"] + rep_count_str + "\nAgent Type: " + agent_obj["agent_type"] //+"<br>"
+	        
+	        var prior_knowledge = [...(agent_obj["prior_knowledge"] || [])];
 
 	        var outer_loop_controller = null;
 	        if("outer_loop_controller" in agent_obj){

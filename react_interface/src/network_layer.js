@@ -419,6 +419,18 @@ export default class NetworkLayer {
     	return out
     }
 
+    glob(path,context){
+    	if(path[0] != "/"){
+    		path = context.working_dir + "/" + path
+    	}
+    	var out = fetch(this.HOST_URL, {
+	    	method : "GLOB",
+	    	headers : JSON_HEADERS,
+	    	body : JSON.stringify(path)})
+    	.then(res => res.json())
+    	return out
+    }
+
 
 	//     	})
 	    	
