@@ -1,6 +1,7 @@
 import { Machine,assign,interpret } from 'xstate';
 import RJSON from 'relaxed-json'
 import {build_interactions_sm} from './interactions.js'
+import {applyPriorKnowledge} from './prior_knowledge.js'
 var fs = require("fs")
 // const path = require("path")
 
@@ -66,6 +67,17 @@ function serve_next_training_set (context,event){
 	return promise
 };
 
+function parseOuterLoopController(x,problem_set=null){
+	if(typeof(x) == "string"){
+		x = {type : x}
+	}
+	if(problem_set != null){
+		x['problem_set'] = problem_set
+	}
+	x['initialized'] = false
+	return {"outer_loop_controller" : x}
+}
+
 function serve_next_agent(context,event){
     var promise = new Promise((resolve, reject) => {
     	var agent_iterator = context.agent_iterator;
@@ -79,6 +91,12 @@ function serve_next_agent(context,event){
 	        var agent_description = "Agent Name: " + agent_obj["agent_name"] + "\nAgent Type: " + agent_obj["agent_type"] //+"<br>"
 	        var problem_set = agent_obj["problem_set"];
 	        var prior_knowledge = agent_obj["prior_knowledge"] || [];
+
+	        var outer_loop_controller = null;
+	        if("outer_loop_controller" in agent_obj){
+	        	outer_loop_controller = parseOuterLoopController(agent_obj["outer_loop_controller"],problem_set)
+	        	problem_set = [outer_loop_controller]
+	        }
 
 	        var other_data = {...agent_obj}
 	        delete other_data["problem_set"];
@@ -116,14 +134,10 @@ function handle_prior_knowledge(context,event){
 		while(prior_knowledge.length > 0){
 			console.log("CURRENT", prior_knowledge)
 			var current = prior_knowledge.shift();
-			//current.type == "Pik" || 
-			var type = current.type.toLowerCase().replace("_", "")
-			if(type == "bestintersect"){
-								
-
-			}else{
-
-			}
+			var out = applyPriorKnowledge(context,current,prior_knowledge)
+			if(out['updateContext']) {resolve({"updateContext" : out['updateContext']})}
+			if(out['train_now'] || false){ return promise }
+			
 		} 
 
 		resolve({"updateContext" : {
@@ -135,29 +149,63 @@ function handle_prior_knowledge(context,event){
 }
 
 
-function _next_prob_obj(problem_iterator,agent_params,file_params){
-    var prob_obj = problem_iterator.shift();
-    // console.log(prob_obj);trz
-    if(!prob_obj){return null;}
+async function _next_prob_obj(problem_iterator,agent_params,file_params,context){
+	var promise = new Promise(async (resolve, reject) => {
+	    var prob_obj = problem_iterator.shift();
+	    while(prob_obj != null && "outer_loop_controller" in prob_obj){
+	    	var nl = context.network_layer
+	    	if(!nl.OUTER_LOOP_URL){
+	    		nl.kill_this("\nCANNOT USE 'outer_loop_controller' : {} pattern unless " +
+	    		 "running train.py with --outer-loop flag.\n"
+	    		);
+	    	}
+	    	// console.log("HERE1.5")
+
+	    	var controller = prob_obj['outer_loop_controller']
+	    	if(!controller['initialized']){
+	    		//TODO: allow for multiple controllers?
+	    		// console.log("HERE1.6")
+	    		await nl.newOuterLoopController(controller,context)
+	    		controller['initialized'] = true
+	    		// console.log("HERE1.7")
+	    	}
+	    	// console.log("HERE1.9")
+	    	var next = await nl.nextProblem(controller,context)
+	    	// console.log("HERE2")
+	    	if(next != null){
+	    		problem_iterator.unshift({...prob_obj})	
+	    		prob_obj = next
+	    	}else if(problem_iterator.length > 0){
+	    		prob_obj = problem_iterator.shift()
+	    	}else{
+	    		prob_obj = null
+	    	}
+	    }
+
+	    // console.log(prob_obj);trz
+	    if(!prob_obj){resolve([null,agent_params]);return;}
 
 
-    while("set_params" in prob_obj){
-        agent_params = {...agent_params,...prob_obj['set_params']};
-        prob_obj = problem_iterator.shift();
-        if(!prob_obj){return null;}
-    }
-    // console.log(prob_obj)
-    var fp_clone = {...file_params}
-    delete fp_clone['agent']
-    prob_obj = {...fp_clone,...agent_params,...prob_obj}
-    console.log(prob_obj,agent_params)
-    return [prob_obj, agent_params]
+	    while("set_params" in prob_obj){
+	        agent_params = {...agent_params,...prob_obj['set_params']};
+	        prob_obj = problem_iterator.shift();
+	        if(!prob_obj){resolve([null,agent_params]);return;}
+	    }
+	    // console.log(prob_obj)
+	    var fp_clone = {...file_params}
+	    delete fp_clone['agent']
+	    prob_obj = {...fp_clone,...agent_params,...prob_obj}
+	    // console.log(prob_obj,agent_params)
+	    resolve([prob_obj, agent_params])
+	    return;
+	})
+	return promise
 }
 
 
 
 function serve_next_problem (context,event){
-	var promise = new Promise((resolve, reject) => {
+	var promise = new Promise(async (resolve, reject) => {
 		var prob_obj = null;
 		var agent_params = context.agent_params;
 		var file_params = context.file_params;
@@ -165,9 +213,11 @@ function serve_next_problem (context,event){
 		var nl = context.network_layer
 		var interactive = context.interactive
 		console.log("PROBLEM ITERATOR", problem_iterator.length);
+
 		if(problem_iterator.length > 0){
-	        [prob_obj, agent_params] = _next_prob_obj(problem_iterator,agent_params,file_params);
-	        console.log(prob_obj,agent_params)
+			// console.log("HERE1")
+	        [prob_obj, agent_params] = await _next_prob_obj(problem_iterator,agent_params,file_params,context);
+	        // console.log(prob_obj,agent_params)
 	        // console.log("SLOOOP")
 	        // console.log(prob_obj)
 	        if(prob_obj){
@@ -175,12 +225,13 @@ function serve_next_problem (context,event){
 	                if(prob_obj["repetitions"] < 0){
 	                    problem_iterator.unshift({...prob_obj})
 	                }else if(prob_obj["repetitions"] == 0){
-		                [prob_obj, agent_params] = _next_prob_obj(problem_iterator,agent_params,file_params)                
+		                [prob_obj, agent_params] = await _next_prob_obj(problem_iterator,agent_params,file_params,context)                
 		            }else if(prob_obj["repetitions"] >= 2){
 		                prob_obj["repetitions"] -= 1
 		                problem_iterator.unshift({...prob_obj})
 		            }
 		        }
+
 
 		        var EXAMPLES_ONLY = prob_obj["examples_only"] || false;
 

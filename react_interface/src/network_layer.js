@@ -43,9 +43,10 @@ const JSON_HEADERS = {
 
 
 export default class NetworkLayer {
-	constructor(AL_URL,HOST_URL){
+	constructor(AL_URL,HOST_URL,OUTER_LOOP_URL){
 		this.AL_URL = AL_URL
 		this.HOST_URL = HOST_URL
+		this.OUTER_LOOP_URL = OUTER_LOOP_URL
 		this.request_history = []
 		autobind(this)
 		// this.createAgent = this.createAgent.bind(this)
@@ -384,6 +385,38 @@ export default class NetworkLayer {
             }
         })
         return promise
+    }
+
+    newOuterLoopController(controller,context){
+    	var data = {
+    		"outer_loop_type" : controller['type'] || controller['outer_loop_type'],
+    		"problem_set" : controller['problem_set'],
+    		"outer_loop_args" : controller['args'] || controller['outer_loop_args'],
+    		"id" : context.agent_id
+    	}
+
+    	console.log(this.OUTER_LOOP_URL)
+		var out = fetch(this.OUTER_LOOP_URL, {
+	    	method : "NEW_STUDENT",
+	    	headers : JSON_HEADERS,
+	    	body : JSON.stringify(data)})
+		.then((res) => {})
+		console.log(out)
+		return out
+
+    }
+
+    nextProblem(controller,context){
+    	var data = {
+    		"id" : context.agent_id
+    	}
+
+    	var out = fetch(this.OUTER_LOOP_URL, {
+	    	method : "NEXT_PROBLEM",
+	    	headers : JSON_HEADERS,
+	    	body : JSON.stringify(data)})
+    	.then(res => res.json())
+    	return out
     }
 
 

@@ -10,7 +10,7 @@ import {build_training_sm} from './training_handler.js'
 import NetworkLayer from './network_layer.js'
 import { interpret } from 'xstate';
 import autobind from 'class-autobind';
-
+import path from 'path';
 
 // 
 import React from 'react';
@@ -75,7 +75,7 @@ export default class ALReactInterface extends React.Component {
     // this.AL_URL = this.urlParams.get('al_url');
     // this.HOST_URL = window.location.origin
     // console.log(this.AL_URL + '/create/',this.HOST_URL)
-    this.network_layer = new NetworkLayer(props.AL_URL,props.HOST_URL)
+    this.network_layer = new NetworkLayer(props.AL_URL,props.HOST_URL,props.OUTER_LOOP_URL)
     
     // this.training_file = this.urlParams.get('training');
     // this.interactive = this.urlParams.get('interactive') == "true";

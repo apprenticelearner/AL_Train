@@ -42,6 +42,7 @@ function getWebProps(){
 	console.log(urlParams)
 
 	var props = {AL_URL : urlParams.get('al_url'),
+				 OUTER_LOOP_URL : urlParams.get('outer_loop_url'),
 				 HOST_URL : window.location.origin,
 				 training_file : urlParams.get('training'),
 				 interactive : safeParse((urlParams.get('interactive')||"").toLowerCase()),
