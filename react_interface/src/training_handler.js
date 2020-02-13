@@ -2,10 +2,12 @@ import { Machine,assign,interpret } from 'xstate';
 import RJSON from 'relaxed-json'
 import {build_interactions_sm} from './interactions.js'
 import {applyPriorKnowledge} from './prior_knowledge.js'
-import shuffle from "shuffle-array"
+import {evalJSONFunc} from './eval.js'
+import {Random} from "random-js"
 var fs = require("fs")
 // const path = require("path")
 
+const random = new Random()
 
 const CTATGuid = {s4:function s4() {
   return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
@@ -80,43 +82,53 @@ function parseOuterLoopController(x,problem_set=null){
 }
 
 
-function resolveProblemSet(spec, context){
-	var promise = new Promise( async (resolve,reject) => {
-		var rez;
-		if(typeof(spec) == 'object'){
-        	spec = {...spec};
 
-			var key = Object.keys(spec)[0];
-			var val = spec[key]
-			if(key == "concatenate"){
-				var all = []
-				for(var g of val){
-					rez = await resolveProblemSet(g,context)
-					all = all.concat(rez)
-				}
-				resolve(all)
-			}else if(key == "shuffle"){
-				rez = await resolveProblemSet(val,context)
-				resolve(shuffle(rez))
-			}else if(key == "glob"){
-				var glob_key = val['key']
-				var pattern = val['pattern']
-				var matches = await context.network_layer.glob(pattern,context)
-				matches = matches.map(m => {var o = {}; o[glob_key]="/"+m; return o})
-				resolve(matches)
-			}else if(key == "from_file"){
+// function resolveProblemSet(spec, context){
+// 	var promise = new Promise( async (resolve,reject) => {
+// 		var rez;
+// 		if(typeof(spec) == 'object'){
+//         	spec = {...spec};
 
-			}else{
-				resolve(spec)
-			}
-        }else{
-        	resolve([...spec]);
-        }
+// 			var key = Object.keys(spec)[0];
+// 			var val = spec[key]
+// 			if(key == "concatenate"){
+// 				var all = []
+// 				for(var g of val){
+// 					rez = await resolveProblemSet(g,context)
+// 					all = all.concat(rez)
+// 				}
+// 				resolve(all)
+// 			}else if(key == "shuffle"){
+// 				rez = await resolveProblemSet(val,context)
+// 				resolve(random.shuffle(rez))
+// 			}else if(key == "sample"){
+// 				var n = val['n']
+// 				//TODO: Implement -> var w_repl = val['with_replacement'] || false
+// 				var set = val['set']
+// 				set = await resolveProblemSet(set,context)
+// 				console.log("IT IS THIS BIG:", set.length)
+// 				resolve(random.sample(set, n))
+// 			}else if(key == "glob"){
+// 				var glob_key = val['key']
+// 				var pattern = val['pattern']
+// 				var matches = await context.network_layer.glob(pattern,context)
+// 				matches = matches.map(m => {var o = {}; o[glob_key]="/"+m; return o})
+// 				resolve(matches)
+// 			}else if(key == "from_file"){
 
 
-	})
-	return promise
-}
+
+// 			}else{
+// 				resolve(spec)
+// 			}
+//         }else{
+//         	resolve([...spec]);
+//         }
+
+
+// 	})
+// 	return promise
+// }
 
 function serve_next_agent(context,event){
     var promise = new Promise(async (resolve, reject) => {
@@ -137,8 +149,8 @@ function serve_next_agent(context,event){
 	            agent_obj['_rep_count'] = agent_obj['_rep_count'] || 1
 	        }
 
-	        var problem_set = await resolveProblemSet(agent_obj["problem_set"],context)
-	        console.log("RESOLVED PROBLEM SET", problem_set)
+	        var problem_set = await evalJSONFunc(agent_obj["problem_set"],context)
+	        console.log("RESOLVED PROBLEM SET", [...problem_set])
 	        // if(typeof(agent_obj["problem_set"]) == 'object'){
 	        // 	var problem_set = {...agent_obj["problem_set"]};
 	        // 	problem_set = await resolveProblemSet(problem_set)
