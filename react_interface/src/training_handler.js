@@ -165,7 +165,8 @@ function serve_next_agent(context,event){
 	        }
 	        var agent_params = agent_obj["set_params"] || {}
 	        var rep_count_str = agent_obj["_rep_count"] != null ? ("(" + agent_obj["_rep_count"] + ")") : ""
-	        var agent_description = "Agent Name: " + agent_obj["agent_name"] + rep_count_str + "\nAgent Type: " + agent_obj["agent_type"] //+"<br>"
+	        agent_obj['agent_name'] += rep_count_str
+	        var agent_description = "Agent Name: " + agent_obj["agent_name"] + "\nAgent Type: " + agent_obj["agent_type"] //+"<br>"
 	        
 	        var prior_knowledge = [...(agent_obj["prior_knowledge"] || [])];
 
@@ -184,7 +185,7 @@ function serve_next_agent(context,event){
 	        	start_state_history : [],
 	        	request_history : [],
 	        	session_id : CTATGuid.guid(),
-	        	user_guid : "Stu_" + CTATGuid.guid(),
+	        	user_guid : agent_obj["agent_name"],//"Stu_" + CTATGuid.guid(),
 
 	        	agent_params	: agent_params,    
 	        	agent_name : agent_obj["agent_name"],

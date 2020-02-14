@@ -166,7 +166,7 @@ class CTAT_Tutor extends React.Component {
           "SessionLog" : "true",
           "Logging" : "ClientToLogServer",
           "log_service_url" : window.location.origin,
-          "user_guid" : context.agent_id,
+          "user_guid" : context.agent_name,
           "session_id" : context.session_id
       };
       var params = Object.assign({},qf,logging_params) //Merge dictionaries
