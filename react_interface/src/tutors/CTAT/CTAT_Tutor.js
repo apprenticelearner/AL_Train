@@ -161,7 +161,6 @@ class CTAT_Tutor extends React.Component {
       }
       var logging_params = {
           "problem_name": BRD_name,
-          "problem_context" : prob_obj['problem_context'] || null,
           "dataset_level_name1" : domain_name,
           "dataset_level_type1" : "Domain",
           "SessionLog" : "true",
@@ -170,6 +169,7 @@ class CTAT_Tutor extends React.Component {
           "user_guid" : context.agent_name,
           "session_id" : context.session_id
       };
+      if('problem_context' in prob_obj){logging_params['problem_context'] = prob_obj['problem_context']}
 
       if("custom_fields" in prob_obj){
         var custom_fields = prob_obj["custom_fields"]
