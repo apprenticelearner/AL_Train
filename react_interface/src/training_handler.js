@@ -380,8 +380,9 @@ function serve_next_problem(context, event) {
         }, "");
 
         // [nr] Mock for test.
-        prob_obj["steps"] = [["7", "9"]];
+        //prob_obj["steps"] = [["7", "9"]];
         //prob_obj["steps"] = [];
+
         resolve({
           updateContext: {
             EXAMPLES_ONLY: EXAMPLES_ONLY,

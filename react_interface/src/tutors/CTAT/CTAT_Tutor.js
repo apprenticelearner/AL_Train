@@ -206,6 +206,7 @@ class CTAT_Tutor extends React.Component {
       this.setState({
         source: { uri: source },
         onLoad: this._triggerWhenInitialized,
+        // TODO: [nr] convert elements to string?
         steps: prob_obj["steps"] ? prob_obj["steps"].flat() : null
       });
       // this.iframe.onLoad = this._triggerWhenInitialized;
@@ -555,10 +556,8 @@ class CTAT_Tutor extends React.Component {
   }
 
   _shouldSkipTraining() {
-    console.log("hello world");
     var tracer = this.iframe_content.CTAT.ToolTutor.tutor.getTracer();
     var stepId = tracer.getLastResult().getStepID();
-    console.log("-------------------");
     console.log("stepId:", stepId);
 
     if (!this.state.steps) {

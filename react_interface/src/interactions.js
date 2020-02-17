@@ -73,6 +73,11 @@ function saiIsCorrectDone(context, event) {
   );
 }
 
+function forceUseExample(context, event) {
+  const saiData = context.staged_SAI;
+  return saiData.skipTraining && saiData.reward < 0;
+}
+
 function isFreeAuthor(context, event) {
   return context.free_author || false;
 }
@@ -315,6 +320,7 @@ function get_machine_actions(app) {
     },
     guards: {
       saiIsCorrectDone: saiIsCorrectDone,
+      forceUseExample: forceUseExample,
       noApplicableSkills: noApplicableSkills,
       isFreeAuthor: isFreeAuthor,
       checkIsCorrect: checkIsCorrect
@@ -413,6 +419,7 @@ var non_interactive_sm = {
         src: "sendFeedback",
         onDone: [
           { target: "Done", cond: "saiIsCorrectDone" },
+          { target: "Applying_Next_Example", cond: "forceUseExample" },
           { target: "Querying_Apprentice" }
         ],
         onError: "Fail"
@@ -554,6 +561,7 @@ var interactive_sm = {
         onDone: [
           // {target: "Setting_Start_State", cond : },
           { target: "Done", cond: "saiIsCorrectDone" },
+          { target: "Applying_Next_Example", cond: "forceUseExample" },
           { target: "Querying_Apprentice" }
         ],
         onError: "Fail"
