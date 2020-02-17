@@ -524,6 +524,11 @@ def do_GET(path):
     if(path == ""): path = "index.html"
     return app.send_static_file(path)
 
+def do_WRITE():
+    write_data = request.get_data()
+    with open(write_data['path'],'w') as f:
+        f.write(write_data['data'])
+
 
 do_switch = {"PRINT":do_PRINT,
              "ERROR":do_PRINT,
@@ -532,7 +537,8 @@ do_switch = {"PRINT":do_PRINT,
              "GET" : do_GET,
              "START_BEHAVIOR_PROFILE" : do_START_BEHAVIOR_PROFILE,
              "APPEND_BEHAVIOR_PROFILE" : do_APPEND_BEHAVIOR_PROFILE,
-             "GLOB" : do_GLOB
+             "GLOB" : do_GLOB,
+             "WRITE" : do_WRITE,
              }
 
 @app.route('/', defaults={'path': ''},methods=list(do_switch.keys()))
@@ -566,7 +572,6 @@ if __name__ == '__main__':
             except OSError as exc: # Guard against race condition
                 if exc.errno != errno.EEXIST:
                     raise
-
 
         with open(output_file_path, 'w', newline='') as f: 
             csv_writer = csv.DictWriter(f, LOG_HEADERS.values(),delimiter="\t")

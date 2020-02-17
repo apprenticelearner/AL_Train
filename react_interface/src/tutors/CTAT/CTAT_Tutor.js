@@ -155,12 +155,13 @@ class CTAT_Tutor extends React.Component {
 
       var qf = qf_exists  ? {"question_file" : prob_obj["question_file"]} : {"question_file" : "/src/empty.nools"} ;
 
-      console.log("qf",qf,interactive)
+      console.log("qf",qf,interactive,prob_obj)
       if(!interactive && qf["question_file"].includes(".nools")){
           nl.kill_this('Question file cannot be nools in non-interactive mode. Use example tracing.')
       }
       var logging_params = {
           "problem_name": BRD_name,
+          "problem_context" : prob_obj['problem_context'] || null,
           "dataset_level_name1" : domain_name,
           "dataset_level_type1" : "Domain",
           "SessionLog" : "true",
@@ -169,6 +170,14 @@ class CTAT_Tutor extends React.Component {
           "user_guid" : context.agent_name,
           "session_id" : context.session_id
       };
+
+      if("custom_fields" in prob_obj){
+        var custom_fields = prob_obj["custom_fields"]
+        for (var [i,key] of Object.keys(custom_fields).entries()){
+          logging_params['custom_field_name'+String(i)] = key
+          logging_params['custom_field_value'+String(i)] = custom_fields[key]
+        }
+      }
       var params = Object.assign({},qf,logging_params) //Merge dictionaries
       
       this.HTML_PATH = HTML_PATH
@@ -475,14 +484,18 @@ class CTAT_Tutor extends React.Component {
       // try {
         const sai = context.staged_SAI;
         var currentElement = this.iframe_content.document.getElementById(sai.selection);
+        var tracer = this.iframe_content.CTAT.ToolTutor.tutor.getTracer()
         const CTAT_CORRECT = this.CTAT_CORRECT
         const CTAT_INCORRECT = this.CTAT_INCORRECT
 
+
         function handle_ctat_feedback(evt){
-          console.log("EVENT", evt.detail.sai.getTransactionID())
+          console.log("EVENT", evt)
           console.log("EVENT", evt.detail.sai.getTransactionID())
           currentElement.removeEventListener(CTAT_CORRECT, handle_ctat_feedback);
           currentElement.removeEventListener(CTAT_INCORRECT, handle_ctat_feedback);
+          var step_id = tracer.getLastResult().getStepID()
+          console.log("step_id:",step_id)
           resolve({...sai,reward: evt.type == CTAT_CORRECT ? 1 : -1})            
         }
 

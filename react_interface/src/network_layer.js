@@ -304,6 +304,17 @@ export default class NetworkLayer {
 	    		 	body:JSON.stringify(data)})
 	}
 
+	write_file(file,data){
+		var data = {
+			"file" : file,
+			"data" : data
+		}
+		return fetch_retry(this.HOST_URL,
+		    		{method: "WRITE",
+		    		headers: JSON_HEADERS,
+	    		 	body:JSON.stringify(data)})
+	}
+
 	generate_nools(context,event){
 		const URL = this.AL_URL + '/get_skills/' + context.agent_id + '/'
 		var data = {'states':this.request_history.map(x => x['state'])}
