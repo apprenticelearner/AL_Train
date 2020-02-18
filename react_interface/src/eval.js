@@ -247,6 +247,51 @@ async function gen_pretraining(args,context,shuffle=false){
 	return o
 }
 
+async function mirror_students(args,context){
+	var human_transactions = args['human_transactions']
+	var step_pivot_table = await evalJSONFunc(args['step_pivot_table'],context)
+	var afm_stats = args['afm_stats']
+	var error_table = args['error_table']
+	var Pik_method = args['Pik_method']
+	var problem_key = args['problem_key']
+	var kc_model = args['kc_model']
+	var problem_pool = await evalJSONFunc(args['problem_pool'],context)
+
+
+
+	var pretraining = {"gen_pretraining" : 
+		{"opportunities" : 
+			{"estimate_Pik" :{
+              "method" : Pik_method,
+              "afm_stats" : afm_stats,
+              "student_id" : null,
+              "error_table" : error_table,
+              }
+            },
+            "step_pivot_table" : step_pivot_table,
+            "problem_key" : problem_key,
+            "kc_model" : kc_model
+        }
+	}
+	var d1 = {"set_params": {
+		"domain_name" : 'prior_knowledge'
+	}}
+	var d2 = {"set_params": {
+		"domain_name" : null
+	}}
+
+	
+
+	var cat_list = [d1,pretraining,d2]
+
+	var template = {
+		"agent_name" : null,
+		"problem_set" : {"concatenate" : cat_list}
+	}
+
+
+}
+
 async function gen_pivot_table(args,context){
 	var pivot_table
 
