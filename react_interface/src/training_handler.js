@@ -379,10 +379,6 @@ function serve_next_problem(context, event) {
           return s + key + ": " + prob_obj[key] + "\n";
         }, "");
 
-        // [nr] Mock for test.
-        //prob_obj["steps"] = [["7", "9"]];
-        //prob_obj["steps"] = [];
-
         resolve({
           updateContext: {
             EXAMPLES_ONLY: EXAMPLES_ONLY,

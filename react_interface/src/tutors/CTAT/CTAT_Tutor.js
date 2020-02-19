@@ -207,7 +207,10 @@ class CTAT_Tutor extends React.Component {
         source: { uri: source },
         onLoad: this._triggerWhenInitialized,
         // TODO: [nr] convert elements to string?
-        steps: prob_obj["steps"] ? prob_obj["steps"].flat() : null
+        steps: prob_obj["steps"] ? prob_obj["steps"].flat() : null,
+        selections: prob_obj["selections"]
+          ? prob_obj["selections"].flat()
+          : null
       });
       // this.iframe.onLoad = this._triggerWhenInitialized;
       // this.iframe.src = HTML_PATH + "?" + queryString.stringify( params ).search;
@@ -555,15 +558,29 @@ class CTAT_Tutor extends React.Component {
     );
   }
 
-  _shouldSkipTraining() {
-    var tracer = this.iframe_content.CTAT.ToolTutor.tutor.getTracer();
-    var stepId = tracer.getLastResult().getStepID();
-    console.log("stepId:", stepId);
-
-    if (!this.state.steps) {
+  _shouldSkipTraining(sai) {
+    if (!this.state.steps && !this.state.selections) {
       return false;
     }
-    return !this.state.steps.includes(stepId);
+
+    if (this.state.steps) {
+      var tracer = this.iframe_content.CTAT.ToolTutor.tutor.getTracer();
+      var stepId = tracer.getLastResult().getStepID();
+      console.log("stepId:", stepId);
+
+      if (this.state.steps.includes(stepId)) {
+        return false;
+      }
+    }
+
+    if (
+      this.state.selections &&
+      this.state.selections.includes(sai.selection)
+    ) {
+      return false;
+    }
+
+    return true;
   }
 
   //---------- Xstate API with promises ----------------
@@ -590,7 +607,7 @@ class CTAT_Tutor extends React.Component {
         resolve({
           ...sai,
           reward: evt.type == CTAT_CORRECT ? 1 : -1,
-          skipTraining: shouldSkipTraining()
+          skipTraining: shouldSkipTraining(sai)
         });
       }
 
@@ -613,7 +630,7 @@ class CTAT_Tutor extends React.Component {
       resolve({
         ...sai,
         reward: 1,
-        skipTraining: this._shouldSkipTraining()
+        skipTraining: this._shouldSkipTraining(sai)
       });
       //   }catch(err){
       //     reject(err)
@@ -830,7 +847,7 @@ class CTAT_Tutor extends React.Component {
     use_class = true,
     use_id = true,
     append_ele = true,
-    numeric_values = false 
+    numeric_values = false
   } = {}) {
     var relative_pos_cache = this.relative_pos_cache;
     var HTML_PATH = this.HTML_PATH;
@@ -871,8 +888,8 @@ class CTAT_Tutor extends React.Component {
             ])
           ) {
             obj["value"] = element.firstElementChild.value;
-            if(numeric_values){
-              obj["value"] = Number(obj["value"]) || obj["value"]
+            if (numeric_values) {
+              obj["value"] = Number(obj["value"]) || obj["value"];
             }
             obj["contentEditable"] =
               element.firstElementChild.contentEditable == "true";

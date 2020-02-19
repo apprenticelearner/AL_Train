@@ -232,10 +232,8 @@ function get_machine_actions(app) {
     services: {
       sendFeedback: (context, event) => {
         if (context.staged_SAI.skipTraining) {
-          console.log("==== SKIPPED ====");
           return Promise.resolve(true);
         }
-        console.log("==== NOT SKIPPED ====");
         return network_layer.sendFeedback(context, event);
       },
       sendFeedbackExplicit: (context, event) =>
