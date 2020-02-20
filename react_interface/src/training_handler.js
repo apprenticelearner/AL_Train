@@ -58,7 +58,7 @@ function load_training_file(context, event) {
 }
 
 function serve_next_training_set(context, event) {
-  var promise = new Promise((resolve, reject) => {
+  var promise = new Promise(async (resolve, reject) => {
     var training_iterator = context.training_iterator;
     var file_params = context.file_params || {};
     console.log("TRAINING ITERATOR", training_iterator.length);
@@ -73,7 +73,7 @@ function serve_next_training_set(context, event) {
       }
 
       console.log("START TRAINING SET: ", name, file_params);
-      var agent_iterator = out[1];
+      var agent_iterator = await evalJSONFunc(out[1],context);
 
       resolve({
         updateContext: {

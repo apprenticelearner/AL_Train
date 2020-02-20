@@ -12,7 +12,8 @@ export var registedFunctions = {
 	"from_file" : from_file,
 	"estimate_Pik" : estimate_Pik,
 	"gen_pretraining" : gen_pretraining,
-	'gen_pivot_table' : gen_pivot_table
+	'gen_pivot_table' : gen_pivot_table,
+	'mirror_students' : mirror_students
 }
 
 function abs_path(p,context){
@@ -131,8 +132,8 @@ async function exact_align(args,context){
 	// console.log("table_path")
 	// console.log(table_path)
 	var error_table = await p_parse_csv(table_path, { delimiter: "\t",header: true, dynamicTyping: true},true)
-	// console.log("error_table")
-	// console.log(error_table)
+	console.log("error_table")
+	console.log(error_table)
 	var curve_by_kc = {}
 	 for (var r of error_table.data){
 		var key = r["KC Name"]
@@ -141,8 +142,8 @@ async function exact_align(args,context){
 			curve_by_kc[key] = Object.values(r)
 		}
 	}
-	// console.log("curve_by_kc")
-	// console.log(curve_by_kc)
+	console.log("curve_by_kc")
+	console.log(curve_by_kc)
 	var opp_by_kc = {}
 	for(var kc in curve_by_kc){
 		var curve = curve_by_kc[kc]
@@ -168,16 +169,37 @@ async function exact_align(args,context){
 
 async function estimate_Pik(args,context){
 	console.log("ESTIMATE_PIK")
+	var out;
 	if(args['method'] == "exact_align"){
-		return await exact_align(args,context)
+		out = await exact_align(args,context)
 	}else if(args['method'] == "backcast"){
-		return await backcast(args,context)
+		out = await backcast(args,context)
 	}
+	console.log(args['KCs'])
+	console.log("BEFORE")
+	console.log({...out})
+	if('KCs' in args && args['KCs'] != null){
+		var new_out = {}
+		for (var key of args['KCs']) {
+			new_out[key] = out[key]
+		}
+		out = new_out
+	}
+	console.log("AFTER")
+	console.log({...out})
+	if('max' in args && args['max'] != null){
+		for (var key in out) {
+			out[key] = Math.min(out[key],args['max']);
+		}
+	}
+	return out
 }
 
 async function gen_pretraining(args,context,shuffle=false){
 	//Get the number of opportunities for each KC
 	var opp_by_kc = await evalJSONFunc(args['opportunities'],context)
+	var only_attr = args['by_step_id'] || false ? "step_id" : "Selection" 
+	var only_str = "only_" + only_attr + "s"
 	console.log("opp_by_kc")
 	console.log(opp_by_kc)
 	opp_by_kc = {...opp_by_kc}
@@ -213,7 +235,7 @@ async function gen_pretraining(args,context,shuffle=false){
 		for(var kc in prob){
 			if(opp_by_kc[kc] > 0){
 				opp_by_kc[kc] -= 1
-				var steps = prob[kc]
+				var steps = prob[kc][only_attr]
 				steps = Array.from(steps)
 				if(steps.length==1){steps = steps[0]}
 				only_steps.push(steps)
@@ -226,7 +248,7 @@ async function gen_pretraining(args,context,shuffle=false){
 		if(any){
 			var o = {}
 			o[args['problem_key']] = p
-			if(!all){o['only_steps'] = only_steps}
+			if(!all){o[only_str] = only_steps}
 			out.push(o)
 		}
 	}
@@ -244,50 +266,145 @@ async function gen_pretraining(args,context,shuffle=false){
 
 	console.log("opp_by_kc")
 	console.log(opp_by_kc)
-	return o
+	return out
 }
 
 async function mirror_students(args,context){
-	var human_transactions = args['human_transactions']
-	var step_pivot_table = await evalJSONFunc(args['step_pivot_table'],context)
-	var afm_stats = args['afm_stats']
-	var error_table = args['error_table']
+	console.log("MIRROR_START")
+	var human_transactions = abs_path(args['human_transactions'],context)
+	
+	var human_afm_stats = args['human_afm_stats']
+	var pool_agent_error_table = args['pool_agent_error_table']
 	var Pik_method = args['Pik_method']
 	var problem_key = args['problem_key']
 	var kc_model = args['kc_model']
-	var problem_pool = await evalJSONFunc(args['problem_pool'],context)
+	var KCs = args['KCs']
+	var maximum = args['max']
+	var human_problems = await evalJSONFunc(args['human_problems'],context)
+	var human_path_map = {}
+	for(var p of human_problems){
+		human_path_map[path.basename(p).split(".")[0]] = p
+	}	
 
-
-
-	var pretraining = {"gen_pretraining" : 
-		{"opportunities" : 
-			{"estimate_Pik" :{
-              "method" : Pik_method,
-              "afm_stats" : afm_stats,
-              "student_id" : null,
-              "error_table" : error_table,
-              }
-            },
-            "step_pivot_table" : step_pivot_table,
-            "problem_key" : problem_key,
-            "kc_model" : kc_model
-        }
+	if('step_pivot_table' in args){
+		var step_pivot_table = await evalJSONFunc(args['step_pivot_table'],context)
+	}else{
+		var pool_agent_problems = await evalJSONFunc(args['pool_agent_problems'],context)
+		var step_pivot_table = {"gen_pivot_table" : {
+			"transaction_file" : args['pool_agent_transactions'],
+          	"problem_pool" : pool_agent_problems,
+          	"kc_model" : args['kc_model']
+		  }
+		}
+		step_pivot_table = await evalJSONFunc(step_pivot_table,context)
 	}
-	var d1 = {"set_params": {
-		"domain_name" : 'prior_knowledge'
-	}}
-	var d2 = {"set_params": {
-		"domain_name" : null
-	}}
 
 	
 
-	var cat_list = [d1,pretraining,d2]
+	
 
-	var template = {
-		"agent_name" : null,
-		"problem_set" : {"concatenate" : cat_list}
+	
+	var human_prob_seq = {}
+	var config = {
+		dynamicTyping: true,
+		delimiter: "\t",
+		header : true,
+		download : true,
+		step : function (row){
+			var row = row.data
+			if(row && 'Anon Student Id' in row){
+				var sequence = human_prob_seq[row['Anon Student Id']] || []
+				var prob = row['Problem Name'] || ""
+				if(prob != ""){
+					if(sequence.length == 0){
+						sequence = [prob]
+					}else if(sequence[sequence.length-1] != prob){
+						sequence.push(prob)
+					}
+				}
+				human_prob_seq[row['Anon Student Id']] = sequence
+			}
+		}
 	}
+	//Run the 'step' function specified above line by line-by-line to find the problem sequences.
+	var url = context.network_layer.HOST_URL + human_transactions
+	console.log("human transactions")
+	console.log(url)
+	var nothing = await p_parse_csv(url,config,false)
+
+	console.log("human_prob_seq")
+	console.log(human_prob_seq)
+
+	// Turn the problem names from the student transactions into paths
+	for(var student in human_prob_seq){
+		var seq = human_prob_seq[student]
+		var new_seq = []
+		for(var prob of seq){
+			var full_path = human_path_map[prob]
+			if(full_path){
+				var o = {}
+				o[problem_key] = full_path
+				new_seq.push(o)
+			}
+		}
+		human_prob_seq[student] = new_seq
+	}
+
+	var out = []
+
+
+	console.log("full_paths")
+	console.log(human_prob_seq)
+	for(var student_id in human_prob_seq){
+		var stu_seq = human_prob_seq[student_id]
+		if(stu_seq.length > 0){
+			var pretraining = {"gen_pretraining" : 
+				{"opportunities" : 
+					{"estimate_Pik" :{
+		              "method" : Pik_method,
+		              "afm_stats" : human_afm_stats,
+		              "student_id" : student_id,
+		              "error_table" : pool_agent_error_table,
+		              "KCs" : KCs,
+		              "max" : maximum,
+		              }
+		            },
+		            "step_pivot_table" : step_pivot_table,
+		            "problem_key" : problem_key,
+		            "kc_model" : kc_model,
+		        }
+			}
+			pretraining = await evalJSONFunc(pretraining,context)
+
+			var d1 = {"set_params": {
+				"domain_name" : 'prior_knowledge'
+			}}
+			var d2 = {"set_params": {
+				"domain_name" : null
+			}}
+		
+			var cat_list = [d1,pretraining,d2,stu_seq]
+
+			var agent_obj = {
+				"agent_name" : student_id,
+				"problem_set" : {"concatenate" : cat_list}
+			}
+			out.push(agent_obj)	
+		}else{
+			var text = "Will Skip Student " + student_id + "because did not do any problems."
+			console.warn(text)
+			context.network_layer.term_print(text,'warning')
+		}
+		
+	}
+
+	console.log("out")
+	console.log(out)
+
+	return out
+
+
+
 
 
 }
@@ -301,7 +418,8 @@ async function gen_pivot_table(args,context){
 		pivot_table = {}
 		for(var row of pivot_table_csv){
 			pivot_table[row['Problem Path']] = pivot_table[row['Problem Path']] || {}
-			pivot_table[row['Problem Path']][row['KC']] = row['Step Names'].split(",")
+			pivot_table[row['Problem Path']][row['KC']]["step_id"] = row['step_id'].split(",")
+			pivot_table[row['Problem Path']][row['KC']]["Selection"] = row['Selection'].split(",")
 		}
 	}
 	if(pivot_table == null){
@@ -338,10 +456,11 @@ async function gen_pivot_table(args,context){
 						var kc_str = row[kc_model_id]
 						if(kc_str){
 							if(!(kc_str in pivot_table[p])){
-								pivot_table[p][kc_str] = new Set()	
+								pivot_table[p][kc_str] = {"step_id": new Set(), "Selection": new Set()}
 							}
 							var step_id_set = pivot_table[p][kc_str]
-							step_id_set.add(row['CF (step_id)'])
+							step_id_set['step_id'].add(row['CF (step_id)'])
+							step_id_set['Selection'].add(row['Selection'])
 						}
 					}
 				}
@@ -357,7 +476,9 @@ async function gen_pivot_table(args,context){
 			for(var prob in pivot_table){
 				var kc_table = pivot_table[prob]
 				for(var kc in kc_table){
-					csv.append({"Problem Path" : prob, "KC" : kc, "Step Names": kc_table[kc].join(",")})
+					csv.append({"Problem Path" : prob, "KC" : kc,
+						 "step_id": kc_table[kc]['step_id'].join(","),
+						 "Selection": kc_table[kc]['Selection'].join(",")})
 				}
 
 			}
