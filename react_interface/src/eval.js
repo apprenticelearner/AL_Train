@@ -192,6 +192,7 @@ async function estimate_Pik(args,context){
 			out[key] = Math.min(out[key],args['max']);
 		}
 	}
+
 	return out
 }
 
@@ -224,6 +225,9 @@ async function gen_pretraining(args,context,shuffle=false){
 
 	console.log("problem_pool")
 	console.log(problem_pool)
+	
+	//Not really a core feature, just necessary for this tutor
+	var onlys_map = args['onlys_map'] || null
 
 	//For all problems add to problem set if any kc needs more practice. 
 	//	 If not all KCs need practice only train KCs that need practice.
@@ -237,6 +241,9 @@ async function gen_pretraining(args,context,shuffle=false){
 				opp_by_kc[kc] -= 1
 				var steps = prob[kc][only_attr]
 				steps = Array.from(steps)
+				if(onlys_map){
+					steps = steps.map(x => onlys_map[x])
+				}
 				if(steps.length==1){steps = steps[0]}
 				only_steps.push(steps)
 				any=true
@@ -244,6 +251,7 @@ async function gen_pretraining(args,context,shuffle=false){
 				all=false
 			}
 		}
+
 		
 		if(any){
 			var o = {}
@@ -372,6 +380,7 @@ async function mirror_students(args,context){
 		            "step_pivot_table" : step_pivot_table,
 		            "problem_key" : problem_key,
 		            "kc_model" : kc_model,
+		            "onlys_map" : args["onlys_map"] || null
 		        }
 			}
 			pretraining = await evalJSONFunc(pretraining,context)
@@ -380,7 +389,7 @@ async function mirror_students(args,context){
 				"domain_name" : 'prior_knowledge'
 			}}
 			var d2 = {"set_params": {
-				"domain_name" : null
+				"domain_name" : undefined
 			}}
 		
 			var cat_list = [d1,pretraining,d2,stu_seq]

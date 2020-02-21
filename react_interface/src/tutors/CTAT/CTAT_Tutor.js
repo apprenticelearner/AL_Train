@@ -207,10 +207,9 @@ class CTAT_Tutor extends React.Component {
         source: { uri: source },
         onLoad: this._triggerWhenInitialized,
         // TODO: [nr] convert elements to string?
-        steps: prob_obj["steps"] ? prob_obj["steps"].flat() : null,
-        selections: prob_obj["selections"]
-          ? prob_obj["selections"].flat()
-          : null
+        steps: prob_obj["only_step_ids"] ? prob_obj["only_step_ids"].flat() : null,
+        selections: prob_obj["only_Selections"]
+          ? prob_obj["only_Selections"].flat() : null
       });
       // this.iframe.onLoad = this._triggerWhenInitialized;
       // this.iframe.src = HTML_PATH + "?" + queryString.stringify( params ).search;
@@ -573,10 +572,8 @@ class CTAT_Tutor extends React.Component {
       }
     }
 
-    if (
-      this.state.selections &&
-      this.state.selections.includes(sai.selection)
-    ) {
+    if (this.state.selections &&
+        this.state.selections.includes(sai.selection)) {
       return false;
     }
 
