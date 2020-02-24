@@ -144,26 +144,27 @@ async function exact_align(args,context){
 	}
 	console.log("curve_by_kc")
 	console.log(curve_by_kc)
-	var opp_by_kc = {}
+	var opps_by_kc = {}
 	for(var kc in curve_by_kc){
 		var curve = curve_by_kc[kc]
 		var min = Infinity;
 		var minIndex;
 		var y = fo_err_by_kc[kc]
 
+		//Always round up
 		for(const [i,x] of curve.entries()){
-			var diff = Math.abs(x-y)
-			if(diff < min){
+			var diff = y-x
+			if(diff < min && diff > 0){
 				min = diff
 				minIndex = i
 			}
 		}
-		opp_by_kc[kc] = minIndex
+		opps_by_kc[kc] = minIndex
 	}
 
-	// console.log("opp_by_kc")
-	// console.log(opp_by_kc)
-	return opp_by_kc
+	// console.log("opps_by_kc")
+	// console.log(opps_by_kc)
+	return opps_by_kc
 	
 }
 
@@ -198,12 +199,12 @@ async function estimate_Pik(args,context){
 
 async function gen_pretraining(args,context,shuffle=false){
 	//Get the number of opportunities for each KC
-	var opp_by_kc = await evalJSONFunc(args['opportunities'],context)
+	var opps_by_kc = await evalJSONFunc(args['opportunities'],context)
 	var only_attr = args['by_step_id'] || false ? "step_id" : "Selection" 
 	var only_str = "only_" + only_attr + "s"
-	console.log("opp_by_kc")
-	console.log(opp_by_kc)
-	opp_by_kc = {...opp_by_kc}
+	console.log("opps_by_kc")
+	console.log(opps_by_kc)
+	opps_by_kc = {...opps_by_kc}
 
 	
 	var pivot_table
@@ -237,8 +238,8 @@ async function gen_pretraining(args,context,shuffle=false){
 		var only_steps = []
 		var prob = pivot_table[p]
 		for(var kc in prob){
-			if(opp_by_kc[kc] > 0){
-				opp_by_kc[kc] -= 1
+			if(opps_by_kc[kc] > 0){
+				opps_by_kc[kc] -= 1
 				var steps = prob[kc][only_attr]
 				steps = Array.from(steps)
 				if(onlys_map){
@@ -262,9 +263,9 @@ async function gen_pretraining(args,context,shuffle=false){
 	}
 
 	//Throw an error if there weren't enough problems
-	if(Object.values(opp_by_kc).reduce((a,b) => a + b, 0) > 0){
+	if(Object.values(opps_by_kc).reduce((a,b) => a + b, 0) > 0){
 		var error = "Insufficient problems in problem_pool to pretrain requested number of steps. " + 
-			"Additional problems required for KCs/Steps: " + JSON.stringify(opp_by_kc)
+			"Additional problems required for KCs/Steps: " + JSON.stringify(opps_by_kc)
 		context.network_layer.kill_this(error)
 		console.error(error)
 	}
@@ -272,8 +273,8 @@ async function gen_pretraining(args,context,shuffle=false){
 	console.log("gen_pretraining")
 	console.log(out)
 
-	console.log("opp_by_kc")
-	console.log(opp_by_kc)
+	console.log("opps_by_kc")
+	console.log(opps_by_kc)
 	return out
 }
 
@@ -313,6 +314,7 @@ async function mirror_students(args,context){
 
 	
 	var human_prob_seq = {}
+	// var buggy_students = new Set()
 	var config = {
 		dynamicTyping: true,
 		delimiter: "\t",
@@ -323,22 +325,50 @@ async function mirror_students(args,context){
 			if(row && 'Anon Student Id' in row){
 				var sequence = human_prob_seq[row['Anon Student Id']] || []
 				var prob = row['Problem Name'] || ""
+				var view = row['Problem View'] || ""
 				if(prob != ""){
+					var pv = String(prob) + "#"+ String(view)
 					if(sequence.length == 0){
-						sequence = [prob]
-					}else if(sequence[sequence.length-1] != prob){
-						sequence.push(prob)
+						sequence = [pv]
+					}else if(!sequence.includes(pv)){
+						// if(sequence.includes(pv)){
+						// 	console.log("BUGGY")
+						// 	console.log(pv,[...sequence])
+						// 	// buggy_students.add(row['Anon Student Id'])
+						// }
+						sequence.push(pv)	
 					}
 				}
 				human_prob_seq[row['Anon Student Id']] = sequence
 			}
 		}
 	}
+
+
 	//Run the 'step' function specified above line by line-by-line to find the problem sequences.
 	var url = context.network_layer.HOST_URL + human_transactions
 	console.log("human transactions")
 	console.log(url)
 	var nothing = await p_parse_csv(url,config,false)
+
+	// console.log("CRAFF")
+	// console.log(human_prob_seq)
+	// console.log(buggy_students)
+	// for(var std of buggy_students){
+	// 	var text = "Will Skip Student " + std + ". Multiple problems done concurrently."
+	// 	console.warn(text)
+	// 	context.network_layer.term_print(text,'warning')
+	// 	delete human_prob_seq[std]
+	// }
+	console.log("BEEE")
+	console.log(human_prob_seq)
+	//Strip out view numbers
+	for(var std in human_prob_seq){
+		human_prob_seq[std] = human_prob_seq[std].map(x => x.substring(0, x.lastIndexOf("#")))
+	}
+	console.log("AFFFF")
+	console.log(human_prob_seq)
+
 
 	console.log("human_prob_seq")
 	console.log(human_prob_seq)
@@ -359,16 +389,16 @@ async function mirror_students(args,context){
 	}
 
 	var out = []
-
+	if('store_opp_table' in args){
+		var opp_table = []
+	}
 
 	console.log("full_paths")
 	console.log(human_prob_seq)
 	for(var student_id in human_prob_seq){
 		var stu_seq = human_prob_seq[student_id]
 		if(stu_seq.length > 0){
-			var pretraining = {"gen_pretraining" : 
-				{"opportunities" : 
-					{"estimate_Pik" :{
+			var opps_by_kc = {"estimate_Pik" :{
 		              "method" : Pik_method,
 		              "afm_stats" : human_afm_stats,
 		              "student_id" : student_id,
@@ -376,11 +406,34 @@ async function mirror_students(args,context){
 		              "KCs" : KCs,
 		              "max" : maximum,
 		              }
-		            },
-		            "step_pivot_table" : step_pivot_table,
-		            "problem_key" : problem_key,
-		            "kc_model" : kc_model,
-		            "onlys_map" : args["onlys_map"] || null
+		            }
+		    opps_by_kc = await evalJSONFunc(opps_by_kc,context)
+
+		    //Just for debugging
+		    if('store_opp_table' in args){
+		    	var o = {}
+		    	o['Anon Student Id'] = student_id
+		    	for(var kc in opps_by_kc){
+		    		o[kc] = opps_by_kc[kc]
+		    	}
+		    	opp_table.push(o)
+		    }
+
+			var pretraining = {"gen_pretraining" : 
+				{"opportunities" : opps_by_kc,
+					// {"estimate_Pik" :{
+		   //            "method" : Pik_method,
+		   //            "afm_stats" : human_afm_stats,
+		   //            "student_id" : student_id,
+		   //            "error_table" : pool_agent_error_table,
+		   //            "KCs" : KCs,
+		   //            "max" : maximum,
+		   //            }
+		   //          },
+	            "step_pivot_table" : step_pivot_table,
+	            "problem_key" : problem_key,
+	            "kc_model" : kc_model,
+	            "onlys_map" : args["onlys_map"] || null
 		        }
 			}
 			pretraining = await evalJSONFunc(pretraining,context)
@@ -407,6 +460,11 @@ async function mirror_students(args,context){
 		
 	}
 
+	if('store_opp_table' in args){
+		var csv = papa.unparse(opp_table,{delimiter: "\t"})
+		console.log("OUT CSV")
+		console.log(csv)
+	}
 	console.log("out")
 	console.log(out)
 
