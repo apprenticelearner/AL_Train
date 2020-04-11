@@ -9,17 +9,17 @@
       "args": {
         "when_learner": "trestle",
         "where_learner": "MostSpecific",
-        "planner": "fo_planner"
+        "planner": "fo_planner",
+        "feature_set": [
+          "equals"
+        ],
+        "function_set": [
+          "add",
+          "subtract",
+          "multiply",
+          "divide"
+        ]
       },
-      "feature_set": [
-        "equals"
-      ],
-      "function_set": [
-        "add",
-        "subtract",
-        "multiply",
-        "divide"
-      ],
       "set_params": {
         "HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
         "examples_only": false
@@ -65,8 +65,6 @@
         "request_epsilon": 0.3,
         "train_epsilon": 0.3
       },
-      "feature_set": [],
-      "function_set": [],
       "set_params": {
         "HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
         "examples_only": false
