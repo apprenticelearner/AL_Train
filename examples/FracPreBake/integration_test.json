@@ -5,7 +5,6 @@
       "agent_type": "ModularAgent",
       "stay_active": true,
       "dont_save": true,
-      "no_ops_parse": true,
       "args": {
         "when_learner": "trestle",
         "where_learner": "MostSpecific",
@@ -38,7 +37,6 @@
       "agent_type": "SoartechAgent",
       "stay_active": true,
       "dont_save": true,
-      "no_ops_parse": true,
       "args": {
         "action_penalty": -0.1,
         "prior_skills": {
