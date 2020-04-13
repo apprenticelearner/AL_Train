@@ -261,7 +261,7 @@ def main(args):
     else:
         if(not args.al_port): args.al_port = get_open_port()
         if(check_port(args.al_host, args.al_port, args.force)):
-            al_process =  subprocess.Popen([sys.executable, os.path.join(args.al_dir, "manage.py"), "runserver", str(args.al_host) + ":" + str(args.al_port)])
+            al_process =  subprocess.Popen([sys.executable, os.path.join(args.al_dir, "django/manage.py"), "runserver", str(args.al_host) + ":" + str(args.al_port)])
             # al_thread = threading.Thread(target=waitAndExit, args=(al_process, kill_all))
             # al_thread.start()
         else:

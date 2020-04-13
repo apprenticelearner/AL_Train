@@ -559,7 +559,7 @@ var interactive_sm = {
         onDone: [
           // {target: "Setting_Start_State", cond : },
           { target: "Done", cond: "saiIsCorrectDone" },
-          { target: "Applying_Next_Example", cond: "forceUseExample" },
+          // { target: "Applying_Next_Example", cond: "forceUseExample" },
           { target: "Querying_Apprentice" }
         ],
         onError: "Fail"
