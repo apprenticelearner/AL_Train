@@ -761,7 +761,7 @@ class CTAT_Tutor extends React.Component {
         index++;
       }
     } else {
-      alert("IDK WHAT THIS IS");
+      alert("RESPONSE IS MISSING FIELD:'mapping'");
       // this.highlighted_elements.push(elm.firstElementChild.id)
       // elm.firstElementChild.classList.add("CTAT--AL_highlight1")
     }
