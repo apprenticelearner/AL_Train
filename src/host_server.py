@@ -203,7 +203,7 @@ def write_rows(rows,count):
     global write_lock
     global csv_writer
     global log_file_handle
-    print("WRITE(%s) %d" %( count, len(rows)))
+    # print("WRITE(%s) %d" %( count, len(rows)))
     write_lock.acquire()
     for row in rows:
         csv_writer.writerow(row)
@@ -243,8 +243,11 @@ def write_problem(session_id,context_id,order=None):
         rows.append({**default_dict,
                      **tool_logs.get(t_id,{}),
                      **tutor_logs.get(t_id,{})})
-        del tool_logs[t_id]
-        del tutor_logs[t_id]
+        # if(t_id not in tool_logs):
+        #     pprint(tool_logs)
+        #     pprint(tutor_logs)
+        if(t_id in tool_logs): del tool_logs[t_id]
+        if(t_id in tutor_logs): del tutor_logs[t_id]
         # transaction_lock.acquire()
         # tool_logs[]
 
@@ -309,7 +312,6 @@ def reset_write_timer(session_id, context_id):
     sd[context_id] = wt
     write_timers[session_id] = sd
     timer_lock.release()
-    return wt
     
 #####################
 def handle_post(post_data,T):
@@ -368,12 +370,14 @@ def handle_post(post_data,T):
                 for elm in list(msg):
                     _fill_from_elm(tool_dict, elm,"tool")
 
-                new_timer = reset_write_timer(session_id,context_id)
+                reset_write_timer(session_id,context_id)
                 c_dict = get_context_dict(session_id,context_id)
                 assign_time(c_dict,tool_dict,T)
                 # assign_message_dict(c_dict, 'tool', tool_dict['Transaction Id'], tool_dict)
                 c_dict['tool'][tool_dict['Transaction Id']] = tool_dict
-                new_timer.start()
+
+                with timer_lock: write_timers[session_id][context_id].start()
+                
 
             ## TUTOR MESSAGES
             for msg in payload.iter("tutor_message"):
@@ -386,12 +390,12 @@ def handle_post(post_data,T):
                     if(elm.tag == "event_descriptor"):
                         sel = next(elm.iter("selection")).text 
 
-                new_timer = reset_write_timer(session_id,context_id)
+                reset_write_timer(session_id,context_id)
                 c_dict = get_context_dict(session_id,context_id)
                 assign_time(c_dict,log_dict,T)
                 # assign_message_dict(c_dict, 'tutor', log_dict['Transaction Id'], log_dict)
                 c_dict['tutor'][log_dict['Transaction Id']] = log_dict
-                new_timer.start()
+                with timer_lock: write_timers[session_id][context_id].start()
                 # if(sel == "done" and log_dict.get("Outcome",None) == "CORRECT"):
                 #     timer = threading.Timer(WRITE_WAIT_TIME,lambda :write_queue.put((session_id,context_id)))
                 #     timer.start()
