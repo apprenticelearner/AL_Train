@@ -24,7 +24,7 @@ colorama.init(autoreset=True)
 
 HOST_DOMAIN = '127.0.0.1' #Use this instead of localhost on windows
 # PORT = 8000
-
+print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
 post_queue = Queue(maxsize=0)
 write_queue = Queue(maxsize=0)
 
@@ -32,7 +32,10 @@ write_queue = Queue(maxsize=0)
 session_data_lock = threading.Lock()
 context_data_lock = threading.Lock()
 write_lock = threading.Lock()
+timer_lock = threading.Lock()
+# transaction_lock = threading.Lock()
 session_dicts = {}
+write_timers = {}
 
 # IGNORE_TOOL_MESSAGES = False
 WRITE_WAIT_TIME = 1.0 #seconds
@@ -209,10 +212,10 @@ write_count = -1
 
 def write_problem(session_id,context_id,order=None):
     global output_file_path
-    # global session_events
     global session_dicts
-
     global write_count
+    global context_data_lock
+
     write_count += 1
     
     c_dict = session_dicts[session_id]['logs'][context_id]
@@ -222,7 +225,10 @@ def write_problem(session_id,context_id,order=None):
     context_dict = c_dict['context']
     # print("COUNT(%d) %d:%d" % (write_count, len(tool_logs.keys()),len(tutor_logs.keys())))
     if(order is None):
+        context_data_lock.acquire()
         order = sorted([k for k,v in c_dict["time"].items()], key=lambda x: c_dict["time"][x])
+        c_dict['time'] = {}
+        context_data_lock.release()
         # print(c_dict["time"])
         # print(order)
          
@@ -234,10 +240,14 @@ def write_problem(session_id,context_id,order=None):
         rows.append({**default_dict,
                      **tool_logs.get(t_id,{}),
                      **tutor_logs.get(t_id,{})})
+        del tool_logs[t_id]
+        del tutor_logs[t_id]
+        # transaction_lock.acquire()
+        # tool_logs[]
 
     write_rows(rows,write_count)
 
-    del session_dicts[session_id]['logs'][context_id]
+    # del session_dicts[session_id]['logs'][context_id]
 
 context_counter = 0
 
@@ -276,7 +286,26 @@ def assign_time(context_dict,d,T):
     if(OVERRIDE_TIME): d['Time'] = GLOBAL_TICKER * 1000
     context_data_lock.release()
 
+# def assign_message_dict(c_dict, typ, T,d):
+#     transaction_lock.acquire()
+#     c_dict[typ][T] = d
+#     transaction_lock.release()
 
+def reset_write_timer(session_id, context_id):
+    global timer_lock
+    global write_queue
+    global write_timers
+    global WRITE_WAIT_TIME
+
+    timer_lock.acquire()
+    print("RESET", session_id)
+    sd = write_timers.get(session_id,{})
+    wt = sd.get(context_id,None)
+    if(wt is not None): wt.cancel()
+    wt = threading.Timer(WRITE_WAIT_TIME,lambda :write_queue.put((session_id,context_id)))
+    sd[context_id] = wt
+    write_timers[session_id] = sd
+    timer_lock.release()
 #####################
 def handle_post(post_data,T):
     global session_data_lock
@@ -300,7 +329,7 @@ def handle_post(post_data,T):
             session_dicts[session_id] = session_dict
 
         session_data_lock.release()
-        # print(minidom.parseString(ElementTree.tostring(x, encoding='utf8', method='xml')).toprettyxml())
+        print(minidom.parseString(ElementTree.tostring(x, encoding='utf8', method='xml')).toprettyxml())
 
         # print("TAG",x.tag)
         if(x.tag == "log_session_start"):
@@ -337,7 +366,9 @@ def handle_post(post_data,T):
                 
                 c_dict = get_context_dict(session_id,context_id)
                 assign_time(c_dict,tool_dict,T)
+                # assign_message_dict(c_dict, 'tool', tool_dict['Transaction Id'], tool_dict)
                 c_dict['tool'][tool_dict['Transaction Id']] = tool_dict
+                reset_write_timer(session_id,context_id)
 
             ## TUTOR MESSAGES
             for msg in payload.iter("tutor_message"):
@@ -352,11 +383,12 @@ def handle_post(post_data,T):
 
                 c_dict = get_context_dict(session_id,context_id)
                 assign_time(c_dict,log_dict,T)
+                # assign_message_dict(c_dict, 'tutor', log_dict['Transaction Id'], log_dict)
                 c_dict['tutor'][log_dict['Transaction Id']] = log_dict
-
-                if(sel == "done" and log_dict.get("Outcome",None) == "CORRECT"):
-                    timer = threading.Timer(WRITE_WAIT_TIME,lambda :write_queue.put((session_id,context_id)))
-                    timer.start()
+                reset_write_timer(session_id,context_id)
+                # if(sel == "done" and log_dict.get("Outcome",None) == "CORRECT"):
+                #     timer = threading.Timer(WRITE_WAIT_TIME,lambda :write_queue.put((session_id,context_id)))
+                #     timer.start()
 
     return ""
 
@@ -450,6 +482,12 @@ def do_GEN_NOOLS():
     with open(os.path.join(nools_dir, "rules.json"),'w') as f:
         json.dump(d,f)
 
+    return ""
+
+def do_PROBLEM_DONE():
+    r = json.loads(request.get_data())
+    timer = threading.Timer(WRITE_WAIT_TIME,lambda :write_queue.put((r['session_id'],r['context_id'])))
+    timer.start()
     return ""
 
 

@@ -140,78 +140,6 @@ export default class NetworkLayer {
     return out;
   }
 
-  // sendFeedbackExplicit(context,event){
-  // 	console.log("sendFeedback EXPLICIT")
-  // 	// const staged_SAI = context.staged_SAI;
-  // 	// const agent_id = context.agent_id;
-  // 	const state = context.state
-  // 	const skill_applications = context.skill_applications
-  // 	const feedback_map = context.feedback_map
-
-  // 	var skill_applications_subset = []
-  // 	var rewards = []
-  // 	for (var index in feedback_map){
-  // 		var skill_app = skill_applications[index]
-  // 		skill_applications_subset.push({
-  // 			"rhs_id" : skill_app["rhs_id"],
-  //                "mapping" : skill_app["mapping"]
-  // 		})
-  // 		var reward = feedback_map[index].toLowerCase() == "correct" ? 1 : -1
-  // 		rewards.push(reward);
-  // 	}
-  // 	// if(!reward){
-  // 	// 	reward = staged_SAI.reward
-  // 	// }
-  // 	// var staged_SAI = context.staged_SAI
-
-  //     // if (staged_SAI === null && context.explanations == null) {
-  //     //     console.error('cannot give feedback on no action.');
-  //     // }
-
-  //     // var reward =
-
-  //     // staged_SAI.reward = reward
-  //     // if(!explicit){
-  //     //     staged_SAI.state = state
-
-  //     // }
-  //     // var rewards = context.rewards || [staged_SAI.reward]
-  //     // var skill_applications = context.skill_applications || [{
-  //     //                 "rhs_id" : staged_SAI["rhs_id"],
-  //     //                 "mapping" : staged_SAI["mapping"]
-  //     //             }];
-
-  //     var data = {state: state,
-  //                 skill_applications: skill_applications_subset,
-  //                 rewards: rewards,
-  //                 // selection : staged_SAI.selection,
-  //                 // reward : rewards[0],
-  //             	}
-  //     console.log("EXPLICIT DATA",data)
-  //     if(context.interactive){
-  //         data['kwargs'] = {'add_skill_info':true}
-  //     }
-
-  //     return this.sendTrainingData(data,context.agent_id)
-
-  //     const URL = this.AL_URL + '/train/' + context.agent_id + '/'
-  //    	return fetch_retry(URL,
-  //    		{method: "POST",
-  //    		 headers: JSON_HEADERS,
-  //    		 body:JSON.stringify(data)})
-  //    		 .then(res => res.json())
-  // 	    $.ajax({
-  // 	        type: 'POST',
-  // 	        url: AL_URL + '/train/' + agent_id + '/',
-  // 	        data: JSON.stringify(data),
-  // 	        contentType: "application/json; charset=utf-8",
-  // 	        retryLimit : AL_RETRY_LIMIT,
-  // 	        tryCount : 0,
-  // 	        error: ajax_retry_on_error,
-
-  // 	        success: (resp) => {on_train_success(data,resp)}
-  // 	    });
-  // }
 
   sendTrainingData(data, agent_id) {
     console.log("sendTrainingData");
@@ -237,20 +165,7 @@ export default class NetworkLayer {
         }
       });
 
-    // $.ajax({
-    //        type: 'POST',
-    //        url: AL_URL + '/train/' + agent_id + '/',
-    //        data: JSON.stringify(sai_data,ignoreKeys),
-    //        contentType: "application/json; charset=utf-8",
 
-    //        // async: true,
-    //        // timeout: AL_TIMEOUT,
-    //        retryLimit : AL_RETRY_LIMIT,
-    //        tryCount : 0,
-    //        error: ajax_retry_on_error,
-
-    //        success: (resp) => {on_train_success(sai_data,resp)}
-    //    });
   }
 
   queryApprentice(context, event) {
@@ -323,6 +238,14 @@ export default class NetworkLayer {
     });
   }
 
+  sendProblemDone(context,event){
+    return fetch_retry(this.HOST_URL, {
+      method: "PROBLEM_DONE",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data, ignoreKeys)
+    })
+  }
+
   generate_nools(context, event) {
     const URL = this.AL_URL + "/get_skills/" + context.agent_id + "/";
     var data = { states: this.request_history.map(x => x["state"]) };
@@ -346,6 +269,8 @@ export default class NetworkLayer {
         });
       });
   }
+
+  
 
   generateBehaviorProfile(context, event = {}) {
     // data = {'states':request_history.map(x => x['state'])}
@@ -457,154 +382,5 @@ export default class NetworkLayer {
     return out;
   }
 
-  //     	})
 
-  //     })
-  //     $.ajax({
-  //         type: "START_COMPLETENESS",
-  //         url: window.location.origin,
-  //         data: JSON.stringify(start_data),
-  //         // contentType: "application/json; charset=utf-8",
-  //         // dataType: 'json',
-  //         error: ajax_retry_on_error,
-  //         success: function(whatever) {
-  //             console.log("STARTED")
-  //             requests.forEach(function (item, index) {
-  //                 s = item['state']
-  //                 var data = {
-  //                     'state': s,
-  //                     'kwargs': {'add_skill_info':true,'n':-1}
-  //                 }
-  //                 $.ajax({
-  //                     type: 'POST',
-  //                     url: AL_URL + '/request/' + agent_id + '/',
-  //                     crossdomain : true,
-  //                     data: JSON.stringify(data),
-  //                     contentType: "application/json; charset=utf-8",
-  //                     dataType: 'json',
-  //                     context:item,
-
-  //                     error: ajax_retry_on_error,
-
-  //                     success: function(resp) {
-  //                         console.log("WRITE")
-  //                         responses = []
-  //                         if("responses" in resp){
-  //                             resp["responses"].forEach(function (r, index) {
-  //                                 sai = {selection: r['selection'],
-  //                                        action: r['action'],
-  //                                        inputs: r['inputs'],
-  //                                 }
-  //                                 console.log(r)
-  //                                 console.log(r["selection"])
-  //                                 responses.push(sai)
-  //                             });
-  //                         }
-
-  //                         completeness_data = {
-  //                             'state' : this["state"],
-  //                             'responses' : responses,
-  //                             'dir' : nools_dir
-  //                         }
-  //                         $.ajax({
-  //                             type: "APPEND_COMPLETENESS",
-  //                             url: window.location.origin,
-  //                             data: JSON.stringify(completeness_data),
-
-  //                             error: ajax_retry_on_error,
-
-  //                             success : function(){
-  //                                 console.log("WRITTEN")
-  //                             }
-  //                         });
-  //                     }
-  //                 });
-  //             });
-  //         }
-  //     });
-  // }
 }
-// console.log("STATE",state);
-
-// console.log("QUERY!");
-
-//!! if(EXAMPLES_ONLY){
-//     if(interactive){
-//         query_user_demonstrate(false);
-//     }else{
-//         post_next_example();
-//     }
-// }else{
-//!! request_history.push(data);
-// data_str =
-// add_skill_info
-// $.ajax({
-//     type: 'POST',
-//     url: AL_URL + '/request/' + agent_id + '/',
-//     crossdomain : true,
-//     data: JSON.stringify(data),
-//     contentType: "application/json; charset=utf-8",
-//     dataType: 'json',
-
-//     // async: true,
-//     // timeout: AL_TIMEOUT,
-//     retryLimit : AL_RETRY_LIMIT,
-//     tryCount : 0,
-//     error: ajax_retry_on_error,
-
-// success: function(resp) {
-//     // console.log("RESP")
-//     // console.log(resp)
-//     if (jQuery.isEmptyObject(resp)) {
-//     	event.service.send()
-//         // console.log("RESPONSE EMPTY")
-//         // if(interactive){
-//         //     setSkillWindowState({})
-//         //     query_user_demonstrate(false);
-//         // }else{
-//         //     post_next_example();
-//         // }
-
-//     } else {
-
-//         applicable_skills = resp['responses']//.map(value=>value['skill_info'])
-//         // console.log(applicable_skills)
-//         if(interactive){
-//             setSkillWindowState({"Applicable Skills" : applicable_skills},propose_sai,feedback_queue_change,null,initial_select='first')
-//             feedback_queue = {}
-//         }
-
-//     	// staged_SAI = resp;
-
-//         if(verbosity > 0) console.log('action to take!');
-//         console.log("RESPONSE: ", resp);
-//         currentElement = iframe_content.document.getElementById(resp.selection);
-//         // console.log(resp)
-//         if(!currentElement){
-//         	console.log("Element " +resp.selection +" does not exist, providing example instead.");
-//             alert("THIS HAPPENED... SO WE NEED TO ACTUALLY IMPLEMENT THIS.");
-//             term_print('\x1b[0;30;47m' + "ERROR: Selection Not found : " + resp.selection + '\x1b[0m');
-//         }else{
-//             // console.log("STATE",state)
-
-//             if(interactive){
-//                 query_user_demonstrate(true)
-//                 propose_sai(resp)
-//             }else{
-//                 currentElement.addEventListener(CTAT_CORRECT, handle_correct);
-//                 currentElement.addEventListener(CTAT_INCORRECT, handle_incorrect);
-//                 console.log("REEEEZ",resp)
-//                 apply_sai(resp);
-//             }
-
-//         }
-
-//         // query_user_feedback(resp);
-//     }
-// },
-// error: function (resp){
-// 	createAgent(queryApprentice);
-// }
-// });
-// }
-// }

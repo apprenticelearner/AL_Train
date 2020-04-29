@@ -415,6 +415,10 @@ function AAID(interactions_state_machine) {
   };
 }
 
+function sendProblemDone(context, event){
+  context.network_layer.sendProblemDone(context,event)
+}
+
 // function gerp(event){
 // 	console.log("GERP")
 // 	return event.data['agent_id']
@@ -579,7 +583,11 @@ export function build_training_sm(app, interactions_sm) {
         Training: {
           entry: "start_training_interaction",
           on: {
-            PROBLEM_DONE: "Serving_Problems",
+            PROBLEM_DONE: {
+              target : "Serving_Problems",
+              actions : "sendProblemDone",
+              
+            }
             CHANGE_INTERACTION_MODE: {
               target: "Serving_Problems",
               actions: "assignInteractionSM"
@@ -627,7 +635,8 @@ export function build_training_sm(app, interactions_sm) {
           return { agent_id: event.data["agent_id"] };
         }),
         allDone: allDone,
-        assignInteractionSM: assignInteractionSM
+        assignInteractionSM: assignInteractionSM,
+        sendProblemDone : sendProblemDone
       },
       guards: {
         iteratorEmpty: iteratorEmpty
