@@ -239,6 +239,8 @@ export default class NetworkLayer {
   }
 
   sendProblemDone(context,event){
+    //NOT YET IMPLEMENTED -- Might not need to
+    var data = {}
     return fetch_retry(this.HOST_URL, {
       method: "PROBLEM_DONE",
       headers: JSON_HEADERS,

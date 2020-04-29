@@ -44,7 +44,7 @@ const appendStartHistory = assign({
 
 const stateRecalc = assign({
   state: (context, event) => {
-    if (context.staged_SAI == null || context.staged_SAI.reward > 0) {
+    if (context.staged_SAI == null || context.staged_SAI.reward > 0 || context.test_mode) {
       return context.tutor.get_state();
     } else {
       return context.state;
@@ -69,16 +69,17 @@ function saiIsCorrectDone(context, event) {
   }
   return (
     sai_data.selection === "done" &&
-    (sai_data.reward == null || sai_data.reward > 0)
+    (sai_data.reward == null || sai_data.reward > 0 || context.test_mode)
   );
 }
 
 function forceUseExample(context, event) {
   const saiData = context.staged_SAI;
-  return saiData.skipTraining && saiData.reward < 0;
+  return (saiData.skipTraining && saiData.reward < 0) || context.examples_only;
 }
 
 function isFreeAuthor(context, event) {
+  
   return context.free_author || false;
 }
 
@@ -87,7 +88,8 @@ function checkIsCorrect(context, event) {
 }
 
 function noApplicableSkills(context, event) {
-  return !Object.keys(event.data).length;
+  console.log("CCCC", context)
+  return !Object.keys(event.data).length || context.examples_only;
 }
 
 function logError(context, event) {
@@ -231,11 +233,12 @@ function get_machine_actions(app) {
   return {
     services: {
       sendFeedback: (context, event) => {
-        if (context.staged_SAI.skipTraining) {
+        if (context.staged_SAI.skipTraining || context.test_mode) {
           return Promise.resolve(true);
         }
         return network_layer.sendFeedback(context, event);
       },
+      //TODO: is this depricated?
       sendFeedbackExplicit: (context, event) =>
         network_layer.sendFeedbackExplicit(context, event),
       applyNextExample: tutor.applyNextExample,
@@ -328,32 +331,27 @@ function get_machine_actions(app) {
 
 export function build_interactions_sm(
   app,
-  interactive = false,
-  free_author = false,
-  tutor_mode = false
+  inh_context,
 ) {
-  const context = {
+  var context = {
     app: app,
     tutor: app.tutor.current,
     skill_panel: app.skill_panel.current,
     buttons: app.buttons.current,
     network_layer: app.network_layer,
 
-    //Inherited
-    agent_id: null,
-    interactive: null,
-    free_author: null,
-
     //Dynamic
     // last_correct : null,
     staged_SAI: null,
     action_type: null
   };
+  context = {...context, ...inh_context}
+
   var sm;
-  if (tutor_mode) {
+  if (context.tutor_mode) {
     sm = tutor_sm;
   } else {
-    sm = interactive ? interactive_sm : non_interactive_sm;
+    sm = context.interactive ? interactive_sm : non_interactive_sm;
   }
 
   const interaction_sm = Machine(

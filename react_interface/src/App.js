@@ -6,11 +6,12 @@ import Buttons from './components/buttons';
 // import { vw, vh, vmin, vmax } from 'react-native-expo-viewport-units';
 // import ButtonsMachine from './interactions.js'
 import {build_interactions_sm} from './interactions.js'
-import {build_training_sm} from './training_handler.js'
+import {build_training_sm, problem_props} from './training_handler.js'
 import NetworkLayer from './network_layer.js'
 import { interpret } from 'xstate';
 import autobind from 'class-autobind';
 import path from 'path';
+import pick from 'object.pick';
 
 // 
 import React from 'react';
@@ -160,9 +161,10 @@ export default class ALReactInterface extends React.Component {
      
     // })
     this.interactions_sm = build_interactions_sm(this,
-                                                 this.props.interactive,
-                                                 this.props.free_author,
-                                                 this.props.tutor_mode)  
+                                                 pick(this.props,problem_props))
+                                                 // this.props.interactive,
+                                                 // this.props.free_author,
+                                                 // this.props.tutor_mode)  
     this.interactions_service = null //Will be spawned in training_sm 
 
     this.training_machine = build_training_sm(this,this.interactions_sm, tf, wd)

@@ -591,6 +591,7 @@ class CTAT_Tutor extends React.Component {
       const CTAT_CORRECT = this.CTAT_CORRECT;
       const CTAT_INCORRECT = this.CTAT_INCORRECT;
       const shouldSkipTraining = this._shouldSkipTraining;
+      const lockElement = this.lockElement;
 
       function handle_ctat_feedback(evt) {
         console.log("EVENT", evt);
@@ -600,6 +601,12 @@ class CTAT_Tutor extends React.Component {
           CTAT_INCORRECT,
           handle_ctat_feedback
         );
+
+        //If in test mode make sure that fields are locked on incorrect
+        console.log("MOOOOOOOO", context)
+        if(context.test_mode){
+          lockElement(sai.selection)
+        }
 
         resolve({
           ...sai,

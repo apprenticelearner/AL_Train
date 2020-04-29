@@ -4,10 +4,18 @@ import { build_interactions_sm } from "./interactions.js";
 import { applyPriorKnowledge } from "./prior_knowledge.js";
 import { evalJSONFunc } from "./eval.js";
 import { Random } from "random-js";
+
+var pick = require('object.pick');
 var fs = require("fs");
 // const path = require("path")
 
 const random = new Random();
+
+//A set of properties which are passed from the training handler SM context 
+//  to the interactions SM as props 
+export const problem_props = ['agent_id','free_author', 
+        'interactive','tutor_mode','examples_only','test_mode']
+const problem_props_dict = problem_props.reduce(function(obj, x) { obj[x] = null;return obj;}, {});        
 
 const CTATGuid = {
   s4: function s4() {
@@ -373,7 +381,7 @@ function serve_next_problem(context, event) {
           }
         }
 
-        var EXAMPLES_ONLY = prob_obj["examples_only"] || false;
+        // var EXAMPLES_ONLY = prob_obj["examples_only"] || false;
 
         var problem_description = Object.keys(prob_obj).reduce((s, key) => {
           return s + key + ": " + prob_obj[key] + "\n";
@@ -381,7 +389,6 @@ function serve_next_problem(context, event) {
 
         resolve({
           updateContext: {
-            EXAMPLES_ONLY: EXAMPLES_ONLY,
             agent_params: agent_params,
             problem_iterator: problem_iterator,
             prob_obj: prob_obj,
@@ -428,11 +435,13 @@ function start_training_interaction(context, event) {
   console.log("START TRAINING INTERACTION");
   var app = context.app;
 
-  var pass_along_context = {
-    agent_id: context.agent_id,
-    interactive: context.interactive,
-    free_author: context.free_author
-  };
+  var pass_along_context = {...pick(context, problem_props),
+                            ...pick(context.prob_obj, problem_props)}
+  // {
+  //   agent_id: context.agent_id,
+  //   interactive: context.interactive,
+  //   free_author: context.free_author
+  // };
 
   var interactions_sm = context.interactions_sm.withContext({
     ...context.interactions_sm.context,
@@ -453,21 +462,16 @@ function allDone(context, event) {
 
 const assignInteractionSM = assign({
   interactions_sm: (context, event) => {
-    var d = {
-      ...{
-        app: context.app,
-        interactive: context.interactive,
-        free_author: context.free_author,
-        tutor_mode: context.tutor_mode
-      },
+    var new_context = {
+      ...{app: context.app},
+      ...pick(context,problem_props),
+      ...pick(context.prob_obj,problem_props),
       ...event.data
     };
-    console.log("assignInteractionSM", d);
+    console.log("assignInteractionSM", new_context);
     var sm = build_interactions_sm(
-      d.app,
-      d.interactive,
-      d.free_author,
-      d.tutor_mode
+      new_context.app,
+      new_context
     );
     return sm;
   }
@@ -483,7 +487,7 @@ const assignInteractionSM = assign({
 export function build_training_sm(app, interactions_sm) {
   // interactions_state_machine,network_layer,training_file,tutor,working_dir
   var nl = app.network_layer;
-  const context = {
+  var context = {
     //Utils
     app: app,
     tutor: app.tutor.current,
@@ -501,8 +505,11 @@ export function build_training_sm(app, interactions_sm) {
     file_params: null,
     agent_params: null,
     prob_obj: null,
-    free_author: null
+    // free_author: null
   };
+  
+  context = {...problem_props_dict,...context}
+
 
   const sm = Machine(
     {
@@ -586,8 +593,7 @@ export function build_training_sm(app, interactions_sm) {
             PROBLEM_DONE: {
               target : "Serving_Problems",
               actions : "sendProblemDone",
-              
-            }
+            },
             CHANGE_INTERACTION_MODE: {
               target: "Serving_Problems",
               actions: "assignInteractionSM"
