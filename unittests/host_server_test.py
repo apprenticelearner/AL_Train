@@ -186,9 +186,9 @@ def log_test(self,sleep_interval):
     print(sys.executable)
     print(" ".join([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path]))
     with open('log/term_out.txt', "w") as outfile:
-      host_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=sys.stdout)#stdout=subprocess.PIPE)#
-      # host_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    sleep(3)
+      # host_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=sys.stdout)#stdout=subprocess.PIPE)#
+      host_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    # sleep(3)
     while True:
         line = host_process.stdout.readline()
         if("HOST SERVER STARTED" in str(line)):
