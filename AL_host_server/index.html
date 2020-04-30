@@ -1,0 +1,42 @@
+<!DOCTYPE html> 
+<html> 
+<head>
+    <script type="text/javascript">
+        function UrlExists(url)
+        {
+            var http = new XMLHttpRequest();
+            http.open('HEAD', url, false);
+            http.send();
+            return http.status!=404;
+        }
+        function handleErrors(response) {
+            if (!response.ok) {
+                throw Error(response.statusText);
+            }
+            return response;
+        }
+
+        var index = 'static/build/index.html' + document.location.search
+
+        //We prefer to run the user built interface
+        if(UrlExists(index)){
+            document.location.href = index;    
+        //But we can fall back on a pre-built one
+        }else{
+            fetch('/../react_interface/release/releases.txt')
+            .then(handleErrors)
+            .then((resp) => resp.text())
+            .then((releases) =>{
+                releases = releases.split(/[ ,\n\t]+/); 
+                releases.sort()
+                console.log(releases)
+                index = '/../react_interface/release/'+releases[releases.length-1]+ '/index.html' + document.location.search
+                document.location.href = index;  
+            })
+            .catch((error)=>alert("Failed to find build and cannot load releases.txt"))
+            
+        }
+        
+    </script>
+</head>
+</html> 

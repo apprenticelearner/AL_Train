@@ -1,7 +1,7 @@
 # Used to start training an Apprentice Learner agent interactively or via example/model tracing.
 #
 
-import argparse,sys,os, atexit,re
+import importlib, argparse, sys, os, atexit, re
 import subprocess, threading
 from subprocess import check_output
 import socket, errno
@@ -15,9 +15,26 @@ outer_loop_process = None
 # al_thread = None
 # ctat_thread = None
 calling_dir = None
-CONFIG_DEFAULT = "net.conf"
+CONFIG_DEFAULT = "altrain.conf"
 HOST_DOMAIN = '127.0.0.1' #Use this instead of localhost on windows
 
+
+def find_conf(cwd):
+    split_path = os.path.normpath(cwd).split(os.sep)
+    home = os.path.normpath(os.path.expanduser("~"))
+
+    for i in range(len(split_path)-1,1,-1):
+        p = os.path.join(*(split_path[0:i]))
+        f = os.path.join(p,CONFIG_DEFAULT)
+        if(p == home): break
+        if(os.path.isfile(f)):
+            return f
+        
+    f = os.path.join(home,CONFIG_DEFAULT)
+    if(os.path.isfile(f)):
+        return f
+
+    return None
 
 def read_conf(ns, path):
     # args = {}
@@ -141,6 +158,21 @@ def get_open_port():
         s.close()
         return port
 
+def dir_from_package(package_name):
+    try:
+        p = os.path.dirname(importlib.util.find_spec(package_name).origin)
+        # p = importlib.import_module(package_name)
+        return p#os.path.abspath(os.path.join(apprentice.__path__[0],".."))
+    except ImportError:
+        return None
+
+# def server_dir_from_package():
+#     try:
+#         importlib.util.find_spec('AL_host_server')
+#         import AL_host_server
+#         return os.path.abspath(os.path.join(AL_host_server.__path__[0],".."))
+#     except ImportError:
+#         return None
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(description='Convert ROOT data to numpy arrays stored as HDF5 for Machine Learning use.')
@@ -176,12 +208,12 @@ def parse_args(argv):
     parser.add_argument('-t', '--tutor' , default=None, dest = "tutor",     metavar="<tutor>",
         help="The type of tutor (e.g. 'ctat' or 'stylus')")
 
-    parser.add_argument('-l', '--log-dir' , default=None, dest = "log_dir",     metavar="<log_dir>",
+    parser.add_argument('-l', '--log-dir' , default='log', dest = "log_dir",     metavar="<log_dir>",
         help="The directory where tab deliminated logging files are written. Overridden by -o/--output.")
     parser.add_argument('-o', '--output' ,  default=None, dest = "output",      metavar="<output>",
         help="The tab deliminated logging file for the session should go to. By default will be generated with a timestamp in the /log directory")
 
-    parser.add_argument('--config' ,  default=CONFIG_DEFAULT, dest = "config",      metavar="<config>.conf",
+    parser.add_argument('--config' ,  default=None, dest = "config",      metavar="<config>.conf",
         help="Bash style configuration file used for setting default variables. ")
     parser.add_argument('-w' , "--working-directory",  default=None, dest = "wd",      metavar="<working-directory>",
         help="The working directory of the ctat server. By default it is the directory where training.json is located")
@@ -207,7 +239,24 @@ def parse_args(argv):
         parser.print_usage()
         sys.exit()
 
-    read_conf(args, args.config)
+    # print("TRAINING bef",args.training)
+    training_abs = os.path.abspath(os.path.join(calling_dir,args.training))
+    # args.training = os.path.abspath(os.path.join(calling_dir,args.training))
+    # print("TRAINING af",args.training)
+    # print("TRAINING app",apply_wd(args.training))
+    # print("CWD",os.getcwd())
+
+    if(args.config is None or not os.path.isfile(args.config)):
+        args.config = find_conf(os.path.dirname(training_abs))
+        print(args.config)
+    
+    if(args.config is not None):
+        read_conf(args, args.config)
+
+    if(args.al_dir == None):
+        args.al_dir = dir_from_package("apprentice")
+        if(args.al_dir == None):
+            raise Exception("Cannot find AL_CORE. Try 'pip install apprentice'.")
 
     print(args.browser_args)
     if(isinstance(args.browser_args, str)): args.browser_args = [args.browser_args]
@@ -217,11 +266,12 @@ def parse_args(argv):
 
     args.log_dir = os.path.abspath(apply_wd(args.log_dir))
     args.al_dir = os.path.abspath(apply_wd(args.al_dir))
+    args.html_bridge_dir = dir_from_package("AL_host_server") 
     # os.path.join(calling_dir,args.al_dir)
-    args.training = os.path.relpath(apply_wd(args.training), start=os.getcwd())
+    
 
 
-    assert os.path.isfile(args.training), "No such file %r" % args.training
+    assert os.path.isfile(training_abs), "No such file %r" % training_abs
     # assert args.al_port != None, "AL_PORT not specified or set in %s" % args.config
     # assert args.ctat_port != None, "CTAT_PORT not specified or set in %s" % args.config
     assert args.al_dir != None, "AL_DIR not specified or set in %s" % args.config
@@ -257,11 +307,11 @@ def main(args):
     global al_process,ctat_process, browser_process, outer_loop_process
 
     if args.no_al_server:
-        assert args.al_port is not None, "Must specify AL_PORT in net.conf or command line"
+        assert args.al_port is not None, "Must specify AL_PORT in altrain.conf or command line"
     else:
         if(not args.al_port): args.al_port = get_open_port()
         if(check_port(args.al_host, args.al_port, args.force)):
-            al_process =  subprocess.Popen([sys.executable, os.path.join(args.al_dir, "django/manage.py"), "runserver", str(args.al_host) + ":" + str(args.al_port)])
+            al_process =  subprocess.Popen([sys.executable, os.path.join(args.al_dir, "..","django","manage.py"), "runserver", str(args.al_host) + ":" + str(args.al_port)])
             # al_thread = threading.Thread(target=waitAndExit, args=(al_process, kill_all))
             # al_thread.start()
         else:
@@ -269,7 +319,7 @@ def main(args):
 
     if(not args.ctat_port): args.ctat_port = get_open_port()
     if(check_port(args.ctat_host, args.ctat_port, args.force)):
-        ctat_process = subprocess.Popen([sys.executable, os.path.join("src", "host_server.py") , str(args.ctat_port), args.output])
+        ctat_process = subprocess.Popen([sys.executable, os.path.join(args.html_bridge_dir, "host_server.py") , str(args.ctat_port), args.output])
         # ctat_thread = threading.Thread(target=waitAndExit, args=(ctat_process, kill_all))
         # ctat_thread.start()
 
@@ -277,7 +327,7 @@ def main(args):
         port_error("CTAT", args.ctat_port)
 
     if(args.outer_loop_url is None and args.outer_loop):
-        assert args.outer_loop_dir is not None, "Must specify OUTER_LOOP_DIR in net.conf"
+        assert args.outer_loop_dir is not None, "Must specify OUTER_LOOP_DIR in altrain.conf"
         if(not args.outer_loop_port): args.outer_loop_port = get_open_port()
         if(check_port(args.outer_loop_host, args.outer_loop_port, args.force)):
             # print([sys.executable, os.path.join(args.outer_loop_dir, "src", "server.py") , "--host", str(args.outer_loop_host),"--port", int(args.outer_loop_port)])
@@ -302,14 +352,12 @@ def main(args):
 
     if(args.browser != None and "selenium" in args.browser):
         from selenium import webdriver
-        sys.path.append("/home/danny/Projects")
         if("chrome" in args.browser):
             options = webdriver.ChromeOptions()
             options.add_argument('--ignore-certificate-errors')
             options.add_argument("--test-type")
             for x in args.browser_args:
                 if(x): options.add_argument(x)
-            # options.binary_location = "/home/danny/Projects/chromedriver"
             driver = webdriver.Chrome(chrome_options=options)
             driver.get(ctat_url)
         elif("firefox" in args.browser):
@@ -324,7 +372,6 @@ def main(args):
             # options.add_argument("--test-type")
             for x in args.browser_args:
                 if(x): options.add_argument(x)
-            # options.binary_location = "/home/danny/Projects/chromedriver"
             driver = webdriver.Firefox(firefox_options=options)
             driver.get(ctat_url)
         else:
@@ -358,9 +405,11 @@ def setup_net_conf():
     i = sys.argv.index("--al-dir") if "--al-dir" in sys.argv else None
     if(i == None): i = sys.argv.index("-d") if "-d" in sys.argv else None
     if(i == None):
-        al_dir = input("Enter the directory where you cloned the apprentice_learner_api \
-         otherwise press enter to exit and set AL_DIR in net.conf. For example. \
-         \n AL_DIR=$HOME/Projects/apprentice_learner_api \n AL_DIR: ")
+        al_dir = dir_from_package("apprentice")
+        if(al_dir == None):
+            al_dir = input("Enter the directory where you cloned the apprentice_learner_api \
+             otherwise press enter to exit and set AL_DIR in net.conf. For example. \
+             \n AL_DIR=$HOME/Projects/apprentice_learner_api \n AL_DIR: ")
     else:
         al_dir = sys.argv[i+1]
 
@@ -378,14 +427,18 @@ def setup_net_conf():
 
 if __name__ == "__main__":
     calling_dir = os.getcwd()
+    print("CALLINGz",calling_dir)
 
+    html_bridge_dir = dir_from_package("AL_host_server")
+    print("b", html_bridge_dir)
     #Always run this script from the directory where it lives
-    abspath = os.path.abspath(__file__)
-    dname = os.path.dirname(abspath)
-    os.chdir(dname)
+    # abspath = os.path.abspath(html_bridge_dir)
+    # dname = os.path.dirname(abspath)
+    # os.chdir(dname)
+    print("CWD", os.getcwd())
 
-    if(not os.path.isfile("net.conf")):
-        setup_net_conf()
+    # if(not os.path.isfile("net.conf")):
+    #     setup_net_conf()
 
     atexit.register(kill_all);
     args = parse_args(sys.argv[1:])

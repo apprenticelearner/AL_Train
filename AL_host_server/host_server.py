@@ -1,4 +1,4 @@
-from flask import Flask, request, send_from_directory, g
+from flask import Flask, request, send_from_directory, g, make_response
 
 import threading
 from queue import Queue, PriorityQueue
@@ -12,13 +12,16 @@ from urllib.parse import unquote
 import uuid, csv
 import errno
 import json
-from nools_gen import generate_nools
+from AL_host_server.nools_gen import generate_nools
 from pprint import pprint
 import colorama
 from colorama import Fore, Back, Style
 import atexit
 import signal
 from glob import glob
+# from flask import Flask, 
+
+static_dir = os.path.dirname(__file__)
 
 colorama.init(autoreset=True)
 
@@ -86,8 +89,9 @@ class HostServer(Flask):
     thread.start() 
     super(HostServer, self).run(host=host, port=port, debug=debug, load_dotenv=load_dotenv, **options)
     
-
-app = HostServer(__name__,static_folder='../')
+print("HOST CWD", os.getcwd(), __name__)
+# app = HostServer(__name__,static_folder='.',root_path=os.getcwd())
+app = HostServer(__name__,static_folder=".")#,root_path=os.getcwd())
 
 
 
@@ -569,9 +573,24 @@ def do_POST ():
     
 ##SHOULD PROBABLY EVENTUALLY MAKE THIS SAFE BY ONLY RETRIEVE FROM STATIC DIR
 def do_GET(path):
+    # if(path == ""): #handle_static("index.html")#path = "index.html"
     print("GET", path[:])
-    if(path == ""): path = "index.html"
-    return app.send_static_file(path)
+    if(path == ""): 
+        # headers = {}
+        return send_from_directory(static_dir,"index.html")
+        # p = os.path.join(static_dir,"index.html")
+        # if(os.path.isfile(p)):
+            # with open(p, 'r') as f:
+                # body = f.read()
+            # return make_response((body, headers))   
+        # else:
+            # return make_response("Not found.", 404) 
+        # return handle_static("index.html")
+    # print("GET", os.path.join(wd,path[:]),path[:])
+    
+
+    # return app.send_static_file(os.path.join(wd,path[:]))
+    return send_from_directory(os.getcwd(),path)#app.send_static_file(path)
 
 def do_WRITE():
     write_data = request.get_data()
@@ -602,15 +621,43 @@ def handle_root(path):
         else:
             return func()
     else:
-        return 400
+        return make_response("Method not recognized", 400)
+
+# ...
+# @app.route('/file_downloads/<filename>')
+# def file_downloads(filename):
+#     headers = {"Content-Disposition": "attachment; filename=%s" % filename}
+#     with open('../tmp/you_private_file.zip', 'r') as f:
+#         body = f.read()
+#     return  make_response((body, headers))
+
+@app.route('/static/<path:path>')
+def handle_static(path):
+    print("STATIC",path)
+    # headers = {"Content-Disposition": "attachment; filename=%s" % filename}
+    return send_from_directory(static_dir,path)
+    # if(request.method == "GET"):
+    #     headers = {}
+    #     p = os.path.join(static_dir,path[:])
+    #     print(p)
+    #     if(os.path.isfile(p)):
+    #         with open(p, 'r') as f:
+    #             body = f.read()
+    #         return make_response((body, headers))    
+    #     else:
+    #         return make_response("Not found.", 404)
+    # else:
+    #     return make_response("Method not recognized", 400)
 
 
 if __name__ == '__main__':
     # logging.basicConfig(level=logging.ERROR)
+    print("FILE",static_dir)
 
     assert len(sys.argv) > 1, "Error, correct usage: %s <port number>" % sys.argv[0]
     assert sys.argv[1].isdigit(), "invalid port %r" % sys.argv[1]
     port = int(sys.argv[1])
+    # static_dir = sys.argv[2]
     if (len(sys.argv) > 2):
         output_file_path = sys.argv[2]
 
