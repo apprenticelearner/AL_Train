@@ -12,7 +12,7 @@ from urllib.parse import unquote
 import uuid, csv
 import errno
 import json
-from AL_host_server.nools_gen import generate_nools
+from al_hostserver.nools_gen import generate_nools
 from pprint import pprint
 import colorama
 from colorama import Fore, Back, Style
@@ -22,6 +22,9 @@ from glob import glob
 # from flask import Flask, 
 
 static_dir = os.path.dirname(__file__)
+build_dir = os.path.abspath(os.path.join(static_dir,"..","react_interface","build"))
+release_dir = os.path.abspath(os.path.join(static_dir,"release"))
+if(not os.path.exists(build_dir)): build_dir = release_dir
 
 colorama.init(autoreset=True)
 
@@ -634,8 +637,18 @@ def handle_root(path):
 @app.route('/static/<path:path>')
 def handle_static(path):
     print("STATIC",path)
-    # headers = {"Content-Disposition": "attachment; filename=%s" % filename}
     return send_from_directory(static_dir,path)
+
+@app.route('/build/<path:path>')
+def handle_build(path):
+    print("BUILD",path)
+    return send_from_directory(build_dir,path)
+
+@app.route('/release/<path:path>')
+def handle_release(path):
+    print("RELEASE",path)
+    return send_from_directory(release_dir,path)
+
     # if(request.method == "GET"):
     #     headers = {}
     #     p = os.path.join(static_dir,path[:])

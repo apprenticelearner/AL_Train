@@ -266,7 +266,7 @@ def parse_args(argv):
 
     args.log_dir = os.path.abspath(apply_wd(args.log_dir))
     args.al_dir = os.path.abspath(apply_wd(args.al_dir))
-    args.html_bridge_dir = dir_from_package("AL_host_server") 
+    args.html_bridge_dir = dir_from_package("al_hostserver") 
     # os.path.join(calling_dir,args.al_dir)
     
 
@@ -429,7 +429,7 @@ if __name__ == "__main__":
     calling_dir = os.getcwd()
     print("CALLINGz",calling_dir)
 
-    html_bridge_dir = dir_from_package("AL_host_server")
+    html_bridge_dir = dir_from_package("al_hostserver")
     print("b", html_bridge_dir)
     #Always run this script from the directory where it lives
     # abspath = os.path.abspath(html_bridge_dir)

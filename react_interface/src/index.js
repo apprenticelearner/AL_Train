@@ -8,16 +8,21 @@ import * as serviceWorker from "./serviceWorker";
 
 import { interpret } from "xstate";
 import CTAT_Tutor from "./tutors/CTAT/CTAT_Tutor";
-//import StylusTutor from './tutors/Stylus/StylusTutor';
+import StylusTutor from './tutors/Stylus/StylusTutor';
 import App from "./App";
 import RJSON from "relaxed-json";
 
 const tutor_map = {
   ctatttutor: CTAT_Tutor,
-  ctat: CTAT_Tutor
-  //"stylustutor" : StylusTutor,
-  //"stylus" : StylusTutor,
+  ctat: CTAT_Tutor,
+  // ctatttutor: "./tutors/CTAT/CTAT_Tutor",
+  // ctat: "./tutors/CTAT/CTAT_Tutor",
+  "stylustutor" : StylusTutor,
+  "stylus" : StylusTutor,
 };
+
+
+
 
 function load_training_file(training_file) {
   // console.log("SLOOPERZ",training_file)
@@ -78,6 +83,17 @@ load_training_file(props.training_file).then(function(training_json) {
   var training_file_props = training_json.set_params;
   props = { ...training_file_props, ...removeEmpty(props) };
   props.tutor = (props.tutor || "ctat").toLowerCase().replace("_", "");
+  return props
+}).then(function(props){
+  var tutorClass = tutor_map[props.tutor] || CTAT_Tutor
+  console.log("TC", tutorClass, props.tutor)
+  ////EVENTUALLY WILL WANT OT DYNAMICALLY IMPORT////
+  // if(props.tutor in tutor_map){props.tutor = tutor_map[props.tutor]}
+  // var tutorClass = (await import(props.tutor)).default
+  /////////////////////////////////////////////////
+  return [props,tutorClass]
+}).then(function(args){
+  var [props,tutorClass] = args
   ReactDOM.render(
     <App
       ref={app => {
@@ -85,13 +101,15 @@ load_training_file(props.training_file).then(function(training_json) {
       }}
       style={{ height: "100%" }}
       //tutorClass={tutor_map[props.tutor] || StylusTutor}
-      tutorClass={tutor_map[props.tutor]}
+      //tutorClass={tutor_map[props.tutor]}
+      tutorClass={tutorClass}
       {...props}
     />,
     document.getElementById("root")
   );
 });
 
+/*
 if (false) {
   // function setSkillWindowState(evt){
 
@@ -233,7 +251,7 @@ if (false) {
   } else {
     window.debugmode = false;
   }
-}
+}*/
 // setButtonsState("press_next",true,true);
 
 // }

@@ -163,7 +163,7 @@ class CTAT_Tutor extends React.Component {
 
       var qf = qf_exists
         ? { question_file: prob_obj["question_file"] }
-        : { question_file: "/src/empty.nools" };
+        : { question_file: "/static/empty.nools" };
 
       console.log("qf", qf, interactive, prob_obj);
       if (!interactive && qf["question_file"].includes(".nools")) {
@@ -291,7 +291,7 @@ class CTAT_Tutor extends React.Component {
       this.hasConfig
     ) {
       this._inject_element("link", {
-        href: "/css/AL_colors.css",
+        href: "/static/css/AL_colors.css",
         type: "text/css",
         rel: "stylesheet"
       });
