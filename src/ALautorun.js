@@ -210,6 +210,7 @@ function post_next_example(){
     elm.firstElementChild.setAttribute("class", "CTAT--example");
     console.log(elm.firstElementChild);
 
+    sai_data['next_state'] = get_state()
 
 	// console.log(sai_data);
 	if(TEST_MODE){
@@ -343,6 +344,7 @@ function handle_user_example(evt){
         action: sai.getAction(),
         inputs: {value: sai.getInput()},
         state: state,
+        next_state: get_state(),
         feedback_type: "example",
         reward: 1
     };
@@ -513,6 +515,7 @@ function send_feedback(reward){
 
 
     data.state = state;
+    data.next_state = get_state()
     send_training_data(data);
 }
 
@@ -670,11 +673,12 @@ function query_apprentice() {
 
     if(verbosity > 0) console.log('querying agent');
 
-    if (last_correct){
-        // console.log("SETTING STATE!");
-        // console.log(last_correct);
-        state = get_state();
-    }
+    state = get_state();
+    // if (last_correct){
+    //     // console.log("SETTING STATE!");
+    //     // console.log(last_correct);
+    //     state = get_state();
+    // }
 
     var data = {
         'state': state
@@ -767,7 +771,8 @@ function checkTypes(element, types){
 }
 
 
-function get_state({encode_relative=false,strip_offsets=true, use_offsets=false, use_class=false, use_id=true,append_ele=true}={}){
+function get_state({encode_relative=false,strip_offsets=true,
+    use_offsets=false, use_class=false, use_id=true,append_ele=true}={}){
     var state_array = iframe_content.$('div').toArray();
     // state_array.push({current_task: current_task});
 
@@ -777,7 +782,7 @@ function get_state({encode_relative=false,strip_offsets=true, use_offsets=false,
 
     	obj = {}
     	if(element.classList.contains("CTATComponent")
-             && !element.classList.contains("CTATTable")) {
+            && !element.classList.contains("CTATTable")){
             // if(obj["className"] == "CTATTable") {continue;} //Skip table objects and just use cells
     		if(use_class){obj["className"] = element.classList[0];}
             if(use_offsets){

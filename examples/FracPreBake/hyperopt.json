@@ -1,0 +1,51 @@
+{
+    "training_set1": [{
+        "agent_name": "Stu_02ca2dd269971767242cb662efed293f",
+        "agent_type": "SoartechAgent",
+        "stay_active": true,
+        "dont_save": true,
+        "no_ops_parse": true,
+        "args": {
+            "action_penalty": -0.1,
+            "prior_skills": {
+                "add": true,
+                "check": true,
+                "click_done": true,
+                "correct_add_convert_num": false,
+                "correct_add_same_num": false,
+                "correct_check": false,
+                "correct_convert_denom1": true,
+                "correct_convert_denom2": false,
+                "correct_convert_num1": false,
+                "correct_convert_num2": true,
+                "correct_copy_convert_denom": false,
+                "correct_copy_same_denom": false,
+                "correct_done": false,
+                "correct_multiply_denom": false,
+                "correct_multiply_num": false,
+                "equal": true,
+                "multiply": true,
+                "update_answer": true,
+                "update_convert": true
+            },
+            "request_epsilon": 0.3,
+            "train_epsilon": 0.3
+        },
+        "feature_set": [],
+        "function_set": [],
+        "problem_set": [{
+            "set_params": {
+                "HTML": "HTML/fraction_arithmetic.html",
+                "examples_only": false
+            }
+        }, {
+            "question_file": "../mass_production/mass_production_brds/M 1_2_times_2_3.brd"
+        }, {
+            "question_file": "../mass_production/mass_production_brds/M 1_3_times_1_6.brd"
+        }, {
+            "question_file": "../mass_production/mass_production_brds/M 1_3_times_3_2.brd"
+        }, {
+            "question_file": "../mass_production/mass_production_brds/M 7_9_times_4_9.brd"
+        }]
+    }]
+}
