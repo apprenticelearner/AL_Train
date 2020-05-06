@@ -18,12 +18,18 @@ import colorama
 from colorama import Fore, Back, Style
 import atexit
 import signal
+from glob import glob
+# from flask import Flask, 
+
+static_dir = os.path.dirname(__file__)
+build_dir = os.path.abspath(os.path.join(static_dir,"..","react_interface","build"))
+release_dir = os.path.abspath(os.path.join(static_dir,"release"))
+if(not os.path.exists(build_dir)): build_dir = release_dir
 
 colorama.init(autoreset=True)
 
 HOST_DOMAIN = '127.0.0.1' #Use this instead of localhost on windows
 # PORT = 8000
-
 post_queue = Queue(maxsize=0)
 write_queue = Queue(maxsize=0)
 
@@ -31,22 +37,33 @@ write_queue = Queue(maxsize=0)
 session_data_lock = threading.Lock()
 context_data_lock = threading.Lock()
 write_lock = threading.Lock()
+timer_lock = threading.Lock()
+# transaction_lock = threading.Lock()
 session_dicts = {}
+write_timers = {}
 
 # IGNORE_TOOL_MESSAGES = False
-
+WRITE_WAIT_TIME = 1.0 #seconds
 POST_THREADS = 4
 WRITE_THREADS = 1
 
 GLOBAL_TICKER = 0
 OVERRIDE_TIME = True
+RUNNING = True
 
 #defining function to run on shutdown
-def cleanup():
+def cleanup(*args):
+    global write_queue
+    global post_queue
+    global log_file_handle
+
+    RUNNING = False
     post_queue.join()
+    time.sleep(2*WRITE_WAIT_TIME)
     write_queue.join()
     log_file_handle.close()
-    print("CLEANUP")
+    # print("CLEANUP")
+
 #Register the function to be called on exit
 atexit.register(cleanup)
 signal.signal(signal.SIGTERM, cleanup)
@@ -75,8 +92,9 @@ class HostServer(Flask):
     thread.start() 
     super(HostServer, self).run(host=host, port=port, debug=debug, load_dotenv=load_dotenv, **options)
     
-
-app = HostServer(__name__,static_folder='../')
+print("HOST CWD", os.getcwd(), __name__)
+# app = HostServer(__name__,static_folder='.',root_path=os.getcwd())
+app = HostServer(__name__,static_folder=".")#,root_path=os.getcwd())
 
 
 
@@ -155,6 +173,7 @@ def shutdown_server():
     if func is None:
         raise RuntimeError('Not running with the Werkzeug Server')
     func()
+        
 
 def _print_and_resp(message=None,m_type="default",outmode=sys.stdout):
     # content_length = int(handler.headers['Content-Length']) # <--- Gets the size of data
@@ -198,35 +217,28 @@ def write_rows(rows,count):
     write_lock.release()
     log_file_handle.flush()
 
-    
-    # print("END", count)
 
 write_count = -1
 
 def write_problem(session_id,context_id,order=None):
     global output_file_path
-    # global session_events
     global session_dicts
-
     global write_count
+    global context_data_lock
+
     write_count += 1
     
-        
-
-    
-    # pprint("BLAMP", session_dicts[session_id])
-    # session_data_lock.acquire()
     c_dict = session_dicts[session_id]['logs'][context_id]
     tool_logs = c_dict['tool']
     tutor_logs = c_dict['tutor']
     session_start_dict = session_dicts[session_id]['start']
     context_dict = c_dict['context']
-    # del session_dicts[session_id]
-    # del session_events[session_id]
-    # session_data_lock.release()
     # print("COUNT(%d) %d:%d" % (write_count, len(tool_logs.keys()),len(tutor_logs.keys())))
     if(order is None):
+        context_data_lock.acquire()
         order = sorted([k for k,v in c_dict["time"].items()], key=lambda x: c_dict["time"][x])
+        c_dict['time'] = {}
+        context_data_lock.release()
         # print(c_dict["time"])
         # print(order)
          
@@ -238,12 +250,18 @@ def write_problem(session_id,context_id,order=None):
         rows.append({**default_dict,
                      **tool_logs.get(t_id,{}),
                      **tutor_logs.get(t_id,{})})
+        # if(t_id not in tool_logs):
+        #     pprint(tool_logs)
+        #     pprint(tutor_logs)
+        if(t_id in tool_logs): del tool_logs[t_id]
+        if(t_id in tutor_logs): del tutor_logs[t_id]
+        # transaction_lock.acquire()
+        # tool_logs[]
 
     write_rows(rows,write_count)
 
-    del session_dicts[session_id]['logs'][context_id]
-    # write_thread = threading.Thread(target=lambda :write_rows(rows))
-    # write_thread.start()
+    # del session_dicts[session_id]['logs'][context_id]
+
 context_counter = 0
 
 def get_context_dict(session_id,context_id):
@@ -281,33 +299,40 @@ def assign_time(context_dict,d,T):
     if(OVERRIDE_TIME): d['Time'] = GLOBAL_TICKER * 1000
     context_data_lock.release()
 
+# def assign_message_dict(c_dict, typ, T,d):
+#     transaction_lock.acquire()
+#     c_dict[typ][T] = d
+#     transaction_lock.release()
 
+def reset_write_timer(session_id, context_id):
+    global timer_lock
+    global write_queue
+    global write_timers
+    global WRITE_WAIT_TIME
 
-
-
+    timer_lock.acquire()
+    # print("RESET", scontext_id)
+    sd = write_timers.get(session_id,{})
+    wt = sd.get(context_id,None)
+    if(wt is not None): wt.cancel()
+    wt = threading.Timer(WRITE_WAIT_TIME,lambda :write_queue.put((session_id,context_id)))
+    sd[context_id] = wt
+    write_timers[session_id] = sd
+    timer_lock.release()
+    
 #####################
 def handle_post(post_data,T):
-
-    # x = post_item.xml_tree
-    # session_id = post_item.session_id
-    # print("POST")
     global session_data_lock
     global context_counter
 
     # global session_events
     global session_dicts
-    # print(post_data)
     # print(minidom.parseString(post_data).toprettyxml())
 
     # https://github.com/CMUCTAT/CTAT/wiki/Logging-Documentation
-
-    # print("S:%s" % session_id)
-
     envelope = ElementTree.fromstring(post_data)
 
-
     for x in envelope.iter():
-
         session_id = x.attrib["session_id"]
 
         session_data_lock.acquire()
@@ -318,45 +343,22 @@ def handle_post(post_data,T):
             session_dicts[session_id] = session_dict
 
         session_data_lock.release()
-
-        # post_queue.put(PostItem(x,
-        #                         session_id,
-        #                         session_dicts[session_id]["priority"]))    
-
-        # session_buffer.append(x)
         # print(minidom.parseString(ElementTree.tostring(x, encoding='utf8', method='xml')).toprettyxml())
 
         # print("TAG",x.tag)
         if(x.tag == "log_session_start"):
-            # print("Message Type: ", x.tag)
             session_start_dict = {}
             _fill_from_elm(session_start_dict, x)
             session_dicts[session_id]['start'] = session_start_dict
-            # session_start_event.set()
-
             # print(minidom.parseString(ElementTree.tostring(x, encoding='utf8', method='xml')).toprettyxml())
-
-
         
         elif(x.tag == "log_action"):
-
-            # print("#")
-            # session_start_event.wait()
-            # print("%")
-
-
-            # session_default_dict = session_dicts[session_id]['default']
-
-            # print("log action attr:",x.attrib)
-            # print(unquote(x.text))
             payload = ElementTree.fromstring(unquote(x.text))
-
             # print(minidom.parseString(ElementTree.tostring(payload, encoding='utf8', method='xml')).toprettyxml())
 
+            ## CONTEXT MESSAGES
             for msg in payload.iter("context_message"):
                 context_id = msg.attrib['context_message_id']
-                # print("context_message attr:",msg.attrib)
-                # print("Message Type: ", "context_message")
                 context_dict = {}
                 _fill_from_elm(context_dict, msg)
                 for elm in list(msg):
@@ -365,18 +367,8 @@ def handle_post(post_data,T):
 
                 c_dict = get_context_dict(session_id,context_id)
                 c_dict['context'] = context_dict
-                # context_data_lock.acquire()
-
-                # session_context_event.set()
-                # pprint(session_default_dict)
-                # print()
-
-            # print("@")
-            # session_context_event.wait()
-            # print("&")
-            
-            
-            # if(not IGNORE_TOOL_MESSAGES):
+    
+            ## TOOL MESSAGES
             for msg in payload.iter("tool_message"):
                 # tool_queue.put((session_id,msg))
                 context_id = msg.attrib['context_message_id']
@@ -385,15 +377,16 @@ def handle_post(post_data,T):
                 for elm in list(msg):
                     _fill_from_elm(tool_dict, elm,"tool")
 
-                
+                reset_write_timer(session_id,context_id)
                 c_dict = get_context_dict(session_id,context_id)
                 assign_time(c_dict,tool_dict,T)
+                # assign_message_dict(c_dict, 'tool', tool_dict['Transaction Id'], tool_dict)
                 c_dict['tool'][tool_dict['Transaction Id']] = tool_dict
-                # session_dicts[session_id]['tool'] = tool_dict
+
+                with timer_lock: write_timers[session_id][context_id].start()
                 
-                    # print("TOOL TRANS", msg.attrib)
 
-
+            ## TUTOR MESSAGES
             for msg in payload.iter("tutor_message"):
                 context_id = msg.attrib['context_message_id']
                 log_dict = {}
@@ -403,83 +396,19 @@ def handle_post(post_data,T):
                     _fill_from_elm(log_dict, elm,"tutor")
                     if(elm.tag == "event_descriptor"):
                         sel = next(elm.iter("selection")).text 
-                    # print("tag", elm.tag)
-                # print("SWERPT",log_dict,log_dict['Transaction Id'])
-                # print("SEL",sel)
+
+                reset_write_timer(session_id,context_id)
                 c_dict = get_context_dict(session_id,context_id)
                 assign_time(c_dict,log_dict,T)
+                # assign_message_dict(c_dict, 'tutor', log_dict['Transaction Id'], log_dict)
                 c_dict['tutor'][log_dict['Transaction Id']] = log_dict
+                with timer_lock: write_timers[session_id][context_id].start()
+                # if(sel == "done" and log_dict.get("Outcome",None) == "CORRECT"):
+                #     timer = threading.Timer(WRITE_WAIT_TIME,lambda :write_queue.put((session_id,context_id)))
+                #     timer.start()
 
-                # session_dicts[session_id]['tutor'][log_dict['Transaction Id']] = log_dict
-                if(sel == "done" and log_dict.get("Outcome",None) == "CORRECT"):
-                    timer = threading.Timer(1,lambda :write_queue.put((session_id,context_id)))
-                    timer.start()
-                    # session_end_event.set()
-                    # print("START WRITE")
-                    # write_thread = threading.Thread(target=lambda :write_session(session_id))
-                    # write_thread.start()
-
-                # tutor_queue.put((session_id,msg))
-                # print("tutor_message attr:",msg.attrib)
-                # print("Message Type: ", "tutor_message")
-
-                # log_dict = session_default_dict.copy()
-                
-                    
-                    # thread = threading.Thread(target=lambda : )
-                    # thread.start() 
-
-                # print("t_id",log_dict.get(LOG_HEADERS['transaction_id'],"bloop"))
-
-                # print("------MESSAGE-------")
-                # mstring = ElementTree.tostring(msg, encoding='utf8', method='xml')                    
-                # print(minidom.parseString(mstring).toprettyxml())
-                # print("------LOG_DICT-------")
-                # for key,val in log_dict.items():
-                #     print(key, ":", val)
-                # print("-------------------")
-
-                # print("------TOOL_DICT-------")
-                # for key,val in tool_dict.items():
-                #     print(key, ":", val)
-                # print("-------------------")
-
-                # if(not IGNORE_TOOL_MESSAGES):
-                #     if(tool_dict != None and log_dict != None and 
-                #         tool_dict.get(LOG_HEADERS['transaction_id'],"bleep") == log_dict.get(LOG_HEADERS['transaction_id'],"bloop")):
-
-                #         log_dict = {**log_dict, **tool_dict}
-                #         tool_dict = {}
-
-                # print("------JOINED DICT-------")
-                # for key,val in log_dict.items():
-                #     print(key, ":", val)
-                # print("-------------------")
-                
-
-                # with open(output_file_path, 'a', newline='') as f: 
-                #     csv_writer = csv.DictWriter(f, LOG_HEADERS.values(),delimiter="\t")
-                #     csv_writer.writerow(log_dict)
     return ""
 
-# def handle_session_start(msg):
-#     pass
-
-# def handle_context_message(msg):
-#     pass
-
-# def handle_tool_message(msg):
-#     pass
-
-# def handle_tutor_messages():
-    # while True:
-    #     session_id, msg = tutor_queue.get()
-
-        
-
-
-
-# def work_on_message_queue():
 
 class PostItem(object):
     def __init__(self, xml_tree, session_id, priority):
@@ -510,6 +439,7 @@ class PostItem(object):
 def work_on_write_queue():
     while True:
         session_id,context_id = write_queue.get()
+        # print("POP", session_id,context_id)
         # print("TYYPE", type(data))
         write_problem(session_id,context_id)
         write_queue.task_done()
@@ -531,6 +461,7 @@ for i in range(WRITE_THREADS):
     thread = threading.Thread(target=work_on_write_queue)
     thread.setDaemon(True)
     thread.start()
+
 
 
 def do_PRINT():
@@ -602,9 +533,11 @@ def do_POST ():
 
     
 
-def do_GET():
-    # print("GET")
-    return app.send_static_file('index.html')
+def do_GET(path):
+    print("GET", path[:])
+    if(path == ""): 
+        return send_from_directory(os.getcwd(),"index.html")
+    return send_from_directory(os.getcwd(),path)
 
 
 do_switch = {"PRINT":do_PRINT,
@@ -614,21 +547,25 @@ do_switch = {"PRINT":do_PRINT,
              "GET" : do_GET}
 
 
+# @app.route('/<path:path>')
+# def static_proxy(path):
+#   # send_static_file will guess the correct MIME type
+#   # print("PROXY:", path)
+#   return app.send_static_file(path)
+
+@app.route('/', defaults={'path': ''},methods=list(do_switch.keys()))
 @app.route('/<path:path>')
-def static_proxy(path):
-  # send_static_file will guess the correct MIME type
-  # print("PROXY:", path)
-  return app.send_static_file(path)
-
-@app.route('/', methods=['QUIT','PRINT',"POST","GET"])
-def handle_root():
-
+def handle_root(path):
+    # print("PATH",path)
     func = do_switch.get(request.method,None)
     # print("METHOD: %s" % request.method)
     if(func is not None):
-        return func()
+        if(request.method == "GET"):
+            return func(path)
+        else:
+            return func()
     else:
-        return 400
+        return make_response("Method not recognized", 400)
 
 
 
