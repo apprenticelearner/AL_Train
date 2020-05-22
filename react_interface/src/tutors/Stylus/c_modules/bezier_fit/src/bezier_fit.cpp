@@ -117,8 +117,16 @@ int main()
 
     };
     double  error = 4.0;        /*  Squared error */
+
+    //Check Boundary conditions w/ 1 & 2 points 
+    static Point2 sp[] = {{ 591, 133 }};
+    curves  = FitCurve_Inflections(sp, 1, error);
+
+    static Point2 sp2[] = {{ 591, 133 },{ 591, 133 }};
+    curves  = FitCurve_Inflections(sp2, 2, error);
+
     auto start = high_resolution_clock::now(); 
-    curves  = FitCurve(d, 37, error);       /*  Fit the Bezier curves */
+    curves  = FitCurve_Inflections(d, 37, error);       /*  Fit the Bezier curves */
     auto end = high_resolution_clock::now(); 
     for (BezierCurve b : curves){
         // BezierCurve bez = curves[i];
@@ -141,10 +149,10 @@ int c_FitCurve(double *points, int nPts, double error, double *output){
     //     printf("%i: %f,%f\n",i, p.x, p.y);
         
     // }
-    auto start = high_resolution_clock::now(); 
+    // auto start = high_resolution_clock::now(); 
     std::list<BezierCurve> curves = FitCurve_Inflections( (Point2 *) points , nPts, error);
-    auto end = high_resolution_clock::now(); 
-    std::cout << "duration" << duration_cast<std::chrono::milliseconds>(end - start).count() << "microseconds";
+    // auto end = high_resolution_clock::now(); 
+    // std::cout << "duration" << duration_cast<std::chrono::milliseconds>(end - start).count() << "microseconds";
     
     // BezierCurve *out = (BezierCurve *) malloc(4 * sizeof(Point2) * curves.size());
     // BezierCurve *out = (BezierCurve *)output;
@@ -214,6 +222,9 @@ void c_ML_EncodeCurves(double *curves, int nCurves, double *output){
 // }
 
 std::list<BezierCurve> FitCurve_Inflections(Point2  *d, int nPts, double  error){
+    if(nPts == 1){
+        return FitCurve(d, nPts, error);
+    }
     std::list<BezierCurve> out = {};
     std::list<int> inflections = CurveAvgInflectionPoints((Point2 *) d, nPts);
     int prev = 0;
@@ -247,6 +258,15 @@ std::list<BezierCurve> FitCurve(Point2  *d, int nPts, double  error)
     //     return FitCubic(d, 0, nPts - 1, tHat1, tHat2, error);
     //     prev = inf;
     // }
+    if (nPts == 1) {
+        BezierCurve bezCurve = (Point2 *)malloc(4 * sizeof(Point2));
+        bezCurve[0] = d[0];        
+        bezCurve[1] = d[0];        
+        bezCurve[2] = d[0];        
+        bezCurve[3] = d[0];        
+        std::list<BezierCurve> out = { bezCurve };
+        return out;
+    }
 
     tHat1 = ComputeLeftTangent(d, 0);
     tHat2 = ComputeRightTangent(d, nPts - 1);
@@ -301,7 +321,7 @@ double RegionDiff(int region1, int region2){
 
 const int STRIDE = 2;
 std::list<int> CurveAvgInflectionPoints(Point2  *d,int nPts){
-    printf("NPOINTS : %i\n", nPts);
+    // printf("NPOINTS : %i\n", nPts);
     std::list<int> out = {};
     std::list<int> inf_list;
 
@@ -620,6 +640,7 @@ static std::list<BezierCurve> FitCubic(Point2 *d, int first, int last,  Vector2 
 
     iterationError = error * 4.0;   /* fixed issue 23 */
     nPts = last - first + 1;
+
 
     /*  Use heuristic if region only has two points in it */
     if (nPts == 2) {
