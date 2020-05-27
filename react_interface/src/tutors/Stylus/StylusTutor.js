@@ -40,12 +40,14 @@ import {
   StyleSheet,
   TouchableHighlight,
   TouchableWithoutFeedback,
-  Platform//, 
+  Platform, 
   // WebView
+  Dimensions
 } from 'react-native';
 
 import autobind from 'class-autobind';
 import BezierFit from './c_modules/bezier_fit/bezier_fit'
+import Seshat from './c_modules/seshat/seshat'
 
 const MAX_STROKE_LENGTH = 512
 const MIN_DIST = 4.0
@@ -63,6 +65,11 @@ export default class StylusTutor extends React.Component {
   }
 
   constructor(props){
+    if(!props.gridWidth) props.gridWidth = 100;
+    if(!props.groupMode) props.groupMode = "grid"
+      
+    
+
     super(props);
     autobind(this)
 
@@ -72,6 +79,33 @@ export default class StylusTutor extends React.Component {
         this.groupStrokes = this.BezierFit.groupStrokes
         this.fitCurve([[1,2],[3,4],[5,6],[7,8]])
     })
+
+    this.Seshat = new Seshat();
+      this.Seshat.promise.then(() => {
+        this.recognize_symbol = this.Seshat.recognize_symbol
+        this.recognize_symbol([
+            [
+            [200,200],
+            [210,210],
+            [220,220],
+            [230,230],
+            [240,240],
+            [250,250],
+            ],
+            [
+            [250,200],
+            [240,210],
+            [230,220],
+            [220,230],
+            [210,240],
+            [200,250],
+            ],
+            ])
+        console.log("I HAVE COMPLETED")
+        // this.groupStrokes = this.BezierFit.groupStrokes
+        // this.fitCurve([[1,2],[3,4],[5,6],[7,8]])
+    })
+
 
     window.setMode = (mode) => {this.setState({mode : mode })}
 
@@ -115,6 +149,15 @@ export default class StylusTutor extends React.Component {
     // this.penUp = this.penUp.bind(this);
 
 
+  }
+
+   onLayout = (e) => {
+    this.setState({
+      width: e.nativeEvent.layout.width,
+      height: e.nativeEvent.layout.height,
+      x: e.nativeEvent.layout.x,
+      y: e.nativeEvent.layout.y
+    })
   }
 
   componentDidMount(){
@@ -319,18 +362,49 @@ export default class StylusTutor extends React.Component {
       this.setState({pen_down : true,strokes:strokes});
     }
   }
+  snapStrokesToGrid(strokes){
+    const get_min = (key,strokes) => Math.min(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
+    const get_max = (key,strokes) => Math.max(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
 
-  penUp(e){
-    if(this.state.mode == "foci"){
-      this.mouseUp(e)
-      return
-    }
-    console.log("UP")
-    if(this.state.pen_down){
-      this.setState({pen_down : false,n_strokes: this.state.n_strokes+1});
+    var grid_assignments = {}
+    var gridWidth = this.props.gridWidth
+    console.log("GW",this.props.gridWidth)
 
+    console.log("strokes", strokes)
+    for (var s_id in strokes){
+      var stroke = strokes[s_id]
+      console.log("stroke", stroke)
+      var {minX,maxX,minY,maxY} = stroke.bounds
+      var min_i = Math.floor(minX/gridWidth) 
+      var max_i = Math.ceil(maxX/gridWidth)
+      var min_j = Math.floor(minY/gridWidth) 
+      var max_j = Math.ceil(maxY/gridWidth)
+      if(maxX-minX > 1.5*gridWidth || maxY-minY > 1.5*gridWidth){
+        continue //Skip objects that span many gridlines
+      }
+      console.log("MMM",min_i,max_i,min_j,max_j)
+      var [b_i, b_j, b_area] = [-1, -1, 0.0]
+      for (var i=min_i; i < max_i; i++){
+        for (var j=min_j; j < max_j; j++){
+          var w = (Math.min(maxX,(i+1)*gridWidth) - Math.max(minX,i*gridWidth)) + 1
+          var h = (Math.min(maxY,(j+1)*gridWidth) - Math.max(minY,j*gridWidth)) + 1
+          var area = w * h
+          console.log("AREA", i, j,area, s_id)
+          if(area > b_area){
+            [b_area, b_i, b_j] = [area, i, j]
+          }
+        }
+      }
+      var b_str = b_i + "_" + b_j
+      var a = grid_assignments[b_str] || []
+      a.push(s_id)
+      grid_assignments[b_str] = a      
     }
-    var groups = this.groupStrokes(this.state.strokes)
+    console.log("GRID ASSIGNMENTS", grid_assignments)
+    return Object.values(grid_assignments)
+  }
+
+  recalcElements(groups){
     this.elements = []
     const get_min = (key,strokes) => Math.min(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
     const get_max = (key,strokes) => Math.max(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
@@ -346,7 +420,30 @@ export default class StylusTutor extends React.Component {
                     maxY: get_max("maxY",elm.strokes)}
       this.elements.push(elm);
     }
-    console.log(this.groupStrokes(this.state.strokes))
+    // console.log(this.groupStrokes(this.state.strokes))
+
+  }
+
+
+  penUp(e){
+    if(this.state.mode == "foci"){
+      this.mouseUp(e)
+      return
+    }
+    console.log("UP")
+    if(this.state.pen_down){
+      this.setState({pen_down : false,n_strokes: this.state.n_strokes+1});
+
+    }
+    if(this.props.groupMode == "grid"){
+      var groups = this.snapStrokesToGrid(this.state.strokes)
+    }else{
+      var groups = this.groupStrokes(this.state.strokes)
+    }
+
+
+    this.recalcElements(groups)
+    
 
   }
 
@@ -585,13 +682,43 @@ export default class StylusTutor extends React.Component {
           }
           svg_content = svg_content.concat(circles);   
 
-          var elems = this.elements || [];
-          for (let j=0; j<elems.length;j++){
-             var b = elems[j].bounds;
-              svg_content.push( <Rect x={b.minX} y={b.minY} width={b.maxX-b.minX} height={b.maxY-b.minY}
-                                  stroke='orange' strokeWidth=".5" fill='none'/> ); 
-          }
+          
         }
+    }
+
+    var winWidth = this.state.width//Dimensions.get("window").width
+    var winHeight = this.state.height//Dimensions.get("window").height
+    var gridWidth = this.props.gridWidth
+    for (let i=0; i<winWidth/gridWidth;i++){
+      svg_content.push(<Polyline
+        points= {i*gridWidth+","+"0"+" "+i*gridWidth+","+winHeight}
+        fill="none"
+        stroke={'gray'}
+        strokeWidth=".5"
+        strokeOpacity={0.4}
+      />);
+    }
+
+    for (let i=0; i<winHeight/gridWidth;i++){
+      svg_content.push(<Polyline
+        points= {"0"+","+i*gridWidth+" "+winWidth+","+i*gridWidth}
+        fill="none"
+        stroke={'gray'}
+        strokeWidth=".5"
+        strokeOpacity={0.4}
+      />);
+    }
+    console.log("svg_content",svg_content)
+
+    // for (let j=0; j<10;j++){
+        
+    // }
+
+    var elems = this.elements || [];
+    for (let j=0; j<elems.length;j++){
+       var b = elems[j].bounds;
+        svg_content.push( <Rect x={b.minX} y={b.minY} width={b.maxX-b.minX} height={b.maxY-b.minY}
+                            stroke='orange' strokeWidth=".5" fill='none'/> ); 
     }
 
 
@@ -627,6 +754,7 @@ export default class StylusTutor extends React.Component {
         >
       
       <View
+        onLayout = {this.onLayout}
         style={[
           StyleSheet.absoluteFill,
           {  justifyContent: 'center', height:"100%", width:"100%" },
