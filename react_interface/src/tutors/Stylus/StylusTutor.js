@@ -53,6 +53,8 @@ const MAX_STROKE_LENGTH = 512
 const MIN_DIST = 4.0
 // var stroke_id_counter = 0;
 
+const get_min = (key,strokes) => Math.min(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
+const get_max = (key,strokes) => Math.max(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
 
 
 /////
@@ -83,25 +85,25 @@ export default class StylusTutor extends React.Component {
     this.Seshat = new Seshat();
       this.Seshat.promise.then(() => {
         this.recognize_symbol = this.Seshat.recognize_symbol
-        this.recognize_symbol([
-            [
-            [200,200],
-            [210,210],
-            [220,220],
-            [230,230],
-            [240,240],
-            [250,250],
-            ],
-            [
-            [250,200],
-            [240,210],
-            [230,220],
-            [220,230],
-            [210,240],
-            [200,250],
-            ],
-            ])
-        console.log("I HAVE COMPLETED")
+        // this.recognize_symbol([
+        //     [
+        //     [200,200],
+        //     [210,210],
+        //     [220,220],
+        //     [230,230],
+        //     [240,240],
+        //     [250,250],
+        //     ],
+        //     [
+        //     [250,200],
+        //     [240,210],
+        //     [230,220],
+        //     [220,230],
+        //     [210,240],
+        //     [200,250],
+        //     ],
+        //     ])
+        // console.log("I HAVE COMPLETED")
         // this.groupStrokes = this.BezierFit.groupStrokes
         // this.fitCurve([[1,2],[3,4],[5,6],[7,8]])
     })
@@ -363,17 +365,16 @@ export default class StylusTutor extends React.Component {
     }
   }
   snapStrokesToGrid(strokes){
-    const get_min = (key,strokes) => Math.min(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
-    const get_max = (key,strokes) => Math.max(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
+    
 
     var grid_assignments = {}
     var gridWidth = this.props.gridWidth
-    console.log("GW",this.props.gridWidth)
+    // console.log("GW",this.props.gridWidth)
 
-    console.log("strokes", strokes)
+    // console.log("strokes", strokes)
     for (var s_id in strokes){
       var stroke = strokes[s_id]
-      console.log("stroke", stroke)
+      // console.log("stroke", stroke)
       var {minX,maxX,minY,maxY} = stroke.bounds
       var min_i = Math.floor(minX/gridWidth) 
       var max_i = Math.ceil(maxX/gridWidth)
@@ -382,14 +383,14 @@ export default class StylusTutor extends React.Component {
       if(maxX-minX > 1.5*gridWidth || maxY-minY > 1.5*gridWidth){
         continue //Skip objects that span many gridlines
       }
-      console.log("MMM",min_i,max_i,min_j,max_j)
+      // console.log("MMM",min_i,max_i,min_j,max_j)
       var [b_i, b_j, b_area] = [-1, -1, 0.0]
       for (var i=min_i; i < max_i; i++){
         for (var j=min_j; j < max_j; j++){
           var w = (Math.min(maxX,(i+1)*gridWidth) - Math.max(minX,i*gridWidth)) + 1
           var h = (Math.min(maxY,(j+1)*gridWidth) - Math.max(minY,j*gridWidth)) + 1
           var area = w * h
-          console.log("AREA", i, j,area, s_id)
+          // console.log("AREA", i, j,area, s_id)
           if(area > b_area){
             [b_area, b_i, b_j] = [area, i, j]
           }
@@ -400,37 +401,63 @@ export default class StylusTutor extends React.Component {
       a.push(s_id)
       grid_assignments[b_str] = a      
     }
-    console.log("GRID ASSIGNMENTS", grid_assignments)
+    // console.log("GRID ASSIGNMENTS", grid_assignments)
     return Object.values(grid_assignments)
   }
 
-  recalcElements(groups){
-    this.elements = []
-    const get_min = (key,strokes) => Math.min(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
-    const get_max = (key,strokes) => Math.max(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
-    for (var i=0; i < groups.length; i++){
-      var elm = {}
-
-      elm.strokes = groups[i].map((indx)=>this.state.strokes[indx])
-      console.log("CLOOOO",elm.strokes,Object.values(elm.strokes))
-      console.log("CLOOOO",Object.values(elm.strokes).map((stroke)=>stroke.bounds["minX"]))
-      elm.bounds = {minX: get_min("minX",elm.strokes),
-                    maxX: get_max("maxX",elm.strokes),
-                    minY: get_min("minY",elm.strokes),
-                    maxY: get_max("maxY",elm.strokes)}
-      this.elements.push(elm);
+  removeElement(stroke_ids){
+    var elm;
+    for (var i=0; i < this.elements.length; i++){
+      var e = this.elements[i]
+      if(e.stroke_ids.length == stroke_ids.length){
+        var ok = true
+        for (var j = 0; j < e.stroke_ids.length; j++) {
+          if (e.stroke_ids[j] !== stroke_ids[j]){
+            ok = false; break;
+          }
+        }
+        if(ok){ this.elements.splice(i,1); return elm }
+      }
     }
+    return undefined
+  }
+  addElement(stroke_ids){
+    this.elements = this.elements || []
+    // for (var i=0; i < groups.length; i++){
+    var elm = {}
+    elm.stroke_ids = stroke_ids
+    elm.strokes = stroke_ids.map((indx)=>this.state.strokes[indx])
+    // console.log("CLOOOO",elm.strokes,Object.values(elm.strokes))
+    // console.log("CLOOOO",Object.values(elm.strokes).map((stroke)=>stroke.bounds["minX"]))
+    elm.bounds = {minX: get_min("minX",elm.strokes),
+                  maxX: get_max("maxX",elm.strokes),
+                  minY: get_min("minY",elm.strokes),
+                  maxY: get_max("maxY",elm.strokes)}
+    this.elements.push(elm);
+    // }
     // console.log(this.groupStrokes(this.state.strokes))
-
+    return elm
   }
 
+  _groupDiff(old_g,new_g){
+    let old_s = old_g.map(x => x.join(","))
+    let new_s = new_g.map(x => x.join(","))
+
+    let added_s = new_s.filter(x => !old_s.includes(x));
+    let removed_s = old_s.filter(x => !new_s.includes(x));
+
+    let added = added_s.map(x => x.split(",").map(x => parseInt(x)))
+    let removed = removed_s.map(x => x.split(",").map(x => parseInt(x)))
+    // console.log(added,removed)
+    return [added, removed]
+  }
 
   penUp(e){
     if(this.state.mode == "foci"){
       this.mouseUp(e)
       return
     }
-    console.log("UP")
+    // console.log("UP")
     if(this.state.pen_down){
       this.setState({pen_down : false,n_strokes: this.state.n_strokes+1});
 
@@ -442,8 +469,33 @@ export default class StylusTutor extends React.Component {
     }
 
 
-    this.recalcElements(groups)
+    var [added, removed] = this._groupDiff(this.groups || [],groups)
+
+    if(this.props.groupMode == "grid"){
+      var groups = this.snapStrokesToGrid(this.state.strokes)
+    }else{
+      var groups = this.groupStrokes(this.state.strokes)
+    }
+    this.groups = groups
+
+    // console.log("GROUPS", groups)
+
+    // this.removeElement(group)
     
+    for(var i=0; i < removed.length; i++){
+      this.removeElement(removed[i])
+    }
+
+    for(var i=0; i < added.length; i++){
+      let group = added[i]
+      let elm = this.addElement(group)
+      elm.symbol_probs = this.recognize_symbol(elm.strokes)
+
+      console.log("Recognize Symbol: ")
+      Object.entries(elm.symbol_probs).sort((a,b)=>b[1]-a[1]).forEach(function([sym,prob]){
+        console.log(sym.padStart(12),":", prob.toFixed(3))
+      })
+    }
 
   }
 
@@ -591,30 +643,6 @@ export default class StylusTutor extends React.Component {
     this.setState({strokes: {...this.state.strokes,...ev_strokes}})
   }
 
-  // resolveCursor(mode,elmUnderPointID){
-    
-    
-  // }
-  // onStartShouldSetResponder (e) {
-  //   return true;
-  // }
-
-  // onMoveShouldSetResponder(e) {
-  //   return true;
-  // }
-
-
-  
-
-
-
-
-
-  // onResponderMove(e) {
-  //   // console.log(e)
-    
-    
-  // }
 
 
   render() {
@@ -708,7 +736,7 @@ export default class StylusTutor extends React.Component {
         strokeOpacity={0.4}
       />);
     }
-    console.log("svg_content",svg_content)
+    // console.log("svg_content",svg_content)
 
     // for (let j=0; j<10;j++){
         
