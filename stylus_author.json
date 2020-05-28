@@ -4,7 +4,7 @@
 		"free_author" : true,
 		"tutor" : "Stylus",
 		"use_foci" : true,
-		"tutor_props" : {"mode" : "debug"}
+		// "tutor_props" : {"mode" : "debug"}
 	},
 	"training_set1" : [{
 		"agent_name":"myAgent1",

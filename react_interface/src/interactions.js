@@ -35,7 +35,7 @@ import { Machine, assign, interpret, send } from "xstate";
 // }
 const appendStartHistory = assign({
   start_state_history: (context, event) => {
-    var state = context.tutor.get_state();
+    var state = context.tutor.getState();
     var history = context.start_state_history || [];
     history.push(state);
     return history;
@@ -45,7 +45,7 @@ const appendStartHistory = assign({
 const stateRecalc = assign({
   state: (context, event) => {
     if (context.staged_SAI == null || context.staged_SAI.reward > 0 || context.test_mode) {
-      return context.tutor.get_state();
+      return context.tutor.getState();
     } else {
       return context.state;
     }
@@ -55,7 +55,7 @@ const stateRecalc = assign({
 const assignFoci = assign({
   staged_SAI: (context, event) => {
     Object.assign(context.staged_SAI, {
-      foci_of_attention: context.tutor.get_current_foci()
+      foci_of_attention: context.tutor.getCurrentFoci()
     });
     return context.staged_SAI;
   }

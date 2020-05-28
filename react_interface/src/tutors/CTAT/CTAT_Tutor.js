@@ -374,8 +374,8 @@ class CTAT_Tutor extends React.Component {
     }
     //Take away focus from whatever is there so it isn't treated as an example
     // document.activeElement.blur();
-    // console.log("STAT",get_state())
-    this.start_state_history.push(this.get_state());
+    // console.log("STAT",getState())
+    this.start_state_history.push(this.getState());
     // last_action = proposed_SAI = null;
   }
 
@@ -531,7 +531,7 @@ class CTAT_Tutor extends React.Component {
     );
   }
 
-  get_current_foci() {
+  getCurrentFoci() {
     if (this.current_foci) {
       return this.current_foci.map(elm => elm.id);
     } else {
@@ -844,7 +844,7 @@ class CTAT_Tutor extends React.Component {
     this.commLibrary.sendXML(message);
   }
 
-  get_state({
+  getState({
     encode_relative = true,
     strip_offsets = true,
     use_offsets = true,

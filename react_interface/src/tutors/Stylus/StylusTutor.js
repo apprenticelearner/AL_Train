@@ -63,7 +63,8 @@ export default class StylusTutor extends React.Component {
       pen_down : false,
       strokes : {},
       n_strokes : 0,
-      // mode : "set_start_state"
+      mode : "set_start_state",
+      check_button_callback: null,
   }
 
   constructor(props){
@@ -128,6 +129,7 @@ export default class StylusTutor extends React.Component {
     this.current_foci = [];
     this.start_state_history = [];
     this.highlighted_elements = [];
+    this.elements = [];
     // this.getEvaluatable = this.getEvaluatable.bind(this)
     // this.evaluate = this.evaluate.bind(this)
     // this.setStartState = this.setStartState.bind(this)
@@ -169,7 +171,8 @@ export default class StylusTutor extends React.Component {
 
   enterSetStartStateMode(){
     if(this.state.mode != "debug"){
-      this.setState({mode : "set_start_state" })  
+      this.setState({mode : "set_start_state",
+                     check_button_callback : this.setStartState })  
     }
     console.log("MODE!", this.state.mode)
   }
@@ -189,7 +192,8 @@ export default class StylusTutor extends React.Component {
 
 
   enterFeedbackMode(){
-    this.setState({mode : "feedback" }) 
+    this.setState({mode : "feedback",
+                   check_button_callback : this.demonstrate })  
   }
 
   exitFeedbackMode(){
@@ -218,13 +222,13 @@ export default class StylusTutor extends React.Component {
   }
 
 
-  // get_current_foci(){
-  //   if(this.current_foci){
-  //     return this.current_foci.map((elm) => elm.id);
-  //   }else{
-  //     return []
-  //   }
-  // }
+  getCurrentFoci(){
+    if(this.current_foci){
+      return this.current_foci.map((elm) => elm.id);
+    }else{
+      return []
+    }
+  }
   // setStartState(){
   //   let L = this.state.n_strokes+this.state.pen_down
   //   let new_strokes = {}
@@ -237,10 +241,12 @@ export default class StylusTutor extends React.Component {
   //   }
   //   this.setState({strokes : new_strokes,mode : "authoring" })
 
-  // }
+  
 
   loadProblem(context){
-    //TODO
+    const promise = new Promise((resolve, reject) =>
+     {resolve({ updateContext: {} })})
+    return promise
   }
 
   lockElement(name){
@@ -262,22 +268,32 @@ export default class StylusTutor extends React.Component {
     // this.setState({strokes :this.state.strokes})
   }
 
-  highlightElement(name,colorIndex=0){
-    var stroke = this.state.strokes[name]
-    stroke.highlight = colorIndex;
-    var index = this.highlighted_elements.indexOf(name)
-    if(index == -1){
-      this.highlighted_elements.push(name)  
+  highlightElement(elm,colorIndex=0){
+    // if(!elm) return
+    var stroke_ids = elm.stroke_ids == undefined ? [elm] : elm.stroke_ids
+    for(var i=0; i< stroke_ids.length; i++){
+      var s_id = stroke_ids[i]
+      var stroke = this.state.strokes[s_id]
+      stroke.highlight = colorIndex;
+      var index = this.highlighted_elements.indexOf(s_id)
+      if(index == -1){
+        this.highlighted_elements.push(s_id)  
+      }
     }
   }
 
-  unhighlightElement(name){
-    var stroke = this.state.strokes[name]
-    stroke.highlight = null
-    var index = this.highlighted_elements.indexOf(name)
+  unhighlightElement(elm){
+    // if(!elm) return
+    var stroke_ids = elm.stroke_ids == undefined ? [elm] : elm.stroke_ids
+    for(var i=0; i< stroke_ids.length; i++){
+      var s_id = stroke_ids[i]
+      var stroke = this.state.strokes[s_id]
+      stroke.highlight = null
+      var index = this.highlighted_elements.indexOf(s_id)
       if(index > -1){
         this.highlighted_elements.splice(index,1)  
       }
+    }
   }
 
   clearElement(name){
@@ -309,7 +325,17 @@ export default class StylusTutor extends React.Component {
   }
 
   getState(){
-    //TODO
+    var out = {}
+    for(var i=0; i < this.elements.length; i++){
+      var elm = this.elements[i]
+      var name = "ie" + i
+      out[name] = {
+        id: name,
+        type : "Symbol",
+        value : elm.symbol
+      }
+    }
+    return out
   }
 
   clearProposedSAI(){
@@ -422,7 +448,7 @@ export default class StylusTutor extends React.Component {
     return undefined
   }
   addElement(stroke_ids){
-    this.elements = this.elements || []
+    // this.elements = this.elements || []
     // for (var i=0; i < groups.length; i++){
     var elm = {}
     elm.stroke_ids = stroke_ids
@@ -493,6 +519,7 @@ export default class StylusTutor extends React.Component {
 
       console.log("Recognize Symbol: ")
       Object.entries(elm.symbol_probs).sort((a,b)=>b[1]-a[1]).forEach(function([sym,prob]){
+        if(elm.symbol == undefined){elm.symbol = sym}
         console.log(sym.padStart(12),":", prob.toFixed(3))
       })
     }
@@ -538,35 +565,35 @@ export default class StylusTutor extends React.Component {
 
   mouseMove(e){
     var ele = this.getElementUnderPoint(e.clientX,e.clientY)
-    var id = ele ? ele.id : null
-    this.setState({elmUnderPointID : id})
+    // var id = ele ? ele.id : null
+    this.setState({elmUnderPoint : ele})
   }
 
   mouseDown(e){
     console.log("MOUSE DOWN")
     var ele = this.getElementUnderPoint(e.clientX,e.clientY)
-    var id = ele ? ele.id : null
-    this.setState({mouseDownElmID : id,
-                    elmUnderPointID : id})
+    // var id = ele ? ele.id : null
+    this.setState({mouseDownElm : ele,
+                    elmUnderPoint : ele})
   }
 
   mouseUp(e){
     console.log("MOUSE UP")
     var ele = this.getElementUnderPoint(e.clientX,e.clientY)
-    var id = ele ? ele.id : null
-    if(ele && id == this.state.mouseDownElmID){
+    // var id = ele ? ele.id : null
+    if(ele && ele == this.state.mouseDownElm){
       var indx = this.current_foci.indexOf(ele)
       if(indx == -1){
           this.current_foci.push(ele)
-          this.highlightElement(ele.id,0)
+          this.highlightElement(ele,0)
       }else{
           this.current_foci.splice(indx,1)
-          this.unhighlightElement(ele.id)
+          this.unhighlightElement(ele)
       }
     }
     // console.log(this.current_foci)
-    this.setState({mouseDownElmID : null,
-                    elmUnderPointID : id})
+    this.setState({mouseDownElm : null,
+                    elmUnderPoint : ele})
   }
 
   getElementUnderPoint(x,y,padding=10){
@@ -593,7 +620,15 @@ export default class StylusTutor extends React.Component {
         }
       }
     }
-    return minStroke
+
+    for (let i=0; i < this.elements.length; i++){
+      let elm = this.elements[i];
+      if(elm.stroke_ids.indexOf(minStroke.id) != -1){
+        return elm
+      }
+    }
+
+    return null
 
   }
 
@@ -627,6 +662,19 @@ export default class StylusTutor extends React.Component {
     return out
   }
 
+  demonstrate(){
+    this.props.interactions_service.send({
+        type: "DEMONSTRATE",
+        data: { sai:{lala:1}, reward: 1 }
+    });
+    // } else if (type == "ATTEMPT") {
+    //   console.log("SEND ATTEMPT", sai);
+    //   this.props.interactions_service.send({
+    //     type: "ATTEMPT",
+    //     data: { ...sai }
+    //   });
+  }
+
   evaluate(){
     let ev_strokes = {};
     if(this.props.evaluate){
@@ -654,7 +702,9 @@ export default class StylusTutor extends React.Component {
         // if(this.state.mode != "debug"){
                  
         // }else{
-        var strokeWidth = this.state.mode == "debug" ? ".5" :(stroke.id == this.state.elmUnderPointID ?  "4": "3")
+        var elmUnderCursor =this.state.elmUnderPoint
+        var elmUnderCursor_strokes = elmUnderCursor ? elmUnderCursor.stroke_ids || [] : [] 
+        var strokeWidth = this.state.mode == "debug" ? ".5" :(stroke.id in elmUnderCursor_strokes ?  "4": "3")
         if(stroke.highlight != null){
           svg_content.push(<Polyline
             points= {stroke['points_str']} fill="none"
@@ -716,7 +766,7 @@ export default class StylusTutor extends React.Component {
 
     var winWidth = this.state.width//Dimensions.get("window").width
     var winHeight = this.state.height//Dimensions.get("window").height
-    var gridWidth = this.props.gridWidth
+    var gridWidth = this.props.gridWidth || 100
     for (let i=0; i<winWidth/gridWidth;i++){
       svg_content.push(<Polyline
         points= {i*gridWidth+","+"0"+" "+i*gridWidth+","+winHeight}
@@ -751,17 +801,20 @@ export default class StylusTutor extends React.Component {
 
 
 
-    let check_button_callback
-    if(this.state.mode == "set_start_state"){
-      check_button_callback = this.setStartState
-    }else{
-      check_button_callback = this.evaluate
-    }
+    // let check_button_callback
+    // if(this.state.mode == "set_start_state"){
+    //   check_button_callback = this.setStartState
+    // }else if(this.state.mode == "set_start_state"){
+    //   check_button_callback = this.demonstrate
+    // }else{  
+      
+    //   check_button_callback = this.evaluate
+    // }
     
     
     var cursor;
     if(this.state.mode == "foci"){
-      cursor = this.state.elmUnderPointID == null ? "default" : "pointer"
+      cursor = this.state.elmUnderPoint == null ? "default" : "pointer"
     }else{
       cursor = cursor_map[this.state.mode] || "crosshair"
     }
@@ -823,7 +876,7 @@ export default class StylusTutor extends React.Component {
             </TouchableHighlight>
             <TouchableHighlight
               style = {[styles.circle_buttons,styles.check_button]}
-              onPress = {check_button_callback}>
+              onPress = {this.state.check_button_callback}>
               <Text style={styles.check_button_text}>{'\u2713'}</Text>
             </TouchableHighlight>
           </View>
