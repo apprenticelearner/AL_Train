@@ -55,26 +55,30 @@ const MIN_DIST = 4.0
 
 const get_min = (key,strokes) => Math.min(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
 const get_max = (key,strokes) => Math.max(...Object.values(strokes).map((stroke)=>stroke.bounds[key])) 
-
+const range = (start, end) => {
+  return Array(end - start).fill().map((_, idx) => start + idx)
+}
 
 /////
 export default class StylusTutor extends React.Component {
+  
   state = {
       pen_down : false,
       strokes : {},
       n_strokes : 0,
       mode : "set_start_state",
       check_button_callback: null,
-  }
+  };
 
   constructor(props){
-    if(!props.gridWidth) props.gridWidth = 100;
-    if(!props.groupMode) props.groupMode = "grid"
+    super(props);
+    autobind(this)
+
+    // if(!this.props.gridWidth) this.props.gridWidth = 100;
+    // if(!this.props.groupMode) this.props.groupMode = "grid"
       
     
 
-    super(props);
-    autobind(this)
 
     this.BezierFit = new BezierFit();
       this.BezierFit.promise.then(() => {
@@ -193,11 +197,14 @@ export default class StylusTutor extends React.Component {
 
   enterFeedbackMode(){
     this.setState({mode : "feedback",
-                   check_button_callback : this.demonstrate })  
+                   check_button_callback : this.demonstrate,
+                   feedback_start_stroke_id : this.state.n_strokes })  
   }
 
   exitFeedbackMode(){
-    this.setState({mode : null })
+    this.setState({mode : null ,
+                   check_button_callback : null,
+                   feedback_start_stroke_id : null })
   }
 
   getCurrentFoci(){
@@ -219,6 +226,13 @@ export default class StylusTutor extends React.Component {
     this.unhighlightAll();
     this.current_foci = []
     this.setState({mode : null })
+  }
+
+
+  printFeedback(context, event) {
+    var nl = context.network_layer;
+    nl.term_print("HEYA");
+
   }
 
 
@@ -452,6 +466,7 @@ export default class StylusTutor extends React.Component {
     // for (var i=0; i < groups.length; i++){
     var elm = {}
     elm.stroke_ids = stroke_ids
+    elm.id = stroke_ids.join("_")
     elm.strokes = stroke_ids.map((indx)=>this.state.strokes[indx])
     // console.log("CLOOOO",elm.strokes,Object.values(elm.strokes))
     // console.log("CLOOOO",Object.values(elm.strokes).map((stroke)=>stroke.bounds["minX"]))
@@ -463,6 +478,21 @@ export default class StylusTutor extends React.Component {
     // }
     // console.log(this.groupStrokes(this.state.strokes))
     return elm
+  }
+
+  _elemsFromStrokes(strokes){
+    var elem_indxs = new Set()
+    for(var i=0; i < strokes.length; i++){
+      var s = strokes[i]
+      var stroke = typeof s != "number" ? s : this.state.strokes[s]
+      for(var j=0; j < this.elements.length; j++){
+        var elm = this.elements[j]
+        if(elm.stroke_ids.indexOf(stroke.id) != -1){
+          elem_indxs.add(j)
+        }  
+      }
+    }
+    return Array.from(elem_indxs).map((indx)=>this.elements[indx])
   }
 
   _groupDiff(old_g,new_g){
@@ -519,7 +549,7 @@ export default class StylusTutor extends React.Component {
 
       console.log("Recognize Symbol: ")
       Object.entries(elm.symbol_probs).sort((a,b)=>b[1]-a[1]).forEach(function([sym,prob]){
-        if(elm.symbol == undefined){elm.symbol = sym}
+        if(elm.value == undefined){elm.value = sym}
         console.log(sym.padStart(12),":", prob.toFixed(3))
       })
     }
@@ -644,6 +674,42 @@ export default class StylusTutor extends React.Component {
 
   }
 
+
+
+  demonstrate(){
+    var L = this.state.n_strokes
+    var start = this.state.feedback_start_stroke_id
+    var d_strokes = range(start,L).map(x => this.state.strokes[x])
+
+    for(var i=0; i < d_strokes.length; i++){
+      d_strokes[i].evaluation = "DEMONSTRATE"
+    }
+
+    var elems = this._elemsFromStrokes(d_strokes)
+    if(elems.length > 0){
+      var e = elems[0];  
+      this.props.interactions_service.send({
+        type: "DEMONSTRATE",
+        data: { 
+                selection : e.id,
+                action : "WriteExpr",
+                inputs : {'value' : e.value},
+                reward: 1 
+              }
+      });
+    }
+    
+
+
+    
+    // } else if (type == "ATTEMPT") {
+    //   console.log("SEND ATTEMPT", sai);
+    //   this.props.interactions_service.send({
+    //     type: "ATTEMPT",
+    //     data: { ...sai }
+    //   });
+  }
+
   getEvaluatable(){
     let i=0;
     let L = this.state.n_strokes+this.state.pen_down
@@ -660,19 +726,6 @@ export default class StylusTutor extends React.Component {
     }
 
     return out
-  }
-
-  demonstrate(){
-    this.props.interactions_service.send({
-        type: "DEMONSTRATE",
-        data: { sai:{lala:1}, reward: 1 }
-    });
-    // } else if (type == "ATTEMPT") {
-    //   console.log("SEND ATTEMPT", sai);
-    //   this.props.interactions_service.send({
-    //     type: "ATTEMPT",
-    //     data: { ...sai }
-    //   });
   }
 
   evaluate(){
@@ -704,7 +757,7 @@ export default class StylusTutor extends React.Component {
         // }else{
         var elmUnderCursor =this.state.elmUnderPoint
         var elmUnderCursor_strokes = elmUnderCursor ? elmUnderCursor.stroke_ids || [] : [] 
-        var strokeWidth = this.state.mode == "debug" ? ".5" :(stroke.id in elmUnderCursor_strokes ?  "4": "3")
+        var strokeWidth = this.state.mode == "debug" ? ".5" :(elmUnderCursor_strokes.indexOf(stroke.id) != -1  ?  "4": "3")
         if(stroke.highlight != null){
           svg_content.push(<Polyline
             points= {stroke['points_str']} fill="none"
@@ -890,10 +943,16 @@ export default class StylusTutor extends React.Component {
   }
 }
 
+StylusTutor.defaultProps = {
+    gridWidth : 100,
+    groupMode : "grid"
+  };
+
 const pen_color_map = { 
   'DEFAULT' : 'black',
   'ATTEMPT' : 'slategray',
   'TUTOR' : 'black',
+  'DEMONSTRATE' : 'dodgerblue',
   'START_STATE' : 'teal',
   'CORRECT' : 'limegreen', 
   'INCORRECT' : 'crimson', //Crimson better than red since looks same as limegreen for people w/ deuteranopia 

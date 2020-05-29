@@ -108,33 +108,7 @@ function _kill_this(context, event) {
   nl.kill_this(event.data.toString());
 }
 
-function printFeedback(context, event) {
-  var nl = context.network_layer;
-  var staged_SAI = context.staged_SAI;
 
-  var type = context.action_type;
-  // var reward = staged_SAI.reward
-  if (!context.feedback_map || Object.keys(context.feedback_map).length === 0) {
-    if (type == "ATTEMPT") {
-      type = staged_SAI.reward > 0 ? "CORRECT" : "INCORRECT";
-    }
-
-    // var color = color_map[type]
-    var inps =
-      staged_SAI.inputs["value"] != null ? staged_SAI.inputs["value"] : "";
-
-    nl.term_print(type + ": " + staged_SAI.selection + " -> " + inps, type);
-  } else {
-    for (var index in context.feedback_map) {
-      var skill_app = context.skill_applications[index];
-      var type = context.feedback_map[index].toUpperCase();
-      // var color = color_map[type]
-      var inps =
-        skill_app.inputs["value"] != null ? skill_app.inputs["value"] : "";
-      nl.term_print(type + ": " + skill_app.selection + " -> " + inps, type);
-    }
-  }
-}
 
 function clearSkillPanel(context, event) {
   context.app.setState({
@@ -280,7 +254,7 @@ function get_machine_actions(app) {
       }),
       // done : window.signal_done,
 
-      printFeedback: printFeedback,
+      
       kill_this: _kill_this,
       printEvent: (context, event) => {
         console.log("P_EVT:", event);
@@ -292,6 +266,7 @@ function get_machine_actions(app) {
         context.app.training_service.send("PROBLEM_DONE");
       },
 
+
       enterSetStartStateMode: tutor.enterSetStartStateMode,
       exitSetStartStateMode: tutor.exitSetStartStateMode,
       enterFeedbackMode: tutor.enterFeedbackMode,
@@ -301,6 +276,8 @@ function get_machine_actions(app) {
       enterTutoringMode: tutor.enterTutoringMode,
       exitTutoringMode: tutor.exitTutoringMode,
       displayCorrectness: tutor.displayCorrectness,
+      printFeedback: tutor.printFeedback,
+      
       applyStagedSAI: (context, event) => {
         tutor.applySAI(context.staged_SAI);
       },

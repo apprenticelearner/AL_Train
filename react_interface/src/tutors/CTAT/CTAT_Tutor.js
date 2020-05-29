@@ -439,6 +439,34 @@ class CTAT_Tutor extends React.Component {
     }
   }
 
+  printFeedback(context, event) {
+    var nl = context.network_layer;
+    var staged_SAI = context.staged_SAI;
+
+    var type = context.action_type;
+    // var reward = staged_SAI.reward
+    if (!context.feedback_map || Object.keys(context.feedback_map).length === 0) {
+      if (type == "ATTEMPT") {
+        type = staged_SAI.reward > 0 ? "CORRECT" : "INCORRECT";
+      }
+
+      // var color = color_map[type]
+      var inps =
+        staged_SAI.inputs["value"] != null ? staged_SAI.inputs["value"] : "";
+
+      nl.term_print(type + ": " + staged_SAI.selection + " -> " + inps, type);
+    } else {
+      for (var index in context.feedback_map) {
+        var skill_app = context.skill_applications[index];
+        var type = context.feedback_map[index].toUpperCase();
+        // var color = color_map[type]
+        var inps =
+          skill_app.inputs["value"] != null ? skill_app.inputs["value"] : "";
+        nl.term_print(type + ": " + skill_app.selection + " -> " + inps, type);
+      }
+    }
+  }
+
   _done_clicked_example(evt) {
     this.handleUserExample({
       detail: {
@@ -494,6 +522,8 @@ class CTAT_Tutor extends React.Component {
       .getElementById("done")
       .removeEventListener("click", this._done_clicked_attempt);
   }
+
+
 
   handle_foci_select(evt) {
     console.log("FOCI SELECT!");
