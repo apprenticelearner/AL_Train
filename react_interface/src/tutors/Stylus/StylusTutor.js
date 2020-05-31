@@ -58,17 +58,29 @@ const get_max = (key,strokes) => Math.max(...Object.values(strokes).map((stroke)
 const range = (start, end) => {
   return Array(end - start).fill().map((_, idx) => start + idx)
 }
+const array_equal = (a,b) => {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; ++i) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+const DEFAULT_START_STATE = {
+      pen_down : false,
+      strokes : {},
+      n_strokes : 0,
+      mode : "loading",
+      check_button_callback: null,
+      elmUnderPoint : null,
+  };
 
 /////
 export default class StylusTutor extends React.Component {
   
-  state = {
-      pen_down : false,
-      strokes : {},
-      n_strokes : 0,
-      mode : "set_start_state",
-      check_button_callback: null,
-  };
+  state = {...DEFAULT_START_STATE, ...{strokes:{}} }
 
   constructor(props){
     super(props);
@@ -78,8 +90,6 @@ export default class StylusTutor extends React.Component {
     // if(!this.props.groupMode) this.props.groupMode = "grid"
       
     
-
-
     this.BezierFit = new BezierFit();
       this.BezierFit.promise.then(() => {
         this.fitCurve = this.BezierFit.fitCurve
@@ -231,9 +241,32 @@ export default class StylusTutor extends React.Component {
 
   printFeedback(context, event) {
     var nl = context.network_layer;
-    nl.term_print("HEYA");
+    var staged_SAI = context.staged_SAI;
 
+    var type = context.action_type;
+    // var reward = staged_SAI.reward
+    if (!context.feedback_map || Object.keys(context.feedback_map).length === 0) {
+      if (type == "ATTEMPT") {
+        type = staged_SAI.reward > 0 ? "CORRECT" : "INCORRECT";
+      }
+
+      // var color = color_map[type]
+      var inps =
+        staged_SAI.inputs["value"] != null ? staged_SAI.inputs["value"] : "";
+
+      nl.term_print(type + ": " + staged_SAI.selection + " -> " + inps, type);
+    } else {
+      for (var index in context.feedback_map) {
+        var skill_app = context.skill_applications[index];
+        var type = context.feedback_map[index].toUpperCase();
+        // var color = color_map[type]
+        var inps =
+          skill_app.inputs["value"] != null ? skill_app.inputs["value"] : "";
+        nl.term_print(type + ": " + skill_app.selection + " -> " + inps, type);
+      }
+    }
   }
+
 
 
   getCurrentFoci(){
@@ -258,9 +291,19 @@ export default class StylusTutor extends React.Component {
   
 
   loadProblem(context){
+    this.clear()
     const promise = new Promise((resolve, reject) =>
-     {resolve({ updateContext: {} })})
+     {//this.setState({"mode" : "set_start_state"})
+      resolve({ updateContext: {} })})
     return promise
+  }
+
+  clear(){
+    this.setState({...DEFAULT_START_STATE, ...{strokes:{}}})
+    this.current_foci = [];
+    this.start_state_history = [];
+    this.highlighted_elements = [];
+    this.elements = [];
   }
 
   lockElement(name){
@@ -341,13 +384,30 @@ export default class StylusTutor extends React.Component {
   getState(){
     var out = {}
     for(var i=0; i < this.elements.length; i++){
-      var elm = this.elements[i]
-      var name = "ie" + i
-      out[name] = {
-        id: name,
+      var elm1 = this.elements[i]
+      var elmobj = {
+        id: elm1.id,
         type : "Symbol",
-        value : elm.symbol
+        value : elm1.symbol
       }
+
+      if(this.props.groupMode == "grid"){
+        var c1 = elm1.g_coords
+        var [above,below,to_right,to_left] = [null,null,null,null];
+        for(var j=0; j < this.elements.length; j++){
+          var e2 = this.elements[j]
+          var c2 = e2.g_coords
+          if(c2.x == c1.x-1){to_left = e2.id}
+          if(c2.x == c1.x+1){to_right = e2.id}
+          if(c2.y == c1.y-1){above = e2.id}
+          if(c2.y == c1.y+1){below = e2.id}
+        }
+        elmobj = {...elmobj, ...{"to_left" : to_left, "to_right" : to_right,
+                    "above" : above, "below" : below}}
+      }
+      
+
+      out[elm1.id] = elmobj
     }
     return out
   }
@@ -381,6 +441,9 @@ export default class StylusTutor extends React.Component {
 
 
   penDown(e){
+    if(this.state.mode == "loading"){
+      return
+    }
     if(this.state.mode == "foci"){
       this.mouseDown(e)
       return
@@ -438,11 +501,11 @@ export default class StylusTutor extends React.Component {
       }
       var b_str = b_i + "_" + b_j
       var a = grid_assignments[b_str] || []
-      a.push(s_id)
+      a.push(parseInt(s_id))
       grid_assignments[b_str] = a      
     }
     // console.log("GRID ASSIGNMENTS", grid_assignments)
-    return Object.values(grid_assignments)
+    return [Object.values(grid_assignments), grid_assignments]
   }
 
   removeElement(stroke_ids){
@@ -461,12 +524,12 @@ export default class StylusTutor extends React.Component {
     }
     return undefined
   }
-  addElement(stroke_ids){
+  addElement(stroke_ids, extra_info=null){
     // this.elements = this.elements || []
     // for (var i=0; i < groups.length; i++){
     var elm = {}
     elm.stroke_ids = stroke_ids
-    elm.id = stroke_ids.join("_")
+    elm.id = "ie" + stroke_ids.join("_")
     elm.strokes = stroke_ids.map((indx)=>this.state.strokes[indx])
     // console.log("CLOOOO",elm.strokes,Object.values(elm.strokes))
     // console.log("CLOOOO",Object.values(elm.strokes).map((stroke)=>stroke.bounds["minX"]))
@@ -475,6 +538,16 @@ export default class StylusTutor extends React.Component {
                   minY: get_min("minY",elm.strokes),
                   maxY: get_max("maxY",elm.strokes)}
     this.elements.push(elm);
+
+    if(extra_info && this.props.groupMode == "grid"){
+      for(var loc_str in extra_info){
+        console.log("MEEP", extra_info[loc_str],stroke_ids)
+        if(array_equal(extra_info[loc_str],stroke_ids)){
+          var coords = loc_str.split("_")
+          elm.g_coords = {"x" : parseInt(coords[0]), "y" : parseInt(coords[1])} 
+        }
+      }
+    }
     // }
     // console.log(this.groupStrokes(this.state.strokes))
     return elm
@@ -509,6 +582,9 @@ export default class StylusTutor extends React.Component {
   }
 
   penUp(e){
+    if(this.state.mode == "loading"){
+      return
+    }
     if(this.state.mode == "foci"){
       this.mouseUp(e)
       return
@@ -519,19 +595,19 @@ export default class StylusTutor extends React.Component {
 
     }
     if(this.props.groupMode == "grid"){
-      var groups = this.snapStrokesToGrid(this.state.strokes)
+      var [groups, extra_info] = this.snapStrokesToGrid(this.state.strokes)
     }else{
-      var groups = this.groupStrokes(this.state.strokes)
+      var [groups, extra_info] = this.groupStrokes(this.state.strokes)
     }
 
 
     var [added, removed] = this._groupDiff(this.groups || [],groups)
 
-    if(this.props.groupMode == "grid"){
-      var groups = this.snapStrokesToGrid(this.state.strokes)
-    }else{
-      var groups = this.groupStrokes(this.state.strokes)
-    }
+    // if(this.props.groupMode == "grid"){
+    //   var groups = this.snapStrokesToGrid(this.state.strokes)
+    // }else{
+    //   var groups = this.groupStrokes(this.state.strokes)
+    // }
     this.groups = groups
 
     // console.log("GROUPS", groups)
@@ -544,7 +620,7 @@ export default class StylusTutor extends React.Component {
 
     for(var i=0; i < added.length; i++){
       let group = added[i]
-      let elm = this.addElement(group)
+      let elm = this.addElement(group, extra_info)
       elm.symbol_probs = this.recognize_symbol(elm.strokes)
 
       console.log("Recognize Symbol: ")
@@ -710,6 +786,17 @@ export default class StylusTutor extends React.Component {
     //   });
   }
 
+  pressDone(){
+    this.props.interactions_service.send({
+        type: "DEMONSTRATE",
+        data: { selection:"done",
+                action : "ButtonPressed",
+                inputs : {value : -1},
+                reward: 1 
+              }
+      });
+  }
+
   getEvaluatable(){
     let i=0;
     let L = this.state.n_strokes+this.state.pen_down
@@ -747,6 +834,8 @@ export default class StylusTutor extends React.Component {
 
 
   render() {
+    console.log("STROKES",this.state.n_strokes)
+    console.log(this.state.strokes)
     let svg_content = []
     // svg_content.push( <Circle cx={300} cy={200} r="50" fill="red" />);
     for (let i=0; i<this.state.n_strokes+this.state.pen_down;i++){
@@ -869,9 +958,11 @@ export default class StylusTutor extends React.Component {
     if(this.state.mode == "foci"){
       cursor = this.state.elmUnderPoint == null ? "default" : "pointer"
     }else{
-      cursor = cursor_map[this.state.mode] || "crosshair"
+      cursor = cursor_map[this.state.mode] || cursor_map[null]
     }
 
+
+    console.log("CURSOR", cursor)
     return (
 
       <TouchableWithoutFeedback
@@ -920,7 +1011,7 @@ export default class StylusTutor extends React.Component {
           {svg_content}
         </Svg>
 
-        {this.state.mode != "foci" &&
+        {(this.state.mode != "foci" && this.state.mode != "loading")  &&
           <View>
             <TouchableHighlight
               style = {[styles.circle_buttons,styles.undo_button]}
@@ -931,6 +1022,11 @@ export default class StylusTutor extends React.Component {
               style = {[styles.circle_buttons,styles.check_button]}
               onPress = {this.state.check_button_callback}>
               <Text style={styles.check_button_text}>{'\u2713'}</Text>
+            </TouchableHighlight>
+            <TouchableHighlight
+              style = {[styles.circle_buttons,styles.done_button]}
+              onPress = {this.pressDone}>
+              <Text style={styles.done_button_text}>{'Done'}</Text>
             </TouchableHighlight>
           </View>
         }
@@ -962,7 +1058,9 @@ var cursor_map = {
     "debug" : "crosshair",
     "foci" : "pointer",
     "set_start_state" : "crosshair",
-    null : "progress"
+    "feedback" : "crosshair",
+    null : "progress",
+    "loading" : "progress"
   }
 
 const styles = StyleSheet.create({
@@ -993,7 +1091,17 @@ const styles = StyleSheet.create({
   },
   check_button_text: {
     fontSize: 40
-  }
+  },
+  done_button : {
+    bottom : 50,
+    left: 50,
+    width:80,
+    height:40,
+  },
+  done_button_text: {
+    fontSize: 24
+  },
+  
 
 
 
