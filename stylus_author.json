@@ -14,6 +14,7 @@
 		"args": {
 			"search_depth" : 2,
 			"when_learner": "decisiontree",
+			"where_learner": "versionspace",
 			"planner" : "vectorized",
 			"function_set" : ["Add","Add3","Mod10","Div10"],
 			"feature_set" : [],

@@ -385,13 +385,14 @@ export default class StylusTutor extends React.Component {
     var out = {}
     for(var i=0; i < this.elements.length; i++){
       var elm1 = this.elements[i]
-      var elmobj = {
-        id: elm1.id,
-        type : "Symbol",
-        value : elm1.symbol
-      }
+      var elmobj;
 
       if(this.props.groupMode == "grid"){
+        elmobj = {
+          id: "e" + elm1.g_coords.x + "_" + elm1.g_coords.y,//elm1.id,
+          type : "Symbol",
+          value : elm1.value
+        }
         var c1 = elm1.g_coords
         var [above,below,to_right,to_left] = [null,null,null,null];
         for(var j=0; j < this.elements.length; j++){
@@ -407,7 +408,33 @@ export default class StylusTutor extends React.Component {
       }
       
 
-      out[elm1.id] = elmobj
+      out[elmobj.id] = elmobj
+    }
+    const mW = this.state.width / this.props.gridWidth
+    const mH = this.state.height / this.props.gridWidth
+    if(this.props.groupMode == "grid"){
+      for(var i=0; i < mW; i++){
+        for(var j=0; j < mH; j++){
+          var id = "e" + i + "_" + j
+          if(!(id in out)){
+            out[id] = {
+              id : id,
+              type : "Symbol",
+              value : ""
+            }
+          }
+        }
+      }
+      const ts = (x) => x.toString()
+      for(var i=0; i < mW; i++){
+        for(var j=0; j < mH; j++){
+          var id ="e" + ts(i) + "_" + ts(j)           
+          out[id]["to_left"] = (i-1 >= 0) ? ("e" + ts(i-1) + "_" + ts(j))   : null
+          out[id]["to_right"] = (i+1 < mW) ? ("e" + ts(i+1) + "_" + ts(j))  : null
+          out[id]["above"] = (j-1 >= 0) ? ("e" + ts(i) + "_" + ts(j-1)) : null
+          out[id]["below"] = (j+1 < mH) ? ("e" + ts(i) + "_" + ts(j+1)) : null
+        }
+      }
     }
     return out
   }
@@ -547,6 +574,7 @@ export default class StylusTutor extends React.Component {
           elm.g_coords = {"x" : parseInt(coords[0]), "y" : parseInt(coords[1])} 
         }
       }
+      elm.id = "e" + elm.g_coords.x.toString() + "_" + elm.g_coords.y.toString()
     }
     // }
     // console.log(this.groupStrokes(this.state.strokes))
