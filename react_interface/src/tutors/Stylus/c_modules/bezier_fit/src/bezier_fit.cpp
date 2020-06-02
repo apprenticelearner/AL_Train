@@ -125,6 +125,12 @@ int main()
     static Point2 sp2[] = {{ 591, 133 },{ 591, 133 }};
     curves  = FitCurve_Inflections(sp2, 2, error);
 
+    static double c_curves[] = {591,133, 591,133, 591,134, 591,134};
+    double mldat[100];
+    c_ML_EncodeCurves(c_curves,1,mldat);
+    printf("%f %f %f %f %f %f %f %f %f\n\n", mldat[0],mldat[1],mldat[2],mldat[3],mldat[4],
+        mldat[5],mldat[6],mldat[7],mldat[8]);
+
     auto start = high_resolution_clock::now(); 
     curves  = FitCurve_Inflections(d, 37, error);       /*  Fit the Bezier curves */
     auto end = high_resolution_clock::now(); 
@@ -178,23 +184,32 @@ void c_ML_EncodeCurves(double *curves, int nCurves, double *output){
         Point2 c2 = p_curves[i*4+2];
         Point2 p2 = p_curves[i*4+3];
         // printf("p1 :%f %f\n, c1: %f %f\n c2: %f %f\n p2: %f %f\n" , p1.x,p1.y,c1.x,c1.y,c2.x,c2.y,p2.x,p2.y);
-
-        double dx = p2.x-p1.x;
-        double dy = p2.y-p1.y;
+        double dx,dy,ndx,ndy;
+        dx = ndx = p2.x-p1.x;
+        dy = ndy = p2.y-p1.y;
         double L = sqrt(dx * dx + dy * dy);
-        double ndx = dx/L;
-        double ndy = dy/L;
+        if(L > 0.0){
+            ndx /= L; ndy /= L;
+        }
 
         double dc1x = c1.x - p1.x;
         double dc1y = c1.y - p1.y;
         double dc1L = sqrt(dc1x * dc1x + dc1y * dc1y);
-        dc1x /= dc1L; dc1y /= dc1L;
+        if(dc1L > 0.0){
+            dc1x /= dc1L; dc1y /= dc1L;
+        }else{
+            dc1x = ndx; dc1y = ndy;
+        }
 
         double dc2x = c2.x - p2.x;
         double dc2y = c2.y - p2.y;
         double dc2L = sqrt(dc2x * dc2x + dc2y * dc2y);
-        dc2x /= dc2L; dc2y /= dc2L;
-
+        if(dc2L > 0.0){
+            dc2x /= dc2L; dc2y /= dc2L;
+        }else{
+            dc2x = -ndx; dc2y = -ndy;
+        }
+        
         double theta1 = asin(dc1x*ndy - dc1y*ndx);
         double theta2 = asin(dc2x*ndy - dc2y*ndx);
 
