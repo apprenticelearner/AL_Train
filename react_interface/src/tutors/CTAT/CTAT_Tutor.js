@@ -880,7 +880,7 @@ class CTAT_Tutor extends React.Component {
     use_offsets = true,
     use_class = true,
     use_id = true,
-    append_ele = true,
+    append_ele = false,
     numeric_values = false
   } = {}) {
     var relative_pos_cache = this.relative_pos_cache;

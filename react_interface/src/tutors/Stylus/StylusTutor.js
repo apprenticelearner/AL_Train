@@ -143,7 +143,7 @@ export default class StylusTutor extends React.Component {
     this.current_foci = [];
     this.start_state_history = [];
     this.highlighted_elements = [];
-    this.elements = [];
+    this.elements = {};
     // this.getEvaluatable = this.getEvaluatable.bind(this)
     // this.evaluate = this.evaluate.bind(this)
     // this.setStartState = this.setStartState.bind(this)
@@ -303,19 +303,19 @@ export default class StylusTutor extends React.Component {
     this.current_foci = [];
     this.start_state_history = [];
     this.highlighted_elements = [];
-    this.elements = [];
+    this.elements = {};
   }
 
   lockElement(name){
-    var stroke = this.state.strokes[name]
-    stroke.locked = true
-    this.setState({strokes :this.state.strokes})
+    var elm = this.resolve_elm(elm)
+    if(!elm){return;}
+    elm.locked = true
   }
 
   unlockElement(name){
-    var stroke = this.state.strokes[name]
-    stroke.locked = false
-    this.setState({strokes :this.state.strokes})
+    var elm = this.resolve_elm(elm)
+    if(!elm){return;}
+    elm.locked = false
   }
 
   colorElement(name,type){
@@ -325,9 +325,26 @@ export default class StylusTutor extends React.Component {
     // this.setState({strokes :this.state.strokes})
   }
 
+  resolve_elm(elm){
+    if(typeof(elm) == "string"){
+      return elm in this.elements ? this.elements[elm] : null
+    }else{
+      return elm
+    }
+  }
+
   highlightElement(elm,colorIndex=0){
     // if(!elm) return
-    var stroke_ids = elm.stroke_ids == undefined ? [elm] : elm.stroke_ids
+    console.log(elm)
+    var stroke_ids;
+
+    elm = this.resolve_elm(elm)
+    if(!elm){return;}
+    
+    if(typeof(elm) == "object"){
+      var stroke_ids = elm.stroke_ids == undefined ? [elm] : elm.stroke_ids
+    }
+
     for(var i=0; i< stroke_ids.length; i++){
       var s_id = stroke_ids[i]
       var stroke = this.state.strokes[s_id]
@@ -358,6 +375,7 @@ export default class StylusTutor extends React.Component {
   }
 
   highlightSAI(sai){
+    console.log("HIGHLIGHT SAI")
     if(sai.mapping){
       var index = 0
       for (var var_str in sai.mapping){
@@ -383,20 +401,24 @@ export default class StylusTutor extends React.Component {
 
   getState(){
     var out = {}
-    for(var i=0; i < this.elements.length; i++){
-      var elm1 = this.elements[i]
+
+
+    for (let [id, elm1] of Object.entries(this.elements)) {
+    // for(var i=0; i < this.elements.length; i++){
+      // var elm1 = this.elements[i]
       var elmobj;
 
       if(this.props.groupMode == "grid"){
         elmobj = {
           id: "e" + elm1.g_coords.x + "_" + elm1.g_coords.y,//elm1.id,
           type : "Symbol",
-          value : elm1.value
+          value : elm1.value,
+          filled : elm1.value ? true : false
         }
         var c1 = elm1.g_coords
         var [above,below,to_right,to_left] = [null,null,null,null];
-        for(var j=0; j < this.elements.length; j++){
-          var e2 = this.elements[j]
+        for (let [id2, e2] of Object.entries(this.elements)) {
+          // var e2 = this.elements[j]
           var c2 = e2.g_coords
           if(c2.x == c1.x-1){to_left = e2.id}
           if(c2.x == c1.x+1){to_right = e2.id}
@@ -406,7 +428,6 @@ export default class StylusTutor extends React.Component {
         elmobj = {...elmobj, ...{"to_left" : to_left, "to_right" : to_right,
                     "above" : above, "below" : below}}
       }
-      
 
       out[elmobj.id] = elmobj
     }
@@ -420,7 +441,8 @@ export default class StylusTutor extends React.Component {
             out[id] = {
               id : id,
               type : "Symbol",
-              value : ""
+              value : "",
+              filled : false
             }
           }
         }
@@ -436,6 +458,7 @@ export default class StylusTutor extends React.Component {
         }
       }
     }
+    out['done'] = {'id': "done", type:'OverlayButton'}
     return out
   }
 
@@ -537,8 +560,7 @@ export default class StylusTutor extends React.Component {
 
   removeElement(stroke_ids){
     var elm;
-    for (var i=0; i < this.elements.length; i++){
-      var e = this.elements[i]
+    for (let [id, e] of Object.entries(this.elements)) {
       if(e.stroke_ids.length == stroke_ids.length){
         var ok = true
         for (var j = 0; j < e.stroke_ids.length; j++) {
@@ -546,7 +568,7 @@ export default class StylusTutor extends React.Component {
             ok = false; break;
           }
         }
-        if(ok){ this.elements.splice(i,1); return elm }
+        if(ok){ delete this.elements[id];/*this.elements.splice(i,1);*/ return elm }
       }
     }
     return undefined
@@ -564,7 +586,7 @@ export default class StylusTutor extends React.Component {
                   maxX: get_max("maxX",elm.strokes),
                   minY: get_min("minY",elm.strokes),
                   maxY: get_max("maxY",elm.strokes)}
-    this.elements.push(elm);
+    
 
     if(extra_info && this.props.groupMode == "grid"){
       for(var loc_str in extra_info){
@@ -576,6 +598,9 @@ export default class StylusTutor extends React.Component {
       }
       elm.id = "e" + elm.g_coords.x.toString() + "_" + elm.g_coords.y.toString()
     }
+    console.log("BEFORE", this.elements, elm)
+    this.elements[elm.id] = elm;
+    console.log("AFTER",this.elements)
     // }
     // console.log(this.groupStrokes(this.state.strokes))
     return elm
@@ -586,14 +611,15 @@ export default class StylusTutor extends React.Component {
     for(var i=0; i < strokes.length; i++){
       var s = strokes[i]
       var stroke = typeof s != "number" ? s : this.state.strokes[s]
-      for(var j=0; j < this.elements.length; j++){
-        var elm = this.elements[j]
+      for (let [id, elm] of Object.entries(this.elements)) {
+      // for(var j=0; j < this.elements.length; j++){
+        // var elm = this.elements[j]
         if(elm.stroke_ids.indexOf(stroke.id) != -1){
-          elem_indxs.add(j)
+          elem_indxs.add(id)
         }  
       }
     }
-    return Array.from(elem_indxs).map((indx)=>this.elements[indx])
+    return Array.from(elem_indxs).map((e_id)=>this.elements[e_id])
   }
 
   _groupDiff(old_g,new_g){
@@ -754,9 +780,9 @@ export default class StylusTutor extends React.Component {
         }
       }
     }
-
-    for (let i=0; i < this.elements.length; i++){
-      let elm = this.elements[i];
+    for (let [id, elm] of Object.entries(this.elements)) {
+    // for (let i=0; i < this.elements.length; i++){
+    //   let elm = this.elements[i];
       if(elm.stroke_ids.indexOf(minStroke.id) != -1){
         return elm
       }
@@ -862,8 +888,8 @@ export default class StylusTutor extends React.Component {
 
 
   render() {
-    console.log("STROKES",this.state.n_strokes)
-    console.log(this.state.strokes)
+    // console.log("STROKES",this.state.n_strokes)
+    // console.log(this.state.strokes)
     let svg_content = []
     // svg_content.push( <Circle cx={300} cy={200} r="50" fill="red" />);
     for (let i=0; i<this.state.n_strokes+this.state.pen_down;i++){
@@ -962,9 +988,10 @@ export default class StylusTutor extends React.Component {
         
     // }
 
-    var elems = this.elements || [];
-    for (let j=0; j<elems.length;j++){
-       var b = elems[j].bounds;
+    // var elems = this.elements || {};
+    // for (let j=0; j<elems.length;j++){
+    for (let [id, elm] of Object.entries(this.elements)) {
+       var b = elm.bounds;
         svg_content.push( <Rect x={b.minX} y={b.minY} width={b.maxX-b.minX} height={b.maxY-b.minY}
                             stroke='orange' strokeWidth=".5" fill='none'/> ); 
     }
@@ -990,7 +1017,7 @@ export default class StylusTutor extends React.Component {
     }
 
 
-    console.log("CURSOR", cursor)
+    // console.log("CURSOR", cursor)
     return (
 
       <TouchableWithoutFeedback
@@ -1046,16 +1073,19 @@ export default class StylusTutor extends React.Component {
               onPress = {this.undoStroke}>
               <Text style={styles.undo_button_text}>{'\u21B6'}</Text>
             </TouchableHighlight>
+            {(this.state.mode != "set_start_state") && [
             <TouchableHighlight
               style = {[styles.circle_buttons,styles.check_button]}
               onPress = {this.state.check_button_callback}>
               <Text style={styles.check_button_text}>{'\u2713'}</Text>
-            </TouchableHighlight>
+            </TouchableHighlight>,
             <TouchableHighlight
               style = {[styles.circle_buttons,styles.done_button]}
               onPress = {this.pressDone}>
               <Text style={styles.done_button_text}>{'Done'}</Text>
             </TouchableHighlight>
+            ]}
+            
           </View>
         }
 
