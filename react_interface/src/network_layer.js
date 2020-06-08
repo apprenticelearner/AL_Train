@@ -373,6 +373,7 @@ export default class NetworkLayer {
   }
 
   glob(path, context) {
+    path = path.replace(/\.\./g,"!u")
     if (path[0] != "/") {
       path = context.working_dir + "/" + path;
     }

@@ -72,7 +72,8 @@ async function backcast(args,context){
 
 }
 
-function p_parse_csv(csv,config={},pre_fetch=false){
+function p_parse_csv(csv,config={},pre_fetch=false, is_path=true){
+	if(is_path){csv = csv.replace(/\.\./g,"!u")}
 	var promise = new Promise(async function(resolve, reject) {
 		config['complete'] = resolve
 		if(pre_fetch){
@@ -91,6 +92,7 @@ async function read_afm_table(file){
 		header: true,
 		dynamicTyping: true
 	}
+	file = file.replace("..","!u")
 	var promise = fetch(file)
 	.then(resp => resp.text())
 	.then((text) => {
@@ -104,8 +106,8 @@ async function read_afm_table(file){
 		return [kc_table,student_table]
 	})
 	.then(async ([kc_table,stu_table]) => {
-		var kc_json = await p_parse_csv(kc_table, config)
-		var stu_json = await p_parse_csv(stu_table, config)
+		var kc_json = await p_parse_csv(kc_table, config,false,false)
+		var stu_json = await p_parse_csv(stu_table, config,false,false)
 		return [kc_json,stu_json]
 	})
     return promise
@@ -132,8 +134,8 @@ async function exact_align(args,context){
 	// console.log("table_path")
 	// console.log(table_path)
 	var error_table = await p_parse_csv(table_path, { delimiter: "\t",header: true, dynamicTyping: true},true)
-	console.log("error_table")
-	console.log(error_table)
+	// console.log("error_table")
+	// console.log(error_table)
 	var curve_by_kc = {}
 	 for (var r of error_table.data){
 		var key = r["KC Name"]
@@ -142,8 +144,8 @@ async function exact_align(args,context){
 			curve_by_kc[key] = Object.values(r)
 		}
 	}
-	console.log("curve_by_kc")
-	console.log(curve_by_kc)
+	// console.log("curve_by_kc")
+	// console.log(curve_by_kc)
 	var opps_by_kc = {}
 	for(var kc in curve_by_kc){
 		var curve = curve_by_kc[kc]
@@ -169,16 +171,16 @@ async function exact_align(args,context){
 }
 
 async function estimate_Pik(args,context){
-	console.log("ESTIMATE_PIK")
+	// console.log("ESTIMATE_PIK")
 	var out;
 	if(args['method'] == "exact_align"){
 		out = await exact_align(args,context)
 	}else if(args['method'] == "backcast"){
 		out = await backcast(args,context)
 	}
-	console.log(args['KCs'])
-	console.log("BEFORE")
-	console.log({...out})
+	// console.log(args['KCs'])
+	// console.log("BEFORE")
+	// console.log({...out})
 	if('KCs' in args && args['KCs'] != null){
 		var new_out = {}
 		for (var key of args['KCs']) {
@@ -186,8 +188,8 @@ async function estimate_Pik(args,context){
 		}
 		out = new_out
 	}
-	console.log("AFTER")
-	console.log({...out})
+	// console.log("AFTER")
+	// console.log({...out})
 	if('max' in args && args['max'] != null){
 		for (var key in out) {
 			out[key] = Math.min(out[key],args['max']);
@@ -202,8 +204,8 @@ async function gen_pretraining(args,context,shuffle=false){
 	var opps_by_kc = await evalJSONFunc(args['opportunities'],context)
 	var only_attr = args['by_step_id'] || false ? "step_id" : "Selection" 
 	var only_str = "only_" + only_attr + "s"
-	console.log("opps_by_kc")
-	console.log(opps_by_kc)
+	// console.log("opps_by_kc")
+	// console.log(opps_by_kc)
 	opps_by_kc = {...opps_by_kc}
 
 	
@@ -217,15 +219,15 @@ async function gen_pretraining(args,context,shuffle=false){
 	}
 	
 	
-	console.log("pivot_table")
-	console.log(pivot_table)
+	// console.log("pivot_table")
+	// console.log(pivot_table)
 
 	var problem_pool = Object.keys(pivot_table)
 	if(shuffle){problem_pool = random.shuffle(problem_pool)}
 	var out = []
 
-	console.log("problem_pool")
-	console.log(problem_pool)
+	// console.log("problem_pool")
+	// console.log(problem_pool)
 	
 	//Not really a core feature, just necessary for this tutor
 	var onlys_map = args['onlys_map'] || null
@@ -270,8 +272,8 @@ async function gen_pretraining(args,context,shuffle=false){
 		console.error(error)
 	}
 
-	console.log("gen_pretraining")
-	console.log(out)
+	// console.log("gen_pretraining")
+	// console.log(out)
 
 	console.log("opps_by_kc")
 	console.log(opps_by_kc)
@@ -329,7 +331,7 @@ async function mirror_students(args,context){
 				if(prob != ""){
 					var pv = String(prob) + "#"+ String(view)
 					if(sequence.length == 0){
-						sequence = [pv]
+						sequence.push(pv)
 					}else if(!sequence.includes(pv)){
 						// if(sequence.includes(pv)){
 						// 	console.log("BUGGY")
@@ -347,8 +349,9 @@ async function mirror_students(args,context){
 
 	//Run the 'step' function specified above line by line-by-line to find the problem sequences.
 	var url = context.network_layer.HOST_URL + human_transactions
-	console.log("human transactions")
-	console.log(url)
+	// console.log("human transactions")
+	// console.log(url)
+
 	var nothing = await p_parse_csv(url,config,false)
 
 	// console.log("CRAFF")
@@ -372,6 +375,9 @@ async function mirror_students(args,context){
 
 	console.log("human_prob_seq")
 	console.log(human_prob_seq)
+
+	console.log("human_path_map")
+	console.log(human_path_map)
 
 	// Turn the problem names from the student transactions into paths
 	for(var student in human_prob_seq){
@@ -510,7 +516,7 @@ async function gen_pivot_table(args,context){
 			download : true,
 			step : function (row){
 				row = row.data
-
+				// console.log("row", row)
 				//Only record CORRECT steps (because others could be out of graph)
 				if(row['Outcome'] === "CORRECT"){
 					var p = path_map[row['Problem Name']] || null

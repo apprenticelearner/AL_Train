@@ -130,7 +130,8 @@ class CTAT_Tutor extends React.Component {
       // iframe_content.CTAT = null;
       // iframe_content.CTATCommShell = null;
 
-      var HTML_PATH = prob_obj["HTML"];
+      //Repalcing ".." w/ "!u" Allows to fetch above working dir
+      var HTML_PATH = prob_obj["HTML"].replace(/\.\./g,"!u"); 
       if (!path.isAbsolute(HTML_PATH)) {
         HTML_PATH = path.join(context.working_dir || "/", HTML_PATH);
       }
@@ -145,6 +146,7 @@ class CTAT_Tutor extends React.Component {
       var qf_exists =
         prob_obj["question_file"] != undefined &&
         prob_obj["question_file"].toUpperCase() != "INTERACTIVE";
+      var abs_qf_paths = prob_obj['abs_qf_paths'] || false
       var BRD_name, free_authoring;
       if (qf_exists) {
         BRD_name = prob_obj["question_file"]
@@ -161,8 +163,11 @@ class CTAT_Tutor extends React.Component {
 
       nl.term_print("Starting Problem: " + BRD_name, "INFO");
 
-      var qf = qf_exists
-        ? { question_file: prob_obj["question_file"] }
+      var qf  = prob_obj["question_file"].replace(/\.\./g,"!u"); 
+      qf = qf_exists
+        ? (abs_qf_paths ?
+            { question_file: context.network_layer.HOST_URL + qf }
+          : { question_file: qf })
         : { question_file: "/static/empty.nools" };
 
       console.log("qf", qf, interactive, prob_obj);
