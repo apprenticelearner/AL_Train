@@ -21,6 +21,10 @@ import signal
 from glob import glob
 # from flask import Flask, 
 
+FETCH_ABOVE_ROOT = str(os.environ.get("AL_HOST_FETCH_ABOVE_ROOT","False")).lower() == "true" 
+
+print("FETCH_ABOVE_ROOT", FETCH_ABOVE_ROOT)
+
 static_dir = os.path.dirname(__file__)
 build_dir = os.path.abspath(os.path.join(static_dir,"..","react_interface","build"))
 release_dir = os.path.abspath(os.path.join(static_dir,"release"))
@@ -475,6 +479,7 @@ def do_QUIT():
 def do_GLOB():
     r = json.loads(request.get_data())
     print("GLOB IT", r)
+    if(FETCH_ABOVE_ROOT): r = r.replace("!u","..")
     g = glob(r.lstrip("/"))
     return json.dumps(g)
 
@@ -593,7 +598,14 @@ def do_GET(path):
     
 
     # return app.send_static_file(os.path.join(wd,path[:]))
-    return send_from_directory(os.getcwd(),path)#app.send_static_file(path)
+    
+    # os.path.dirname()
+    # os.path.basename()
+    if(FETCH_ABOVE_ROOT):
+        return send_from_directory(os.path.join(os.getcwd(),os.path.dirname(path))
+                                ,os.path.basename(path))
+    else:
+        return send_from_directory(os.getcwd(),path)#app.send_static_file(path)
 
 def do_WRITE():
     write_data = request.get_data()
@@ -612,10 +624,12 @@ do_switch = {"PRINT":do_PRINT,
              "WRITE" : do_WRITE,
              }
 
+
+
 @app.route('/', defaults={'path': ''},methods=list(do_switch.keys()))
 @app.route('/<path:path>')
 def handle_root(path):
-    # print("PATH",path)
+    if(FETCH_ABOVE_ROOT): path = path.replace("!u","..")
     func = do_switch.get(request.method,None)
     # print("METHOD: %s" % request.method)
     if(func is not None):
@@ -625,6 +639,7 @@ def handle_root(path):
             return func()
     else:
         return make_response("Method not recognized", 400)
+  
 
 # ...
 # @app.route('/file_downloads/<filename>')

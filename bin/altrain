@@ -1,3 +1,4 @@
+#!/bin/bash
 # Used to start training an Apprentice Learner agent interactively or via example/model tracing.
 #
 
@@ -18,6 +19,11 @@ calling_dir = None
 CONFIG_DEFAULT = "altrain.conf"
 HOST_DOMAIN = '127.0.0.1' #Use this instead of localhost on windows
 
+#Allows the host server to fetch above its working directory using 
+#  special "!u" in place of "..". This this environment variable is
+#  only safe to set when running locally. On a production server allowing
+#  this to remain true is major security hole. 
+AL_HOST_FETCH_ABOVE_ROOT=True
 
 def find_conf(cwd):
     split_path = os.path.normpath(cwd).split(os.sep)
@@ -319,7 +325,11 @@ def main(args):
 
     if(not args.ctat_port): args.ctat_port = get_open_port()
     if(check_port(args.ctat_host, args.ctat_port, args.force)):
-        ctat_process = subprocess.Popen([sys.executable, os.path.join(args.html_bridge_dir, "host_server.py") , str(args.ctat_port), args.output])
+        _env = os.environ.copy() 
+        _env["AL_HOST_FETCH_ABOVE_ROOT"] = str(AL_HOST_FETCH_ABOVE_ROOT)
+        ctat_process = subprocess.Popen([
+            sys.executable, os.path.join(args.html_bridge_dir, "host_server.py"),
+             str(args.ctat_port), args.output], env=_env)
         # ctat_thread = threading.Thread(target=waitAndExit, args=(ctat_process, kill_all))
         # ctat_thread.start()
 
