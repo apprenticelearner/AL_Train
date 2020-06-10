@@ -1,0 +1,35 @@
+{
+	"set_params" : {
+		"interactive" : true,
+		"free_author" : true,
+		"tutor" : "CTAT",
+		"use_foci" : true,
+		// "tutor_props" : {"mode" : "debug"}
+	},
+	"training_set1" : [{
+		"agent_name":"myAgent1",
+		"agent_type":"ModularAgent",
+		"output_dir":"out/myAgent1",
+		"args": {
+			"search_depth" : 2,
+			"when_learner": "decisiontree",
+			"planner": "vectorized",
+		},
+
+		"stay_active": true,
+		"dont_save": true,
+		"no_ops_parse" : true,
+		
+		"feature_set" : [],
+		"function_set" : ["AddOne","Append25","Multiply","Div10"],
+
+		
+		"problem_set" : [
+			{"set_params" : 
+				{"HTML": "../../model/HTML/square5.html"}
+			},
+			{
+			"repetitions":-1}
+		]
+	}]
+}

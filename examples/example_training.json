@@ -4,8 +4,16 @@
 	"training_set1" : [
 	{
 		"agent_name":"Treatment_IntegerAddition",
-		"agent_type":"WhereWhenHowNoFoa",
-		"output_dir":"out/myAgent1",
+		"agent_type":"ModularAgent",
+		"args": {
+			"search_depth" : 2,
+			"when_learner": "decisiontree",
+			"where_learner": "MostSpecific",
+			"planner": "vectorized",
+			"function_set": ["Add","Subtract","Multiply","Divide"],
+        	"feature_set": ["Equals"]
+		},			
+
 		"problem_set" : [
 
 			{"set_params" : 
@@ -46,7 +54,7 @@
 	{
 
 		"agent_name":"Control",
-		"agent_type":"WhereWhenHowNoFoa",
+		"agent_type":"ModularAgent",
 		"output_dir":"out/myAgent1",
 		"problem_set" : [
 
