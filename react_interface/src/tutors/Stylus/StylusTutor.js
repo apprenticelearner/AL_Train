@@ -2,7 +2,7 @@ import Svg, {
   Circle,
   Ellipse,
   G,
-  // Text,
+  Text as SvgText,
   TSpan,
   TextPath,
   Path,
@@ -71,6 +71,7 @@ const array_equal = (a,b) => {
 const DEFAULT_START_STATE = {
       pen_down : false,
       strokes : {},
+      active_elements : [],
       n_strokes : 0,
       mode : "loading",
       check_button_callback: null,
@@ -144,6 +145,7 @@ export default class StylusTutor extends React.Component {
     this.start_state_history = [];
     this.highlighted_elements = [];
     this.elements = {};
+    this.groups = [];
     // this.getEvaluatable = this.getEvaluatable.bind(this)
     // this.evaluate = this.evaluate.bind(this)
     // this.setStartState = this.setStartState.bind(this)
@@ -299,11 +301,12 @@ export default class StylusTutor extends React.Component {
   }
 
   clear(){
-    this.setState({...DEFAULT_START_STATE, ...{strokes:{}}})
+    this.setState({...DEFAULT_START_STATE, ...{strokes:{},active_elements:[]}})
     this.current_foci = [];
     this.start_state_history = [];
     this.highlighted_elements = [];
     this.elements = {};
+    this.groups = [];
   }
 
   lockElement(name){
@@ -335,35 +338,58 @@ export default class StylusTutor extends React.Component {
 
   highlightElement(elm,colorIndex=0){
     // if(!elm) return
-    console.log(elm)
-    var stroke_ids;
+    // console.log(elm)
+    // var stroke_ids;
 
     elm = this.resolve_elm(elm)
-    if(!elm){return;}
+    if(elm == null){return;}
     
-    if(typeof(elm) == "object"){
+    if(typeof(elm) != "object" || elm.type == "strokes"){
+      // if(typeof(elm) == "object"){
       var stroke_ids = elm.stroke_ids == undefined ? [elm] : elm.stroke_ids
-    }
+      // }
 
-    for(var i=0; i< stroke_ids.length; i++){
-      var s_id = stroke_ids[i]
-      var stroke = this.state.strokes[s_id]
-      stroke.highlight = colorIndex;
-      var index = this.highlighted_elements.indexOf(s_id)
+      for(var i=0; i< stroke_ids.length; i++){
+        var s_id = stroke_ids[i]
+        var stroke = this.state.strokes[s_id]
+        stroke.highlight = colorIndex;
+        var index = this.highlighted_elements.indexOf(s_id)
+        if(index == -1){
+          this.highlighted_elements.push(s_id)  
+        }
+      }
+    }else{
+      elm.highlight = colorIndex
+      var index = this.highlighted_elements.indexOf(elm.id)
       if(index == -1){
-        this.highlighted_elements.push(s_id)  
+        this.highlighted_elements.push(elm.id)  
       }
     }
   }
 
   unhighlightElement(elm){
     // if(!elm) return
-    var stroke_ids = elm.stroke_ids == undefined ? [elm] : elm.stroke_ids
-    for(var i=0; i< stroke_ids.length; i++){
-      var s_id = stroke_ids[i]
-      var stroke = this.state.strokes[s_id]
-      stroke.highlight = null
-      var index = this.highlighted_elements.indexOf(s_id)
+
+
+
+    elm = this.resolve_elm(elm)
+    console.log("UNHIGHTLIGHT",elm.id,elm,typeof(elm))
+    if(elm == null){return;}
+    
+    if(typeof(elm) != "object" || elm.type == "strokes"){
+      var stroke_ids = elm.stroke_ids == undefined ? [elm] : elm.stroke_ids
+      for(var i=0; i< stroke_ids.length; i++){
+        var s_id = stroke_ids[i]
+        var stroke = this.state.strokes[s_id]
+        stroke.highlight = null
+        var index = this.highlighted_elements.indexOf(s_id)
+        if(index > -1){
+          this.highlighted_elements.splice(index,1)  
+        }
+      }
+    }else{
+      elm.highlight = null
+      var index = this.highlighted_elements.indexOf(elm.id)
       if(index > -1){
         this.highlighted_elements.splice(index,1)  
       }
@@ -375,7 +401,7 @@ export default class StylusTutor extends React.Component {
   }
 
   highlightSAI(sai){
-    console.log("HIGHLIGHT SAI")
+    // console.log("HIGHLIGHT SAI")
     if(sai.mapping){
       var index = 0
       for (var var_str in sai.mapping){
@@ -459,34 +485,59 @@ export default class StylusTutor extends React.Component {
       }
     }
     out['done'] = {'id': "done", type:'OverlayButton'}
+    console.log("STATE:",out)
     return out
   }
 
   clearProposedSAI(){
     if(this.proposed_SAI){
-        this.clearElement(this.proposed_SAI.selection)
-        this.unlockElement(this.proposed_SAI.selection.replace('?ele-',""))
+        // this.clearElement(this.proposed_SAI.selection)
+        // this.unlockElement(this.proposed_SAI.selection.replace('?ele-',""))
         this.unhighlightAll()
         this.proposed_SAI = null;
+        delete this.elements[this.staged_element];
     }
   }
 
   proposeSAI(sai){
+    console.log("PROPOSE",sai)
     this.clearProposedSAI()
     this.proposed_SAI = {...sai}
-    this.highlightSAI(sai)
     this.stageSAI(sai)
+    this.highlightSAI(sai)
+
+    this.setState({active_elements : Object.keys(this.elements)})
   }
 
   stageSAI(sai){
     //TODO
+    
+    var [gx,gy] = sai.selection.slice(1).split("_").map(x => Number(x))
+    console.log("STAGE",sai,gx,gy)
+    var [x,y] = [this.props.gridWidth * (gx+.5),this.props.gridWidth * (gy-.2)]
+    var width = this.props.gridWidth * .8
+    var elm = { 
+      id : sai.selection,
+      g_coords: {x: gx,y: gy},
+      value : sai.inputs['value'],
+      type : 'text',
+      x : x,
+      y : y+this.props.gridWidth,
+      bounds : {"minX":x-width*.5, "minY":y, "maxX":x+width*.5, "maxY":y+width},
+      fontSize : Math.floor(this.props.gridWidth * .8)
+    }
+    this.elements[elm.id] = elm;
+    this.staged_element = elm.id;
+
   }
 
   confirmProposedSAI(){
+    console.log("confirmed",this.proposed_SAI, this.highlighted_elements)
     if(this.proposed_SAI){
       this.unhighlightAll()
       this.proposed_SAI = null  
     }
+    this.setState() //Force rerender
   }
 
 
@@ -499,7 +550,7 @@ export default class StylusTutor extends React.Component {
       return
     }
     console.log("HERE",typeof(e.target.className),e.target.className.baseVal == "svg_canvas" || false)
-    console.log("DOWN")
+    console.log("PENDOWN")
     if(e.target.className.baseVal == "svg_canvas" || e.target.parentNode.className.baseVal == "svg_canvas"){
       var strokes = this.state.strokes
       var L = Object.keys(strokes).length
@@ -571,6 +622,8 @@ export default class StylusTutor extends React.Component {
         if(ok){ delete this.elements[id];/*this.elements.splice(i,1);*/ return elm }
       }
     }
+
+    this.setState({active_elements : Object.keys(this.elements)})
     return undefined
   }
   addElement(stroke_ids, extra_info=null){
@@ -586,6 +639,7 @@ export default class StylusTutor extends React.Component {
                   maxX: get_max("maxX",elm.strokes),
                   minY: get_min("minY",elm.strokes),
                   maxY: get_max("maxY",elm.strokes)}
+    elm.type = 'strokes'              
     
 
     if(extra_info && this.props.groupMode == "grid"){
@@ -598,9 +652,11 @@ export default class StylusTutor extends React.Component {
       }
       elm.id = "e" + elm.g_coords.x.toString() + "_" + elm.g_coords.y.toString()
     }
-    console.log("BEFORE", this.elements, elm)
+    console.log("BEFORE", Object.keys(this.elements), elm)
     this.elements[elm.id] = elm;
-    console.log("AFTER",this.elements)
+    console.log("AFTER",this.elements,Object.keys(this.elements))
+
+    this.setState({active_elements : Object.keys(this.elements)})
     // }
     // console.log(this.groupStrokes(this.state.strokes))
     return elm
@@ -614,7 +670,7 @@ export default class StylusTutor extends React.Component {
       for (let [id, elm] of Object.entries(this.elements)) {
       // for(var j=0; j < this.elements.length; j++){
         // var elm = this.elements[j]
-        if(elm.stroke_ids.indexOf(stroke.id) != -1){
+        if(elm.type == 'strokes' && elm.stroke_ids.indexOf(stroke.id) != -1){
           elem_indxs.add(id)
         }  
       }
@@ -636,6 +692,7 @@ export default class StylusTutor extends React.Component {
   }
 
   penUp(e){
+    console.log("penUP")
     if(this.state.mode == "loading"){
       return
     }
@@ -643,7 +700,7 @@ export default class StylusTutor extends React.Component {
       this.mouseUp(e)
       return
     }
-    // console.log("UP")
+    console.log("UP",this.state.pen_down,Object.keys(this.elements))
     if(this.state.pen_down){
       this.setState({pen_down : false,n_strokes: this.state.n_strokes+1});
 
@@ -756,7 +813,7 @@ export default class StylusTutor extends React.Component {
                     elmUnderPoint : ele})
   }
 
-  getElementUnderPoint(x,y,padding=10){
+  getStokeUnderPoint(x,y,padding=10){
     var strokeCandidates = []
     for (let i=0; i<this.state.n_strokes;i++){
         var stroke = this.state.strokes[i]
@@ -780,14 +837,17 @@ export default class StylusTutor extends React.Component {
         }
       }
     }
+    return minStroke
+  }
+
+  getElementUnderPoint(x,y,padding=10){
     for (let [id, elm] of Object.entries(this.elements)) {
-    // for (let i=0; i < this.elements.length; i++){
-    //   let elm = this.elements[i];
-      if(elm.stroke_ids.indexOf(minStroke.id) != -1){
-        return elm
+      console.log("ET:",id, elm)
+      if( x > elm.bounds.minX-padding && x < elm.bounds.maxX+padding &&
+          y > elm.bounds.minY-padding && y < elm.bounds.maxY+padding){
+        return elm        
       }
     }
-
     return null
 
   }
@@ -875,20 +935,20 @@ export default class StylusTutor extends React.Component {
       ev_strokes = this.props.evaluate(this.getEvaluatable())
     }else{
       ev_strokes = this.getEvaluatable()
-      console.log("bleep", ev_strokes)
+      // console.log("bleep", ev_strokes)
       // for (let i=0; i<ev_strokes.length;i++){
       for(var i in ev_strokes){
         ev_strokes[i]['evaluation'] = "INCORRECT"
       }
     }
-    console.log("bloop", ev_strokes)
+    // console.log("bloop", ev_strokes)
     this.setState({strokes: {...this.state.strokes,...ev_strokes}})
   }
 
 
 
   render() {
-    // console.log("STROKES",this.state.n_strokes)
+    console.log("RERENDER",[...this.highlighted_elements])
     // console.log(this.state.strokes)
     let svg_content = []
     // svg_content.push( <Circle cx={300} cy={200} r="50" fill="red" />);
@@ -907,12 +967,14 @@ export default class StylusTutor extends React.Component {
             stroke={this.where_colors[stroke.highlight]}
             strokeWidth={strokeWidth*3 +1}
             strokeOpacity={0.15}
+            strokeLinecap='round'
           />);   
           svg_content.push(<Polyline
             points= {stroke['points_str']} fill="none"
             stroke={this.where_colors[stroke.highlight]}
             strokeWidth={strokeWidth*2}
             strokeOpacity={0.4}
+            strokeLinecap='round'
           />);   
         }
 
@@ -921,12 +983,13 @@ export default class StylusTutor extends React.Component {
             points= {stroke['points_str']} fill="none"
             stroke={pen_color_map[stroke['evaluation']] || pen_color_map["DEFAULT"]}
             strokeWidth={strokeWidth}
+            strokeLinecap='round'
           />);   
         }else{
           svg_content.push(<Circle
             cx= {stroke.points[0][0]}
             cy= {stroke.points[0][1]}
-            r={strokeWidth}
+            r={strokeWidth*1.5}
             fill = {pen_color_map[stroke['evaluation']] || pen_color_map["DEFAULT"]}
           />);   
         }
@@ -944,6 +1007,7 @@ export default class StylusTutor extends React.Component {
               fill="none"
               stroke={'blue'}
               strokeWidth="3"
+              strokeLinecap='round'
             />);
 
             circles.push( <Circle cx={b[0]+""} cy={b[1]+""} r="3" fill="red" />);
@@ -988,12 +1052,54 @@ export default class StylusTutor extends React.Component {
         
     // }
 
+    // svg_content.push(<SvgText x={100} y={100}
+    //                                  fontSize={80}
+    //                                  stroke={this.where_colors[2]}
+    //                                  strokeOpacity={0.15}
+    //                                  strokeWidth={3*(80.0/40.0) + 1}
+    //                         > {7} </SvgText>);  
+    // svg_content.push(<SvgText x={100} y={100}
+    //                                  fontSize={80}
+    //                                  stroke={this.where_colors[2]}
+    //                                  strokeOpacity={0.45}
+    //                                  strokeWidth={2*(80.0/40.0)}
+    //                         > {7} </SvgText>);  
+    // svg_content.push(<SvgText x={100} y={100} fontSize={80}
+                            // > {42} </SvgText>);
     // var elems = this.elements || {};
     // for (let j=0; j<elems.length;j++){
     for (let [id, elm] of Object.entries(this.elements)) {
        var b = elm.bounds;
-        svg_content.push( <Rect x={b.minX} y={b.minY} width={b.maxX-b.minX} height={b.maxY-b.minY}
+        if(elm.id == "done"){continue}
+        if(elm.type == 'text'){
+          if(elm.highlight != null){
+            svg_content.push(<SvgText x={elm.x} y={elm.y}
+                                     fontSize={elm.fontSize}
+                                     stroke={this.where_colors[elm.highlight]}
+                                     strokeOpacity={0.15}
+                                     strokeWidth={elm.fontSize/14.0 + 1}
+                                     textAnchor="middle"
+                            > {elm.value.toString()} </SvgText>);  
+            svg_content.push(<SvgText x={elm.x} y={elm.y} 
+                                    fontSize={elm.fontSize}
+                                     stroke={this.where_colors[elm.highlight]}
+                                     strokeOpacity={0.45}
+                                     strokeWidth={elm.fontSize/20.0}
+                                     textAnchor="middle"
+                            > {elm.value.toString()} </SvgText>);
+          }else{
+            svg_content.push(<SvgText x={elm.x} y={elm.y} 
+                            fontSize={elm.fontSize}
+                            textAnchor="middle"
+                            > {elm.value.toString()} </SvgText>);
+          }
+          
+          // console.log(elm.value.toString())
+        }else if(elm.type == 'strokes'){
+          svg_content.push( <Rect x={b.minX} y={b.minY} width={b.maxX-b.minX} height={b.maxY-b.minY}
                             stroke='orange' strokeWidth=".5" fill='none'/> ); 
+        }
+
     }
 
 

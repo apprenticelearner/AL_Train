@@ -18,6 +18,10 @@
 			"planner" : "vectorized",
 			"function_set" : ["Add","Add3","Mod10","Div10"],
 			"feature_set" : [],
+			"constraint_set" : "stylus",
+			"where_args": {
+				"remove_attrs" : ["value","id"]
+			}
 		},
 		"problem_set" : [
 			{

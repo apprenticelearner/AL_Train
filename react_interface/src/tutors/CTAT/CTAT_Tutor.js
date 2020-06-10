@@ -163,7 +163,7 @@ class CTAT_Tutor extends React.Component {
 
       nl.term_print("Starting Problem: " + BRD_name, "INFO");
 
-      var qf  = prob_obj["question_file"].replace(/\.\./g,"!u"); 
+      var qf  = (prob_obj["question_file"]||"").replace(/\.\./g,"!u"); 
       qf = qf_exists
         ? (abs_qf_paths ?
             { question_file: context.network_layer.HOST_URL + qf }
