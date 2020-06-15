@@ -16,7 +16,8 @@ EMCCFLAGS= -s USE_PTHREADS=0 -s FILESYSTEM=0 -s WASM=1 -s MODULARIZE=1 \
 
 bezier_fit.wasm: GraphicsGems.cpp bezier_fit.cpp stroke_group.cpp GraphicsGems.h
 	$(EMCC) stroke_group.cpp GraphicsGems.cpp bezier_fit.cpp  -o $(B_DIR)/bezier_fit.js $(EMCCFLAGS) $(CPPFLAGS)
-	sed -i '1s/^/\/\* eslint no-unused-expressions:0 no-restricted-globals:0 \*\/\n/' $(B_DIR)/bezier_fit.js
+	#sed -i '1s/^/\/\* eslint no-unused-expressions:0 no-restricted-globals:0 \*\/\n/' $(B_DIR)/bezier_fit.js
+	sed -i '1s/^/\/\* eslint-disable \*\/\n/' $(B_DIR)/bezier_fit.js
 	sed -i "s/import.meta.url/${WASM_DIR}/g" $(B_DIR)/bezier_fit.js
 	mv $(B_DIR)/bezier_fit.js $(B_DIR)/js_glue.js
 	cp $(B_DIR)/bezier_fit.wasm $(PUB_DIR)/bezier_fit.wasm
