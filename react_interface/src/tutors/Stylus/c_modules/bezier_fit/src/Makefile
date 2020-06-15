@@ -14,7 +14,7 @@ EMCCFLAGS= -s USE_PTHREADS=0 -s FILESYSTEM=0 -s WASM=1 -s MODULARIZE=1 \
  		   -s EXPORTED_FUNCTIONS="['_c_FitCurve', '_c_ML_EncodeCurves',"_c_GroupStrokes"]" \
  		   -s EXPORT_ES6=1 -s INVOKE_RUN=0
 
-bezier_fit.wasm: GraphicsGems.cpp bezier_fit.cpp stroke_group.cpp GraphicsGems.h
+bezier_fit.wasm: GraphicsGems.cpp bezier_fit.cpp stroke_group.cpp GraphicsGems.h build_dir
 	$(EMCC) stroke_group.cpp GraphicsGems.cpp bezier_fit.cpp  -o $(B_DIR)/bezier_fit.js $(EMCCFLAGS) $(CPPFLAGS)
 	#sed -i '1s/^/\/\* eslint no-unused-expressions:0 no-restricted-globals:0 \*\/\n/' $(B_DIR)/bezier_fit.js
 	sed -i '1s/^/\/\* eslint-disable \*\/\n/' $(B_DIR)/bezier_fit.js
@@ -23,12 +23,15 @@ bezier_fit.wasm: GraphicsGems.cpp bezier_fit.cpp stroke_group.cpp GraphicsGems.h
 	cp $(B_DIR)/bezier_fit.wasm $(PUB_DIR)/bezier_fit.wasm
 	
 
-bezier_fit.so: GraphicsGems.cpp bezier_fit.cpp stroke_group.cpp GraphicsGems.h
+bezier_fit.so: GraphicsGems.cpp bezier_fit.cpp stroke_group.cpp GraphicsGems.h build_dir
 	$(CC) -fPIC $(CPPFLAGS) -Wall -c GraphicsGems.cpp -o  GraphicsGems.o 
 	$(CC) -fPIC $(CPPFLAGS) -Wall -c bezier_fit.cpp -o  bezier_fit.o 
 	$(CC) -fPIC $(CPPFLAGS) -Wall -c stroke_group.cpp -o  stroke_group.o 
 # 	$(CC) -fPIC $(CPPFLAGS) -c -Wall GraphicsGems.cpp bezier_fit.cpp stroke_group.cpp -o $(B_DIR)/stroke_group.o
 	$(CC) -shared $(CPPFLAGS) GraphicsGems.o bezier_fit.o stroke_group.o -o $(B_DIR)/bezier_fit.so 
 	rm *.o
+
+build_dir: 
+	mkdir -p $(B_DIR)
 
 GraphicsGems.o bezier_fit.o stroke_group.o : CPPFLAGS+=-fPIC
