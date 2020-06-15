@@ -89,7 +89,7 @@ export default class NetworkLayer {
     const skill_applications = context.skill_applications;
     const feedback_map = context.feedback_map;
 
-    var out;
+    var out = null;
     if (feedback_map && Object.keys(feedback_map).length > 0) {
       // var skill_applications_subset = []
       // var rewards = []
@@ -99,6 +99,10 @@ export default class NetworkLayer {
         // skill_applications_subset.push({
         var data = {
           state: context.state,
+          selection: skill_app["selection"],
+          action: skill_app["action"],
+          inputs: skill_app["inputs"],
+          foci_of_attention: skill_app["foci_of_attention"],
           rhs_id: skill_app["rhs_id"],
           mapping: skill_app["mapping"],
           reward: feedback_map[index].toLowerCase() == "correct" ? 1 : -1
@@ -106,15 +110,21 @@ export default class NetworkLayer {
         if (context.interactive) {
           data["add_skill_info"] = true;
         }
-        d_list.push(data);
-        // if(out){
-        // 	out = out.then((resp)=>this.sendTrainingData(data,context.agent_id))
-        // 		 .then(()=>sleep(10))
+        // if(out == null){
+        //   out = this.sendTrainingData(d_list, context.agent_id);
         // }else{
-        // 	out = this.sendTrainingData(data,context.agent_id)
+
         // }
+
+        // d_list.push(data);
+        if(out != null){
+        	out = out.then((resp)=>this.sendTrainingData(data,context.agent_id))
+        		 // .then(()=>sleep(10))
+        }else{
+        	out = this.sendTrainingData(data,context.agent_id)
+        }
       }
-      out = this.sendTrainingData(d_list, context.agent_id);
+      // out = this.sendTrainingData(d_list, context.agent_id);
 
       // if(data.reward == null && context.reward != null){
       // 	data.reward = context.reward
