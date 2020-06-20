@@ -47,7 +47,7 @@ import {
 
 import autobind from 'class-autobind';
 import BezierFit from './c_modules/bezier_fit/bezier_fit'
-// import Seshat from './c_modules/seshat/seshat'
+import Seshat from './c_modules/seshat/seshat'
 
 const MAX_STROKE_LENGTH = 512
 const MIN_DIST = 4.0
@@ -98,9 +98,9 @@ export default class StylusTutor extends React.Component {
         this.fitCurve([[1,2],[3,4],[5,6],[7,8]])
     })
 
-    // this.Seshat = new Seshat();
-    //   this.Seshat.promise.then(() => {
-    //     this.recognize_symbol = this.Seshat.recognize_symbol
+    this.Seshat = new Seshat();
+      this.Seshat.promise.then(() => {
+        this.recognize_symbol = this.Seshat.recognize_symbol
         // this.recognize_symbol([
         //     [
         //     [200,200],
@@ -122,7 +122,7 @@ export default class StylusTutor extends React.Component {
         // console.log("I HAVE COMPLETED")
         // this.groupStrokes = this.BezierFit.groupStrokes
         // this.fitCurve([[1,2],[3,4],[5,6],[7,8]])
-    // })
+    })
 
 
     window.setMode = (mode) => {this.setState({mode : mode })}
@@ -435,11 +435,12 @@ export default class StylusTutor extends React.Component {
       var elmobj;
 
       if(this.props.groupMode == "grid"){
+        var value = elm1.value != null ? elm1.value.toString() : null
         elmobj = {
           id: "e" + elm1.g_coords.x + "_" + elm1.g_coords.y,//elm1.id,
           type : "Symbol",
-          value : elm1.value,
-          filled : elm1.value ? true : false
+          value : value,
+          filled : value != "" && value != null ? true : false
         }
         var c1 = elm1.g_coords
         var [above,below,to_right,to_left] = [null,null,null,null];
@@ -644,7 +645,7 @@ export default class StylusTutor extends React.Component {
 
     if(extra_info && this.props.groupMode == "grid"){
       for(var loc_str in extra_info){
-        console.log("MEEP", extra_info[loc_str],stroke_ids)
+        // console.log("MEEP", extra_info[loc_str],stroke_ids)
         if(array_equal(extra_info[loc_str],stroke_ids)){
           var coords = loc_str.split("_")
           elm.g_coords = {"x" : parseInt(coords[0]), "y" : parseInt(coords[1])} 
@@ -733,7 +734,7 @@ export default class StylusTutor extends React.Component {
       let group = added[i]
       let elm = this.addElement(group, extra_info)
       // elm.symbol_probs = this.recognize_symbol(elm.strokes)
-      elm.symbol_probs = {"x": 1.0}//this.recognize_symbol(elm.strokes)
+      elm.symbol_probs = this.recognize_symbol(elm.strokes)
 
       console.log("Recognize Symbol: ")
       Object.entries(elm.symbol_probs).sort((a,b)=>b[1]-a[1]).forEach(function([sym,prob]){
@@ -949,7 +950,7 @@ export default class StylusTutor extends React.Component {
 
 
   render() {
-    console.log("RERENDER",[...this.highlighted_elements])
+    // console.log("RERENDER",[...this.highlighted_elements])
     // console.log(this.state.strokes)
     let svg_content = []
     // svg_content.push( <Circle cx={300} cy={200} r="50" fill="red" />);
