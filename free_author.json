@@ -15,7 +15,7 @@
 		"args": {
 			"search_depth" : 2,
 			"when_learner": "decisiontree",
-			"planner" : "vectorized",
+			"planner" : "numba",
 			"when_args" : {"cross_rhs_inference" : "none"},
 			"function_set" : ["Add","Add3","Mod10","Div10"],
 			"feature_set" : [],

@@ -11,6 +11,7 @@ import CTAT_Tutor from "./tutors/CTAT/CTAT_Tutor";
 import StylusTutor from './tutors/Stylus/StylusTutor';
 import App from "./App";
 import RJSON from "relaxed-json";
+import Spinner from 'react-native-loading-spinner-overlay';
 
 const tutor_map = {
   ctatttutor: CTAT_Tutor,

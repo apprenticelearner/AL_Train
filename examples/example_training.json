@@ -9,7 +9,7 @@
 			"search_depth" : 2,
 			"when_learner": "decisiontree",
 			"where_learner": "MostSpecific",
-			"planner": "vectorized",
+			"planner": "numba",
 			"function_set": ["Add","Subtract","Multiply","Divide"],
         	"feature_set": ["Equals"]
 		},			

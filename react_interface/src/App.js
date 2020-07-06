@@ -15,6 +15,9 @@ import pick from 'object.pick';
 
 // 
 import React from 'react';
+import Spinner from 'react-native-loading-spinner-overlay';
+// import "react-loader-spinner/dist/loader/css/react-spinner-loader.css"
+// import Loader from 'react-loader-spinner'
 // import { View, Text, StyleSheet } from "react-native";
 // import logo from './logo.svg';
 // import './App.css';
@@ -122,7 +125,8 @@ export default class ALReactInterface extends React.Component {
 
   onTrainingTransition(current){
     var c = current.context
-    console.log("&", "HEY THIS IS THIS THING")
+    console.log("&", current)
+    this.setState({"Training_Machine_State" : current.value})
     if(!c.interactive){
       this.setState({
         training_description : c.training_description || "???",
@@ -270,10 +274,28 @@ export default class ALReactInterface extends React.Component {
         </View>
       </View>
     }
-
+    
+    // <View style={styles.overlay}>
+        //   <Text style={styles.overlay_text}>
+        //     LOADING
+        //   </Text>
+        // </View>
+    console.log("TRANING MACHINE STATE",this.state.Training_Machine_State)
     return (
   	<View style={styles.container}>
   		<View style={styles.ctat_tutor}>
+        {this.state.Training_Machine_State == "Creating_Agent" &&
+          <View style={styles.overlay}>
+            <Spinner
+              color={'#000000'}
+              size={100}
+              visible={true}
+              textContent={'Loading...'}
+              textStyle={styles.spinnerTextStyle}
+            />
+          </View> 
+        }
+        
   			<Tutor
           //tutor_props = {this.state.prob_obj}
           ref={this.tutor}//{function(tutor) {window.tutor = tutor; console.log("TUTOR IS:",tutor)}}
@@ -285,6 +307,7 @@ export default class ALReactInterface extends React.Component {
           {...this.state.tutor_props}
         />
   		</View>
+
   		{lower_display}
   	</View>
     );
@@ -298,6 +321,23 @@ export default class ALReactInterface extends React.Component {
 //nools_callback={window.nools_callback}/>
 
 const styles = StyleSheet.create({
+      spinnerTextStyle: {
+        color: '#000000'
+      },
+      overlay: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        backgroundColor: 'rgba(50, 50, 50, 0.3)',
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center"
+      },
+      overlay_text: {
+        textAlign: 'center',
+      },
 	     container : {
         // justifyContent: "stretch",
         // padding: 20,

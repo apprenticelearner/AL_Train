@@ -734,7 +734,9 @@ export default class StylusTutor extends React.Component {
       let group = added[i]
       let elm = this.addElement(group, extra_info)
       // elm.symbol_probs = this.recognize_symbol(elm.strokes)
+      console.time("recognize_symbol")
       elm.symbol_probs = this.recognize_symbol(elm.strokes)
+      console.timeEnd("recognize_symbol")
 
       console.log("Recognize Symbol: ")
       Object.entries(elm.symbol_probs).sort((a,b)=>b[1]-a[1]).forEach(function([sym,prob]){

@@ -174,6 +174,12 @@ int c_FitCurve(double *points, int nPts, double error, double *output){
     return i;
 }
 
+double clamp(double x, double lo, double hi){
+    if(x < lo){return lo;}
+    if(x > hi){return hi;}
+    return x;
+}
+
 void c_ML_EncodeCurves(double *curves, int nCurves, double *output){
     Point2 *p_curves = (Point2 *)curves;
 
@@ -210,8 +216,8 @@ void c_ML_EncodeCurves(double *curves, int nCurves, double *output){
             dc2x = -ndx; dc2y = -ndy;
         }
         
-        double theta1 = asin(dc1x*ndy - dc1y*ndx);
-        double theta2 = asin(dc2x*ndy - dc2y*ndx);
+        double theta1 = asin(clamp(dc1x*ndy - dc1y*ndx,-1.0,1.0));
+        double theta2 = asin(clamp(dc2x*ndy - dc2y*ndx,-1.0,1.0));
 
         double *out_i = &output[i*encoding_width];
         out_i[0] = p1.x;

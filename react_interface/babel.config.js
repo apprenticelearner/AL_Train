@@ -8,7 +8,8 @@ module.exports = function(api) {
         "alias": {
           "^react-native$": "react-native-web"
         }
-      }]
+      }],
+      ["@babel/plugin-proposal-class-properties", { "loose": true }]
     ],
   };
 };
