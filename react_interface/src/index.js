@@ -8,18 +8,18 @@ import * as serviceWorker from "./serviceWorker";
 
 import { interpret } from "xstate";
 import CTAT_Tutor from "./tutors/CTAT/CTAT_Tutor";
-import StylusTutor from './tutors/Stylus/StylusTutor';
+// import StylusTutor from './tutors/Stylus/StylusTutor';
 import App from "./App";
 import RJSON from "relaxed-json";
-import Spinner from 'react-native-loading-spinner-overlay';
+
 
 const tutor_map = {
   ctatttutor: CTAT_Tutor,
   ctat: CTAT_Tutor,
   // ctatttutor: "./tutors/CTAT/CTAT_Tutor",
   // ctat: "./tutors/CTAT/CTAT_Tutor",
-  "stylustutor" : StylusTutor,
-  "stylus" : StylusTutor,
+  // "stylustutor" : StylusTutor,
+  // "stylus" : StylusTutor,
 };
 
 
