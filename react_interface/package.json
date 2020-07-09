@@ -31,7 +31,6 @@
     "react-app-polyfill": "^0.1.3",
     "react-art": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-loader-spinner": "^3.1.14",
     "react-native": "^0.62.2",
     "react-native-expo-viewport-units": "0.0.8",
     "react-native-loading-spinner-overlay": "^1.1.0",
@@ -40,7 +39,6 @@
     "react-native-web-webview": "^0.2.9",
     "relaxed-json": "^1.0.3",
     "shuffle-array": "^1.0.1",
-    "spinner-loader": "^1.0.3",
     "xstate": "^4.11.0"
   },
   "devDependencies": {

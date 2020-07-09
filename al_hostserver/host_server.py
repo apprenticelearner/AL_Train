@@ -27,7 +27,8 @@ print("FETCH_ABOVE_ROOT", FETCH_ABOVE_ROOT)
 
 static_dir = os.path.dirname(__file__)
 build_dir = os.path.abspath(os.path.join(static_dir,"..","react_interface","build"))
-release_dir = os.path.abspath(os.path.join(static_dir,"release"))
+release_dir = os.path.abspath(os.path.join(static_dir,"..","react_interface","release"))
+print("RELEASE DIR", release_dir)
 if(not os.path.exists(build_dir)): build_dir = release_dir
 
 colorama.init(autoreset=True)
