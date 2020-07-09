@@ -116,7 +116,8 @@ export default class ALReactInterface extends React.Component {
     var standard_props = {interactions_state: current,
                           interactions_service : this.interactions_service}
     this.setState({
-      default_props : standard_props
+      default_props : standard_props,
+      "Interactions_Machine_State" : current.value
       // buttons_props: standard_props,
       // tutor_props: standard_props,
       // skill_panel_props: standard_props,
@@ -284,7 +285,10 @@ export default class ALReactInterface extends React.Component {
     return (
   	<View style={styles.container}>
   		<View style={styles.ctat_tutor}>
-        {this.state.Training_Machine_State == "Creating_Agent" &&
+        {(this.state.Training_Machine_State == "Creating_Agent") //||
+          // this.state.Interactions_Machine_State == "Querying_Apprentice" ||
+          // this.state.Interactions_Machine_State == "Sending_Feedback")
+          &&
           <View style={styles.overlay}>
             <Spinner
               color={'#000000'}
