@@ -17,7 +17,7 @@
 			"when_learner": "decisiontree",
 			"planner" : "numba",
 			"when_args" : {"cross_rhs_inference" : "none"},
-			"function_set" : ["Add","Add3","Mod10","Div10"],
+			"function_set" : ["Mod10","Div10","Add","Add3"],
 			"feature_set" : [],
 		},
 		"problem_set" : [

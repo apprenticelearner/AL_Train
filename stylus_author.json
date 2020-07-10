@@ -14,9 +14,9 @@
 		"args": {
 			"search_depth" : 2,
 			"when_learner": "decisiontree",
-			"where_learner": "versionspace",
+			"where_learner": "numba",
 			"planner" : "vectorized",
-			"function_set" : ["Add","Add3","Mod10","Div10","Subtract","Multiply"],
+			"function_set" : ["Mod10","Div10","Add","Add3"],
 			"feature_set" : [],
 			"constraint_set" : "stylus",
 			"where_args": {
