@@ -16,10 +16,15 @@ setup(
         long_description_content_type ="text/markdown", 
         license ='MIT', 
         packages = find_packages(), 
-        scripts=['bin/altrain'],
+        # scripts=['bin/altrain'],
         # entry_points ={ 
             
         # }, 
+        entry_points={
+            "console_scripts": [
+                "altrain = al_hostserver.altrain:pre_main"
+            ]
+        },
         classifiers =( 
             "Programming Language :: Python :: 3", 
             "License :: OSI Approved :: MIT License", 
