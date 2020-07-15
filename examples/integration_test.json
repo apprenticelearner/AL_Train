@@ -1,5 +1,4 @@
-{
-  "training_set1": [
+{"training_set1": [
     {
       "agent_name": "test_FO_ModularAgent",
       "agent_type": "ModularAgent",
@@ -58,8 +57,8 @@
       ]
     },
     {
-      "agent_name": "test_SoarTechAgent",
-      "agent_type": "SoartechAgent",
+      "agent_name": "test_ExpertaAgent",
+      "agent_type": "ExpertaAgent",
       "stay_active": true,
       "dont_save": true,
       "args": {

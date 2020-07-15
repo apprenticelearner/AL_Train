@@ -1,0 +1,47 @@
+{"training_set1": [
+    {
+      "agent_name": "test_ExpertaAgent",
+      "agent_type": "ExpertaAgent",
+      "stay_active": true,
+      "dont_save": true,
+      "args": {
+        "action_penalty": -0.1,
+        "prior_skills": {
+          "add": false,
+          "check": false,
+          "click_done": false,
+          "correct_add_convert_num": true,
+          "correct_add_same_num": true,
+          "correct_check": true,
+          "correct_convert_denom1": true,
+          "correct_convert_denom2": true,
+          "correct_convert_num1": true,
+          "correct_convert_num2": true,
+          "correct_copy_convert_denom": true,
+          "correct_copy_same_denom": true,
+          "correct_done": true,
+          "correct_multiply_denom": true,
+          "correct_multiply_num": true,
+          "equal": false,
+          "multiply": false,
+          "update_answer": false,
+          "update_convert": false,
+        },
+        "request_epsilon": 0.3,
+        "train_epsilon": 0.3
+      },
+      "problem_set": [
+        {"set_params": 
+          {"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+          "examples_only": false}
+        },
+        {"question_file": "../training/1-3_plus_4-9.brd"},
+        {"question_file": "../training/1-4_plus_2-5.brd"},
+        {"question_file": "../training/1-4_plus_2-6.brd"},
+        {"question_file": "../training/1-4_plus_2-7.brd"},
+        {"question_file": "../training/1-5_plus_4-6.brd"},
+        {"question_file": "../training/1-6_plus_2-6.brd"}
+      ]
+    }
+  ]
+}
