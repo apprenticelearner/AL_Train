@@ -13,11 +13,12 @@
 		"agent_name":"myAgent1",
 		"agent_type":"ModularAgent",
 		"args": {
-			"search_depth" : 2,
+			"search_depth" : 3,
+			"when_learner": "versionspace",
 			"when_learner": "decisiontree",
 			"planner" : "numba",
 			"when_args" : {"cross_rhs_inference" : "none"},
-			"function_set" : ["Mod10","Div10","Add","Add3"],
+			"function_set" : ["RipFloatValue","Mod10","Div10","Add","Add3"],
 			"feature_set" : [],
 		},
 		"problem_set" : [

@@ -12,11 +12,11 @@
 		"stay_active": true,
       	"dont_save": true,
 		"args": {
-			"search_depth" : 2,
+			"search_depth" : 3,
 			"when_learner": "decisiontree",
-			"where_learner": "numba",
-			"planner" : "vectorized",
-			"function_set" : ["Mod10","Div10","Add","Add3"],
+			"where_learner": "versionspace",
+			"planner" : "numba",
+			"function_set" : ["RipFloatValue","Mod10","Div10","Add","Add3"],
 			"feature_set" : [],
 			"constraint_set" : "stylus",
 			"where_args": {
