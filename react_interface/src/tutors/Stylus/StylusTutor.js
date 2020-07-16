@@ -69,6 +69,13 @@ const array_equal = (a,b) => {
   return true;
 }
 
+function pick(obj, keys){
+  var out = {}
+  Object.keys(obj).forEach((x) => {if(keys.includes(x)){out[x] = obj[x]}})
+  return out
+}
+
+
 const DEFAULT_START_STATE = {
       pen_down : false,
       strokes : {},
@@ -742,6 +749,11 @@ export default class StylusTutor extends React.Component {
       // elm.symbol_probs = this.recognize_symbol(elm.strokes)
       console.time("recognize_symbol")
       elm.symbol_probs = await this.recognize_symbol(elm.strokes)
+
+      //Just take numbers
+      elm.symbol_probs = pick(elm.symbol_probs,['1','2','3','4','5','6','7','8','9','0','+','-'])  
+
+
       console.timeEnd("recognize_symbol")
 
       console.log("Recognize Symbol: ")
