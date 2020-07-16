@@ -1,6 +1,7 @@
 import c_Seshat from './js_glue';
 
 
+
 class Seshat {
   constructor(in_buff_len = 2048, out_buff_len = 128, n_out_classes = 10){
     const NC = n_out_classes;

@@ -47,6 +47,24 @@ class BezierFit {
         return out;
       }
 
+      this.fitCurveFeatures = (points,error=6.0) => {
+        points = points.flat()
+        var nPts = points.length / 2
+        input_buffer.set(points.flat())
+        var n_curves = Module._c_FitCurve(input_ptr,nPts,error*error,output_ptr)
+        Module._c_ML_EncodeCurves(output_ptr,n_curves,ml_ptr);
+        // Module._c_InflectionPoints(input_ptr,nPts)
+        var out = []
+        var it = ml_buffer.entries()
+        const nxt = () => it.next().value[1]
+        for (var i=0; i < n_curves; i++){
+          out[i] = [nxt(),nxt(),nxt(),nxt(),nxt(),nxt(),nxt(),nxt(),nxt()]
+          // console.log("Bezier: ", i, out[i])
+        }
+        return out;
+
+      }
+
       this.groupStrokes = (strokes) => {
         strokes = Object.values(strokes)
         const len_ptr = Module._malloc(strokes.length*HEAP32.BYTES_PER_ELEMENT);

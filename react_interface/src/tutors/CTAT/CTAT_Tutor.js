@@ -905,7 +905,7 @@ class CTAT_Tutor extends React.Component {
         if (element.classList[0] != "CTATTextField") {
           //Skip text fields
           if (use_class) {
-            obj["type"] = element.classList[0];
+            obj["dom_class"] = element.classList[0];
           }
           if (use_offsets) {
             obj["offsetParent"] = element.offsetParent.dataset.silexId;
@@ -926,6 +926,7 @@ class CTAT_Tutor extends React.Component {
               "CTATTable--cell"
             ])
           ) {
+            obj['type'] = "TextField"
             obj["value"] = element.firstElementChild.value;
             if (numeric_values) {
               obj["value"] = Number(obj["value"]) || obj["value"];
@@ -933,12 +934,15 @@ class CTAT_Tutor extends React.Component {
             obj["contentEditable"] =
               element.firstElementChild.contentEditable == "true";
             // obj["name"] = element.id
+          }else if(checkTypes(element, ["CTATButton"])){
+            obj['type'] = "Button"
           }
           // if(checkTypes(element, ["CTATTextField", "CTATComboBox"])){
           //  obj["textContent"] = element.textContent;
           // }
 
           if (checkTypes(element, ["CTATComboBox"])) {
+            obj['type'] = "ComboBox"
             // if(element.options){
             //Probably not the best
             var options = element.firstElementChild.options;
@@ -950,6 +954,8 @@ class CTAT_Tutor extends React.Component {
 
             // }
           }
+
+          if(!obj['type']){ obj['type'] = "Component"}
           let name = (append_ele ? "?ele-" : "") + element.id;
           // console.log(name,append_ele)
           state_json[name] = obj;
