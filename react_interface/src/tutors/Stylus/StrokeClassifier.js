@@ -18,7 +18,7 @@ const alphabet = ['!' ,'(' ,')', '+', ',', '-', '.', '/', '0', '1', '2', '3' ,'4
 'z', '|']
 
 function argsort(arr,k=0){
-  var sorted = arr.map(((val,index) => [val,index])).sort((a,b) => a[0]-b[0]) 
+  var sorted = arr.map(((val,index) => [val,index])).sort((a,b) => b[0]-a[0]) 
   if(k){sorted = sorted.slice(0,k)}
   var vals = sorted.map(x => x[0])
   var indicies = sorted.map(x => x[1])
@@ -50,28 +50,32 @@ export default class StrokeClassifier {
         console.log("STROKES", strokes)
         var minx = 2400000000, miny = 2400000000;
         var maxx = -2400000000, maxy = -2400000000;
+        var out_strokes = []
         for (var i = 0; i < strokes.length; i++) {
+          out_strokes.push([])
           for (var j = 0; j < strokes[i].length; j++) {
               minx = Math.min(minx, strokes[i][j][0]);
               miny = Math.min(miny, strokes[i][j][1]);
+              out_strokes[i].push([strokes[i][j][0],strokes[i][j][1]] )
+          }
+        }
+        
+        for (var i = 0; i < strokes.length; i++) {
+          for (var j = 0; j < strokes[i].length; j++) {
+              out_strokes[i][j][0] -= minx;
+              out_strokes[i][j][1] -= miny;
+              maxx = Math.max(maxx, out_strokes[i][j][0]);
+              maxy = Math.max(maxy, out_strokes[i][j][1]);
           }
         }
         console.log(minx, maxx, miny, maxy);
         for (var i = 0; i < strokes.length; i++) {
           for (var j = 0; j < strokes[i].length; j++) {
-              strokes[i][j][0] -= minx;
-              strokes[i][j][1] -= miny;
-              maxx = Math.max(maxx, strokes[i][j][0]);
-              maxy = Math.max(maxy, strokes[i][j][1]);
+              out_strokes[i][j][0] /= Math.min(maxx, maxy) / 100;
+              out_strokes[i][j][1] /= Math.min(maxx, maxy) / 100;
           }
         }
-        for (var i = 0; i < strokes.length; i++) {
-          for (var j = 0; j < strokes[i].length; j++) {
-              strokes[i][j][0] /= Math.min(maxx, maxy) / 100;
-              strokes[i][j][1] /= Math.min(maxx, maxy) / 100;
-          }
-        }
-        return strokes
+        return out_strokes
       }
 
       this.recognize_symbol = (strokes) => {
@@ -82,15 +86,17 @@ export default class StrokeClassifier {
             inp.push(stroke.points)
           } 
         }
-        // inp = this.normalize_strokes(inp)
+        inp = this.normalize_strokes(inp)
         console.log("normed",inp)
         var curve_features = []
         for(var stroke of inp){
           var curves = this.fitCurve(stroke)  
           for(var feats of this.fitCurveFeatures(stroke)){
+            console.log("feats", feats)
             curve_features.push(feats)
           }
         }
+        console.log("curve_features",curve_features)
         var input = tf.tensor([curve_features], DocumentType=tf.float32);
         // console.log(this.model)
         // console.log(curves)
