@@ -28,6 +28,10 @@ print("FETCH_ABOVE_ROOT", FETCH_ABOVE_ROOT)
 static_dir = os.path.dirname(__file__)
 build_dir = os.path.abspath(os.path.join(static_dir,"..","react_interface","build"))
 release_dir = os.path.abspath(os.path.join(static_dir,"..","react_interface","release"))
+dist_dir = release_dir
+if(os.path.isdir(build_dir)): dist_dir = build_dir
+
+
 print("RELEASE DIR", release_dir)
 if(not os.path.exists(build_dir)): build_dir = release_dir
 
@@ -664,6 +668,11 @@ def handle_build(path):
 def handle_release(path):
     print("RELEASE",path)
     return send_from_directory(release_dir,path)
+
+@app.route('/dist/<path:path>')
+def handle_dist(path):
+    print("DIST",path)
+    return send_from_directory(dist_dir,path)
 
     # if(request.method == "GET"):
     #     headers = {}

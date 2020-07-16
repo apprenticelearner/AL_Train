@@ -47,7 +47,8 @@ import {
 
 import autobind from 'class-autobind';
 import BezierFit from './c_modules/bezier_fit/bezier_fit'
-import Seshat from './c_modules/seshat/seshat'
+// import Seshat from './c_modules/seshat/seshat'
+import StrokeClassifier from "./StrokeClassifier"
 
 const MAX_STROKE_LENGTH = 512
 const MIN_DIST = 4.0
@@ -98,31 +99,36 @@ export default class StylusTutor extends React.Component {
         this.fitCurve([[1,2],[3,4],[5,6],[7,8]])
     })
 
-    this.Seshat = new Seshat();
-      this.Seshat.promise.then(() => {
-        this.recognize_symbol = this.Seshat.recognize_symbol
-        // this.recognize_symbol([
-        //     [
-        //     [200,200],
-        //     [210,210],
-        //     [220,220],
-        //     [230,230],
-        //     [240,240],
-        //     [250,250],
-        //     ],
-        //     [
-        //     [250,200],
-        //     [240,210],
-        //     [230,220],
-        //     [220,230],
-        //     [210,240],
-        //     [200,250],
-        //     ],
-        //     ])
-        // console.log("I HAVE COMPLETED")
-        // this.groupStrokes = this.BezierFit.groupStrokes
-        // this.fitCurve([[1,2],[3,4],[5,6],[7,8]])
+    this.StrokeClassifier = new StrokeClassifier();
+    this.StrokeClassifier.promise.then(() => {
+      this.recognize_symbol = this.StrokeClassifier.recognize_symbol
     })
+
+    // this.Seshat = new Seshat();
+    //   this.Seshat.promise.then(() => {
+    //     this.recognize_symbol = this.Seshat.recognize_symbol
+    //     // this.recognize_symbol([
+    //     //     [
+    //     //     [200,200],
+    //     //     [210,210],
+    //     //     [220,220],
+    //     //     [230,230],
+    //     //     [240,240],
+    //     //     [250,250],
+    //     //     ],
+    //     //     [
+    //     //     [250,200],
+    //     //     [240,210],
+    //     //     [230,220],
+    //     //     [220,230],
+    //     //     [210,240],
+    //     //     [200,250],
+    //     //     ],
+    //     //     ])
+    //     // console.log("I HAVE COMPLETED")
+    //     // this.groupStrokes = this.BezierFit.groupStrokes
+    //     // this.fitCurve([[1,2],[3,4],[5,6],[7,8]])
+    // })
 
 
     window.setMode = (mode) => {this.setState({mode : mode })}
@@ -692,7 +698,7 @@ export default class StylusTutor extends React.Component {
     return [added, removed]
   }
 
-  penUp(e){
+  async penUp(e){
     console.log("penUP")
     if(this.state.mode == "loading"){
       return
@@ -735,7 +741,7 @@ export default class StylusTutor extends React.Component {
       let elm = this.addElement(group, extra_info)
       // elm.symbol_probs = this.recognize_symbol(elm.strokes)
       console.time("recognize_symbol")
-      elm.symbol_probs = this.recognize_symbol(elm.strokes)
+      elm.symbol_probs = await this.recognize_symbol(elm.strokes)
       console.timeEnd("recognize_symbol")
 
       console.log("Recognize Symbol: ")

@@ -10,7 +10,7 @@
 			"when_learner": "decisiontree",
 			"where_learner": "MostSpecific",
 			"planner": "numba",
-			"function_set": ["Add","Subtract","Multiply","Divide"],
+			"function_set": ["RipFloatValue","Add","Subtract","Multiply","Divide"],
         	"feature_set": ["Equals"]
 		},			
 
@@ -55,7 +55,14 @@
 
 		"agent_name":"Control",
 		"agent_type":"ModularAgent",
-		"output_dir":"out/myAgent1",
+		"args": {
+			"search_depth" : 2,
+			"when_learner": "decisiontree",
+			"where_learner": "MostSpecific",
+			"planner": "numba",
+			"function_set": ["RipFloatValue","Add","Subtract","Multiply","Divide"],
+        	"feature_set": ["Equals"]
+		},			
 		"problem_set" : [
 
 			{"README" : "If you want to explictly name the HTML each time that's fine too.",
