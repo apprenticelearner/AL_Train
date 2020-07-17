@@ -6,8 +6,8 @@ with open('requirements.txt') as f:
 long_description = '...need to add description' 
   
 setup( 
-        name ='alhtml', 
-        version ='0.4.4', 
+        name ='altrain', 
+        version ='0.5.1', 
         author ='Daniel Weitekamp', 
         author_email ='weitekamp@cmu.edu', 
         url ='https://github.com/apprenticelearner/AL_HTML', 
@@ -16,10 +16,15 @@ setup(
         long_description_content_type ="text/markdown", 
         license ='MIT', 
         packages = find_packages(), 
-        scripts=['bin/altrain'],
+        # scripts=['bin/altrain'],
         # entry_points ={ 
             
         # }, 
+        entry_points={
+            "console_scripts": [
+                "altrain = al_hostserver.altrain:pre_main"
+            ]
+        },
         classifiers =( 
             "Programming Language :: Python :: 3", 
             "License :: OSI Approved :: MIT License", 
