@@ -6,6 +6,10 @@ bprofiles/
 net.conf
 *.cprof
 *.prof
+alhtml.egg-info
+
+examples/INFO
+examples/DEBUG
 
 *.DS_Store
 __pycache__/
