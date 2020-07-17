@@ -7,6 +7,7 @@ net.conf
 *.cprof
 *.prof
 alhtml.egg-info
+altrain.egg-info
 
 examples/INFO
 examples/DEBUG
