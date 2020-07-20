@@ -92,6 +92,7 @@ export default class NetworkLayer {
 
     var out = null;
     if (feedback_map && Object.keys(feedback_map).length > 0) {
+      out = new Promise()
       // var skill_applications_subset = []
       // var rewards = []
       var d_list = [];
@@ -118,12 +119,19 @@ export default class NetworkLayer {
         // }
 
         // d_list.push(data);
-        if(out != null){
-        	out = out.then((resp)=>this.sendTrainingData(data,context.agent_id))
-        		 // .then(()=>sleep(10))
-        }else{
-        	out = this.sendTrainingData(data,context.agent_id)
+        // if(out != null){
+        out = out.then((resp)=>this.sendTrainingData(data,context.agent_id))
+
+        console.log("BLEEP",this.OUTER_LOOP_URL, context.outer_loop_controller)
+        if(this.OUTER_LOOP_URL){
+          out = out.then((resp)=>
+            this.updateOuterLoopController(data, context)
+          )
         }
+        		 // .then(()=>sleep(10))
+        // }else{
+        // 	out = this.sendTrainingData(data,context.agent_id)
+        // }
       }
       // out = this.sendTrainingData(d_list, context.agent_id);
 
@@ -146,6 +154,12 @@ export default class NetworkLayer {
         data["add_skill_info"] = true;
       }
       out = this.sendTrainingData(data, context.agent_id);
+      console.log("BLEEP",this.OUTER_LOOP_URL, context)
+      if(this.OUTER_LOOP_URL && context.outer_loop_controller){
+        out = out.then((resp)=>
+          this.updateOuterLoopController(data, context)
+        )
+      }
     }
 
     return out;
@@ -360,14 +374,37 @@ export default class NetworkLayer {
       id: context.agent_id
     };
 
+
+
     console.log(this.OUTER_LOOP_URL);
+    console.log("outer loop data:", data);
+    console.log("outer loop context:", context);
     var out = fetch(this.OUTER_LOOP_URL, {
       method: "NEW_STUDENT",
       headers: JSON_HEADERS,
       body: JSON.stringify(data)
     }).then(res => {});
-    console.log(out);
+    
     return out;
+  }
+
+  updateOuterLoopController(data, context){
+    // console.log("UPDATE OUTER LOOP",controller, data, context)
+    var update_data = {
+      selection : data['selection'],
+      reward : data['reward'],
+      action_type : context.action_type,
+    }
+    return fetch_retry(this.OUTER_LOOP_URL, {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(update_data)
+    })
+    // console.log('sel', data['selection'])
+    // console.log('reward', data['reward'])
+    // console.log('action_type', context.action_type)
+    // console.log('problem_name', context.tutor.getProblemName() || null)
+
   }
 
   nextProblem(controller, context) {

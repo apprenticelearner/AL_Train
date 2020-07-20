@@ -25,11 +25,13 @@ FETCH_ABOVE_ROOT = str(os.environ.get("AL_HOST_FETCH_ABOVE_ROOT","False")).lower
 
 print("FETCH_ABOVE_ROOT", FETCH_ABOVE_ROOT)
 
-static_dir = os.path.dirname(__file__)
-build_dir = os.path.abspath(os.path.join(static_dir,"..","react_interface","build"))
-release_dir = os.path.abspath(os.path.join(static_dir,"..","react_interface","release"))
+al_train_dir = os.path.join(os.path.dirname(__file__),"..")
+build_dir = os.path.abspath(os.path.join(al_train_dir,"react_interface","build"))
+release_dir = os.path.abspath(os.path.join(al_train_dir,"react_interface","release"))
 dist_dir = release_dir
 if(os.path.isdir(build_dir)): dist_dir = build_dir
+
+static_dir = os.path.abspath(os.path.join(dist_dir,"static"))
 
 
 print("RELEASE DIR", release_dir)
@@ -590,7 +592,7 @@ def do_GET(path):
     # print("GET", path[:])
     if(path == ""): 
         # headers = {}
-        return send_from_directory(static_dir,"index.html")
+        return send_from_directory(os.path.join(al_train_dir,"al_hostserver"),"index.html")
         # p = os.path.join(static_dir,"index.html")
         # if(os.path.isfile(p)):
             # with open(p, 'r') as f:
@@ -658,6 +660,11 @@ def handle_root(path):
 def handle_static(path):
     print("STATIC",path)
     return send_from_directory(static_dir,path)
+
+@app.route('/al_train/<path:path>')
+def handle_al_train(path):
+    print("AL_TRAIN (dir)",path)
+    return send_from_directory(al_train_dir,path)
 
 @app.route('/build/<path:path>')
 def handle_build(path):

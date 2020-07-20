@@ -6,7 +6,7 @@ with open('requirements.txt') as f:
 long_description = '...need to add description' 
   
 setup( 
-        name ='altrain', 
+        name ='al_train', 
         version ='0.5.1', 
         author ='Daniel Weitekamp', 
         author_email ='weitekamp@cmu.edu', 

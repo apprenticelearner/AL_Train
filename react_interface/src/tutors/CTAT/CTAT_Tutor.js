@@ -112,6 +112,10 @@ class CTAT_Tutor extends React.Component {
     // this._triggerWhenInitialized()
   }
 
+  getProblemName(){
+    return this.problem_name
+  }
+
   loadProblem(context) {
     const prob_obj = context.prob_obj;
     const nl = context.network_layer;
@@ -168,14 +172,17 @@ class CTAT_Tutor extends React.Component {
         ? (abs_qf_paths ?
             { question_file: context.network_layer.HOST_URL + qf }
           : { question_file: qf })
-        : { question_file: "/static/empty.nools" };
+        : { question_file: "/dist/empty.nools" };
 
       console.log("qf", qf, interactive, prob_obj);
       if (!interactive && qf["question_file"].includes(".nools")) {
+        console.log("BAD QF", qf["question_file"])
         nl.kill_this(
-          "Question file cannot be nools in non-interactive mode. Use example tracing."
+          "Got question_file: '" + qf["question_file"] + "'. Question file cannot be nools in non-interactive mode. Use example tracing."
         );
       }
+
+      this.problem_obj = prob_obj
       var logging_params = {
         problem_name: BRD_name,
         dataset_level_name1: domain_name,
