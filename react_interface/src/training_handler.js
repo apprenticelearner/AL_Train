@@ -14,7 +14,7 @@ const random = new Random();
 //A set of properties which are passed from the training handler SM context 
 //  to the interactions SM as props 
 export const problem_props = ['agent_id','free_author', 
-        'interactive','tutor_mode','examples_only','test_mode']
+        'interactive','tutor_mode','examples_only','test_mode', 'outer_loop_controller']
 const problem_props_dict = problem_props.reduce(function(obj, x) { obj[x] = null;return obj;}, {});        
 
 const CTATGuid = {
@@ -99,11 +99,13 @@ function serve_next_training_set(context, event) {
   return promise;
 }
 
-function parseOuterLoopController(x, problem_set = null) {
+async function parseOuterLoopController(x, context, problem_set = null) {
   if (typeof x == "string") {
     x = { type: x };
   }
-  if (problem_set != null) {
+  if(x['problem_set']){
+    x["problem_set"] = await evalJSONFunc(x['problem_set'], context);
+  }else if(problem_set != null){
     x["problem_set"] = problem_set;
   }
   x["initialized"] = false;
@@ -180,7 +182,11 @@ function serve_next_agent(context, event) {
       }
 
       var problem_set = await evalJSONFunc(agent_obj["problem_set"], context);
-      console.log("RESOLVED PROBLEM SET", [...problem_set]);
+      
+      if(agent_obj["problem_set"]){
+        console.log("RESOLVED PROBLEM SET", [...problem_set]);  
+      }
+      
       // if(typeof(agent_obj["problem_set"]) == 'object'){
       // 	var problem_set = {...agent_obj["problem_set"]};
       // 	problem_set = await resolveProblemSet(problem_set)
@@ -215,9 +221,10 @@ function serve_next_agent(context, event) {
 
       var outer_loop_controller = null;
       if ("outer_loop_controller" in agent_obj) {
-        outer_loop_controller = parseOuterLoopController(
+        outer_loop_controller = await parseOuterLoopController(
           agent_obj["outer_loop_controller"],
-          problem_set
+          context,
+          problem_set,
         );
         problem_set = [outer_loop_controller];
       }
@@ -243,7 +250,9 @@ function serve_next_agent(context, event) {
           agent_iterator: agent_iterator,
           problem_set: problem_set,
           prior_knowledge: prior_knowledge,
-          agent_start_time: new Date()
+          agent_start_time: new Date(),
+          outer_loop_controller : outer_loop_controller,
+          
         }
       });
     } else {
@@ -287,6 +296,7 @@ async function _next_prob_obj(
 ) {
   var promise = new Promise(async (resolve, reject) => {
     var prob_obj = problem_iterator.shift();
+    console.log("prob_obj",prob_obj)
     while (prob_obj != null && "outer_loop_controller" in prob_obj) {
       var nl = context.network_layer;
       if (!nl.OUTER_LOOP_URL) {
@@ -295,7 +305,7 @@ async function _next_prob_obj(
             "running train.py with --outer-loop flag.\n"
         );
       }
-      // console.log("HERE1.5")
+      console.log("HERE1.5")
 
       var controller = prob_obj["outer_loop_controller"];
       if (!controller["initialized"]) {
@@ -303,11 +313,11 @@ async function _next_prob_obj(
         // console.log("HERE1.6")
         await nl.newOuterLoopController(controller, context);
         controller["initialized"] = true;
-        // console.log("HERE1.7")
+        console.log("HERE1.7")
       }
-      // console.log("HERE1.9")
+      console.log("HERE1.9")
       var next = await nl.nextProblem(controller, context);
-      // console.log("HERE2")
+      console.log("NXT", next)
       if (next != null) {
         problem_iterator.unshift({ ...prob_obj });
         prob_obj = next;

@@ -53,8 +53,9 @@ async function glob(args,context){
 	var glob_key = args['key'] || null
 	var pattern = args['pattern']
 	var matches = await context.network_layer.glob(pattern,context)
-	if(glob_key){
-		matches = matches.map(m => {var o = {}; o[glob_key]="/"+m; return o})	
+	if(glob_key || args['obj_template']){
+		var default_obj = args['obj_template'] || {}
+		matches = matches.map(m => {var o = {...default_obj}; o[glob_key]="/"+m; return o})	
 	}else{
 		matches = matches.map(m => "/"+m)
 	}

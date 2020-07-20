@@ -312,8 +312,10 @@ def parse_args(argv):
         args.output = "%s/%sLog-%s.txt" % (args.log_dir, os.path.basename(
             args.training).split(".")[0], datetime.now().strftime("%Y-%m-%d-%H_%M_%S"))
 
-    if(args.outer_loop_dir != None):
-        args.outer_loop_dir = os.path.abspath(apply_wd(args.outer_loop_dir))
+    if(args.outer_loop_dir == None):
+        args.outer_loop_dir = dir_from_package("al_outerloop")
+        if(args.outer_loop_dir == None):
+            args.outer_loop_dir = os.path.abspath(apply_wd(args.outer_loop_dir))
 
     args.output = os.path.abspath(apply_wd(args.output))
 
@@ -362,7 +364,7 @@ def main(args):
         port_error("CTAT", args.ctat_port)
 
     if(args.outer_loop_url is None and args.outer_loop):
-        assert args.outer_loop_dir is not None, "Must specify OUTER_LOOP_DIR in altrain.conf"
+        assert args.outer_loop_dir is not None, "Install AL_outerloop or specify OUTER_LOOP_DIR in altrain.conf"
         if(not args.outer_loop_port):
             args.outer_loop_port = get_open_port()
         if(check_port(args.outer_loop_host, args.outer_loop_port, args.force)):
