@@ -1,5 +1,5 @@
 import sys, os
-print("Python version")
+print("Python version: %s" %sys.executable)
 print (sys.version)
 
 import importlib
