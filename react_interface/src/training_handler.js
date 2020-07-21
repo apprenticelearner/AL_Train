@@ -302,7 +302,7 @@ async function _next_prob_obj(
       if (!nl.OUTER_LOOP_URL) {
         nl.kill_this(
           "\nCANNOT USE 'outer_loop_controller' : {} pattern unless " +
-            "running train.py with --outer-loop flag.\n"
+            "running altrain with --outer-loop flag.\n"
         );
       }
       // console.log("HERE1.5")
