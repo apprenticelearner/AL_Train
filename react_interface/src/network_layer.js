@@ -102,6 +102,7 @@ export default class NetworkLayer {
         // skill_applications_subset.push({
         var data = {
           state: context.state,
+	  next_state: context.tutor.getState(),
           selection: skill_app["selection"],
           action: skill_app["action"],
           inputs: skill_app["inputs"],
@@ -143,6 +144,7 @@ export default class NetworkLayer {
       var skill_app = context.staged_SAI;
       var data = {
         state: context.state,
+	next_state: context.tutor.getState(),
         selection: skill_app["selection"],
         action: skill_app["action"],
         inputs: skill_app["inputs"],
