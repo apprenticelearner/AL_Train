@@ -2,7 +2,7 @@ import sys, os
 print("Python version: %s" %sys.executable)
 print (sys.version)
 
-import importlib
+from importlib.util import find_spec
 import argparse
 import atexit
 import re
@@ -188,7 +188,7 @@ def get_open_port():
 
 def dir_from_package(package_name):
     try:
-        spec = importlib.util.find_spec(package_name)
+        spec = find_spec(package_name)
         if(spec is None): return None
         p = os.path.dirname(spec.origin)
         # p = importlib.import_module(package_name)
