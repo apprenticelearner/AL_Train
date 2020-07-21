@@ -25,7 +25,8 @@ FETCH_ABOVE_ROOT = str(os.environ.get("AL_HOST_FETCH_ABOVE_ROOT","False")).lower
 
 print("FETCH_ABOVE_ROOT", FETCH_ABOVE_ROOT)
 
-al_train_dir = os.path.join(os.path.dirname(__file__),"..")
+host_dir = os.path.dirname(__file__)
+al_train_dir = os.path.join(host_dir,"..")
 build_dir = os.path.abspath(os.path.join(al_train_dir,"react_interface","build"))
 release_dir = os.path.abspath(os.path.join(al_train_dir,"react_interface","release"))
 dist_dir = release_dir
@@ -680,6 +681,11 @@ def handle_release(path):
 def handle_dist(path):
     print("DIST",path)
     return send_from_directory(dist_dir,path)
+
+@app.route('/host/<path:path>')
+def handle_host(path):
+    print("HOST",path)
+    return send_from_directory(host_dir,path)
 
     # if(request.method == "GET"):
     #     headers = {}

@@ -172,7 +172,7 @@ class CTAT_Tutor extends React.Component {
         ? (abs_qf_paths ?
             { question_file: context.network_layer.HOST_URL + qf }
           : { question_file: qf })
-        : { question_file: "/dist/empty.nools" };
+        : { question_file: "/host/empty.nools" };
 
       console.log("qf", qf, interactive, prob_obj);
       if (!interactive && qf["question_file"].includes(".nools")) {
@@ -281,7 +281,7 @@ class CTAT_Tutor extends React.Component {
       iframe_content.CTAT.ToolTutor.tutor == null
     ) {
       // term_print('\x1b[0;30;47m' + "BLEHH1" +  '\x1b[0m');
-      console.log("BLEHH1");
+      console.log("CTAT not defined yet...");
       window.setTimeout(() => {
         this._triggerWhenInitialized();
       }, 500);
@@ -303,7 +303,7 @@ class CTAT_Tutor extends React.Component {
       this.hasConfig
     ) {
       this._inject_element("link", {
-        href: "/static/css/AL_colors.css",
+        href: "/host/css/AL_colors.css",
         type: "text/css",
         rel: "stylesheet"
       });
@@ -325,11 +325,11 @@ class CTAT_Tutor extends React.Component {
       this.CTAT_ACTION =
         iframe_content.CTAT.Component.Base.Tutorable.EventType.action;
 
-      console.log("INITIALIZED!");
+      console.log("CTAT INITIALIZED!");
       this.init_callback(this);
     } else {
       // term_print('\x1b[0;30;47m' + "BLEHH2" + '\x1b[0m');
-      console.log("BLEHH2");
+      console.log("CTAT not initialized yet...");
       window.setTimeout(() => {
         this._triggerWhenInitialized();
       }, 500);
