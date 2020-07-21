@@ -23,7 +23,7 @@
 		},
 		"problem_set" : [
 			{"set_params" : 
-				{"HTML": "model/HTML/MultiColumnArithmatic.html"}
+				{"HTML": "../model/HTML/MultiColumnArithmatic.html"}
 			},
 			{
 			"repetitions":-1}

@@ -19,3 +19,4 @@ __pycache__/
 *.swo
 geckodriver.log
 
+.python-version
