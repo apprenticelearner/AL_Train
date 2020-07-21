@@ -1,7 +1,9 @@
+import sys, os
+print("Python version")
+print (sys.version)
+
 import importlib
 import argparse
-import sys
-import os
 import atexit
 import re
 import subprocess
@@ -476,15 +478,15 @@ def pre_main():
     global calling_dir
 
     calling_dir = os.getcwd()
-    print("CALLING", calling_dir)
+    print("Calling from directory:", calling_dir)
 
     html_bridge_dir = dir_from_package("al_hostserver")
-    print("b", html_bridge_dir)
+    # print("b", html_bridge_dir)
     # Always run this script from the directory where it lives
     # abspath = os.path.abspath(html_bridge_dir)
     # dname = os.path.dirname(abspath)
     # os.chdir(dname)
-    print("CWD", os.getcwd())
+    # print("CWD", os.getcwd())
 
     # if(not os.path.isfile("net.conf")):
     #     setup_net_conf()
