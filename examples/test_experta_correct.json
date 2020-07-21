@@ -5,7 +5,7 @@
       "stay_active": true,
       "dont_save": true,
       "args": {
-        "action_penalty": -0.1,
+        "action_penalty": -0.0,
         "prior_skills": {
           "add": false,
           "check": false,
