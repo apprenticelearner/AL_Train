@@ -20,7 +20,7 @@ ctat_process = None
 browser_process = None
 outer_loop_process = None
 # al_thread = None
-# ctat_thread = None
+# ctat_thread = Nones
 calling_dir = None
 CONFIG_DEFAULT = "altrain.conf"
 HOST_DOMAIN = '127.0.0.1'  # Use this instead of localhost on windows
@@ -188,7 +188,9 @@ def get_open_port():
 
 def dir_from_package(package_name):
     try:
-        p = os.path.dirname(importlib.util.find_spec(package_name).origin)
+        spec = importlib.util.find_spec(package_name)
+        if(spec is None): return None
+        p = os.path.dirname(spec.origin)
         # p = importlib.import_module(package_name)
         return p  # os.path.abspath(os.path.join(apprentice.__path__[0],".."))
     except ImportError:
@@ -310,13 +312,13 @@ def parse_args(argv):
     # assert args.browser != None, "BROWSER not specified or set in %s" % args.config
     assert args.log_dir != None, "LOG_DIR not specified or set in %s" % args.config
 
-    if(args.output == None):
+    if(args.output is None):
         args.output = "%s/%sLog-%s.txt" % (args.log_dir, os.path.basename(
             args.training).split(".")[0], datetime.now().strftime("%Y-%m-%d-%H_%M_%S"))
 
-    if(args.outer_loop_dir == None):
+    if(args.outer_loop_dir is None):
         args.outer_loop_dir = dir_from_package("al_outerloop")
-        if(args.outer_loop_dir == None):
+        if(args.outer_loop_dir is None and args.outer_loop_dir is not None):
             args.outer_loop_dir = os.path.abspath(apply_wd(args.outer_loop_dir))
 
     args.output = os.path.abspath(apply_wd(args.output))
