@@ -305,7 +305,7 @@ async function _next_prob_obj(
             "running train.py with --outer-loop flag.\n"
         );
       }
-      console.log("HERE1.5")
+      // console.log("HERE1.5")
 
       var controller = prob_obj["outer_loop_controller"];
       if (!controller["initialized"]) {
@@ -313,18 +313,19 @@ async function _next_prob_obj(
         // console.log("HERE1.6")
         await nl.newOuterLoopController(controller, context);
         controller["initialized"] = true;
-        console.log("HERE1.7")
+        // console.log("HERE1.7")
       }
-      console.log("HERE1.9")
+      // console.log("HERE1.9")
       var next = await nl.nextProblem(controller, context);
-      console.log("NXT", next)
+      // console.log("NXT", next)
       if (next != null) {
         problem_iterator.unshift({ ...prob_obj });
         prob_obj = next;
       } else if (problem_iterator.length > 0) {
         prob_obj = problem_iterator.shift();
       } else {
-        prob_obj = null;
+        resolve([null, agent_params]);
+        return
       }
     }
 
@@ -372,8 +373,8 @@ function serve_next_problem(context, event) {
         context
       );
       // console.log(prob_obj,agent_params)
-      // console.log("SLOOOP")
-      // console.log(prob_obj)
+      console.log("SLOOOP")
+      console.log(prob_obj)
       if (prob_obj) {
         if ("repetitions" in prob_obj) {
           if (prob_obj["repetitions"] < 0) {

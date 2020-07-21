@@ -63,6 +63,7 @@ export default class NetworkLayer {
   }
 
   createAgent(context, event) {
+    this.term_print("Creating Agent: " + context.agent_name, "INFO");
     var data = {
       name: context.agent_name,
       agent_type: context.agent_type,
