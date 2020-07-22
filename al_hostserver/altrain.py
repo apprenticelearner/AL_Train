@@ -204,6 +204,22 @@ def dir_from_package(package_name):
 #     except ImportError:
 #         return None
 
+def clear_cache():
+    from numbert.caching import cache_dir
+    import shutil
+    shutil.rmtree(cache_dir)
+    print("Cache Cleared!")
+
+
+def handle_special(args):
+    if(args.training == "clear-cache"):
+        clear_cache()
+
+    sys.exit()
+
+
+
+
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
@@ -274,7 +290,11 @@ def parse_args(argv):
         sys.exit()
 
     # print("TRAINING bef",args.training)
-    training_abs = os.path.abspath(os.path.join(calling_dir, args.training))
+
+    if args.training in ["clear-cache"]:
+        handle_special(args)
+    else:
+        training_abs = os.path.abspath(os.path.join(calling_dir, args.training))
     # args.training = os.path.abspath(os.path.join(calling_dir,args.training))
     # print("TRAINING af",args.training)
     # print("TRAINING app",apply_wd(args.training))

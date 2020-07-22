@@ -292,7 +292,7 @@ export default class ALReactInterface extends React.Component {
           <View style={styles.overlay}>
             <Spinner
               color={'#000000'}
-              size={100}
+              size={150}
               visible={true}
               textContent={'Loading...'}
               textStyle={styles.spinnerTextStyle}
