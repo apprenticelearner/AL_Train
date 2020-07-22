@@ -1,0 +1,27 @@
+{	
+	"set_params" : {
+		"interactive" : true,
+		"free_author" : true,
+		"tutor" : "Stylus",
+		"use_foci" : true,
+		"tutor_props" : {"mode" : "blarg"}
+	},
+	"training_set1" : [{
+		"agent_name":"myAgent1",
+		"agent_type":"ModularAgent",
+		"stay_active": true,
+      	"dont_save": true,
+      	"function_set" : ["Add","Add3","Mod10","Div10"],
+		"feature_set" : [],
+		"args": {
+			"search_depth" : 2,
+			"when_learner": "decisiontree",
+			"planner" : "vectorized"
+		},
+		"problem_set" : [
+			{
+			"repetitions":-1
+			}
+		]
+	}]
+}
