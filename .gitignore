@@ -8,6 +8,7 @@ net.conf
 *.prof
 alhtml.egg-info
 altrain.egg-info
+al_train.egg-info
 
 examples/INFO
 examples/DEBUG
