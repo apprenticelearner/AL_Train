@@ -93,7 +93,7 @@ export default class NetworkLayer {
 
     var out = null;
     if (feedback_map && Object.keys(feedback_map).length > 0) {
-      out = new Promise()
+      out = new Promise((resolve)=>{resolve(null)})
       // var skill_applications_subset = []
       // var rewards = []
       var d_list = [];
