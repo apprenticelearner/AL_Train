@@ -41,12 +41,12 @@
 				"examples_only" : false}
 			},
 
-	 		{"question_file" : "../training/1-3_plus_4-9.brd"},
-	 		{"question_file" : "../training/1-4_plus_2-5.brd"},
-	 		{"question_file" : "../training/1-4_plus_2-6.brd"},
-	 		{"question_file" : "../training/1-4_plus_2-7.brd"},
-	 		{"question_file" : "../training/1-5_plus_4-6.brd"},
-	 		{"question_file" : "../training/1-6_plus_2-6.brd"}
+			{"question_file": "../training/AD 1_2_plus_2_3.brd"},
+			{"question_file": "../training/AD 1_4_plus_4_5.brd"},
+			{"question_file": "../training/AS 11_2_plus_3_2.brd"},
+			{"question_file": "../training/AS 3_7_plus_4_7.brd"},
+			{"question_file": "../training/M 2_3_times_1_2.brd"},
+			{"question_file": "../training/M 3_10_times_4_5.brd"}
 
 		]
 	},
@@ -68,22 +68,22 @@
 			{"README" : "If you want to explictly name the HTML each time that's fine too.",
 				
 			"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-3_plus_4-9.brd"},
+			"question_file": "../training/AD 1_2_plus_2_3.brd"},
 
 	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-4_plus_2-5.brd"},
+			"question_file": "../training/AD 1_4_plus_4_5.brd"},
 
 	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-4_plus_2-6.brd"},
+			"question_file": "../training/AS 11_2_plus_3_2.brd"},
 
 	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-4_plus_2-7.brd"},
+			"question_file": "../training/AS 3_7_plus_4_7.brd"},
 
 	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-5_plus_4-6.brd"},
+			"question_file": "../training/M 2_3_times_1_2.brd"},
 
 	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-	 		"question_file" : "../training/1-6_plus_2-6.brd"}
+			"question_file": "../training/M 3_10_times_4_5.brd"}
 
 		]
 	}
