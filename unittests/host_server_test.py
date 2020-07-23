@@ -184,14 +184,17 @@ def log_test(self,sleep_interval):
         os.remove(log_path)
 
     print(sys.executable)
-    print(" ".join([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path]))
-    with open('log/term_out.txt', "w") as outfile:
-      # host_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=sys.stdout)#stdout=subprocess.PIPE)#
-      host_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    print(" ".join([sys.executable, os.path.join("../al_hostserver", "host_server.py") , str(port), log_path]))
+    # with open('log/term_out.txt', "w") as outfile:
+    host_process = subprocess.Popen([sys.executable, os.path.join("../al_hostserver", "host_server.py") , str(port), log_path],stdout=subprocess.PIPE)#
+    # host_process = subprocess.Popen([sys.executable, os.path.join("../src", "host_server.py") , str(port), log_path],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     # sleep(3)
     while True:
         line = host_process.stdout.readline()
+        if(line != b''):
+          print("->", line)
         if("HOST SERVER STARTED" in str(line)):
+            print("started!")
             break
     
     session_id = 0 
