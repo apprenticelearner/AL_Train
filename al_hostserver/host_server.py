@@ -331,6 +331,15 @@ def reset_write_timer(session_id, context_id):
     sd[context_id] = wt
     write_timers[session_id] = sd
     timer_lock.release()
+
+def start_write_timer(session_id, context_id):
+    global write_timers
+    global timer_lock
+    with timer_lock:
+        timer = write_timers[session_id][context_id]
+        if(not timer.is_alive()):
+            timer.start()
+
     
 #####################
 def handle_post(post_data,T):
@@ -395,7 +404,8 @@ def handle_post(post_data,T):
                 # assign_message_dict(c_dict, 'tool', tool_dict['Transaction Id'], tool_dict)
                 c_dict['tool'][tool_dict['Transaction Id']] = tool_dict
 
-                with timer_lock: write_timers[session_id][context_id].start()
+                # with timer_lock: write_timers[session_id][context_id].start()
+                start_write_timer(session_id,context_id)
                 
 
             ## TUTOR MESSAGES
@@ -414,7 +424,7 @@ def handle_post(post_data,T):
                 assign_time(c_dict,log_dict,T)
                 # assign_message_dict(c_dict, 'tutor', log_dict['Transaction Id'], log_dict)
                 c_dict['tutor'][log_dict['Transaction Id']] = log_dict
-                with timer_lock: write_timers[session_id][context_id].start()
+                start_write_timer(session_id,context_id)
                 # if(sel == "done" and log_dict.get("Outcome",None) == "CORRECT"):
                 #     timer = threading.Timer(WRITE_WAIT_TIME,lambda :write_queue.put((session_id,context_id)))
                 #     timer.start()

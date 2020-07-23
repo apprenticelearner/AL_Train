@@ -893,7 +893,8 @@ class CTAT_Tutor extends React.Component {
     use_class = true,
     use_id = true,
     append_ele = false,
-    numeric_values = false
+    numeric_values = false,
+    clear_editable_values = true,
   } = {}) {
     var relative_pos_cache = this.relative_pos_cache;
     var HTML_PATH = this.HTML_PATH;
@@ -940,6 +941,10 @@ class CTAT_Tutor extends React.Component {
             }
             obj["contentEditable"] =
               element.firstElementChild.contentEditable == "true";
+
+            if(clear_editable_values && obj["contentEditable"]){
+              obj['value'] = ""
+            }
             // obj["name"] = element.id
           }else if(checkTypes(element, ["CTATButton"])){
             obj['type'] = "Button"
