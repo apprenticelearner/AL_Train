@@ -111,7 +111,8 @@ app = HostServer(__name__,static_folder=".")#,root_path=os.getcwd())
 
 
 # output.write("Anon Student Id\tSession Id\tTime\tStudent Response Type\tTutor Response Type\tLevel (Unit)\tProblemName\tStep Name\tSelection\tAction\tInput\tFeedback Text\tOutcome\n");
-LOG_HEADERS = {"user_guid"              :"Anon Student Id",
+LOG_HEADERS = {"problem_start_time"     :"Problem Start Time",
+               "user_guid"              :"Anon Student Id",
                "session_id"             :"Session Id",
                "transaction_id"         :"Transaction Id",
                "tutor_event_time"       :"Time",
@@ -127,13 +128,16 @@ LOG_HEADERS = {"user_guid"              :"Anon Student Id",
                "tutor_advice"           :"Feedback Text",
                "action_evaluation"      :"Outcome",
                "problem_context"        :"CF (Problem Context)",
+               "single_kc"              :"KC (Single-KC)",
                }
 
 session_default_dict =  {key: None for key in LOG_HEADERS.values()}
 output_file_path = None
 tool_dict = {}
 
-def _fill_from_elm(log_dict, elm,typ='tutor'):
+def _fill_from_elm(log_dict, elm,typ='tutor', date_time=None, timezone=None):
+    global GLOBAL_TICKER
+
     if(elm.tag == "custom_field"):
         name = next(elm.iter("name")).text
         if(name in LOG_HEADERS):
@@ -149,6 +153,8 @@ def _fill_from_elm(log_dict, elm,typ='tutor'):
         log_dict[LOG_HEADERS["selection"]] = next(elm.iter("selection")).text 
         log_dict[LOG_HEADERS["action"]] = next(elm.iter("action")).text 
         log_dict[LOG_HEADERS["input"]] = next(elm.iter("input")).text 
+
+        
     elif(elm.tag == "semantic_event"):
         rt = elm.attrib["name"]
         log_dict[LOG_HEADERS["transaction_id"]] = elm.attrib["transaction_id"]
@@ -169,6 +175,13 @@ def _fill_from_elm(log_dict, elm,typ='tutor'):
         problem = next(elm.iter("problem"))
         log_dict[LOG_HEADERS["problem_name"]] = next(problem.iter("name")).text 
         log_dict[LOG_HEADERS["problem_context"]] = next(problem.iter("context")).text 
+        log_dict[LOG_HEADERS["single_kc"]] = 'Single-KC'
+
+    elif(elm.tag == "context_message" and elm.attrib.get("name",None) == "START_PROBLEM"):
+        if(OVERRIDE_TIME):
+            log_dict[LOG_HEADERS['problem_start_time']] = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(GLOBAL_TICKER))#GLOBAL_TICKER * 1000
+        else:
+            log_dict[LOG_HEADERS['problem_start_time']] = date_time
 
     elif(elm.tag in LOG_HEADERS):
         log_dict[LOG_HEADERS[elm.tag]] = elm.text
@@ -308,7 +321,7 @@ def assign_time(context_dict,d,T):
     if('time' not in context_dict): context_dict['time'] = {}
     if(transaction_id not in context_dict['time']):
         context_dict['time'][transaction_id] = T
-    if(OVERRIDE_TIME): d['Time'] = GLOBAL_TICKER * 1000
+    if(OVERRIDE_TIME): d['Time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(GLOBAL_TICKER))#GLOBAL_TICKER * 1000
     context_data_lock.release()
 
 # def assign_message_dict(c_dict, typ, T,d):
@@ -364,6 +377,11 @@ def handle_post(post_data,T):
             session_dicts[session_id] = session_dict
 
         session_data_lock.release()
+
+        # for date_time in x.iter("date_time"):
+        date_time = x.attrib.get('date_time',None)
+        timezone = x.attrib.get('timezone',None)
+
         # print(minidom.parseString(ElementTree.tostring(x, encoding='utf8', method='xml')).toprettyxml())
 
         # print("TAG",x.tag)
@@ -381,7 +399,7 @@ def handle_post(post_data,T):
             for msg in payload.iter("context_message"):
                 context_id = msg.attrib['context_message_id']
                 context_dict = {}
-                _fill_from_elm(context_dict, msg)
+                _fill_from_elm(context_dict, msg, 'context', date_time, timezone)
                 for elm in list(msg):
                     _fill_from_elm(context_dict,elm)
 
