@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         backgroundColor: 'rgba(50, 50, 50, 0.3)',
-        flex: 1,
+        flex: "100%",
         justifyContent: "center",
         alignItems: "center"
       },
@@ -343,11 +343,19 @@ const styles = StyleSheet.create({
         textAlign: 'center',
       },
 	     container : {
+        // flex : 0,
+        height : "100%",
+        width : "100%",
+        display : "flex",
+        alignItems : 'stretch',
+        overflow: "hidden",
         // justifyContent: "stretch",
         // padding: 20,
-        // alignItems:'center',
+        // alignItems:'stretch',
         // backgroundColor: "blue",
-        flex: 1,
+        // flex: "100%",
+        flexGrow: 1,
+        // flex:100,
         flexDirection: "column",
         // flexWrap: "wrap"
       },
@@ -361,14 +369,17 @@ const styles = StyleSheet.create({
         // width:800,
         // height: vh(64),
         // flexGrow: 100,
+        flex: 65,
         margin: 4,
-        flexBasis: "65%",
-        flex: 1,
+        // flex: 1,
+        // flexBasis: 65,
+        
+        
         
 
       },
       prompt : {
-        flex: 1,
+        flex: 100,
         textAlign : "center"
       },
       controls :{
@@ -376,10 +387,12 @@ const styles = StyleSheet.create({
       	// flexGrow: 1,
       	// flexBasis: 300,
         // display: "flex",
-        // height : "35%",
-        flex: 1,
-        flexBasis: "35%",
+        maxHeight : "35%",
+        flex: 35,
+        // flexBasis: .35,
         flexDirection: "row",
+        alignItems: "stretch",
+
         // flexWrap: "wrap",
         // width : 600,
         // flexGrow: 1,
@@ -392,8 +405,8 @@ const styles = StyleSheet.create({
       	// width: "65%",
       	// height: 300,
         // height: vh(35),
-        flex : 1,
-        flexBasis: "60%",
+        flex : 60,
+        // flexBasis: .60,
         // flexGrow : 0
         // flexDirection: "row",
         // flexShrink: 1,
@@ -404,14 +417,18 @@ const styles = StyleSheet.create({
       
 
       buttons : {
-        flexGrow: 1,
+        // flexGrow: 1,
         // display: "flex",
         // width : 1000,
         // flexBasis: 2,
+        flex : 40,
         flexDirection: "column",
         // height: vh(35),
         // width: "35%",
-        flexBasis : "40%",
+        // flexBasis : .40,
+        // flexBasis : 40,
+        // flexShrink : 0 0 "40%",
+        
         /*width:300px;*/
         // flexWrap: "wrap",
         justifySelf : "space-around",

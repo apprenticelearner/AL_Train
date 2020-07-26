@@ -98,7 +98,7 @@ load_training_file(props.training_file).then(function(training_json) {
       ref={app => {
         window.react_interface = app;
       }}
-      style={{ height: "100%" }}
+      //style={{ height: "100%", width : "100%" }}
       //tutorClass={tutor_map[props.tutor] || StylusTutor}
       //tutorClass={tutor_map[props.tutor]}
       tutorClass={tutorClass}
