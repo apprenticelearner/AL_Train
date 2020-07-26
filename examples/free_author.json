@@ -14,7 +14,7 @@
 		"agent_type":"ModularAgent",
 		"args": {
 			"search_depth" : 3,
-			"when_learner": "versionspace",
+			"where_learner": "versionspace",
 			"when_learner": "decisiontree",
 			"planner" : "numba",
 			"when_args" : {"cross_rhs_inference" : "none"},
