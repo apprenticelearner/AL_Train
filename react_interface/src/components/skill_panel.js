@@ -326,31 +326,28 @@ class SkillPanel extends Component{
 
           </View>
 
+          <View style={liststyles.skill_info}>  
+		      
+            
+  		        <Panel title="How"
+  		        	   collapsedHeight={this.props.collapsedHeight.how}>
+  		          <Text>{this.state.selected_skill && this.state.selected_skill.how}</Text>
+  		        </Panel>
+  		        <Panel title="Where"
+  		        	   collapsedHeight={this.props.collapsedHeight.where}>
+  		          <Text>{this.state.selected_skill && JSON.stringify(this.state.selected_skill.where, null, 2)}</Text>
+  		        </Panel>
+  		        <Panel title="When"
+  		        	   collapsedHeight={this.props.collapsedHeight.when}>
+  		          <Text>{this.state.selected_skill && this.state.selected_skill.when}</Text>
+  		        </Panel>
+  		        <Panel title="Which"
+  		        	   collapsedHeight={this.props.collapsedHeight.which}>
+  		          <Text>{this.state.selected_skill && this.state.selected_skill.which}</Text>
+		        </Panel>
           
-		      <ScrollView style={liststyles.skill_info}
-		                 showsVerticalScrollIndicator={true}
-		                 
-		                 // contentInset= {{top: 20, left: 20, bottom: 0, right: 20}}
-		                 >
-		        <Panel title="How"
-		        	   collapsedHeight={this.props.collapsedHeight.how}>
-		          <Text>{this.state.selected_skill && this.state.selected_skill.how}</Text>
-		        </Panel>
-		        <Panel title="Where"
-		        	   collapsedHeight={this.props.collapsedHeight.where}>
-		          <Text>{this.state.selected_skill && JSON.stringify(this.state.selected_skill.where, null, 2)}</Text>
-		        </Panel>
-		        <Panel title="When"
-		        	   collapsedHeight={this.props.collapsedHeight.when}>
-		          <Text>{this.state.selected_skill && this.state.selected_skill.when}</Text>
-		        </Panel>
-		        <Panel title="Which"
-		        	   collapsedHeight={this.props.collapsedHeight.which}>
-		          <Text>{this.state.selected_skill && this.state.selected_skill.which}</Text>
-		        </Panel>
 
-		      </ScrollView>
-          
+          </View>  
 
 
 
@@ -364,9 +361,11 @@ class SkillPanel extends Component{
 const skillbox_styles = StyleSheet.create({
   content: {
     // "display": "flex",
-    flex : 1,
+    // flex : 1,
+    alignItems: "stretch",
+    flexGrow: 1,
 
-    // "height" : "100%",
+    "maxHeight" : "100%",
     // "flexDirection":"row-reverse",
     "flexDirection":"row",
     
@@ -375,19 +374,27 @@ const skillbox_styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 0.5,
     borderColor: '#d6d7da',
+    // overflow : "hidden",
     
   },
 });
 
 const liststyles = StyleSheet.create({
   skill_list: {
-   flexBasis : 250,
+   // flexBasis : 250,
+   flex: 5,
    paddingTop: 10,
   },
   skill_info: {
-   flex: 1,
+   maxHeight : "100%",
+   flex: 5,
    paddingTop: 10,
+   overflowY: "scroll",
   },
+  //scroll_view: {
+    //height : "100%",
+    //overflowY: "scroll",
+  //},
   sectionHeader: {
     flexWrap: 'wrap',
     paddingTop: 6,

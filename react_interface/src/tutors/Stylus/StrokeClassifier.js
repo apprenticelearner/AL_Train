@@ -5,7 +5,7 @@ import BezierFit from './c_modules/bezier_fit/bezier_fit'
 
 const model_json = '/dist/danny_modeljs/model.json'
 
-var model_url = 'https://raw.githubusercontent.com/khluu/smartsheet/master/tfjs/model-4.json'
+var model_url = 'https://raw.githubusercontent.com/khluu/smartsheet/master/tfjs/model.json'
 
 const alphabet = ['!' ,'(' ,')', '+', ',', '-', '.', '/', '0', '1', '2', '3' ,'4', '5', '6', '7', '8', '9',
 '=' ,'A', 'B', 'C', 'E', 'F', 'G', 'H', 'I', 'L', 'M', 'N', 'P', 'R', 'S', 'T' ,'V', 'X',
@@ -40,7 +40,7 @@ export default class StrokeClassifier {
     })
     
     this.promise = Promise.all([tf_promise, this.BezierFit.promise, this.model_promise]).then(async () => {
-      this.model_promise = await tf.loadLayersModel(model_json).then((model) => {
+      this.model_promise = await tf.loadLayersModel(model_url).then((model) => {
       this.model = model
       })
     }).then(() => {

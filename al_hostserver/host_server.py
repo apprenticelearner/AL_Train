@@ -111,8 +111,7 @@ app = HostServer(__name__,static_folder=".")#,root_path=os.getcwd())
 
 
 # output.write("Anon Student Id\tSession Id\tTime\tStudent Response Type\tTutor Response Type\tLevel (Unit)\tProblemName\tStep Name\tSelection\tAction\tInput\tFeedback Text\tOutcome\n");
-LOG_HEADERS = {"problem_start_time"     :"Problem Start Time",
-               "user_guid"              :"Anon Student Id",
+LOG_HEADERS = {"user_guid"              :"Anon Student Id",
                "session_id"             :"Session Id",
                "transaction_id"         :"Transaction Id",
                "tutor_event_time"       :"Time",
@@ -121,6 +120,7 @@ LOG_HEADERS = {"problem_start_time"     :"Problem Start Time",
                "tutor_resp_type"        :"Tutor Response Type",
                "level"                  :"Level (Domain)",
                "problem_name"           :"Problem Name",
+               "problem_start_time"     :"Problem Start Time",
                "step_id"                :"Step Name",
                "selection"              :"Selection",
                "action"                 :"Action",
