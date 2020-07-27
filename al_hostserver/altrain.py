@@ -207,7 +207,12 @@ def dir_from_package(package_name):
 def clear_cache():
     from numbert.caching import cache_dir
     import shutil
-    shutil.rmtree(cache_dir)
+    shutil.rmtree(os.path.abspath(os.path.join(cache_dir,"../")))
+    import numba.typed
+    shutil.rmtree(os.path.join(os.path.dirname(numba.typed.__file__), "__pycache__"))
+    import numbert.caching
+    shutil.rmtree(os.path.join(os.path.dirname(numbert.caching.__file__), "__pycache__"))
+    # shutil.rmtree(os.path.abspath(os.path.join(cache_dir,"../../ipython/numba_cache")))
     print("Cache Cleared!")
 
 
