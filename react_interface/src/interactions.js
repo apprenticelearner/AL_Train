@@ -44,9 +44,12 @@ const appendStartHistory = assign({
 
 const stateRecalc = assign({
   state: (context, event) => {
+    console.log("BLARG",context.staged_SAI, context.test_mode)
     if (context.staged_SAI == null || context.staged_SAI.reward > 0 || context.test_mode) {
+      console.log("REDO")
       return context.tutor.getState();
     } else {
+      console.log("KEEP")
       return context.state;
     }
   }
@@ -218,7 +221,12 @@ function get_machine_actions(app) {
       applyNextExample: tutor.applyNextExample,
       attemptStagedSAI: tutor.attemptStagedSAI,
       queryApprentice: network_layer.queryApprentice,
-      checkApprentice: network_layer.checkApprentice
+      checkApprentice: network_layer.checkApprentice,
+      finalizeStartState:  (context, event) => {
+        console.log("Start finalizeStartState")
+        tutor.exitSetStartStateMode(context, event)
+        return Promise.resolve(true);
+      }
     },
     actions: {
       logError: logError,
@@ -428,11 +436,21 @@ var interactive_sm = {
       entry: "enterSetStartStateMode",
       on: {
         START_STATE_SET: {
-          target: "Querying_Apprentice",
+          target: "Finalizing_Start_State",
           actions: ["appendStartHistory"]
         }
       },
-      exit: ["exitSetStartStateMode", "stateRecalc"]
+      // exit: ["exitSetStartStateMode"]
+    },
+    Finalizing_Start_State: {
+      invoke :{
+        id: "finalizeStartState",
+        src: "finalizeStartState",
+        onDone: {
+          target : "Querying_Apprentice"
+        }      
+      },
+      exit : "stateRecalc"
     },
     Querying_Apprentice: {
       invoke: {

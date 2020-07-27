@@ -384,6 +384,7 @@ class CTAT_Tutor extends React.Component {
       // elm.firstChild.classList.remove("CTAT--AL_start");
       // console.log("BOOP",elm);
     }
+    console.log("FINISHED LOCKING");
     //Take away focus from whatever is there so it isn't treated as an example
     // document.activeElement.blur();
     // console.log("STAT",getState())
