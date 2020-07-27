@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
 
       },
       prompt : {
-        flex: 100,
+        flex: 35,
         textAlign : "center"
       },
       controls :{
