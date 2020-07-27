@@ -40,7 +40,7 @@
         "when_learner": "decisiontree",
         "where_learner": "MostSpecific",
         "planner": "numba",
-        "function_set": ["Add","Subtract","Multiply","Divide"],
+        "function_set": ["RipFloatValue","Add","Subtract","Multiply","Divide"],
             "feature_set": ["Equals"]
       },
       "problem_set": [
