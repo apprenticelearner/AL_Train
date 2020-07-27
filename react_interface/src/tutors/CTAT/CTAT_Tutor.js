@@ -673,6 +673,7 @@ class CTAT_Tutor extends React.Component {
       this.applyHint();
       var sai = this.getDefaultSAI();
       this.colorElement(sai.selection, "EXAMPLE");
+      this.lockElement(sai.selection)
       this.applySAI(sai);
       resolve({
         ...sai,
@@ -943,7 +944,7 @@ class CTAT_Tutor extends React.Component {
             obj["contentEditable"] =
               element.firstElementChild.contentEditable == "true";
 
-            if(clear_editable_values && obj["contentEditable"]){
+            if(clear_editable_values && obj["contentEditable"] == true){
               obj['value'] = ""
             }
             // obj["name"] = element.id
