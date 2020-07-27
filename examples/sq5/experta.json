@@ -3,25 +3,29 @@
 		"interactive" : true,
 		"free_author" : true,
 		"tutor" : "CTAT",
-		"use_foci" : true,
+		"use_foci" : false,
 		// "tutor_props" : {"mode" : "debug"}
 	},
 	"training_set1" : [{
 		"agent_name":"myAgent1",
-		"agent_type":"ModularAgent",
+		"agent_type":"ExpertaAgent",
 		"output_dir":"out/myAgent1",
 		"args": {
-			"search_depth" : 2,
-			"when_learner": "decisiontree",
-			"planner": "fo_planner",
-		},
-
+			"action_penalty": -0.0,
+			"prior_skills": {
+			  "update_field": true,
+			  "div10": true,
+			  "addOne": true,
+			  "append25": true,
+			  "multiply": true,
+			  "done": true
+			},
+			"request_epsilon": 0.3,
+			"train_epsilon": 0.3
+	        },
 		"stay_active": true,
 		"dont_save": true,
 		"no_ops_parse" : true,
-		
-		"feature_set" : [],
-		"function_set" : ["AddOne","Append25","Multiply","Div10"],
 
 		
 		"problem_set" : [

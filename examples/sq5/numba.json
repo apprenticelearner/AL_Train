@@ -10,19 +10,20 @@
 		"agent_name":"myAgent1",
 		"agent_type":"ModularAgent",
 		"output_dir":"out/myAgent1",
+
 		"args": {
-			"search_depth" : 2,
+			"search_depth" : 3,
 			"when_learner": "decisiontree",
-			"planner": "fo_planner",
+			"where_learner": "versionspace",
+			"planner": "numba",
+			"feature_set" : [],
+			"function_set" : ["RipFloatValue", "RipStrValue",
+				"AddOne","Append25","Multiply","Div10"],
 		},
 
 		"stay_active": true,
 		"dont_save": true,
 		"no_ops_parse" : true,
-		
-		"feature_set" : [],
-		"function_set" : ["AddOne","Append25","Multiply","Div10"],
-
 		
 		"problem_set" : [
 			{"set_params" : 
