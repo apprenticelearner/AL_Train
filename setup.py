@@ -7,7 +7,7 @@ long_description = '...need to add description'
   
 setup( 
         name ='al_train', 
-        version ='0.5.2', 
+        version ='0.5.6', 
         author ='Daniel Weitekamp', 
         author_email ='weitekamp@cmu.edu', 
         url ='https://github.com/apprenticelearner/AL_Train', 
