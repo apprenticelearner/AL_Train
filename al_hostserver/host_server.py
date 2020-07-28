@@ -173,7 +173,7 @@ def _fill_from_elm(log_dict, elm,typ='tutor', date_time=None, timezone=None):
             elm = level
 
         problem = next(elm.iter("problem"))
-        log_dict[LOG_HEADERS["problem_name"]] = next(problem.iter("name")).text 
+        log_dict[LOG_HEADERS["problem_name"]] = os.path.basename(next(problem.iter("name")).text)
         log_dict[LOG_HEADERS["problem_context"]] = next(problem.iter("context")).text 
         log_dict[LOG_HEADERS["single_kc"]] = 'Single-KC'
 
