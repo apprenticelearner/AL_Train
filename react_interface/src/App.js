@@ -45,7 +45,7 @@ import { TouchableHighlight,ScrollView,View, Text, Platform, StyleSheet,SectionL
 
 // var urlParams = new URLSearchParams(window.location.search);
 // var AL_URL = urlParams.get('al_url');
-// var HOST_URL = window.location.origin
+// var HOST_URL = window.location.origins
 // window.network_layer = new NetworkLayer(AL_URL,HOST_URL)
 
 // ctat_state_machine_service.onTr
@@ -200,7 +200,7 @@ export default class ALReactInterface extends React.Component {
 
   }
 
-  generateBehaviorProfile(ground_truth_path="/ground_truth.json",out_dir=""){
+  generateBehaviorProfile(ground_truth_path="/al_train/ground_truth.json",out_dir=""){
     // window.generateBehaviorProfile = (ground_truth_path,out_dir="") => {
     let f = this.network_layer.generateBehaviorProfile
 
