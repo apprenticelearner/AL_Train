@@ -200,7 +200,7 @@ export default class ALReactInterface extends React.Component {
 
   }
 
-  generateBehaviorProfile(ground_truth_path="/ground_truth.json",out_dir=""){
+  generateBehaviorProfile(ground_truth_path="/al_train/ground_truth.json",out_dir=""){
     // window.generateBehaviorProfile = (ground_truth_path,out_dir="") => {
     let f = this.network_layer.generateBehaviorProfile
 
