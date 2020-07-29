@@ -933,6 +933,7 @@ class CTAT_Tutor extends React.Component {
             checkTypes(element, [
               "CTATTextInput",
               "CTATComboBox",
+              "CTATTextArea",
               "CTATTable--cell"
             ])
           ) {
@@ -945,12 +946,26 @@ class CTAT_Tutor extends React.Component {
               element.firstElementChild.contentEditable == "true";
 
             if(clear_editable_values && obj["contentEditable"] == true){
-              obj['value'] = ""
+              obj['value'] = "";
             }
             // obj["name"] = element.id
-          }else if(checkTypes(element, ["CTATButton"])){
-            obj['type'] = "Button"
           }
+          if(checkTypes(element, ["CTATButton"])){
+            obj['type'] = "Button";
+          }
+
+          if(checkTypes(element, ["CTATButton", "CTATCheckBox", "CTATRadioButton"])) {
+            obj['label'] = element.getAttribute("data-ctat-label");
+          }
+
+          if(checkTypes(element, ["CTATCheckBox", "CTATRadioButton"])) {
+            obj['groupName'] = element.firstElementChild.getAttribute("name");
+          }
+
+          if(checkTypes(element, ["CTATTextArea"])){
+            obj['type'] = "TextArea";
+          }
+
           // if(checkTypes(element, ["CTATTextField", "CTATComboBox"])){
           //  obj["textContent"] = element.textContent;
           // }

@@ -20,72 +20,80 @@
         <text>widget_demo</text>
         <uniqueID>1</uniqueID>
         <dimension>
-            <x>276</x>
-            <y>30</y>
+            <x>422</x>
+            <y>24</y>
         </dimension>
     </node>
     <node locked="false" doneState="false">
         <text>state1</text>
         <uniqueID>2</uniqueID>
         <dimension>
-            <x>300</x>
-            <y>140</y>
+            <x>373</x>
+            <y>137</y>
         </dimension>
     </node>
     <node locked="false" doneState="false">
         <text>state2</text>
         <uniqueID>3</uniqueID>
         <dimension>
-            <x>300</x>
-            <y>250</y>
+            <x>373</x>
+            <y>247</y>
         </dimension>
     </node>
     <node locked="false" doneState="false">
         <text>state3</text>
         <uniqueID>4</uniqueID>
         <dimension>
-            <x>300</x>
-            <y>360</y>
+            <x>373</x>
+            <y>357</y>
         </dimension>
     </node>
     <node locked="false" doneState="false">
         <text>state4</text>
         <uniqueID>5</uniqueID>
         <dimension>
-            <x>300</x>
-            <y>470</y>
+            <x>373</x>
+            <y>467</y>
         </dimension>
     </node>
     <node locked="false" doneState="false">
         <text>state5</text>
         <uniqueID>6</uniqueID>
         <dimension>
-            <x>300</x>
-            <y>580</y>
+            <x>373</x>
+            <y>577</y>
         </dimension>
     </node>
     <node locked="false" doneState="false">
         <text>state6</text>
         <uniqueID>7</uniqueID>
         <dimension>
-            <x>300</x>
-            <y>690</y>
+            <x>373</x>
+            <y>687</y>
         </dimension>
     </node>
     <node locked="false" doneState="false">
         <text>state7</text>
         <uniqueID>8</uniqueID>
         <dimension>
-            <x>300</x>
-            <y>800</y>
+            <x>373</x>
+            <y>797</y>
         </dimension>
     </node>
     <node locked="false" doneState="true">
         <text>Done</text>
         <uniqueID>9</uniqueID>
         <dimension>
-            <x>303</x>
-            <y>910</y>
+            <x>376</x>
+            <y>907</y>
+        </dimension>
+    </node>
+    <node locked="false" doneState="false">
+        <text>state9</text>
+        <uniqueID>10</uniqueID>
+        <dimension>
+            <x>503</x>
+            <y>134</y>
         </dimension>
     </node>
     <edge>
@@ -566,6 +574,66 @@
         </rule>
         <sourceID>8</sourceID>
         <destID>9</destID>
+        <traversalCount>0</traversalCount>
+    </edge>
+    <edge>
+        <actionLabel preferPathMark="false" minTraversals="1" maxTraversals="1">
+            <studentHintRequest></studentHintRequest>
+            <stepSuccessfulCompletion></stepSuccessfulCompletion>
+            <stepStudentError></stepStudentError>
+            <uniqueID>20</uniqueID>
+            <message>
+                <verb>NotePropertySet</verb>
+                <properties>
+                    <MessageType>InterfaceAction</MessageType>
+                    <transaction_id>5b4e03d3-f3be-d318-bad6-d6bbce0f2f11</transaction_id>
+                    <Selection>
+                        <value>checkBoxGroup</value>
+                    </Selection>
+                    <Action>
+                        <value>UpdateCheckBox</value>
+                    </Action>
+                    <Input>
+                        <value>Free Check: true</value>
+                    </Input>
+                </properties>
+            </message>
+            <buggyMessage>No, this is not correct.</buggyMessage>
+            <successMessage></successMessage>
+            <hintMessage>Please provide your answer 'Free Check: true' in the highlighted element.</hintMessage>
+            <callbackFn></callbackFn>
+            <actionType>Correct Action</actionType>
+            <oldActionType>Correct Action</oldActionType>
+            <checkedStatus>Never Checked</checkedStatus>
+            <matchers Concatenation="true">
+                <Selection>
+                    <matcher>
+                        <matcherType>ExactMatcher</matcherType>
+                        <matcherParameter name="single">checkBoxGroup</matcherParameter>
+                    </matcher>
+                </Selection>
+                <Action>
+                    <matcher>
+                        <matcherType>ExactMatcher</matcherType>
+                        <matcherParameter name="single">UpdateCheckBox</matcherParameter>
+                    </matcher>
+                </Action>
+                <Input>
+                    <matcher>
+                        <matcherType>ExactMatcher</matcherType>
+                        <matcherParameter name="single">Free Check: true</matcherParameter>
+                    </matcher>
+                </Input>
+                <Actor linkTriggered="false">Student</Actor>
+            </matchers>
+        </actionLabel>
+        <preCheckedStatus>No-Applicable</preCheckedStatus>
+        <rule>
+            <text>unnamed</text>
+            <indicator>-1</indicator>
+        </rule>
+        <sourceID>1</sourceID>
+        <destID>10</destID>
         <traversalCount>0</traversalCount>
     </edge>
     <EdgesGroups ordered="true"></EdgesGroups>
