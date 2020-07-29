@@ -1,0 +1,24 @@
+{	
+	},//THIS IS A COMMENT
+	"training_set1" : [
+		{
+      "agent_name":"test_Numba_ModularAgent",
+      "agent_type":"ModularAgent",
+      "args": {
+        "search_depth" : 2,
+        "when_learner": "decisiontree",
+        "where_learner": "MostSpecific",
+        "planner": "numba",
+        "function_set": ["RipFloatValue","Add","Subtract","Multiply","Divide"],
+            "feature_set": ["Equals"]
+      },
+      "problem_set": [
+        {"set_params": 
+          {"HTML": "aldemo/HTML/widgettest.html",
+          "examples_only": false}
+        },
+	{"question_file": "../training/widget_demo.brd"},
+      ]
+    },
+	]
+}
