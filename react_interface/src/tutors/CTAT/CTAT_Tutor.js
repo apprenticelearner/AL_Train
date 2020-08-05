@@ -937,7 +937,6 @@ class CTAT_Tutor extends React.Component {
               "CTATTable--cell"
             ])
           ) {
-            obj['type'] = "TextField"
             obj["value"] = element.firstElementChild.value;
             if (numeric_values) {
               obj["value"] = Number(obj["value"]) || obj["value"];
@@ -950,9 +949,7 @@ class CTAT_Tutor extends React.Component {
             }
             // obj["name"] = element.id
           }
-          if(checkTypes(element, ["CTATButton"])){
-            obj['type'] = "Button";
-          }
+
 
           if(checkTypes(element, ["CTATButton", "CTATCheckBox", "CTATRadioButton"])) {
             obj['label'] = element.getAttribute("data-ctat-label");
@@ -962,8 +959,24 @@ class CTAT_Tutor extends React.Component {
             obj['groupName'] = element.firstElementChild.getAttribute("name");
           }
 
+          if (checkTypes(element, ["CTATTextInput","CTATTable--cell"])) {
+            obj['type'] = "TextField";
+          }
+
+          if(checkTypes(element, ["CTATButton"])){
+            obj['type'] = "Button";
+          }
+
           if(checkTypes(element, ["CTATTextArea"])){
             obj['type'] = "TextArea";
+          }
+
+          if(checkTypes(element, ["CTATCheckBox"])) {
+            obj['type'] = "CheckBox";
+          }
+
+          if(checkTypes(element, ["CTATRadioButton"])) {
+            obj['type'] = "RadioButton";
           }
 
           // if(checkTypes(element, ["CTATTextField", "CTATComboBox"])){
@@ -971,7 +984,7 @@ class CTAT_Tutor extends React.Component {
           // }
 
           if (checkTypes(element, ["CTATComboBox"])) {
-            obj['type'] = "ComboBox"
+            obj['type'] = "ComboBox";
             // if(element.options){
             //Probably not the best
             var options = element.firstElementChild.options;
