@@ -1,0 +1,8 @@
+scipy
+pytest
+pytest-benchmark
+coverage
+flake8
+coveralls
+apprentice @ git+https://github.com/apprenticelearner/AL_Core
+torch

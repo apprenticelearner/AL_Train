@@ -1,0 +1,4 @@
+sphinx
+sphinx-rtd-theme
+apprentice @ git+https://github.com/apprenticelearner/AL_Core
+torch
