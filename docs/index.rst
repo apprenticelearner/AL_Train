@@ -4,11 +4,7 @@
    :maxdepth: 2
    :caption: Contents:
 
-   agents.rst
-   learners.rst
-   planners.rst
-   working_memory.rst
-   
+   altrain.rst
 
 
 Indices and tables
