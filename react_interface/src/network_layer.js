@@ -82,69 +82,10 @@ export default class NetworkLayer {
     ).then(res => res.json());
   }
 
-  sendFeedback(context, event) {
-    console.log("sendFeedback");
-    if (context.staged_SAI === null) {
-      console.error("cannot give feedback on no action.");
-    }
-
-    const skill_applications = context.skill_applications;
-    const feedback_map = context.feedback_map;
-
-    var out = null;
-    if (feedback_map && Object.keys(feedback_map).length > 0) {
-      out = new Promise((resolve)=>{resolve(null)})
-      // var skill_applications_subset = []
-      // var rewards = []
-      var d_list = [];
-      for (var index in feedback_map) {
-        var skill_app = skill_applications[index];
-        // skill_applications_subset.push({
-        var data = {
-          state: context.state,
-	  next_state: context.tutor.getState(),
-          selection: skill_app["selection"],
-          action: skill_app["action"],
-          inputs: skill_app["inputs"],
-          foci_of_attention: skill_app["foci_of_attention"],
-          rhs_id: skill_app["rhs_id"],
-          mapping: skill_app["mapping"],
-          reward: feedback_map[index].toLowerCase() == "correct" ? 1 : -1
-        };
-        if (context.interactive) {
-          data["add_skill_info"] = true;
-        }
-        // if(out == null){
-        //   out = this.sendTrainingData(d_list, context.agent_id);
-        // }else{
-
-        // }
-
-        // d_list.push(data);
-        // if(out != null){
-        out = out.then((resp)=>this.sendTrainingData(data,context.agent_id))
-
-        console.log("BLEEP",this.OUTER_LOOP_URL, context.outer_loop_controller)
-        if(this.OUTER_LOOP_URL){
-          out = out.then((resp)=>
-            this.updateOuterLoopController(data, context)
-          )
-        }
-        		 // .then(()=>sleep(10))
-        // }else{
-        // 	out = this.sendTrainingData(data,context.agent_id)
-        // }
-      }
-      // out = this.sendTrainingData(d_list, context.agent_id);
-
-      // if(data.reward == null && context.reward != null){
-      // 	data.reward = context.reward
-      // }
-    } else {
-      var skill_app = context.staged_SAI;
-      var data = {
+  _pack_feedback_data(skill_app,context){
+    var data = {
         state: context.state,
-	next_state: context.tutor.getState(),
+        next_state: context.tutor.getState(),
         selection: skill_app["selection"],
         action: skill_app["action"],
         inputs: skill_app["inputs"],
@@ -153,17 +94,53 @@ export default class NetworkLayer {
         mapping: skill_app["mapping"],
         reward: skill_app["reward"]
       };
+    console.log("DATA", data,skill_app)
+    return data
+  }
+
+  sendFeedback(context, event) {
+    console.log("sendFeedback", context.staged_SAI);
+    
+
+    const skill_applications = context.skill_applications;
+    const feedback_map = context.feedback_map;
+    console.log("?MULTI?",skill_applications,feedback_map)
+
+    if (context.staged_SAI === null && context.skill_applications === null) {
+      console.error("cannot give feedback on no action.");
+    }
+
+    var out = new Promise((resolve)=>{resolve(null)})
+    var d_list = [];
+    for (var skill_app of skill_applications) {
+      var data = this._pack_feedback_data(skill_app,context);
+      
       if (context.interactive) {
         data["add_skill_info"] = true;
       }
-      out = this.sendTrainingData(data, context.agent_id);
-      console.log("BLEEP",this.OUTER_LOOP_URL, context)
-      if(this.OUTER_LOOP_URL && context.outer_loop_controller){
+
+      out = out.then((resp)=>this.sendTrainingData(data,context.agent_id))
+
+      if(this.OUTER_LOOP_URL){
         out = out.then((resp)=>
           this.updateOuterLoopController(data, context)
         )
       }
     }
+    // } else {
+    //   var skill_app = context.staged_SAI;
+    //   var data = this._pack_feedback_data(skill_app,context)
+    //   if (context.interactive) {
+    //     data["add_skill_info"] = true;
+    //   }
+    //   out = this.sendTrainingData(data, context.agent_id);
+    //   console.log("BLEEP",this.OUTER_LOOP_URL, context)
+    //   if(this.OUTER_LOOP_URL && context.outer_loop_controller){
+    //     out = out.then((resp)=>
+    //       this.updateOuterLoopController(data, context)
+    //     )
+    //   }
+    // }
 
     return out;
   }

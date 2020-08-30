@@ -1,6 +1,8 @@
 import React from "react";
 import WebView from "react-native-web-webview";
 import autobind from "class-autobind";
+import deep_equal from 'fast-deep-equal'
+
 
 // import WebViewFile from '../../examples/FracPreBake/FractionArithmetic/HTML/fraction_arithmetic.html';
 import {
@@ -175,18 +177,24 @@ class CTAT_Tutor extends React.Component {
         : { question_file: "/host/empty.nools" };
 
       console.log("qf", qf, interactive, prob_obj);
-      if (!interactive && qf["question_file"].includes(".nools")) {
-        console.log("BAD QF", qf["question_file"])
-        nl.kill_this(
-          "Got question_file: '" + qf["question_file"] + "'. Question file cannot be nools in non-interactive mode. Use example tracing."
-        );
+      var qf_type = null;
+      if(qf["question_file"].endsWith(".brd")){qf_type = 'brd'}
+      if(qf["question_file"].endsWith(".nools")){qf_type = 'nools'}
+      if(qf_type == null){
+        nl.kill_this("Unexpected question file extension " + qf['question_file'] + "expected .nools or .brd")
       }
+      // if (!interactive && qf["question_file"].includes(".nools")) {
+      //   console.log("BAD QF", qf["question_file"])
+      //   nl.kill_this(
+      //     "Got question_file: '" + qf["question_file"] + "'. Question file cannot be nools in non-interactive mode. Use example tracing."
+      //   );
+      // }
 
       this.problem_obj = prob_obj
       var logging_params = {
         problem_name: BRD_name,
         dataset_level_name1: domain_name,
-        dataset_level_type1: "Domain",
+        dataset_level_type1: "Domain",  
         SessionLog: "true",
         Logging: "ClientToLogServer",
         log_service_url: window.location.origin,
@@ -218,6 +226,7 @@ class CTAT_Tutor extends React.Component {
       this.setState({
         source: { uri: source },
         onLoad: this._triggerWhenInitialized,
+        qf_type: qf_type,
         // TODO: [nr] convert elements to string?
         steps: prob_obj["only_step_ids"] ? prob_obj["only_step_ids"].flat() : null,
         selections: prob_obj["only_Selections"]
@@ -290,6 +299,7 @@ class CTAT_Tutor extends React.Component {
     this.graph = iframe_content.CTAT.ToolTutor.tutor.getGraph() || false;
     this.commLibrary = iframe_content.CTATCommShell.commShell.getCommLibrary();
     this.hasConfig = iframe_content.CTATConfiguration != undefined;
+    this.tracer = iframe_content.globalTracerRef || false
 
     // console.log("graph")
     // console.log(graph)
@@ -298,7 +308,7 @@ class CTAT_Tutor extends React.Component {
     // console.log(hasConfig)
 
     if (
-      (this.graph || this.interactive) &&
+      (this.graph || this.interactive || this.tracer) &&
       this.commLibrary &&
       this.hasConfig
     ) {
@@ -324,6 +334,8 @@ class CTAT_Tutor extends React.Component {
         iframe_content.CTAT.Component.Base.Tutorable.EventType.incorrect;
       this.CTAT_ACTION =
         iframe_content.CTAT.Component.Base.Tutorable.EventType.action;
+      this.CTAT_UNGRADED =
+        iframe_content.CTAT.Component.Base.Tutorable.EventType.ungraded;
 
       console.log("CTAT INITIALIZED!");
       this.init_callback(this);
@@ -452,32 +464,9 @@ class CTAT_Tutor extends React.Component {
     }
   }
 
-  printFeedback(context, event) {
-    var nl = context.network_layer;
-    var staged_SAI = context.staged_SAI;
-
-    var type = context.action_type;
-    // var reward = staged_SAI.reward
-    if (!context.feedback_map || Object.keys(context.feedback_map).length === 0) {
-      if (type == "ATTEMPT") {
-        type = staged_SAI.reward > 0 ? "CORRECT" : "INCORRECT";
-      }
-
-      // var color = color_map[type]
-      var inps =
-        staged_SAI.inputs["value"] != null ? staged_SAI.inputs["value"] : "";
-
-      nl.term_print(type + ": " + staged_SAI.selection + " -> " + inps, type);
-    } else {
-      for (var index in context.feedback_map) {
-        var skill_app = context.skill_applications[index];
-        var type = context.feedback_map[index].toUpperCase();
-        // var color = color_map[type]
-        var inps =
-          skill_app.inputs["value"] != null ? skill_app.inputs["value"] : "";
-        nl.term_print(type + ": " + skill_app.selection + " -> " + inps, type);
-      }
-    }
+  reprSkillApplication(skill_app){
+    var value = skill_app.inputs["value"] != null ? skill_app.inputs["value"] : "";
+    return skill_app.selection + " -> " + value
   }
 
   _done_clicked_example(evt) {
@@ -668,10 +657,10 @@ class CTAT_Tutor extends React.Component {
     return promise;
   }
   applyNextExample(context, event) {
-    const promise = new Promise((resolve, reject) => {
+    const promise = new Promise(async (resolve, reject) => {
       // try{
       this.applyHint();
-      var sai = this.getDefaultSAI();
+      var sai = await this.getDefaultSAI();
       this.colorElement(sai.selection, "EXAMPLE");
       this.lockElement(sai.selection)
       this.applySAI(sai);
@@ -685,6 +674,43 @@ class CTAT_Tutor extends React.Component {
       //   }
     });
     return promise;
+  }
+  compareConflictSets(context, event){
+    const promise = new Promise(async (resolve, reject) => {
+      var conflict_set = await this.getConflictSet();
+      console.log("YEEEEEP", conflict_set, context)
+
+      var skill_applications = []
+      for (var skill_app of conflict_set){
+        skill_app['reward'] = 1
+        skill_app['action_type'] = "EXAMPLE"
+        skill_app = this._cleanSAI(skill_app)
+        skill_applications.push(skill_app)  
+      }
+      
+      if(context.response && context.response.length > 0){
+        for(var resp of context.response){
+          var matches_any = false
+          for (var skill_app of skill_applications){
+            if(skill_app['selection'] === resp['selection'] &&
+               skill_app['action'] === resp['action'] &&
+               deep_equal(skill_app['inputs'],resp['inputs'])){
+              matches_any = true
+              skill_app['action_type'] = "ATTEMPT"
+              break
+            }
+          }
+          if(!matches_any){
+            resp['reward'] = -1
+            resp['action_type'] = "ATTEMPT"
+            skill_applications.push(resp)
+          }
+        }
+      }
+      console.log("SKL",skill_applications)
+      resolve({skill_applications:skill_applications})
+    });
+    return promise; 
   }
   //----------------------------------------------------
 
@@ -825,17 +851,65 @@ class CTAT_Tutor extends React.Component {
     }
   }
 
+  getAllNextSAIs() {  
+    console.log("NOODLE CABOOTLE")
+  }
+
+
+  getConflictSet() {
+    const promise = new Promise((resolve, reject) => {
+      const callback = (e) => {
+        var conflict_set = this.tracer.getFacts("ConflictSet")[0].conflict_set
+        resolve(conflict_set)
+      }
+      this.iframe_content.document.addEventListener(
+        this.CTAT_INCORRECT,
+        callback,
+        { once: true }
+      );
+      const CTATSAI = this.iframe_content.CTATSAI;
+      var sai_obj = new CTATSAI('done','nothin','nothin');
+      this.iframe_content.CTATCommShell.commShell.processComponentAction(
+        sai_obj,
+        true
+      );
+    })
+    return promise;
+  }
+
+  _cleanSAI(sai){
+    if(!('selection' in sai)){ sai['selection'] = sai['sel'] || null}    
+    if(!('inputs' in sai)){ sai['inputs'] = {'value' : sai['input'] || null}}
+    if(!('foci_of_attention' in sai)){ sai['foci_of_attention'] = sai['args'] || null} 
+    console.log("CLEAN!",sai)   
+    return sai
+  }
+
   getDefaultSAI() {
-    var sai = this.graph
-      .getExampleTracer()
-      .getBestNextLink()
-      .getDefaultSAI();
-    sai = {
-      selection: sai.getSelection(),
-      action: sai.getAction(),
-      inputs: { value: sai.getInput() }
-    };
-    return sai;
+    const promise = new Promise(async (resolve, reject) => {
+      if(this.state.qf_type == "brd"){
+        var sai = this.graph
+        .getExampleTracer()
+        .getBestNextLink()
+        .getDefaultSAI();
+        sai = {
+          selection: sai.getSelection(),
+          action: sai.getAction(),
+          inputs: { value: sai.getInput() }
+        };
+        resolve(sai);
+      }else{
+        var conflict_set = await this.getConflictSet();
+        var sai = this._cleanSAI(conflict_set[0])
+        console.log("EXAMPLE SAI", sai);
+        
+        resolve(sai);
+
+       console.log("IT HAS ENDED") 
+      }
+      // console.log("SAAAAAAI", sai)
+    });
+    return promise;
   }
 
   clearProposedSAI() {

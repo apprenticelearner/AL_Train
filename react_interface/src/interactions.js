@@ -66,24 +66,35 @@ const assignFoci = assign({
 
 //CONDITIONS
 function saiIsCorrectDone(context, event) {
-  const sai_data = context.staged_SAI;
   if (context.feedback_map && Object.keys(context.feedback_map).length > 0) {
     return false;
   }
-  return (
-    sai_data.selection === "done" &&
-    (sai_data.reward == null || sai_data.reward > 0 || context.test_mode)
-  );
+  if(context.skill_applications.length == 1){
+    var skill_app = context.skill_applications[0]  
+    if(skill_app.selection === "done" &&
+      (skill_app.reward == null || skill_app.reward > 0 || context.test_mode)){
+      return true
+    }
+  }
+  return false
 }
 
 function forceUseExample(context, event) {
-  const saiData = context.staged_SAI;
-  return (saiData.skipTraining && saiData.reward < 0) || context.examples_only;
+  if(context.skill_applications.length == 1){
+    var skill_app = context.skill_applications[0]  
+    return (skill_app.skipTraining && skill_app.reward < 0) || context.examples_only;
+  }
+  return false
 }
 
 function isFreeAuthor(context, event) {
   
   return context.free_author || false;
+}
+
+function useWholeConflictSet(context,event){
+  console.log("JEEEEEEZ", context)
+  return context.whole_conflict_set || false; 
 }
 
 function checkIsCorrect(context, event) {
@@ -128,6 +139,27 @@ function fillSkillPanel(context, event) {
     }
   });
 }
+
+function applyFeedbackMap(context,event){
+  var skill_applications = context.skill_applications
+  var feedback_map = context.feedback_map
+  if (!skill_applications){
+    skill_applications = [context.staged_SAI]
+  }
+  for (var i=0; i < skill_applications.length; i++) {
+    var skill_app = skill_applications[i];
+    if(feedback_map && Object.keys(feedback_map).length > 0){
+      skill_app['reward'] = feedback_map[i].toLowerCase() == "correct" ? 1 : -1
+    }
+  }
+  return {skill_applications : skill_applications}
+}
+
+// function printSkillApps(context,event){
+//   for (var i=0; i < skill_applications.length; i++) {
+
+//   }
+// }
 
 const recalcFeedbackMap = send((context, event) => {
   // const promise = new Promise((resolve,reject) => {
@@ -193,6 +225,24 @@ const toggleFeedbackStyle = send((context, event) => {
   return { type: "" };
 });
 
+function printFeedback(context, event) {
+  var nl = context.network_layer;
+  var staged_SAI = context.staged_SAI;
+
+  var typ = context.action_type;
+  for (var skill_app of context.skill_applications) {
+    let sk_typ = skill_app['action_type'] || typ
+    console.log("printFeedback",sk_typ)
+
+    if(context.tutor.reprSkillApplication){
+      var skill_app_str = context.tutor.reprSkillApplication(skill_app)
+    }else{
+      var skill_app_str = skill_app.selection + " -> " + String(skill_app.inputs)
+    }
+    nl.term_print(sk_typ + ": " + skill_app_str, sk_typ);
+  }
+}
+
 // skill_set={skill_set}
 //						select_callback={select_callback}
 //						correctness_callback={correctness_callback}
@@ -210,7 +260,7 @@ function get_machine_actions(app) {
   return {
     services: {
       sendFeedback: (context, event) => {
-        if (context.staged_SAI.skipTraining || context.test_mode) {
+        if ((context.staged_SAI && context.staged_SAI.skipTraining) || context.test_mode) {
           return Promise.resolve(true);
         }
         return network_layer.sendFeedback(context, event);
@@ -220,6 +270,7 @@ function get_machine_actions(app) {
         network_layer.sendFeedbackExplicit(context, event),
       applyNextExample: tutor.applyNextExample,
       attemptStagedSAI: tutor.attemptStagedSAI,
+      compareConflictSets: tutor.compareConflictSets,
       queryApprentice: network_layer.queryApprentice,
       checkApprentice: network_layer.checkApprentice,
       finalizeStartState:  (context, event) => {
@@ -256,9 +307,12 @@ function get_machine_actions(app) {
           feedback_map: null
         };
       }),
+      applyFeedbackMap: assign(applyFeedbackMap),
       assignSkillApplications: assign({
-        skill_applications: (context, event) =>
-          event.data.responses || event.data.skill_applications
+        skill_applications: (context, event) => {
+          console.log("assignSkillApplications",event)
+          return event.data.responses || event.data.skill_applications
+        }
       }),
       // done : window.signal_done,
 
@@ -284,7 +338,7 @@ function get_machine_actions(app) {
       enterTutoringMode: tutor.enterTutoringMode,
       exitTutoringMode: tutor.exitTutoringMode,
       displayCorrectness: tutor.displayCorrectness,
-      printFeedback: tutor.printFeedback,
+      
       
       applyStagedSAI: (context, event) => {
         tutor.applySAI(context.staged_SAI);
@@ -300,6 +354,7 @@ function get_machine_actions(app) {
       recalcFeedbackMap: recalcFeedbackMap,
       assignFeedbackMap: assignFeedbackMap,
       toggleFeedbackStyle: toggleFeedbackStyle,
+      printFeedback: printFeedback,
 
       generate_nools: network_layer.generate_nools,
       appendStartHistory: appendStartHistory
@@ -309,7 +364,8 @@ function get_machine_actions(app) {
       forceUseExample: forceUseExample,
       noApplicableSkills: noApplicableSkills,
       isFreeAuthor: isFreeAuthor,
-      checkIsCorrect: checkIsCorrect
+      checkIsCorrect: checkIsCorrect,
+      useWholeConflictSet: useWholeConflictSet
     }
   };
 }
@@ -362,12 +418,24 @@ var non_interactive_sm = {
         id: "queryApprentice",
         src: "queryApprentice",
         onDone: [
+          { target: "ComparingConflictSets", cond : "useWholeConflictSet"},
           { target: "Applying_Next_Example", cond: "noApplicableSkills" },
           { target: "Applying_Staged_SAI", actions: ["assignStagedSAI"] }
         ],
         onError: "Fail"
       },
       exit: "assignResponse"
+    },
+    ComparingConflictSets : {
+      invoke: {
+        id: "compareConflictSets",
+        src: "compareConflictSets",
+        onDone: {
+          target: "Sending_Feedback",
+          actions: ["assignSkillApplications"]
+        },
+        onError: "Fail"
+      }
     },
     Applying_Staged_SAI: {
       invoke: {
@@ -496,7 +564,7 @@ var interactive_sm = {
             SKILL_PANEL_FEEDBACK_EMPTY: "Waiting_Yes_No_Feedback",
             SUBMIT_SKILL_FEEDBACK: {
               target: "#interactive.Sending_Feedback",
-              actions: ["clearProposedSAI"]
+              actions: ["clearProposedSAI","applyFeedbackMap"]
             }
           }
         }

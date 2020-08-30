@@ -52,6 +52,8 @@ function getWebProps() {
     training_file: urlParams.get("training"),
     interactive: safeParse((urlParams.get("interactive") || "").toLowerCase()),
     use_foci: safeParse((urlParams.get("use_foci") || "").toLowerCase()),
+    use_skill_label: safeParse((urlParams.get("use_skill_label") || "").toLowerCase()),
+    whole_conflict_set: safeParse((urlParams.get("whole_conflict_set") || "").toLowerCase()),
     tutor: urlParams.get("tutor"),
     nools_dir: urlParams.get("nools_dir")
   };

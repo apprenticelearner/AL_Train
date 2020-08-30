@@ -13,7 +13,7 @@ const random = new Random();
 
 //A set of properties which are passed from the training handler SM context 
 //  to the interactions SM as props 
-export const problem_props = ['agent_id','free_author', 
+export const problem_props = ['agent_id','free_author', 'whole_conflict_set','use_skill_labels','use_foci',
         'interactive','tutor_mode','examples_only','test_mode', 'outer_loop_controller']
 const problem_props_dict = problem_props.reduce(function(obj, x) { obj[x] = null;return obj;}, {});        
 
