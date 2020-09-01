@@ -215,9 +215,9 @@ def _print_and_resp(message=None,m_type="default",outmode=sys.stdout):
             print(Back.GREEN + Fore.BLACK  + message)
         elif m_type == 'incorrect':
             print(Back.RED + Fore.BLACK + message)
-        elif m_type == 'example':
+        elif m_type == 'example' or m_type == 'hint_request':
             print(Back.BLUE + Fore.YELLOW  +  message)#, file=outmode)
-        elif m_type == 'info':
+        elif m_type == 'info' or m_type == 'attempt':
             print(Back.WHITE + Fore.BLACK + message)
         elif m_type == 'warning':
             print(Back.BLACK + Fore.YELLOW + message)#, file=outmode)

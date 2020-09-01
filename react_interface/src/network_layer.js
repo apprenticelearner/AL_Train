@@ -92,7 +92,8 @@ export default class NetworkLayer {
         foci_of_attention: skill_app["foci_of_attention"],
         rhs_id: skill_app["rhs_id"],
         mapping: skill_app["mapping"],
-        reward: skill_app["reward"]
+        reward: skill_app["reward"],
+        stu_resp_type: skill_app['stu_resp_type'] || context.stu_resp_type
       };
     console.log("DATA", data,skill_app)
     return data
@@ -100,20 +101,16 @@ export default class NetworkLayer {
 
   sendFeedback(context, event) {
     console.log("sendFeedback", context.staged_SAI);
-    
+    const skill_applications = context.skill_applications || [context.staged_SAI];
 
-    const skill_applications = context.skill_applications;
-    const feedback_map = context.feedback_map;
-    console.log("?MULTI?",skill_applications,feedback_map)
-
-    if (context.staged_SAI === null && context.skill_applications === null) {
+    if (context.skill_applications === null) {
       console.error("cannot give feedback on no action.");
     }
 
     var out = new Promise((resolve)=>{resolve(null)})
     var d_list = [];
     for (var skill_app of skill_applications) {
-      var data = this._pack_feedback_data(skill_app,context);
+      let data = this._pack_feedback_data(skill_app,context);
       
       if (context.interactive) {
         data["add_skill_info"] = true;
@@ -179,9 +176,11 @@ export default class NetworkLayer {
     var data = {
       state: context.state
     };
-    if (context.interactive) {
-      data["kwargs"] = { add_skill_info: true, n: 0 };
-    }
+    var kwargs = {}
+    if (context.interactive) kwargs['add_skill_info'] = true;
+    if (context.whole_conflict_set) kwargs['n'] = 0;
+
+    data["kwargs"] = kwargs
 
     this.request_history.push(data);
 
@@ -373,7 +372,7 @@ export default class NetworkLayer {
     var update_data = {
       selection : data['selection'],
       reward : data['reward'],
-      action_type : context.action_type,
+      stu_resp_type : context.stu_resp_type,
     }
     return fetch_retry(this.OUTER_LOOP_URL, {
       method: "POST",
@@ -382,7 +381,7 @@ export default class NetworkLayer {
     })
     // console.log('sel', data['selection'])
     // console.log('reward', data['reward'])
-    // console.log('action_type', context.action_type)
+    // console.log('stu_resp_type', context.stu_resp_type)
     // console.log('problem_name', context.tutor.getProblemName() || null)
 
   }

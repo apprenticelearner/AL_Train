@@ -69,8 +69,9 @@ function saiIsCorrectDone(context, event) {
   if (context.feedback_map && Object.keys(context.feedback_map).length > 0) {
     return false;
   }
-  if(context.skill_applications.length == 1){
-    var skill_app = context.skill_applications[0]  
+  let skill_applications = context.skill_applications || [context.staged_SAI]
+  if(skill_applications.length == 1){
+    var skill_app = skill_applications[0]  
     if(skill_app.selection === "done" &&
       (skill_app.reward == null || skill_app.reward > 0 || context.test_mode)){
       return true
@@ -80,8 +81,9 @@ function saiIsCorrectDone(context, event) {
 }
 
 function forceUseExample(context, event) {
-  if(context.skill_applications.length == 1){
-    var skill_app = context.skill_applications[0]  
+  let skill_applications = context.skill_applications || [context.staged_SAI]
+  if(skill_applications.length == 1){
+    var skill_app = skill_applications[0]  
     return (skill_app.skipTraining && skill_app.reward < 0) || context.examples_only;
   }
   return false
@@ -111,11 +113,6 @@ function logError(context, event) {
   // alert("FAIL")
 }
 
-// var color_map = {
-// 	"EXAMPLE" : "0;33;44m",
-// 	"CORRECT" : "0;30;42m",
-// 	"INCORRECT" : "0;30;41m",
-// }
 
 function _kill_this(context, event) {
   var nl = context.network_layer;
@@ -225,21 +222,29 @@ const toggleFeedbackStyle = send((context, event) => {
   return { type: "" };
 });
 
-function printFeedback(context, event) {
+async function printFeedback(context, event) {
   var nl = context.network_layer;
   var staged_SAI = context.staged_SAI;
-
-  var typ = context.action_type;
-  for (var skill_app of context.skill_applications) {
-    let sk_typ = skill_app['action_type'] || typ
-    console.log("printFeedback",sk_typ)
+  var skill_applications = context.skill_applications || [staged_SAI]
+  await nl.term_print("----",'INFO')
+  var typ = context.stu_resp_type;
+  for (var skill_app of skill_applications) {
+    let resp_type = skill_app['stu_resp_type'] || typ
+    
+    let print_type = resp_type
+    if(resp_type == "ATTEMPT" && skill_app['reward']){
+       print_type = skill_app['reward'] > 0 ? "CORRECT" : "INCORRECT"  
+    }
+    if(print_type == "HINT_REQUEST") print_type = "EXAMPLE"
+    
+    console.log("printFeedback",print_type)
 
     if(context.tutor.reprSkillApplication){
       var skill_app_str = context.tutor.reprSkillApplication(skill_app)
     }else{
       var skill_app_str = skill_app.selection + " -> " + String(skill_app.inputs)
     }
-    nl.term_print(sk_typ + ": " + skill_app_str, sk_typ);
+    await nl.term_print(print_type + ": " + skill_app_str, print_type);
   }
 }
 
@@ -271,6 +276,7 @@ function get_machine_actions(app) {
       applyNextExample: tutor.applyNextExample,
       attemptStagedSAI: tutor.attemptStagedSAI,
       compareConflictSets: tutor.compareConflictSets,
+      applyFromConflictSet: tutor.applyFromConflictSet,
       queryApprentice: network_layer.queryApprentice,
       checkApprentice: network_layer.checkApprentice,
       finalizeStartState:  (context, event) => {
@@ -285,8 +291,8 @@ function get_machine_actions(app) {
       stateRecalc: stateRecalc,
       assignResponse: assign({ response: (context, event) => event.data }),
       assignStagedSAI: assign({ staged_SAI: (context, event) => event.data }),
-      assignExample: assign({ action_type: (context, event) => "EXAMPLE" }),
-      assignAttempt: assign({ action_type: (context, event) => "ATTEMPT" }),
+      assignHintRequest: assign({ stu_resp_type: (context, event) => "HINT_REQUEST" }),
+      assignAttempt: assign({ stu_resp_type: (context, event) => "ATTEMPT" }),
       assignCorrect: assign({
         staged_SAI: (context, event) => {
           return { ...context.staged_SAI, ...{ reward: 1 } };
@@ -384,7 +390,7 @@ export function build_interactions_sm(
     //Dynamic
     // last_correct : null,
     staged_SAI: null,
-    action_type: null
+    stu_resp_type: null
   };
   context = {...context, ...inh_context}
 
@@ -418,7 +424,7 @@ var non_interactive_sm = {
         id: "queryApprentice",
         src: "queryApprentice",
         onDone: [
-          { target: "ComparingConflictSets", cond : "useWholeConflictSet"},
+          { target: "Comparing_Conflict_Sets", cond : "useWholeConflictSet"},
           { target: "Applying_Next_Example", cond: "noApplicableSkills" },
           { target: "Applying_Staged_SAI", actions: ["assignStagedSAI"] }
         ],
@@ -426,13 +432,23 @@ var non_interactive_sm = {
       },
       exit: "assignResponse"
     },
-    ComparingConflictSets : {
+    Comparing_Conflict_Sets : {
       invoke: {
         id: "compareConflictSets",
         src: "compareConflictSets",
         onDone: {
-          target: "Sending_Feedback",
+          target: "Applying_from_Conflict_Set",
           actions: ["assignSkillApplications"]
+        },
+        onError: "Fail"
+      }
+    },
+    Applying_from_Conflict_Set : {
+      invoke: {
+        id: "applyFromConflictSet",
+        src: "applyFromConflictSet",
+        onDone: {
+          target: "Sending_Feedback",
         },
         onError: "Fail"
       }
@@ -455,7 +471,7 @@ var non_interactive_sm = {
         src: "applyNextExample",
         onDone: {
           target: "Sending_Feedback",
-          actions: ["assignStagedSAI", "assignExample"]
+          actions: ["assignStagedSAI", "assignHintRequest"]
         },
         onError: "Fail"
       }
@@ -582,7 +598,7 @@ var interactive_sm = {
           target: "Waiting_Select_Foci",
           actions: [
             "assignStagedSAI",
-            "assignExample",
+            "assignHintRequest",
             "printEvent",
             "clearProposedSAI"
           ]

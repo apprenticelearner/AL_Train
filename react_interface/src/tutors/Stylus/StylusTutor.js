@@ -142,7 +142,7 @@ export default class StylusTutor extends React.Component {
 
     this.where_colors = [  "darkorchid",  "#ff884d",  "#52d0e0", "#feb201",  "#e44161", "#ed3eea", "#2f85ee",  "#562ac6", "#cc24cc"]
     // this.color_map = {
-    //   "EXAMPLE" : "dodgerblue",
+    //   "HINT_REQUEST" : "dodgerblue",
     //   "CORRECT" : "limegreen",
     //   "INCORRECT" : "red",
     //   "HIGHLIGHT" : "darkorchid",
@@ -151,7 +151,7 @@ export default class StylusTutor extends React.Component {
     //   };
     this.mode_to_color = {
       "set_start_state" : "START_STATE",
-      "demonstrate" : "EXAMPLE",
+      "demonstrate" : "HINT_REQUEST",
       "debug" : "gray"
     }
     this.current_foci = [];
@@ -258,7 +258,7 @@ export default class StylusTutor extends React.Component {
     var nl = context.network_layer;
     var staged_SAI = context.staged_SAI;
 
-    var type = context.action_type;
+    var type = context.stu_resp_type;
     // var reward = staged_SAI.reward
     if (!context.feedback_map || Object.keys(context.feedback_map).length === 0) {
       if (type == "ATTEMPT") {

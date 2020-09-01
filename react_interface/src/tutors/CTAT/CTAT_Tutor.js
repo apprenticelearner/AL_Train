@@ -66,6 +66,8 @@ class CTAT_Tutor extends React.Component {
 
     this.color_class_map = {
       EXAMPLE: "CTAT--example",
+      HINT: "CTAT--example",
+      HINT_REQUEST: "CTAT--example",
       CORRECT: "CTAT--correct",
       INCORRECT: "CTAT--incorrect",
       HIGHLIGHT: "CTAT--AL_highlight",
@@ -675,34 +677,78 @@ class CTAT_Tutor extends React.Component {
     });
     return promise;
   }
+  applyFromConflictSet(context, event) {
+    const promise = new Promise(async (resolve, reject) => {
+      for(let skill_app of context.skill_applications){
+        console.log("AQUI",skill_app)
+        if(skill_app.reward > 0){
+
+          var currentElement = this.iframe_content.document.getElementById(
+            skill_app.selection
+          );
+
+          const handle_ctat_feedback = (evt) => {
+            this.colorElement(skill_app.selection, skill_app.outcome);
+            this.lockElement(skill_app.selection);
+            resolve();
+          }
+
+          currentElement.addEventListener(this.CTAT_CORRECT, handle_ctat_feedback);
+          currentElement.addEventListener(this.CTAT_INCORRECT, handle_ctat_feedback);
+          this.applySAI(skill_app);
+          
+          return
+        }
+      }
+      reject("Ground Truth Conflict Set Empty.")
+    });
+    return promise;
+  }
   compareConflictSets(context, event){
     const promise = new Promise(async (resolve, reject) => {
       var conflict_set = await this.getConflictSet();
-      console.log("YEEEEEP", conflict_set, context)
+      var responses = context.response.responses || []
+      console.log("YEEEEEP", conflict_set, responses)
 
       var skill_applications = []
       for (var skill_app of conflict_set){
         skill_app['reward'] = 1
-        skill_app['action_type'] = "EXAMPLE"
+        skill_app['stu_resp_type'] = "HINT_REQUEST"
+        skill_app['outcome'] = "HINT"
         skill_app = this._cleanSAI(skill_app)
         skill_applications.push(skill_app)  
       }
       
-      if(context.response && context.response.length > 0){
-        for(var resp of context.response){
+      if(responses && responses.length > 0){
+        for(var resp of responses){
           var matches_any = false
           for (var skill_app of skill_applications){
+            //SA === SA (SA-)
             if(skill_app['selection'] === resp['selection'] &&
-               skill_app['action'] === resp['action'] &&
-               deep_equal(skill_app['inputs'],resp['inputs'])){
-              matches_any = true
-              skill_app['action_type'] = "ATTEMPT"
-              break
+               skill_app['action'] === resp['action']){
+
+              //I == I (--I) <- '==' is explicit choice so '-1' == -1
+              let [inps_a, inps_b] = [skill_app['inputs'],resp['inputs']]
+              let eq = true
+              for(let attr in inps_a){
+                if(!(attr in inps_b && inps_a[attr]==inps_b[attr])){
+                  eq = false
+                  break
+                } 
+              }
+              if(eq){
+                // deep_equal(skill_app['inputs'],resp['inputs'])){
+                matches_any = true
+                skill_app['stu_resp_type'] = "ATTEMPT"
+                skill_app['outcome'] = "CORRECT"
+                break
+              }
             }
           }
           if(!matches_any){
             resp['reward'] = -1
-            resp['action_type'] = "ATTEMPT"
+            resp['stu_resp_type'] = "ATTEMPT"
+            resp['outcome'] = "INCORRECT"
             skill_applications.push(resp)
           }
         }
@@ -738,6 +784,13 @@ class CTAT_Tutor extends React.Component {
       true
     );
   }
+
+  // modifyElement(name,value) {  
+  //   var elm = this.iframe_content.document.getElementById(name);
+  //   // var comp = this.iframe_content.CTATShellTools.findComponent(name)[0];
+  //   console.log(elm)
+  //   elm.firstElementChild.value = value
+  // }
 
   lockElement(name) {
     var comp = this.iframe_content.CTATShellTools.findComponent(name)[0];
