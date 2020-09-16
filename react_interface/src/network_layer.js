@@ -100,8 +100,7 @@ export default class NetworkLayer {
   }
 
   sendFeedback(context, event) {
-    console.log("sendFeedback", context.staged_SAI);
-    const skill_applications = context.skill_applications || [context.staged_SAI];
+    const skill_applications = context.skill_applications
 
     if (context.skill_applications === null) {
       console.error("cannot give feedback on no action.");
@@ -124,31 +123,12 @@ export default class NetworkLayer {
         )
       }
     }
-    // } else {
-    //   var skill_app = context.staged_SAI;
-    //   var data = this._pack_feedback_data(skill_app,context)
-    //   if (context.interactive) {
-    //     data["add_skill_info"] = true;
-    //   }
-    //   out = this.sendTrainingData(data, context.agent_id);
-    //   console.log("BLEEP",this.OUTER_LOOP_URL, context)
-    //   if(this.OUTER_LOOP_URL && context.outer_loop_controller){
-    //     out = out.then((resp)=>
-    //       this.updateOuterLoopController(data, context)
-    //     )
-    //   }
-    // }
-
     return out;
   }
 
 
   sendTrainingData(data, agent_id) {
     console.log("sendTrainingData");
-    // console.log("SAI: ", sai_data)
-
-    // loggingLibrary.logResponse (transactionID,"textinput1","UpdateTextField","Hello World","RESULT","CORRECT","You got it!");
-    // console.log(sai_data)
     const URL = this.AL_URL + "/train/" + agent_id + "/";
     return fetch_retry(URL, {
       method: "POST",
@@ -160,14 +140,10 @@ export default class NetworkLayer {
         try {
           const data = JSON.parse(text);
           return data;
-          // Do your JSON handling here
         } catch (err) {
           return {};
-          // It is text, do you text handling here
         }
       });
-
-
   }
 
   queryApprentice(context, event) {
@@ -196,9 +172,11 @@ export default class NetworkLayer {
   checkApprentice(context, event) {
     console.log("checkApprentice");
 
+    const staged_skill_app = context.skill_applications[context.staged_index]
+
     var data = {
       state: context.state,
-      ...context.staged_SAI
+      ...staged_skill_app
     };
 
     const URL = this.AL_URL + "/check/" + context.agent_id + "/";

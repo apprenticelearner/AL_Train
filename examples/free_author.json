@@ -2,6 +2,7 @@
 	"set_params" : {
 		"interactive" : true,
 		"free_author" : true,
+		"whole_conflict_set" : true,
 		"tutor" : "CTAT",
 		"use_foci" : true,
 		"agent" : {

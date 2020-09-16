@@ -2,6 +2,7 @@
 // import { CollapsingToolbar }  from 'react-native-collapsingtoolbar';
 // import CollapsibleList from './collapsible_list.js'
 import SkillPanel from './components/skill_panel.js'
+import SkillOverlay from './components/skill_overlay.js'
 import Buttons from './components/buttons';
 // import { vw, vh, vmin, vmax } from 'react-native-expo-viewport-units';
 // import ButtonsMachine from './interactions.js'
@@ -289,7 +290,7 @@ export default class ALReactInterface extends React.Component {
           // this.state.Interactions_Machine_State == "Querying_Apprentice" ||
           // this.state.Interactions_Machine_State == "Sending_Feedback")
           &&
-          <View style={styles.overlay}>
+          <View style={[styles.overlay,styles.loader]}>
             <Spinner
               color={'#000000'}
               size={150}
@@ -299,8 +300,12 @@ export default class ALReactInterface extends React.Component {
             />
           </View> 
         }
-        
+        <SkillOverlay style ={styles.overlay} skill_applications = {[
+          {"how": "poop"},
+          {"how": "shloop"},
+        ]}/>
   			<Tutor
+          style ={styles.overlay}
           //tutor_props = {this.state.prob_obj}
           ref={this.tutor}//{function(tutor) {window.tutor = tutor; console.log("TUTOR IS:",tutor)}}
           id="tutor_iframe"
@@ -334,10 +339,12 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         left: 0,
-        backgroundColor: 'rgba(50, 50, 50, 0.3)',
         flex: "100%",
         justifyContent: "center",
         alignItems: "center"
+      },
+      loader :{
+        backgroundColor: 'rgba(50, 50, 50, 0.3)',
       },
       overlay_text: {
         textAlign: 'center',

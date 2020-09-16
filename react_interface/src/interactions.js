@@ -44,8 +44,10 @@ const appendStartHistory = assign({
 
 const stateRecalc = assign({
   state: (context, event) => {
-    console.log("BLARG",context.staged_SAI, context.test_mode)
-    if (context.staged_SAI == null || context.staged_SAI.reward > 0 || context.test_mode) {
+    let skill_applications = context.skill_applications;
+    let si = context.staged_index;
+    let staged_skill_app =  si && skill_applications[si] || null;
+    if (staged_skill_app == null || staged_skill_app.reward > 0 || context.test_mode) {
       console.log("REDO")
       return context.tutor.getState();
     } else {
@@ -56,11 +58,12 @@ const stateRecalc = assign({
 });
 
 const assignFoci = assign({
-  staged_SAI: (context, event) => {
-    Object.assign(context.staged_SAI, {
+  skill_applications: (context, event) => {
+    let skill_applications = context.skill_applications
+    Object.assign(skill_applications[context.staged_index], {
       foci_of_attention: context.tutor.getCurrentFoci()
     });
-    return context.staged_SAI;
+    return skill_applications;
   }
 });
 
@@ -69,7 +72,7 @@ function saiIsCorrectDone(context, event) {
   if (context.feedback_map && Object.keys(context.feedback_map).length > 0) {
     return false;
   }
-  let skill_applications = context.skill_applications || [context.staged_SAI]
+  let skill_applications = context.skill_applications//|| [context.staged_SAI]
   if(skill_applications.length == 1){
     var skill_app = skill_applications[0]  
     if(skill_app.selection === "done" &&
@@ -81,7 +84,7 @@ function saiIsCorrectDone(context, event) {
 }
 
 function forceUseExample(context, event) {
-  let skill_applications = context.skill_applications || [context.staged_SAI]
+  let skill_applications = context.skill_applications// || [context.staged_SAI]
   if(skill_applications.length == 1){
     var skill_app = skill_applications[0]  
     return (skill_app.skipTraining && skill_app.reward < 0) || context.examples_only;
@@ -130,6 +133,7 @@ function clearSkillPanel(context, event) {
 }
 
 function fillSkillPanel(context, event) {
+  console.log("FILLSKILL",event)
   context.app.setState({
     skill_panel_props: {
       skill_set: { "Applicable Skills": event.data["responses"] || {} }
@@ -140,9 +144,9 @@ function fillSkillPanel(context, event) {
 function applyFeedbackMap(context,event){
   var skill_applications = context.skill_applications
   var feedback_map = context.feedback_map
-  if (!skill_applications){
-    skill_applications = [context.staged_SAI]
-  }
+  // if (!skill_applications){
+  //   skill_applications = [context.staged_SAI]
+  // }
   for (var i=0; i < skill_applications.length; i++) {
     var skill_app = skill_applications[i];
     if(feedback_map && Object.keys(feedback_map).length > 0){
@@ -224,8 +228,8 @@ const toggleFeedbackStyle = send((context, event) => {
 
 async function printFeedback(context, event) {
   var nl = context.network_layer;
-  var staged_SAI = context.staged_SAI;
-  var skill_applications = context.skill_applications || [staged_SAI]
+  // var staged_SAI = context.staged_SAI;
+  var skill_applications = context.skill_applications// || [staged_SAI]
   await nl.term_print("----",'INFO')
   var typ = context.stu_resp_type;
   for (var skill_app of skill_applications) {
@@ -265,7 +269,10 @@ function get_machine_actions(app) {
   return {
     services: {
       sendFeedback: (context, event) => {
-        if ((context.staged_SAI && context.staged_SAI.skipTraining) || context.test_mode) {
+        if ((context.skill_applications &&
+             context.skill_applications[context.staged_index] &&
+             context.skill_applications[context.staged_index].skipTraining)
+             || context.test_mode) {
           return Promise.resolve(true);
         }
         return network_layer.sendFeedback(context, event);
@@ -274,7 +281,7 @@ function get_machine_actions(app) {
       sendFeedbackExplicit: (context, event) =>
         network_layer.sendFeedbackExplicit(context, event),
       applyNextExample: tutor.applyNextExample,
-      attemptStagedSAI: tutor.attemptStagedSAI,
+      attemptStagedSkillApp: tutor.attemptStagedSkillApp,
       compareConflictSets: tutor.compareConflictSets,
       applyFromConflictSet: tutor.applyFromConflictSet,
       queryApprentice: network_layer.queryApprentice,
@@ -290,17 +297,36 @@ function get_machine_actions(app) {
 
       stateRecalc: stateRecalc,
       assignResponse: assign({ response: (context, event) => event.data }),
-      assignStagedSAI: assign({ staged_SAI: (context, event) => event.data }),
+      assignStagedIndex: assign({ staged_index: (context, event) => {
+        let index = Number.isInteger(event.data) ? event.data : 0 
+        console.log("assignStagedIndex", index)
+        return index
+        }
+      }),
+      updateStaged: assign({ 
+        skill_applications: (context, event) => {
+          let skill_applications = context.skill_applications
+          skill_applications[context.staged_index] = event.data
+          return skill_applications
+        }
+      }),
+      // assignStaged: assign({ staged_SAI: (context, event) => event.data }),
       assignHintRequest: assign({ stu_resp_type: (context, event) => "HINT_REQUEST" }),
       assignAttempt: assign({ stu_resp_type: (context, event) => "ATTEMPT" }),
       assignCorrect: assign({
-        staged_SAI: (context, event) => {
-          return { ...context.staged_SAI, ...{ reward: 1 } };
+        skill_applications: (context, event) => {
+          let skill_applications = context.skill_applications
+          let si = context.staged_index
+          skill_applications[si] = { ...skill_applications[si], ...{ reward: 1 } }
+          return skill_applications;
         }
       }),
       assignIncorrect: assign({
-        staged_SAI: (context, event) => {
-          return { ...context.staged_SAI, ...{ reward: -1 } };
+        skill_applications: (context, event) => {
+          let skill_applications = context.skill_applications
+          let si = context.staged_index
+          skill_applications[si] = { ...skill_applications[si], ...{ reward: -1 } }
+          return skill_applications;
         }
       }),
       assignFoci: assignFoci,
@@ -308,7 +334,7 @@ function get_machine_actions(app) {
         return {
           reward: null,
           // "rewards" : null,
-          staged_SAI: null,
+          staged_index: null,
           skill_applications: null,
           feedback_map: null
         };
@@ -317,7 +343,48 @@ function get_machine_actions(app) {
       assignSkillApplications: assign({
         skill_applications: (context, event) => {
           console.log("assignSkillApplications",event)
-          return event.data.responses || event.data.skill_applications
+          let skill_applications
+          if(event.data instanceof Array){
+            skill_applications = event.data
+          }else{
+            skill_applications = event.data.responses || event.data.skill_applications
+          }
+          if(skill_applications == undefined && Object.keys(event.data).length){
+            skill_applications = [event.data]
+          }else{
+            skill_applications = []
+          }
+          for(var i=0; i < skill_applications.length; i++){
+            skill_applications[i]['index'] = i
+          }
+
+          context.app.setState({
+            skill_panel_props: {
+              skill_set: { "Applicable Skills": skill_applications || [] }
+            }
+          });
+          
+          return skill_applications
+        }
+      }),
+      appendAndStageSkillApplication: assign({
+        staged_index : (context, event) => {
+          let skill_applications = context.skill_applications || []
+          return skill_applications.length
+        },
+        skill_applications: (context, event) => {
+          let skill_applications = context.skill_applications || []
+          let l = skill_applications.length
+          skill_applications.push(event.data)
+          skill_applications[l]['index'] = l
+
+          context.app.setState({
+            skill_panel_props: {
+              skill_set: { "Applicable Skills": skill_applications || [] }
+            }
+          });
+
+          return skill_applications
         }
       }),
       // done : window.signal_done,
@@ -346,10 +413,14 @@ function get_machine_actions(app) {
       displayCorrectness: tutor.displayCorrectness,
       
       
-      applyStagedSAI: (context, event) => {
-        tutor.applySAI(context.staged_SAI);
+      applyStagedSkillApp: (context, event) => {
+        let staged_skill_app = context.skill_applications[context.staged_index]
+        tutor.applySAI(staged_skill_app);
       },
-      proposeSAI: (context, event) => tutor.proposeSAI(event.data),
+      proposeStaged: (context, event) => {
+        let staged_skill_app = context.skill_applications[context.staged_index]
+        tutor.proposeSkillApp(staged_skill_app)
+      },
       confirmProposedSAI: (context, event) => {
         tutor.confirmProposedSAI();
       },
@@ -389,7 +460,7 @@ export function build_interactions_sm(
 
     //Dynamic
     // last_correct : null,
-    staged_SAI: null,
+    // staged_SAI: null,
     stu_resp_type: null
   };
   context = {...context, ...inh_context}
@@ -424,9 +495,11 @@ var non_interactive_sm = {
         id: "queryApprentice",
         src: "queryApprentice",
         onDone: [
-          { target: "Comparing_Conflict_Sets", cond : "useWholeConflictSet"},
+          { target: "Comparing_Conflict_Sets", cond : "useWholeConflictSet",
+            actions: ["assignSkillApplications","assignStagedIndex"]},
           { target: "Applying_Next_Example", cond: "noApplicableSkills" },
-          { target: "Applying_Staged_SAI", actions: ["assignStagedSAI"] }
+          { target: "Applying_Staged_Skill_App",
+             actions: ["assignSkillApplications","assignStagedIndex"] }
         ],
         onError: "Fail"
       },
@@ -453,13 +526,13 @@ var non_interactive_sm = {
         onError: "Fail"
       }
     },
-    Applying_Staged_SAI: {
+    Applying_Staged_Skill_App: {
       invoke: {
-        id: "attemptStagedSAI",
-        src: "attemptStagedSAI",
+        id: "attemptStagedSkillApp",
+        src: "attemptStagedSkillApp",
         onDone: {
           target: "Sending_Feedback",
-          actions: ["assignStagedSAI", "assignAttempt"]
+          actions: ["updateStaged", "assignAttempt"]
         },
         onError: "Fail"
       }
@@ -471,7 +544,7 @@ var non_interactive_sm = {
         src: "applyNextExample",
         onDone: {
           target: "Sending_Feedback",
-          actions: ["assignStagedSAI", "assignHintRequest"]
+          actions: ["updateStaged", "assignHintRequest"]
         },
         onError: "Fail"
       }
@@ -544,16 +617,16 @@ var interactive_sm = {
           {
             target: "Waiting_User_Feedback.Waiting_Demonstrate_Only",
             cond: "noApplicableSkills",
-            actions: ["fillSkillPanel"]
+            // actions: ["fillSkillPanel"]
           },
           {
             target: "Waiting_User_Feedback.Waiting_Yes_No_Feedback",
-            actions: ["fillSkillPanel", "proposeSAI", "assignStagedSAI"]
+            actions: ["assignStagedIndex"]
           }
         ],
         onError: "Fail"
       },
-      exit: "assignSkillApplications"
+      exit : ["assignSkillApplications","fillSkillPanel"]
     },
     Waiting_User_Feedback: {
       entry: "enterFeedbackMode",
@@ -562,6 +635,7 @@ var interactive_sm = {
       states: {
         Waiting_Demonstrate_Only: {},
         Waiting_Yes_No_Feedback: {
+          entry : ["proposeStaged"],
           on: {
             SKILL_PANEL_FEEDBACK_NONEMPTY: "Waiting_Submit_Feedback",
             // "YES_PRESSED" : {target : "#interactive.Sending_Feedback",
@@ -587,7 +661,7 @@ var interactive_sm = {
       },
       //
       on: {
-        STAGE_SAI: { actions: ["assignStagedSAI", "proposeSAI"] },
+        STAGE_SAI: { actions: ["assignStagedIndex", "proposeSkillApp"] },
         //
         TOGGLE_FEEDBACK: { actions: "recalcFeedbackMap" }, //, onDone:{actions :"callSend"}, onError: 'Fail'}},
         FEEBACK_MAP_UPDATE: {
@@ -597,9 +671,9 @@ var interactive_sm = {
         DEMONSTRATE: {
           target: "Waiting_Select_Foci",
           actions: [
-            "assignStagedSAI",
-            "assignHintRequest",
-            "printEvent",
+            "appendAndStageSkillApplication",
+            // "assignHintRequest", //NOTE should probably not be global 
+            // "printEvent",
             "clearProposedSAI"
           ]
         },
@@ -608,10 +682,10 @@ var interactive_sm = {
 
       exit: ["exitFeedbackMode"]
     },
-    // "Applying_Staged_SAI" : {
+    // "Applying_Staged_Skill_App" : {
     // 	invoke : {
-    //         id: "attemptStagedSAI",
-    //         src: "attemptStagedSAI",
+    //         id: "attemptStagedSkillApp",
+    //         src: "attemptStagedSkillApp",
     //         onDone: "Sending_Feedback",
     //         onError: 'Fail',
     // 	},
@@ -698,7 +772,7 @@ const tutor_sm = {
       on: {
         ATTEMPT: {
           target: "Checking_Against_Apprentice",
-          actions: "assignStagedSAI"
+          actions: ["assignSkillApplications","assignStagedIndex"]
         }
       },
       exit: "exitTutoringMode"

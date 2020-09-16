@@ -436,13 +436,13 @@ class CTAT_Tutor extends React.Component {
     if (type == "EXAMPLE") {
       this.props.interactions_service.send({
         type: "DEMONSTRATE",
-        data: { ...sai, reward: 1 }
+        data: { ...sai, reward: 1, "stu_resp_type" : "HINT_REQUEST" }
       });
     } else if (type == "ATTEMPT") {
       console.log("SEND ATTEMPT", sai);
       this.props.interactions_service.send({
         type: "ATTEMPT",
-        data: { ...sai }
+        data: { ...sai, "stu_resp_type" : "ATTEMPT" }
       });
     } else {
       throw "uknown type given";
@@ -456,7 +456,7 @@ class CTAT_Tutor extends React.Component {
   }
 
   displayCorrectness(context, event) {
-    var sai = context.staged_SAI;
+    var sai = context.skill_applications[context.staged_index];
     var sel = sai.selection;
     if (event.data == 1) {
       this.colorElement(sel, "CORRECT");
@@ -615,10 +615,10 @@ class CTAT_Tutor extends React.Component {
   }
 
   //---------- Xstate API with promises ----------------
-  attemptStagedSAI(context, event) {
+  attemptStagedSkillApp(context, event) {
     const promise = new Promise((resolve, reject) => {
       // try {
-      const sai = context.staged_SAI;
+      const sai = context.skill_applications[context.staged_index]
       var currentElement = this.iframe_content.document.getElementById(
         sai.selection
       );
@@ -974,7 +974,7 @@ class CTAT_Tutor extends React.Component {
     }
   }
 
-  proposeSAI(sai) {
+  proposeSkillApp(sai) {
     // console.log("EVDA", event.data)
     // var sai = event.data
     this.clearProposedSAI();
