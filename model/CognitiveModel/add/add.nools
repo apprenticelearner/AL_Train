@@ -1,0 +1,661 @@
+import("types.nools");
+
+global first_number="100";
+global second_number="999";
+
+global start_state = {
+    "inpA1": {
+        "type" : "TextField",
+        "value": 7,
+        "above": "hidey1",
+        "below": "inpB1",
+        "to_left" : "inpA2",
+        "to_right": null,
+    },
+    "inpA2": {
+        "type" : "TextField",
+        "value": 7,
+        "above": "carry1",
+        "below": "inpB2",
+        "to_left" : "inpA3",
+        "to_right": "inpA1",
+    },
+    "inpA3": {
+        "type" : "TextField",
+        "value": 7,
+        "above": "carry2",
+        "below": "inpB3",
+        "to_left" : "hidey2",
+        "to_right": "inpA2",
+    },
+    "inpB1": {
+        "type" : "TextField",
+        "value": 7,
+        "above": "inpA1",
+        "below": "out1",
+        "to_left" : "inpB2",
+        "to_right": null,
+    },
+    "inpB2": {
+        "type" : "TextField",
+        "value": 7,
+        "above": "inpA2",
+        "below": "out2",
+        "to_left" : "inpB3",
+        "to_right": "inpB1",
+    },
+    "inpB3": {
+        "type" : "TextField",
+        "value": 7,
+        "above": "inpA3",
+        "below": "out3",
+        "to_left" : "hidey3",
+        "to_right": "inpB2",
+    },
+    "out1": {
+        "type" : "TextField",
+        "value": "",
+        "above": "inpB1",
+        "below": null,
+        "to_left" : "out2",
+        "to_right": null,
+    },
+    "out2": {
+        "type" : "TextField",
+        "value": "",
+        "above": "inpB2",
+        "below": null,
+        "to_left" : "out3",
+        "to_right": "out1",
+    },
+    "out3": {
+        "type" : "TextField",
+        "value": "",
+        "above": "inpB3",
+        "below": null,
+        "to_left" : "out4",
+        "to_right": "out2",
+    },
+    "out4": {
+        "type" : "TextField",
+        "value": "",
+        "above": "hidey3",
+        "below": null,
+        "to_left" : null,
+        "to_right": "out3",
+    },
+    "carry1": {
+        "type" : "TextField",
+        "value": "",
+        "above": null,
+        "below": "inpA2",
+        "to_left" : "carry2",
+        "to_right": "hidey1",
+    },
+    "carry2": {
+        "type" : "TextField",
+        "value": "",
+        "above": null,
+        "below": "inpA3",
+        "to_left" : "carry3",
+        "to_right": "carry1",
+    },
+    "carry3": {
+        "type" : "TextField",
+        "value": "",
+        "above": null,
+        "below": "hidey2",
+        "to_left" : null,
+        "to_right": "carry2",
+    },
+    "hidey1": {
+        "type" : "TextField",
+        "value": "",
+        "above": null,
+        "below": "inpA1",
+        "to_left" : "carry1",
+        "to_right": null,
+    },
+    "hidey2": {
+        "type" : "TextField",
+        "value": "",
+        "above": "carry3",
+        "below": "hidey3",
+        "to_left" : null,
+        "to_right": "inpA3",
+    },
+    "hidey3": {
+        "type" : "TextField",
+        "value": "",
+        "above": "hidey2",
+        "below": "out4",
+        "to_left" : null,
+        "to_right": "inpB3",
+    },
+    "done": {
+        "type" : "Button",
+    },
+
+};
+
+global conflict_set = [];
+// var matches = [];
+// var full_matches = [];
+
+function make_start(first,second){
+	var i = 3;
+	for (var x of first.split("")){
+		console.log(x);
+		start_state['inpA' + String(i)]['value'] = x;
+		i--;
+		if(i==0){break}
+	}
+	var i = 3;
+	for (var x of second.split("")){
+		console.log(x);
+		start_state['inpB' + String(i)]['value'] = x;
+		i--;
+		if(i==0){break}
+	}
+
+}
+
+global derefs = [["below","to_right"],["above","above","above"],["above"]];
+
+rule bootstrap {
+	when {
+		s: Boolean s === false from false;
+	}
+	then {
+		console.log("nooooools sss start");
+		// constructor: function(n, v, l, r, a, b) {
+		make_start(first_number,second_number);
+		// assert(new MatchList("main"));
+        all_tfs = {};
+		for (var name in start_state){
+			obj = start_state[name];
+			if(obj['type'] == "Button"){
+				tf = new Button(name);			
+			}else if(obj['type'] == "TextField"){
+				tf = new TextField(name,obj['value'],obj['to_left'],
+					obj['to_right'],obj['above'],obj['below']);
+	            all_tfs[name] = tf;
+				// assert(new interfaceElement(name,obj['value'] || null));
+				if(obj['value'] || name.includes("hidey")){
+					tf.enabled = false;
+					console.log(name,obj['value']);
+					assert(new TPA(name,"UpdateTextField", obj['value']));
+				}else{
+					tf.enabled = true;
+					console.log(name,"unlock");
+					assert(new TPA(name, "unlock", true));
+				}
+			}
+            assert(tf);
+        }
+
+        // for (var name in all_tfs){
+        //     var tf = all_tfs[name];
+        //     tf['to_left'] = all_tfs[tf['to_left']] || tf['to_left'];
+        //     tf['to_right'] = all_tfs[tf['to_right']] || tf['to_right'];
+        //     tf['above'] = all_tfs[tf['above']] || tf['above'];
+        //     tf['below'] = all_tfs[tf['below']] || tf['below'];
+            
+        // }
+
+		assert(new PhaseHandler());
+		assert(new ConflictSet(conflict_set));
+
+        for (var name in all_tfs){
+            var tf = all_tfs[name];
+            // if(tf.name == "inpB3"){console.log("THIS EN")}
+            for (var deref of derefs){
+                // console.log("?",deref);
+                var obj = tf;
+                for(var i=0; i < deref.length; i++){
+                    if(obj == null){break}
+                    nxt = obj[deref[i]];
+                    console.log(obj.name,nxt);
+                    // if(nxt == null){break}
+                    obj = all_tfs[nxt] || null;
+                }
+
+                if(obj != null){
+                    console.log("ASSERT",obj.name);
+                    assert(new DeRef(tf,deref.join("."),obj));
+                }
+            }
+        }
+		// setProblemAttribute("use_backtracking", false);
+		// setProblemAttribute("prune_old_activations", true);
+		halt();
+	}
+}
+
+/// Phase Control flow: 0)Start-> 1)Match-> 2)Resolve-> 3)Check-> 4)Report-> Reset
+rule startMatching {
+	when {
+		ph : PhaseHandler ph.phase == 0;
+	}
+	then{
+		conflict_set.splice(0,conflict_set.length); //Empty it
+		console.log("START MATCHING");
+		focus("phase1");
+		modify(ph,"phase", 1);
+	}
+
+}
+
+rule startResolving {
+	when {
+		ph : PhaseHandler ph.phase == 1;
+	}
+	then{
+		console.log("START Resolving");
+		focus("phase2");
+		modify(ph,"phase", 2);
+	}
+
+}
+
+rule startChecking {
+	when {
+		ph : PhaseHandler ph.phase == 2;
+	}
+	then{
+		console.log("START Checking");
+		focus("phase3");
+		modify(ph,"phase", 3);
+	}
+}
+
+rule reportCorrectness {
+	when {
+		ph : PhaseHandler ph.phase == 3;
+	}
+	then{
+		console.log("START Correctness");
+		focus("phase4");
+		modify(ph,"phase", 4);
+	}
+}
+
+rule resetting {
+	when {
+		ph : PhaseHandler ph.phase == 4;
+		cfs : ConflictSet;
+	}
+	then{
+		console.log("Start Reset");
+		console.log("conflict_set");
+		// modify(new CustomField("conflict_set",conflict_set));
+		modify(cfs,'conflict_set',conflict_set);
+
+		for (var x of conflict_set){
+			console.log(x.rhs,x.args,x.sel, "->", x.input);
+		}
+		modify(ph,"phase", 0);
+		modify(ph,"cycle", ph.cycle+1);
+		halt();
+	}
+}
+
+//////////// Check Rules ///////////////// 
+
+rule checkMatches {
+	agenda-group: "phase3";
+	when {
+		match : Match match.is_correct == false;
+	}
+	then{
+
+		console.log("Check", match, match.full_fired, match.sel,match.input);
+		if(match.full_fired){
+			conflict_set.push(match);
+			if(checkSAI({selection: match.sel, action: match.action, input: match.input})) {
+				console.log("SAI MATCHES!");
+				modify(match, "is_correct", true);
+				return
+			}
+		}
+		retract(match);
+	}
+}
+
+rule positive_feedback{
+	agenda-group: "phase4";
+	when {
+		match : Match match.is_correct == true;
+		sel : TextField sel.name == match.sel;
+	}
+	then{
+		console.log("Correct", match.rhs,match.args);
+		if(checkSAI({selection: match.sel, action: match.action, input: match.input})) {
+			modify(sel, "value", match.input);
+			modify(sel, "enabled", false);
+			retract(match);
+		}
+		
+	}
+}
+
+
+////////////RULES START////////////////
+
+rule Add2 {
+	agenda-group: "phase1";
+	when {
+		ph : PhaseHandler;
+		sel : TextField sel.enabled === true;
+		arg0: TextField arg0.enabled === false && arg0.value !== "";
+		arg1: TextField arg1.enabled === false && arg1.value !== "" &&
+		sel.above === arg1.name &&
+		arg0.below === arg1.name &&
+		arg1.above === arg0.name &&
+		arg1.below === sel.name;
+	}
+	then {
+		v = String((Number(arg0.value) + Number(arg1.value)) % 10);
+		if(!isNaN(v)){
+			console.log("Add2", v, sel.name, arg0.name, arg1.name);
+			match = new Match("Add2","Add2", sel.name, "UpdateTextField",
+						 v,[arg0.name,arg1.name]);
+			assert(match);
+		}
+	}
+}
+
+
+
+rule ResolveAdd2 {
+	agenda-group: "phase2";
+	when {
+		match : Match match.rhs === "Add2" && match.full_fired === false;
+		sel : TextField match.sel === sel.name;
+		not(sel_r : TextField sel.to_right === sel_r.name && sel_r.enabled === true);
+		dr1: DeRef dr1.source.name === sel.name && dr1.path === "above.above.above";
+		not(m: Match m.rhs === "Carry2" && m.sel === dr1.obj.name && m.input === "1");
+		not(m: Match m.rhs === "Carry3" && m.sel === dr1.obj.name && m.input === "1");
+		not(m: Match m.rhs === "Add3" && m.args[0] === dr1.obj.name);
+	}
+	then{
+		modify(match,"full_fired", true);
+		console.log("ResolveAdd2",sel.name);
+	}
+}
+
+rule Add3 {
+	agenda-group: "phase1";
+	when {
+		ph : PhaseHandler;
+		sel : TextField sel.enabled === true;
+		arg0: TextField arg0.enabled === false && arg0.value !== "";
+		arg1: TextField arg1.enabled === false && arg1.value !== "";
+		arg2: TextField arg2.enabled === false && arg2.value !== "" &&		
+		arg0.below === arg1.name &&
+		arg1.above === arg0.name &&
+
+		arg1.below === arg2.name &&
+		arg2.above === arg1.name &&
+
+		sel.above === arg2.name &&
+		arg2.below === sel.name;		
+	}
+	then {
+		v = String((Number(arg0.value) + Number(arg1.value) + Number(arg2.value)) % 10);
+		if(!isNaN(v)){
+			console.log("Add3", v, sel.name, arg0.name, arg1.name, arg2.name);
+			match = new Match("Add3","Add3", sel.name, "UpdateTextField",
+						 v,[arg0.name,arg1.name,arg2.name]);
+			assert(match);
+		}
+	}
+}
+
+rule ResolveAdd3 {
+	agenda-group: "phase2";
+	when {
+		match : Match match.rhs == "Add3" && match.full_fired === false;
+		sel : TextField match.sel === sel.name;
+		not(sel_r : TextField sel.to_right === sel_r.name && sel_r.enabled === true);
+	}
+	then{
+		modify(match,"full_fired", true);
+		console.log("ResolveAdd3",sel.name);
+	}
+}
+
+
+rule Carry2_1 {
+	agenda-group: "phase1";
+	when {
+		ph : PhaseHandler;
+		sel : TextField sel.enabled === true;
+		arg0: TextField arg0.enabled === false && arg0.value !== "";
+		arg1: TextField arg1.enabled === false && arg1.value !== "";
+		neigh0: TextField neigh0.value === "" &&
+		sel.to_right === neigh0.name && 
+		neigh0.below === arg0.name && 
+		arg0.above === neigh0.name && 
+		arg0.below === arg1.name &&
+		arg1.above === arg0.name;
+		not(dr0: DeRef dr0.source.name === arg1.name && dr0.path === 'below.to_right');
+
+	}
+	then {
+		v = String(Math.floor((Number(arg0.value) + Number(arg1.value)) / 10));
+		if(!isNaN(v)){
+			console.log("CARRY2_1",v, sel.name,arg0.name,arg1.name,neigh0.name);
+			match = new Match("Carry2","Carry2", sel.name, "UpdateTextField",
+						 v,[arg0.name,arg1.name]);
+			assert(match);
+		}
+	}
+}
+
+rule Carry2_2 {
+	agenda-group: "phase1";
+	when {
+		ph : PhaseHandler;
+		sel : TextField sel.enabled === true;
+		arg0: TextField arg0.enabled === false && arg0.value !== "";
+		arg1: TextField arg1.enabled === false && arg1.value !== "";
+		neigh0: TextField neigh0.value === "" &&
+		sel.to_right === neigh0.name && 
+		neigh0.below === arg0.name && 
+		arg0.above === neigh0.name && 
+		arg0.below === arg1.name &&
+		arg1.above === arg0.name;
+		dr0 : DeRef dr0.source.name === arg1.name && dr0.path === 'below.to_right';
+		obj : TextField obj.name === dr0.obj.name && obj.enabled === false;
+
+	}
+	then {
+		v = String(Math.floor((Number(arg0.value) + Number(arg1.value)) / 10));
+		if(!isNaN(v)){
+			console.log("CARRY2_2",v, sel.name,arg0.name,arg1.name,neigh0.name,obj.name,obj.enabled);
+			match = new Match("Carry2","Carry2", sel.name, "UpdateTextField",
+						 v,[arg0.name,arg1.name]);
+			assert(match);
+		}
+	}
+}
+
+rule ResolveCarry2 {
+	agenda-group: "phase2";
+	when {
+		match : Match match.rhs === "Carry2" && match.full_fired === false;
+		sel : TextField match.sel === sel.name &&
+		match.input !== "0";
+		or(
+			sel_r : TextField sel.to_right === sel_r.name && sel_r.enabled === false,
+			m : Match sel.to_right === m.sel && m.input === "0"
+		);
+	}
+	then{
+
+		modify(match,"full_fired", true);
+		console.log("RESOLVE CARRY2", match.sel);
+	}
+}
+
+
+rule Carry3 {
+	agenda-group: "phase1";
+	when {
+		ph : PhaseHandler;
+		sel : TextField sel.enabled === true;
+		arg0: TextField arg0.enabled === false && arg0.value !== "";
+		arg1: TextField arg1.enabled === false && arg1.value !== "";
+		arg2: TextField arg2.enabled === false &&//&& arg2.value !== "" && //Buggy? See 999+001
+		sel.to_right === arg0.name && 
+		arg0.below === arg1.name && 
+		arg1.above === arg0.name && 
+		arg1.below === arg2.name &&
+		arg2.above === arg1.name;
+		dr0 : DeRef dr0.source.name === arg2.name && dr0.path === 'below.to_right';
+		obj : TextField obj.name === dr0.obj.name && obj.enabled === false;
+	}
+	then {
+		v = String(Math.floor((Number(arg0.value) + Number(arg1.value) + Number(arg2.value)) / 10));
+		if(!isNaN(v)){
+			console.log("CARRY3",v, sel.name,arg0.name,arg1.name,arg2.name);
+			match = new Match("Carry3","Carry3", sel.name, "UpdateTextField",
+						 v,[arg0.name,arg1.name, arg2.name]);
+			assert(match);
+		}else{
+			console.log("NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
+		}
+	}
+}
+
+
+rule ResolveCarry3 {
+	agenda-group: "phase2";
+	when {
+		match : Match match.rhs === "Carry3" && match.full_fired === false;
+		sel : TextField match.sel === sel.name &&
+		match.input !== "0";
+		or(
+			sel_r : TextField sel.to_right === sel_r.name && sel_r.enabled === false,
+			m : Match sel.to_right === m.sel && m.input === "0"
+		)
+	}
+	then{
+
+		modify(match,"full_fired", true);
+		console.log("RESOLVE CARRY3", match.sel);
+	}
+}
+
+
+
+rule BringDown {
+	agenda-group: "phase1";
+	when {
+		ph : PhaseHandler;
+		sel : TextField sel.enabled === true;
+		arg0: TextField arg0.enabled === false && arg0.value !== "";
+		neigh0: TextField neigh0.value === ""; 
+		neigh1: TextField neigh1.value === "" &&
+		arg0.below === neigh0.name &&
+		neigh0.above === arg0.name &&
+
+		neigh0.below === neigh1.name &&
+		neigh1.above === neigh0.name &&		
+
+		neigh1.below === sel.name &&
+		sel.above === neigh1.name;
+
+	}
+	then {
+		v = arg0.value;
+		if(!isNaN(v)){
+			console.log("BringDown",v, sel.name,arg0.name);
+			match = new Match("BringDown","BringDown", sel.name, "UpdateTextField",
+						 v,[arg0.name]);
+			assert(match);
+		}
+	}
+}
+
+rule ResolveBringDown {
+	agenda-group: "phase2";
+	when {
+		match : Match match.rhs === "BringDown" && match.full_fired === false;
+		sel : TextField match.sel === sel.name
+	}
+	then{
+		modify(match,"full_fired", true);
+		console.log("RESOLVE ringDown", match.sel);
+	}
+}
+
+rule Done {
+	agenda-group: "phase1";
+	when {
+		ph : PhaseHandler;
+		sel : Button sel.name === "done";
+	}
+	then {
+		v = "-1";
+		console.log("Done",v,sel.name);
+		match = new Match("Done","Done", sel.name, "ButtonPressed", v, []);
+		assert(match);
+	}
+}
+
+rule ResolveDone {
+	agenda-group: "phase2";
+	when {
+		match : Match match.rhs === "Done" && match.full_fired === false;
+		sel : Button match.sel === sel.name;
+		// out3: TextField out3.name == "out3" && out3.enabled === false;
+		not(m0: Match m0.rhs === "Carry2" && m0.input === "1");
+		not(m1: Match m1.rhs === "Carry3" && m1.input === "1");
+		not(m2: Match m2.rhs === "Add2");
+		not(m3: Match m3.rhs === "Add3");
+		not(m4: Match m4.rhs === "BringDown");
+	}
+	then{
+		modify(match,"full_fired", true);
+		console.log("RESOLVE Done", match.sel);
+	}
+}
+
+// rule Carry3 {
+// 	agenda-group: "phase1";
+// 	when {
+// 		ph : PhaseHandler;
+// 		sel : TextField sel.enabled === true;
+// 		arg0: TextField arg0.enabled === false;
+// 		arg1: TextField arg1.enabled === false;
+// 		arg2: TextField arg2.enabled === false;
+// 		sel.to_right === arg2.name && 
+// 		arg2.below === arg0.name && 
+// 		arg0.above === arg2.name && 
+// 		arg0.below === arg1.name &&
+// 		arg1.above === arg0.name;
+// 	}
+// 	then {
+// 		v = Math.floor((Number(arg0.value) + Number(arg1.value) + Number(arg2.value)) / 10);
+// 		console.log("CARRY3",v, sel.name,arg0.name,arg1.name,neigh0.name);
+// 		match = new Match("Carry3","Carry3", sel.name, "UpdateTextField",
+// 					 v,[arg0.name,arg1.name]);
+// 		assert(match);
+// 	}
+// }
+
+// rule ResolveCarry3 {
+// 	agenda-group: "phase2";
+// 	when {
+// 		match : Match match.rhs === "Carry3" && match.full_fired === false;
+// 		sel : TextField match.sel === sel.name;
+// 		not(m_r : Match m_r.sel === sel.to_right && m_r.input == 1);
+// 	}
+// 	then{
+// 		modify(match,"full_fired", true);
+// 		console.log("RESOLVE CARRY3", match.sel);
+// 	}
+// }
+

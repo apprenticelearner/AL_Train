@@ -1,0 +1,36 @@
+{	
+	"set_params" : {
+		"interactive" : false,
+		"free_author" : true,
+		"tutor" : "CTAT",
+		"use_foci" : true,
+		"use_skill_labels" : true,
+		"whole_conflict_set" : true,
+		"agent" : {
+			"stay_active": true,
+      		"dont_save": true,	
+		},
+		// "abs_qf_paths": true,
+	},//THIS IS A COMMENT
+	"training_set1" : [{
+		"agent_name":"myAgent1",
+		"agent_type":"ModularAgent",
+		"args": {
+			"search_depth" : 3,
+			"where_learner": "versionspace",
+			"when_learner": "decisiontree",
+			"planner" : "numba",
+			"when_args" : {"cross_rhs_inference" : "none"},
+			"function_set" : ["RipFloatValue","Mod10","Div10","Add","Add3"],
+			"feature_set" : [],
+		},
+		"problem_set" : [
+			{"set_params" : 
+				{"HTML": "../model/HTML/MultiColumnArithmatic.html",
+				 "question_file" : "../CognitiveModel/add/777_777.nools"}
+			},
+			{
+			"repetitions":-1}
+		]
+	}]
+}

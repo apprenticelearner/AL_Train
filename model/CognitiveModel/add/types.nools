@@ -1,0 +1,139 @@
+// This file contains some possibly incomplete fact type definitions for the
+// Mendel Abductive Reasoning Tutor
+//
+// The file contains all types that are needed, so no need to create new ones,
+// but the types that are provided may not have all the slots that are necessary.
+//
+
+define Button {
+	name: null,
+	constructor: function(n) {
+		this.name = n;
+	}
+}
+
+define TextField {
+	name: null,
+	value: null,
+	to_left: null,
+	to_right: null,
+	above: null,
+	below: null,
+	enabled: true,
+	constructor: function(n, v, l, r, a, b) {
+		this.name = n;
+		this.value = v;
+		this.to_left = l;
+		this.to_right = r;
+		this.above = a;
+		this.below = b;
+	}
+}
+// define MatchList {
+// 	name : "main",
+// 	matches : [],
+// 	full_matches : [],
+// 	constructor: function(name) {
+// 		this.name = name;
+// 	}
+// }
+define DeRef {
+	source : null,
+	path : null,
+	obj : null,
+	constructor: function(s, p, o) {
+		this.source = s; 
+		this.path = p;
+		this.obj = o;
+	}
+}
+
+
+define PhaseHandler {
+	phase : 0,
+	cycle : 0,
+	constructor: function(){
+
+	}
+}
+
+define Match {
+	skill: null,
+	rhs: null,
+	sel: null,
+	action: null,
+	input: null,
+	args: null,
+	full_fired : false,
+	is_correct : false,
+	constructor: function(skill,rhs,sel,action,input,args) {
+		this.skill = skill;
+		this.rhs = rhs;
+		this.sel = sel;
+		this.action = action;
+		this.input = input;
+		this.args = args;
+	}
+}
+
+define ConflictSet {
+  conflict_set: null,
+  constructor: function(c) {
+    this.conflict_set = c;
+  }
+}
+
+define CustomField {
+  name: null,
+  value: null,
+  constructor: function(n, v) {
+    this.name = n;
+    this.value = v;
+  }
+}
+
+
+define interfaceElement {
+	name: null,
+	value: null,
+	constructor: function(n, v) {
+		this.name = n;
+		this.value = v;
+	}
+}
+
+define StudentValues {
+	selection: null,
+	action: null,
+	input: null,
+	constructor: function(s, a, i) {
+		this.selection = s;
+		this.action = a;
+		this.input = i;
+	}
+}
+
+define TPA {
+	selection: null,
+	action: null,
+	input: null,
+	constructor: function(s, a, i) {
+		this.selection = s;
+		this.action = a;
+		this.input = i;
+	}
+}
+
+define Hint {
+  precedence: 0,
+  msg: "",
+  constructor: function(m, optPrecedence) {
+  	this.msg = m;
+  	this.precedence = optPrecedence || 0;
+  }
+}
+
+define IsHintMatch {
+  constructor: function() {
+  }
+}
