@@ -1,17 +1,24 @@
-import React from "react";
-import ReactDOM from "react-dom";
-import "./index.css";
-import SkillPanel from "./components/skill_panel";
-import Buttons from "./components/buttons";
-import * as serviceWorker from "./serviceWorker";
-// import ButtonsMachine from './interactions.js'
+/**
+ * Copyright (c) 2020
+ *
+ * This is the entry point for using AL_Trainer by passing url query
+ *  strings to specify the host server, AL server, training_file 
+ *  and so forth.
+ * 
+ * @summary Entry point for AL_Trainer initialized by query strings.
+ * @author Daniel Weitekamp <dannyweitekamp@gmail.com>
+ *
+ */
 
-import { interpret } from "xstate";
+import { registerRootComponent } from 'expo';
+import React from "react";
+import {View, Text} from "react-native";
+import RJSON from "relaxed-json";
+import autobind from 'class-autobind';
+
 import CTAT_Tutor from "./tutors/CTAT/CTAT_Tutor";
 import StylusTutor from './tutors/Stylus/StylusTutor';
-import App from "./App";
-import RJSON from "relaxed-json";
-
+import AL_Trainer from "./al_trainer";
 
 const tutor_map = {
   ctatttutor: CTAT_Tutor,
@@ -20,14 +27,11 @@ const tutor_map = {
   "stylus" : StylusTutor,
 };
 
-
-
-
 function load_training_file(training_file) {
-  // console.log("SLOOPERZ",training_file)
   return fetch(training_file)
     .then(str => str.text()) //str.json())
-    .then(str => RJSON.parse(str)); //str.json())
+    .then(str => RJSON.parse(str)) //str.json())
+    .catch(err => "Training File Error")
 }
 
 function safeParse(json) {
@@ -74,191 +78,52 @@ function removeEmpty(obj) {
   return out;
 }
 
-var props = getWebProps();
-
-props.training_file = props.training_file || "/stylus_author.json";
-// console.log("WEE", props.training_file)
-
-load_training_file(props.training_file).then(function(training_json) {
-  // console.log("BOOPERSZ", training_json)
-  var training_file_props = training_json.set_params;
-  props = { ...training_file_props, ...removeEmpty(props) };
-  props.tutor = (props.tutor || "ctat").toLowerCase().replace("_", "");
-  return props
-}).then(function(props){
-  var tutorClass = tutor_map[props.tutor] || CTAT_Tutor
-  console.log("TC", tutorClass, props.tutor)
-  ////EVENTUALLY WILL WANT OT DYNAMICALLY IMPORT////
-  // if(props.tutor in tutor_map){props.tutor = tutor_map[props.tutor]}
-  // var tutorClass = (await import(props.tutor)).default
-  /////////////////////////////////////////////////
-  return [props,tutorClass]
-}).then(function(args){
-  var [props,tutorClass] = args
-  ReactDOM.render(
-    <App
-      ref={app => {
-        window.react_interface = app;
-      }}
-      //style={{ height: "100%", width : "100%" }}
-      //tutorClass={tutor_map[props.tutor] || StylusTutor}
-      //tutorClass={tutor_map[props.tutor]}
-      tutorClass={tutorClass}
-      {...props}
-    />,
-    document.getElementById("root")
-  );
-});
-
-/*
-if (false) {
-  // function setSkillWindowState(evt){
-
-  // }
-  // window.state_machine = ButtonsMachine.initialState
-  // window.state_machine_service = interpret(ButtonsMachine)
-  // window.state_machine_service.start()
-
-  // const state = {
-  //   current:
-  // };
-  // window.state_machine_service.onTransition(current => {
-  // 	console.log("current.value")
-  // 	console.log(current.value)
-  // 	setButtonsState(current,window.debugmode)
-
-  //   // this.setState({ current : current })
-  //   }
-  // );
-
-  // function setButtonCallbacks(callbacks){
-  // window.button_callbacks = callbacks
-  // }
-  // window.setButtonCallbacks = setButtonCallbacks
-
-  // function setNoolsCallback(callback){
-  // 	window.nools_callback = callback
-  // }
-  // window.setNoolsCallback = setNoolsCallback
-
-  function setSkillWindowState(
-    skill_set,
-    select_callback,
-    correctness_callback,
-    initial_select = null,
-    where_colors = null
-  ) {
-    ReactDOM.render(
-      //<View>
-      <CTAT_Tutor></CTAT_Tutor>,
-      //<SkillPanel skill_set={skill_set}
-      //						select_callback={select_callback}
-      //						correctness_callback={correctness_callback}
-      //							initial_select={initial_select}
-      //							where_colors={where_colors || undefined}
-      //								current = {window.state_machine}
-      //								service = {window.state_machine_service}
-      //
-      //								/>
-      //		</View>
-      document.getElementById("skill_panel")
-    );
+class QueryStrInitializedTrainer extends React.Component {
+  constructor(props){
+    super(props);
+    autobind(this);
+    this.state ={prompt: "loading..."}
   }
+  componentDidMount(){
+    var props = getWebProps();
 
-  function setButtonsState(current, debugmode = false) {
-    window.state_machine = current;
-    ReactDOM.render(
-      <Buttons
-        current={current}
-        service={window.state_machine_service}
-        debugmode={debugmode}
-        callbacks={window.button_callbacks}
-        nools_callback={window.nools_callback}
-      />,
-      document.getElementById("buttons")
-    );
-  }
+    props.training_file = props.training_file || "/stylus_author.json";
 
-  window.setSkillWindowState = setSkillWindowState;
-  window.setButtonCallbacks = setSkillWindowState;
-  window.setButtonsState = setButtonsState;
-
-  // function render(){
-  // let sections = [
-  // 	              {title: 'D', data: ['Devin the long named fool']},
-  // 	              {title: 'J', data: ['Jackson', 'James', 'Jillian', 'Jimmy', 'Joel', 'John', 'Julie']},
-  // 	              {title: 'B', data: ['Backson', 'Bames', 'Billian', 'Bimmy', 'Boel', 'Bohn', 'Bulie']},
-  // 	            ];
-
-  let test_skills = {
-    explanations: [
-      {
-        name: "E0 + E1",
-        how: "E0 + E1",
-        where: { A: { B: 1 } },
-        when: "WHEN PART",
-        which: 7.0,
-        mapping: { "?sel": "A1", "?arg0": "B1", "?arg1": "C1" }
-      },
-      {
-        name: "E0 + E1",
-        how: "E0 + E1",
-        where: "WHERE PART",
-        when: "WHEN PART",
-        which: 7.0,
-        mapping: { "?sel": "A2", "?arg0": "B2", "?arg1": "C2" }
-      },
-      {
-        name: "(E0 + E1) // 10",
-        how: "(E0 + E1) // 10",
-        where: "WHERE PART",
-        when: "WHEN PART",
-        which: 4.0,
-        mapping: { "?sel": "A1", "?arg0": "B1", "?arg1": "C1" }
-      },
-      {
-        name: "(E0 + E1) // 10",
-        how: "(E0 + E1) // 10",
-        where: "WHERE PART",
-        when: "WHEN PART",
-        which: 4.0,
-        mapping: { "?sel": "A2", "?arg0": "B2", "?arg1": "C2" }
+    load_training_file(props.training_file).then((training_json) => {
+      var training_file_props = training_json.set_params;
+      props = { ...training_file_props, ...removeEmpty(props) };
+      props.tutor = (props.tutor || "ctat").toLowerCase().replace("_", "");
+      return props
+    }).then((props) => {
+      var tutorClass = tutor_map[props.tutor] || CTAT_Tutor
+      if(props && tutorClass){
+        this.setState({props: props, tutorClass: tutorClass})  
+      }else{
+        this.setState({prompt: 'ERROR!'})  
       }
-    ],
-    "other skills": [
-      {
-        name: "(E0 + E1) // 10",
-        how: "E0 + E1 + E2",
-        where: "WHERE PART (E0 + E1 + E2)",
-        when: "WHEN PART (E0 + E1 + E2)",
-        which: 3.0
-      },
-      {
-        name: "(E0 + E1 + E2) // 10",
-        how: "E0 + E1",
-        where: "WHERE PART ((E0 + E1 + E2) // 10)",
-        when: "WHEN PART ((E0 + E1 + E2) // 10)",
-        which: 8.0
-      }
-    ]
-  };
-  // setSkillWindowState({"skills:": []});
-
-  if (!process.env.NODE_ENV || process.env.NODE_ENV === "development") {
-    window.debugmode = true;
-    window.query_apprentice = () => {};
-    setButtonsState(window.state_machine, true);
-    setSkillWindowState(test_skills);
-  } else {
-    window.debugmode = false;
+    })
   }
-}*/
-// setButtonsState("press_next",true,true);
+  render() {
+    if(!this.state.props || !this.state.tutorClass){
+      return (
+        <View style={{width:"100%",height:"100%",
+          justifyContent:'center',alignContent:'center', backgroundColor:"pink"}}>
+          <Text style={{textAlign:'center', fontSize:40}}> {this.state.prompt}</Text>
+        </View>
+      )
+    }else{
+      return (
+        <AL_Trainer
+          ref={app => {
+            window.react_interface = app;
+          }}        
+          tutorClass={this.state.tutorClass}
+          {...this.state.props}
+        />
+      )
+    }
+  }
+}
 
-// }
-// document.getElementById('render_button').addEventListener("click",render)
+registerRootComponent(QueryStrInitializedTrainer);
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();

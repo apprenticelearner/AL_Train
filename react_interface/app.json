@@ -1,4 +1,6 @@
 {
-  "name": "TutorInterface",
-  "displayName": "create react native web app"
+  "expo": {
+    "name": "AL_Train",
+    "slug": "al-train",
+  }
 }

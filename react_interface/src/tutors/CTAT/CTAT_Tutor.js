@@ -618,7 +618,8 @@ class CTAT_Tutor extends React.Component {
   attemptStagedSkillApp(context, event) {
     const promise = new Promise((resolve, reject) => {
       // try {
-      const sai = context.skill_applications[context.staged_index]
+      console.log("THIIIIS", context)
+      const sai = context.skill_applications[context.staged_index || 0]
       var currentElement = this.iframe_content.document.getElementById(
         sai.selection
       );
@@ -838,6 +839,7 @@ class CTAT_Tutor extends React.Component {
   //       // elm.firstElementChild.classList.add("CTAT--AL_highlight1")
   //   }
   // }
+
 
   highlightElement(name, colorIndex = 1) {
     this.unhighlightElement(name);

@@ -72,6 +72,7 @@ function saiIsCorrectDone(context, event) {
   if (context.feedback_map && Object.keys(context.feedback_map).length > 0) {
     return false;
   }
+  console.log('CORRECT DONE')
   let skill_applications = context.skill_applications//|| [context.staged_SAI]
   if(skill_applications.length == 1){
     var skill_app = skill_applications[0]  
@@ -125,7 +126,7 @@ function _kill_this(context, event) {
 
 
 function clearSkillPanel(context, event) {
-  context.app.setState({
+  context.al_trainer.setState({
     skill_panel_props: {
       skill_set: { "Applicable Skills": {} }
     }
@@ -134,7 +135,7 @@ function clearSkillPanel(context, event) {
 
 function fillSkillPanel(context, event) {
   console.log("FILLSKILL",event)
-  context.app.setState({
+  context.al_trainer.setState({
     skill_panel_props: {
       skill_set: { "Applicable Skills": event.data["responses"] || {} }
     }
@@ -260,11 +261,11 @@ async function printFeedback(context, event) {
 //								current = {window.state_machine}
 //								service = {window.state_machine_service}
 
-function get_machine_actions(app) {
-  var tutor = app.tutor.current;
-  var skill_panel = app.skill_panel.current;
-  var buttons = app.network_layer.current;
-  var network_layer = app.network_layer;
+function get_machine_actions(al_trainer) {
+  var tutor = al_trainer.tutor.current;
+  var skill_panel = al_trainer.skill_panel.current;
+  var buttons = al_trainer.network_layer.current;
+  var network_layer = al_trainer.network_layer;
 
   return {
     services: {
@@ -305,8 +306,8 @@ function get_machine_actions(app) {
       }),
       updateStaged: assign({ 
         skill_applications: (context, event) => {
-          let skill_applications = context.skill_applications
-          skill_applications[context.staged_index] = event.data
+          let skill_applications = context.skill_applications || []
+          skill_applications[context.staged_index || 0] = event.data
           return skill_applications
         }
       }),
@@ -342,25 +343,32 @@ function get_machine_actions(app) {
       applyFeedbackMap: assign(applyFeedbackMap),
       assignSkillApplications: assign({
         skill_applications: (context, event) => {
-          console.log("assignSkillApplications",event)
           let skill_applications
           if(event.data instanceof Array){
+            //The response looks like this [{selection:?,action: ?, ...},...]
             skill_applications = event.data
           }else{
+            //The response looks like this {...,responses: [{selection:?,action: ?, ...},...]}
             skill_applications = event.data.responses || event.data.skill_applications
           }
-          if(skill_applications == undefined && Object.keys(event.data).length){
-            skill_applications = [event.data]
-          }else{
-            skill_applications = []
+          if(skill_applications == undefined){
+            if(Object.keys(event.data).length){
+              //The response looks like this {selection:?,action: ?, ...}
+              skill_applications = [event.data]
+            }else{
+              //The response was empty
+              skill_applications = []
+            }
           }
           for(var i=0; i < skill_applications.length; i++){
             skill_applications[i]['index'] = i
           }
+          console.log("Final skill_applications",skill_applications)
 
-          context.app.setState({
+          context.al_trainer.setState({
             skill_panel_props: {
-              skill_set: { "Applicable Skills": skill_applications || [] }
+              skill_set: { "Applicable Skills": skill_applications || [] },
+              skill_applications : skill_applications,
             }
           });
           
@@ -378,7 +386,7 @@ function get_machine_actions(app) {
           skill_applications.push(event.data)
           skill_applications[l]['index'] = l
 
-          context.app.setState({
+          context.al_trainer.setState({
             skill_panel_props: {
               skill_set: { "Applicable Skills": skill_applications || [] }
             }
@@ -398,7 +406,7 @@ function get_machine_actions(app) {
       fillSkillPanel: fillSkillPanel,
       clearSkillPanel: clearSkillPanel,
       done: (context, event) => {
-        context.app.training_service.send("PROBLEM_DONE");
+        context.al_trainer.training_service.send("PROBLEM_DONE");
       },
 
 
@@ -448,15 +456,15 @@ function get_machine_actions(app) {
 }
 
 export function build_interactions_sm(
-  app,
+  al_trainer,
   inh_context,
 ) {
   var context = {
-    app: app,
-    tutor: app.tutor.current,
-    skill_panel: app.skill_panel.current,
-    buttons: app.buttons.current,
-    network_layer: app.network_layer,
+    al_trainer: al_trainer,
+    tutor: al_trainer.tutor.current,
+    skill_panel: al_trainer.skill_panel.current,
+    buttons: al_trainer.buttons.current,
+    network_layer: al_trainer.network_layer,
 
     //Dynamic
     // last_correct : null,
@@ -474,7 +482,7 @@ export function build_interactions_sm(
 
   const interaction_sm = Machine(
     { ...{ context: context }, ...sm },
-    get_machine_actions(app)
+    get_machine_actions(al_trainer)
   );
   return interaction_sm;
 }
@@ -496,10 +504,10 @@ var non_interactive_sm = {
         src: "queryApprentice",
         onDone: [
           { target: "Comparing_Conflict_Sets", cond : "useWholeConflictSet",
-            actions: ["assignSkillApplications","assignStagedIndex"]},
-          { target: "Applying_Next_Example", cond: "noApplicableSkills" },
+            actions: ["assignSkillApplications"]},
+          { target: "Applying_Next_Example", cond: "noApplicableSkills"},
           { target: "Applying_Staged_Skill_App",
-             actions: ["assignSkillApplications","assignStagedIndex"] }
+             actions: ["assignSkillApplications"] }
         ],
         onError: "Fail"
       },
