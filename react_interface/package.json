@@ -10,7 +10,7 @@
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "web": "expo start --web",
-    "build": "rm -r build && expo build:web && cp public/* web-build && mv web-build build",
+    "build": "rm -fr build && expo build:web && cp public/* web-build && mv web-build build",
     "start": "react-native start",
     "test": "jest"
   },
