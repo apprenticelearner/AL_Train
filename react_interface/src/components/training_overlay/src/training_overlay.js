@@ -100,8 +100,6 @@ class ElemHighlight extends Component{
         onPress={onPress}
         onMouseEnter={()=>this.setState({opacity:.6})}
         onMouseLeave={()=>this.setState({opacity:1.0})}
-
-
         style={[{position:"absolute", left: -6, top: -6,
              // zIndex:zIndex,
              opacity:this.state.opacity,
@@ -270,14 +268,16 @@ class TrainingOverlay extends Component{
 
   demonstrateCallback(sel,action,input){
     let _sgs = this.state.selection_groups
-    _sgs[sel].push({
+    let _sgs_sel = _sgs[sel] || []
+    _sgs_sel.push({
             selection:sel,
             action: action,
             input:input,
             stu_resp_type : "HINT_REQUEST",
             reward:1})
     //focusCallback(_sgs[sel].length-1)
-    this.toggleFociModeCallback(sel,_sgs[sel].length-1)
+    this.toggleFociModeCallback(sel,_sgs_sel.length-1)
+    _sgs[sel] = _sgs_sel
     this.setState({selection_groups : _sgs})
 
   }
@@ -321,6 +321,25 @@ class TrainingOverlay extends Component{
             toggleFociModeCallback, demonstrateCallback,
             removeCallback}
   }
+
+  render_foci_highlights(skill_app){
+    if(skill_app && skill_app.foci_of_attention){
+      let highlights = []
+      let {bounding_boxes, where_colors} = this.props
+      for (let k=0; k < skill_app.foci_of_attention.length; k++){
+        let foa = skill_app.foci_of_attention[k]
+        highlights.push(
+          <SkillAppProposal bounds={bounding_boxes[foa]}
+                            color = {where_colors[k+1]}
+                            hasFocus={true}
+                            key={'foa'+k.toString()}/>
+        )
+      }
+      return highlights
+    }else{
+      return null
+    }
+  }  
 
   render_foci_boxes(){
     let {bounding_boxes, where_colors, state} = this.props
@@ -405,13 +424,35 @@ class TrainingOverlay extends Component{
       )
   }
 
+  resolve_SA_and_focus(sel, staged_sel, staged_index){
+    let {foci_mode_sel, foci_mode_index, 
+         focus_sel, focus_index} = this.state
+    let hasFocus = false
+    let skill_app_index;
+    if(sel === foci_mode_sel){
+      skill_app_index = foci_mode_index
+      hasFocus = true
+    }else if(sel === focus_sel){
+      skill_app_index = focus_index
+      hasFocus = true
+    }else if(staged_sel == sel){
+      skill_app_index = staged_index
+    }else{
+      let sg = this.state.selection_groups[sel]
+      skill_app_index = sg.findIndex(sa => sa.reward > 0) || 0; 
+      if(skill_app_index == -1){skill_app_index = 0} 
+    }
+    return [skill_app_index,hasFocus]
+  }
+
   render(){
+    console.log('\n\nrender overlay\n\n')
     let {bounding_boxes, where_colors} = this.props
     let {focus_index, only_show_focused_index, foci_mode_index,
          demonstrate_sel, demonstrate_index} = this.state
     let [staged_sel, staged_index, using_default_staged] = this.resolveStaged()         
-    let [skill_boxes,possibilities,highlights] = [[],[],[]]
-    let submit_callback = null
+    let [skill_boxes,possibilities] = [[],[]]
+    let [submit_callback,focused_skill_app] = [null,null]
     let prompt = prompts.feedback
 
     if(this.props.start_state_mode){
@@ -421,44 +462,21 @@ class TrainingOverlay extends Component{
       prompt = prompts.start_state_mode
       submit_callback=()=>{this.send_transition("START_STATE_SET")}
     }
-    
-    console.log('\n\nrender overlay\n\n')
 
     let j=0
     for (let sel of this.state.selection_order){
-      if(this.state.only_show_focused_sel){
-        if(sel != this.state.focus_sel) continue;
+      if(this.state.only_show_focused_sel && 
+         sel != this.state.focus_sel){
+        continue;
       }
       let sg = this.state.selection_groups[sel]
       let bounds = bounding_boxes[sel]
 
-      let hasFocus = false
-      let skill_app_index;
-      if(sel === this.state.focus_sel && this.state.foci_mode_sel == null){
-        skill_app_index = this.state.focus_index
-        let skill_app = sg[skill_app_index]
-        if(skill_app && skill_app.foci_of_attention){
-
-          for (let k=0; k < skill_app.foci_of_attention.length; k++){
-            let foa = skill_app.foci_of_attention[k]
-            highlights.push(
-              <SkillAppProposal bounds={bounding_boxes[foa]}
-                                color = {where_colors[k+1]}
-                                hasFocus={true}
-                                key={'foa'+k.toString()}/>
-            )
-          }
-        }
-        hasFocus = true
-      }else if(staged_sel == sel){
-        skill_app_index = staged_index
-        // skill_app = sg[staged_index]
-      }else{
-        skill_app_index = sg.findIndex(sa => sa.reward > 0) || 0; 
-        if(skill_app_index == -1){skill_app_index = 0} 
-      }
+      let [skill_app_index, hasFocus] =
+         this.resolve_SA_and_focus(sel, staged_sel, staged_index);
       let skill_app = sg[skill_app_index]
-      let [correct,incorrect] = [skill_app.reward > 0,skill_app.reward < 0]
+      if(hasFocus) focused_skill_app = skill_app
+      let [correct,incorrect] = [skill_app.reward > 0, skill_app.reward < 0]
       let is_demonstation = skill_app.stu_resp_type == "HINT_REQUEST"
 
 
@@ -484,8 +502,7 @@ class TrainingOverlay extends Component{
       console.log("BLEEP", staged_sel == sel ? staged_index : null)
       skill_boxes.push(
         <SkillAppBox
-          key={sel}
-          zIndex={j}
+          key={sel} zIndex={j}
           initial_pos ={{x: bounds.x+bounds.width+10, y: bounds.y-70}}//{{x: 0, y: 0}}
           staged_index ={staged_sel == sel ? staged_index : null}
           skill_applications={sg}
@@ -493,13 +510,23 @@ class TrainingOverlay extends Component{
             focusCallback, toggleCallback, stageCallback, removeCallback,
             toggleFociModeCallback, only_show_focused_index, foci_mode_index
           }}
-          
         />
       )
       j++
     }
 
-    let foci_boxes = this.render_foci_boxes()
+    let unfilled = []
+    if(!foci_mode_index){
+      for(let sel in bounding_boxes){
+        if(sel in this.state.selection_order) continue;
+        let {demonstrateCallback} = this.generate_callbacks(sel)
+        unfilled.push(
+          <SkillAppProposal key={sel} bounds={bounding_boxes[sel]}
+            demonstrateCallback={demonstrateCallback} editable
+          />
+        )
+      }
+    }
 
     console.log("submit_callback",submit_callback)
     const out = (
@@ -507,7 +534,8 @@ class TrainingOverlay extends Component{
         pointerEvents={'box-none'}
         style={styles.overlay}>
         {foci_mode_index != null && this.render_foci_boxes()}
-        {highlights}
+        {this.render_foci_highlights(focused_skill_app)}
+        {unfilled}
         {possibilities}
         {skill_boxes}
         <Prompts 
