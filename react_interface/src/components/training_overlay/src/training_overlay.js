@@ -323,7 +323,8 @@ class TrainingOverlay extends Component{
   }
 
   render_foci_highlights(skill_app){
-    if(skill_app && skill_app.foci_of_attention){
+    if(skill_app && skill_app.foci_of_attention && 
+       !this.state.foci_mode_sel){
       let highlights = []
       let {bounding_boxes, where_colors} = this.props
       for (let k=0; k < skill_app.foci_of_attention.length; k++){
@@ -449,7 +450,7 @@ class TrainingOverlay extends Component{
     console.log('\n\nrender overlay\n\n')
     let {bounding_boxes, where_colors} = this.props
     let {focus_index, only_show_focused_index, foci_mode_index,
-         demonstrate_sel, demonstrate_index} = this.state
+         foci_mode_sel, demonstrate_sel, demonstrate_index} = this.state
     let [staged_sel, staged_index, using_default_staged] = this.resolveStaged()         
     let [skill_boxes,possibilities] = [[],[]]
     let [submit_callback,focused_skill_app] = [null,null]
@@ -516,7 +517,7 @@ class TrainingOverlay extends Component{
     }
 
     let unfilled = []
-    if(!foci_mode_index){
+    if(!foci_mode_sel){
       for(let sel in bounding_boxes){
         if(sel in this.state.selection_order) continue;
         let {demonstrateCallback} = this.generate_callbacks(sel)
