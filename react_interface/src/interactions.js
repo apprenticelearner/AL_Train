@@ -442,7 +442,18 @@ function get_machine_actions(al_trainer) {
       printFeedback: printFeedback,
 
       generate_nools: network_layer.generate_nools,
-      appendStartHistory: appendStartHistory
+      appendStartHistory: appendStartHistory,
+
+      apply_overlay_start: (context,event) => {
+        let training_overlay = context.training_overlay
+        let start_state_sais = training_overlay && training_overlay.state.start_state_sais
+        if(start_state_sais){
+          for(var sel in start_state_sais){
+            let sai = start_state_sais[sel]
+            context.tutor.applySAI(sai)
+          }
+        }
+      }
     },
     guards: {
       saiIsCorrectDone: saiIsCorrectDone,
@@ -450,7 +461,10 @@ function get_machine_actions(al_trainer) {
       noApplicableSkills: noApplicableSkills,
       isFreeAuthor: isFreeAuthor,
       checkIsCorrect: checkIsCorrect,
-      useWholeConflictSet: useWholeConflictSet
+      useWholeConflictSet: useWholeConflictSet,
+      tutorHandlesStartState : (context)=>{return context.al_trainer.tutor_handles_start_state},
+      tutorHandlesDemonstrations : (context)=>{return context.al_trainer.tutor_handles_demonstration},
+      tutorHandlesFoci : (context)=>{return context.al_trainer.tutor_handles_foci},
     }
   };
 }
@@ -461,6 +475,7 @@ export function build_interactions_sm(
 ) {
   var context = {
     al_trainer: al_trainer,
+    training_overlay: al_trainer.training_overlay.current,
     tutor: al_trainer.tutor.current,
     skill_panel: al_trainer.skill_panel.current,
     buttons: al_trainer.buttons.current,
@@ -602,7 +617,7 @@ var interactive_sm = {
       on: {
         START_STATE_SET: {
           target: "Finalizing_Start_State",
-          actions: ["appendStartHistory"]
+          actions: ["appendStartHistory", 'apply_overlay_start']
         }
       },
       // exit: ["exitSetStartStateMode"]

@@ -341,6 +341,9 @@ class CTAT_Tutor extends React.Component {
 
       console.log("CTAT INITIALIZED!");
       this.init_callback(this);
+
+      iframe_content.removeEventListener('scroll', this.props.updateBoundsCallback)
+      iframe_content.addEventListener('scroll', this.props.updateBoundsCallback)
     } else {
       // term_print('\x1b[0;30;47m' + "BLEHH2" + '\x1b[0m');
       console.log("CTAT not initialized yet...");
@@ -779,11 +782,13 @@ class CTAT_Tutor extends React.Component {
 
     // last_action = sai
     const CTATSAI = this.iframe_content.CTATSAI;
-    var sai_obj = new CTATSAI(sai.selection, sai.action, sai.inputs["value"]);
+    let input = (sai.inputs && sai.inputs["value"]) || sai.input
+    let sai_obj = new CTATSAI(sai.selection, sai.action, input);
     this.iframe_content.CTATCommShell.commShell.processComponentAction(
       sai_obj,
       true
     );
+    console.log("sai_obj",sai_obj)
   }
 
   // modifyElement(name,value) {  
@@ -1017,10 +1022,30 @@ class CTAT_Tutor extends React.Component {
     this.commLibrary.sendXML(message);
   }
 
+  generateElementList(){
+    let state_array = this.iframe_content.$("div").toArray();
+    var elements = this.elements = [];
+    $.each(state_array, function(idx, element) {
+      if (element.classList.contains("CTATComponent") &&
+         !element.classList.contains("CTATTable")) {
+        elements.push(element)
+      }
+    })
+    return elements
+  }
+
+  getBoundingBoxes(){
+    let bounding_boxes = {}
+    for(let element of this.elements){
+      bounding_boxes[element.id] = element.getBoundingClientRect()
+    }
+    return bounding_boxes
+  }
+
   getState({
     encode_relative = true,
-    strip_offsets = true,
-    use_offsets = true,
+    strip_offsets = false,
+    use_bounds = true,
     use_class = true,
     use_id = true,
     append_ele = false,
@@ -1029,12 +1054,15 @@ class CTAT_Tutor extends React.Component {
   } = {}) {
     var relative_pos_cache = this.relative_pos_cache;
     var HTML_PATH = this.HTML_PATH;
-    var state_array = this.iframe_content.$("div").toArray();
+
+    var elements = this.generateElementList()
+    let bounding_boxes = this.getBoundingBoxes()
     // state_array.push({current_task: current_task});
 
     var state_json = {};
     var count = 0;
-    $.each(state_array, function(idx, element) {
+    // $.each(state_array, function(idx, element) {
+    for(let element of this.elements){
       obj = {};
       if (
         element.classList.contains("CTATComponent") &&
@@ -1046,12 +1074,15 @@ class CTAT_Tutor extends React.Component {
           if (use_class) {
             obj["dom_class"] = element.classList[0];
           }
-          if (use_offsets) {
+          if (use_bounds) {
+            let rect = bounding_boxes[element.id]
+            rect = {x :rect.x, y : rect.y, width : rect.width, height: rect.height }
+            Object.assign(obj, rect)
             obj["offsetParent"] = element.offsetParent.dataset.silexId;
-            obj["offsetLeft"] = element.offsetLeft;
-            obj["offsetTop"] = element.offsetTop;
-            obj["offsetWidth"] = element.offsetWidth;
-            obj["offsetHeight"] = element.offsetHeight;
+            // obj["x"] = element.x;
+            // obj["y"] = element.y;
+            // obj["width"] = element.width;
+            // obj["height"] = element.height;
           }
 
           if (use_id) {
@@ -1126,7 +1157,7 @@ class CTAT_Tutor extends React.Component {
       //  element.removeData();
       //  console.log("WOOOPS");
       // }
-    });
+    }
 
     // Gets lists of elements that are to the left, right and above the current element
     if (encode_relative) {
@@ -1151,21 +1182,22 @@ class CTAT_Tutor extends React.Component {
             if (i != j) {
               var [a_n, a_obj] = elm_list[i];
               var [b_n, b_obj] = elm_list[j];
+              var [a_bb, b_bb] = [bounding_boxes[a_n],bounding_boxes[b_n]]
               if (
-                a_obj.offsetTop > b_obj.offsetTop &&
-                a_obj.offsetLeft < b_obj.offsetLeft + b_obj.offsetWidth &&
-                a_obj.offsetLeft + a_obj.offsetWidth > b_obj.offsetLeft
+                a_bb.y > b_bb.y &&
+                a_bb.x < b_bb.x + b_bb.width &&
+                a_bb.x + a_bb.width > b_bb.x
               ) {
-                var dist = a_obj.offsetTop - b_obj.offsetTop;
+                var dist = a_bb.y - b_bb.y;
                 rel_objs[a_n]["above"].push([b_n, dist]);
                 rel_objs[b_n]["below"].push([a_n, dist]);
               }
               if (
-                a_obj.offsetLeft < b_obj.offsetLeft &&
-                a_obj.offsetTop + a_obj.offsetHeight > b_obj.offsetTop &&
-                a_obj.offsetTop < b_obj.offsetTop + b_obj.offsetHeight
+                a_bb.x < b_bb.x &&
+                a_bb.y + a_bb.height > b_bb.y &&
+                a_bb.y < b_bb.y + b_bb.height
               ) {
-                var dist = b_obj.offsetLeft - a_obj.offsetLeft;
+                var dist = b_bb.x - a_bb.x;
                 rel_objs[a_n]["to_right"].push([b_n, dist]);
                 rel_objs[b_n]["to_left"].push([a_n, dist]);
 
@@ -1232,10 +1264,10 @@ class CTAT_Tutor extends React.Component {
         obj["to_right"] = rel_obj["to_right"];
         obj["to_left"] = rel_obj["to_left"];
         if (strip_offsets) {
-          delete obj["offsetTop"];
-          delete obj["offsetLeft"];
-          delete obj["offsetWidth"];
-          delete obj["offsetHeight"];
+          delete obj["y"];
+          delete obj["x"];
+          delete obj["width"];
+          delete obj["height"];
         }
 
         state_json[elm_list[i][0]] = obj;
@@ -1276,6 +1308,8 @@ class CTAT_Tutor extends React.Component {
         // source={{"uri": "http://0.0.0.0:8000/HTML/fraction_arithmetic.html?question_file=../mass_production/mass_production_brds/AD 5_9_plus_3_7.brd"}}
         source={this.state.source}
         onLoad={this.state.onLoad}
+
+        // onScroll={this.props.updateBoundsCallback}
         // source={{"html": "<!DOCTYPE html><html><head></head><body> HERE IS THE TUTOR... ARE YOU LEARNING YET? </body></html>"}}
         // source={{"html": "<? echo file_get_contents('http://0.0.0.0:8000/HTML/fraction_arithmetic.html'); ?>"}}
         // injectedJavaScript={"window.booger = document"}

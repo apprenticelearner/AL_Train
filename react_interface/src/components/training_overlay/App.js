@@ -1,55 +1,89 @@
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import SkillOverlay from "./src/training_overlay.js"
+import React, { Component } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import TrainingOverlay from "./src/training_overlay.js"
+import autobind from "class-autobind";
+
+const state = {
+  "A" : {
+    contentEditable: true,
+    type : "TextField",
+  },
+  "B" : {
+    contentEditable: true,
+    type : "TextField",
+  },
+  "C" : {
+    contentEditable: true,
+    type : "TextField",
+  },
+  "D" : {
+    contentEditable: true,
+    type : "TextField",
+  },
+  "Button" : {
+    type : "Button",
+  },
+  "E" : {
+    contentEditable: false,
+    type : "TextField",
+  },
+  "F" : {
+    contentEditable: false,
+    type : "TextField",
+  },
+  "G" : {
+    contentEditable: true,
+    type : "TextField",
+  },
+}
 
 const bounding_boxes = {
   "A" : {
-    type : "TextField",
     x : 100,
     y : 100,
     width: 100,
     height: 100,
   },
   "B" : {
-    type : "TextField",
     x : 250,
     y : 200,
     width: 200,
     height: 200,
   },
   "C" : {
-    type : "TextField",
     x : 250,
     y : 100,
     width: 100,
     height: 100,
   },
   "D" : {
-    type : "TextField",
     x : 50,
     y : 300,
     width: 100,
     height: 100,
   },
   "Button" : {
-    type : "Button",
     x : 150,
     y : 500,
     width: 100,
     height: 50,
   },
   "E" : {
-    type : "TextField",
     x : 500,
     y : 300,
     width: 100,
     height: 100,
   },
   "F" : {
-    type : "TextField",
     x : 650,
     y : 300,
+    width: 100,
+    height: 100,
+  },
+  "G" : {
+    x : 500,
+    y : 500,
     width: 100,
     height: 100,
   },
@@ -80,30 +114,46 @@ if(NO_START_REWARD){
   }
 }
 
-export default function App() {
-  let fake_items = []
-  for(let bb_n in bounding_boxes){
-    let bb = bounding_boxes[bb_n]
-    fake_items.push(
-      <View style={{left: bb.x,
-                    top: bb.y,
-                    width: bb.width,
-                    height: bb.height,
-                    backgroundColor : 'rgba(180,180,180,.3)',
-                    position: "absolute"
-                  }}
-            key={bb_n}
-      /> 
-    )
+export default class App extends Component{
+  constructor(props){
+    super(props);
+    autobind(this)
+    this.state = {start_state_mode: false}
   }
-  return (
-    <View style={styles.container}>
-      {fake_items}
-      <SkillOverlay skill_applications ={skill_applications}
-        bounding_boxes = {bounding_boxes}/>
-    </View>
-  );
+  render(){
+    let fake_items = []
+    for(let bb_n in bounding_boxes){
+      let bb = bounding_boxes[bb_n]
+      fake_items.push(
+        <View style={{left: bb.x,
+                      top: bb.y,
+                      width: bb.width,
+                      height: bb.height,
+                      backgroundColor : 'rgba(180,180,180,.3)',
+                      position: "absolute"
+                    }}
+              key={bb_n}
+        /> 
+      )
+    }
+    return (
+      <View style={styles.container}>
+        <TouchableOpacity
+          style={{position:"absolute",bottom:10, right: 10, width:200,height:50,backgroundColor:'green'}}
+          onPress={()=>{this.setState({start_state_mode: !this.state.start_state_mode})}}
+        >
+          <Text>{"START STATE MODE"}</Text>
+        </TouchableOpacity>
+        {fake_items}
+        <TrainingOverlay skill_applications ={skill_applications}
+          bounding_boxes = {bounding_boxes}
+          start_state_mode = {this.state.start_state_mode}
+        />
+      </View>
+    );
+  }
 }
+
 
 const styles = StyleSheet.create({
   container: {

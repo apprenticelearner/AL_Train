@@ -38,7 +38,10 @@ const images = {
 };
 
 const prompts = {
-  select_foci : "Select any elements used to compute this value."
+  select_foci : "Select any elements used to compute this value.",
+  start_state_mode : "Propose a problem by filling out its initial state.",
+  demonstrate : "Demonstrate the next step.",
+  feedback : "Give feedback to all the proposed actions. Or demonstrate the next step.",
 }
 
 
@@ -122,9 +125,9 @@ class TrainingOverlay extends Component{
   constructor(props){
     super(props);
     autobind(this)
-    let sk_apps =this.props.skill_applications 
+    let sk_apps = this.props.skill_applications || null
     this.state = {
-     focus_sel : this.props.skill_applications[0].selection,
+     focus_sel : (sk_apps && sk_apps[0].selection) || null,
      focus_index : 0,
      demonstrate_sel: null,
      demonstrate_index: null,
@@ -134,13 +137,18 @@ class TrainingOverlay extends Component{
      // only_show_focused_sel: false,
      // staged_index : 0,
      staged_index : null,
-     ...this.group_skill_apps(this.props.skill_applications,{})
+     ...this.group_skill_apps(sk_apps,{})
      // z_order: [...Array((sk_apps || []).length).keys()]
     }
 
   }
 
   group_skill_apps(next_sk_apps,prev_sk_apps){
+    if(!next_sk_apps){
+      return {selection_order: [],
+              selection_groups: {}
+             }
+    }
     let selection_groups = {}
     // let toggleCallback_groups = {}
     let selection_order = []
@@ -184,18 +192,22 @@ class TrainingOverlay extends Component{
           }
   }
 
-  findDefaultStaged(){
-    for (let sel in this.state.selection_groups){
-      let sg = this.state.selection_groups[sel]
-      for (let i=0; i<sg.length; i++){
-        let skill_app = sg[i]
-        if(skill_app.reward > 0){
-          return [skill_app.selection, i]
+  resolveStaged(){
+    let {staged_sel,staged_index} = this.state
+    if(this.state.staged_sel == null || this.state.staged_index == null){
+      for (let sel in this.state.selection_groups){
+        let sg = this.state.selection_groups[sel]
+        for (let i=0; i<sg.length; i++){
+          let skill_app = sg[i]
+          if(skill_app.reward > 0){
+            return [skill_app.selection, i,true]
+          }
         }
       }
+      return [Object.keys(this.state.selection_groups)[0], 0,true]
+    }else{
+      return [staged_sel,staged_index,false]
     }
-    return [null, null]
-
   }
 
   componentDidUpdate(prevProps) {
@@ -207,202 +219,115 @@ class TrainingOverlay extends Component{
     
   }
 
-  render(){
-    let {bounding_boxes, where_colors} = this.props
-    let skill_boxes = []
-    let possibilities = []
-    let highlights = []
-    let connectors = []
-    let submit_callback = null
-    let prompt = null
-    console.log('\n\nrender overlay\n\n')
-    let {staged_sel, staged_index,
-         demonstrate_sel, demonstrate_index} = this.state
-    // let staged_sel = this.state.staged_sel 
-    // let staged_index = this.state.staged_index
-    // console.log("R)
-    let using_default_staged = false
-    if(staged_sel == null || staged_index == null){
-      [staged_sel,staged_index] = this.findDefaultStaged()
-      using_default_staged = true
+  send_transition(action_str){
+    this.props.interactions_service.send(action_str);
+  }
+
+  focusCallback(sel,index){
+    console.log("Set FOCUS", sel,index)
+    this.state.selection_order.splice(
+      this.state.selection_order.indexOf(sel),1)
+    let new_sel_order = [...this.state.selection_order,sel]
+    this.setState({"focus_sel" : sel,"focus_index":index, selection_order: new_sel_order})
+    console.log("selection_order",new_sel_order)
+  }
+
+  stageCallback(sel,index){
+    console.log("STAGE", sel,index)
+    if(this.state.staged_sel == sel && this.state.staged_index == index ){
+      this.setState({"staged_sel" : null,"staged_index": null})
+    }else{
+      this.setState({"staged_sel" : sel,"staged_index": index})  
     }
-    if(staged_sel == null || staged_index == null){
-      staged_sel = Object.keys(this.state.selection_groups)[0]
-      staged_index = 0
+  }
+
+  toggleCallback(sel,nxt,index){
+    console.log("CALLBACK",sel,index,nxt)
+    let _sgs = this.state.selection_groups
+    // let i = this.state.selection_order[j]
+    _sgs[sel][index] = {..._sgs[sel][index],reward:nxt.correct ? 1 : -1}
+    this.setState({selection_groups:_sgs})
+  }
+
+  toggleFociModeCallback(sel,index,force_false){
+    if(!force_false)this.focusCallback(sel,index)
+    if(force_false || 
+      (this.state.foci_mode_sel == sel &&
+       this.state.foci_mode_index == index)){
+      this.setState({foci_mode_sel : null,
+                     foci_mode_index: null,
+                     only_show_focused_sel :false,
+                     only_show_focused_index :false
+      })
+    }else{
+      this.setState({foci_mode_sel : sel,
+                     foci_mode_index: index,
+                     only_show_focused_sel : true,
+                     only_show_focused_index :true
+      })
     }
+  }
 
-    let j=0
-    for (let sel of this.state.selection_order){
-      if(this.state.only_show_focused_sel){
-        if(sel != this.state.focus_sel) continue;
-      }
-      let sg = this.state.selection_groups[sel]
-      let bounds = bounding_boxes[sel]
+  demonstrateCallback(sel,action,input){
+    let _sgs = this.state.selection_groups
+    _sgs[sel].push({
+            selection:sel,
+            action: action,
+            input:input,
+            stu_resp_type : "HINT_REQUEST",
+            reward:1})
+    //focusCallback(_sgs[sel].length-1)
+    this.toggleFociModeCallback(sel,_sgs[sel].length-1)
+    this.setState({selection_groups : _sgs})
 
-      let hasFocus = false
-      let skill_app_index;
-      if(sel === this.state.focus_sel && this.state.foci_mode_sel == null){
-        skill_app_index = this.state.focus_index
-        console.log("FOCUS_INDEX", this.state.focus_index)
-        let skill_app = sg[skill_app_index]
-        console.log("SELECTED", skill_app)
-        if(skill_app && skill_app.foci_of_attention){
+  }
 
-          for (let k=0; k < skill_app.foci_of_attention.length; k++){
-            let foa = skill_app.foci_of_attention[k]
-            console.log("FOCI", foa)
-            highlights.push(
-              <SkillAppProposal bounds={bounding_boxes[foa]}
-                                color = {where_colors[k+1]}
-                                hasFocus={true}
-                                key={'foa'+k.toString()}/>
-            )
-          }
-        }
-        hasFocus = true
-      }else if(staged_sel == sel){
-        skill_app_index = staged_index
-        // skill_app = sg[staged_index]
-      }else{
-        skill_app_index = sg.findIndex(sa => sa.reward > 0) || 0; 
-        if(skill_app_index == -1){skill_app_index = 0} 
-      }
-      console.log("BLOOP",sel,staged_sel,staged_index,using_default_staged)
-      let skill_app = sg[skill_app_index]
-      let correct = skill_app.reward > 0
-      let incorrect = skill_app.reward < 0
-      let is_demonstation = skill_app.stu_resp_type == "HINT_REQUEST"
-
-      let focusCallback = (index)=>{
-       console.log("Set FOCUS", sel,index)
-       this.state.selection_order.splice(
-          this.state.selection_order.indexOf(sel),1)
-       let new_sel_order = [...this.state.selection_order,sel]
-       this.setState({"focus_sel" : sel,"focus_index":index, selection_order: new_sel_order})
-       console.log("selection_order",new_sel_order)
-      }
-
-      let stageCallback = (index)=>{
-        console.log("STAGE", sel,index)
-        if(this.state.staged_sel == sel && this.state.staged_index == index ){
-          this.setState({"staged_sel" : null,"staged_index": null})
-        }else{
-          this.setState({"staged_sel" : sel,"staged_index": index})  
-        }
-      }
-
-      
-
-      let toggleCallback = (nxt,index)=>{
-        console.log("CALLBACK",sel,index,nxt)
-        let _sgs = this.state.selection_groups
-        // let i = this.state.selection_order[j]
-        _sgs[sel][index] = {..._sgs[sel][index],reward:nxt.correct ? 1 : -1}
-        this.setState({selection_groups:_sgs})
-      }
-
-      let toggleFociModeCallback = (index,force_false) =>{
-        if(!force_false)focusCallback(index)
-        if(force_false || 
-          (this.state.foci_mode_sel == sel &&
-           this.state.foci_mode_index == index)){
-          this.setState({foci_mode_sel : null,
-                         foci_mode_index: null,
-                         only_show_focused_sel :false,
-                         only_show_focused_index :false
-          })
-        }else{
-          this.setState({foci_mode_sel : sel,
-                         foci_mode_index: index,
-                         only_show_focused_sel : true,
-                         only_show_focused_index :true
-          })
-        }
-      }
-
-      if(this.state.foci_mode_sel != null){
-        prompt = prompts.select_foci 
-        submit_callback = ()=>{
-          console.log("Click Away")
-          toggleFociModeCallback(null,true)
-        }
-      }
-
-      let demonstrateCallback = (action,input)=>{
-        let _sgs = this.state.selection_groups
-        _sgs[sel].push({
-                selection:sel,
-                action: action,
-                input:input,
-                stu_resp_type : "HINT_REQUEST",
-                reward:1})
-        //focusCallback(_sgs[sel].length-1)
-        toggleFociModeCallback(_sgs[sel].length-1)
-        this.setState({selection_groups : _sgs})
-
-      }
-
-      let removeCallback = (index)=>{
-        let _sgs = this.state.selection_groups
-        let fi = this.state.focus_index
-        let fs = this.state.focus_sel
-        _sgs[sel].splice(index,1)
-        if(_sgs[sel].length == 0){
-          delete _sgs[sel]
-        }
-        fi = fi >= index ? (fi - 1) : fi
-        if(fi < 0){[fs,fi] = [selection_order[0],0]}
-        this.setState({selection_groups : _sgs,
-                       focus_sel: fs,
-                       focus_index: fi})
-        toggleFociModeCallback(null,true)
-      }
-
-      
-
-      possibilities.push(
-        <SkillAppProposal
-          key={sel}
-          bounds={bounds}
-          staged={staged_sel == sel && staged_index == skill_app_index}
-          skill_app={skill_app}
-          hasFocus={hasFocus}
-          correct={correct}
-          incorrect={incorrect}
-          is_demonstation={is_demonstation}
-          //demonstrating={demonstrate_sel == sel && staged_index == skill_app_index}
-          demonstrateCallback={demonstrateCallback}
-        />        
-      )
-
-      
-      
-      console.log("BLEEP", staged_sel == sel ? staged_index : null)
-      skill_boxes.push(
-        <SkillAppBox
-          zIndex={j}
-          focusCallback = {focusCallback}
-          initial_pos ={{x: bounds.x+bounds.width+10, y: bounds.y-70}}//{{x: 0, y: 0}}
-          staged_index ={staged_sel == sel ? staged_index : null}
-          using_default_staged={using_default_staged}
-          focus_index ={this.state.focus_index}
-          key={sel}
-          skill_applications={sg}
-          hasFocus={hasFocus}
-          toggleCallback={toggleCallback}
-          stageCallback={stageCallback}
-          removeCallback={removeCallback}
-          only_show_focused_index={this.state.only_show_focused_index}
-          foci_mode_index={this.state.foci_mode_index}
-          toggleFociModeCallback={toggleFociModeCallback}
-        />
-      )
-      j++
+  removeCallback(sel,index){
+    let _sgs = this.state.selection_groups
+    let fi = this.state.focus_index
+    let fs = this.state.focus_sel
+    _sgs[sel].splice(index,1)
+    if(_sgs[sel].length == 0){
+      delete _sgs[sel]
     }
+    fi = fi >= index ? (fi - 1) : fi
+    if(fi < 0){[fs,fi] = [selection_order[0],0]}
+    this.setState({selection_groups : _sgs,
+                   focus_sel: fs,
+                   focus_index: fi})
+    this.toggleFociModeCallback(sel,null,true)
+  }
 
+  generate_callbacks(sel){
+    let focusCallback = (index)=>
+      this.focusCallback(sel,index)
+    
+    let stageCallback = (index)=>
+      this.stageCallback(sel,index)  
+
+    let toggleCallback= (nxt,index) =>
+      this.toggleCallback(sel,nxt,index)        
+    
+    let toggleFociModeCallback = (index,force_false) =>
+      this.toggleFociModeCallback(sel,index,force_false)
+    
+    let demonstrateCallback = (action,input)=>
+      this.demonstrateCallback(sel,action,input)
+    
+    let removeCallback = (index)=>
+      this.removeCallback(sel,index)
+
+    return {focusCallback, stageCallback,toggleCallback,
+            toggleFociModeCallback, demonstrateCallback,
+            removeCallback}
+  }
+
+  render_foci_boxes(){
+    let {bounding_boxes, where_colors, state} = this.props
+    let {foci_mode_sel, foci_mode_index} = this.state
     let foci_boxes = []
-    if(this.state.foci_mode_index != null){
-      let [fs,fi] = [this.state.foci_mode_sel,this.state.foci_mode_index]
+    if(foci_mode_index != null){
+      let [fs,fi] = [foci_mode_sel,foci_mode_index]
       let skill_app = this.state.selection_groups[fs][fi]
       let foci = skill_app.foci_of_attention || []
       let z = 10;
@@ -435,11 +360,153 @@ class TrainingOverlay extends Component{
         z++
       }
     }
+    return foci_boxes
+  }
+
+  render_start_state_mode(){
+    let {bounding_boxes, where_colors, state} = this.props
+    let fillables = []
+    console.log("render_start_state_mode", bounding_boxes,state )
+    for(let bn in bounding_boxes){
+      let bounds = bounding_boxes[bn]
+      let elm_obj = (state && state[bn]) || null
+      if(elm_obj && (elm_obj.contentEditable || elm_obj.type == "Button")
+         || !state){
+        let sai = (this.state.start_state_sais || {})[bn] || null
+        let demonstrateCallback = (action, input) => {
+          let ss_sais = this.state.start_state_sais || {}
+          ss_sais[bn] = {selection: bn, action:action, input: input }
+          this.setState({start_state_sais: ss_sais})
+        } 
+        fillables.push(
+          <SkillAppProposal
+            key={bn}
+            bounds={bounds}
+            skill_app={sai}
+            color = {'darkcyan'}
+            textColor = {'darkcyan'}
+            hasFocus={false}
+            demonstrateCallback={demonstrateCallback}
+            editable={true}
+          />        
+        )
+      }
+    }
+    return( 
+      <View 
+        pointerEvents={'box-none'}
+        style={styles.overlay}>
+        {fillables}
+        <Prompts 
+          prompt={prompts.start_state_mode}
+          submitCallback={()=>{this.send_transition("START_STATE_SET")}}
+        />
+      </View>
+      )
+  }
+
+  render(){
+    let {bounding_boxes, where_colors} = this.props
+    let {focus_index, only_show_focused_index, foci_mode_index,
+         demonstrate_sel, demonstrate_index} = this.state
+    let [staged_sel, staged_index, using_default_staged] = this.resolveStaged()         
+    let [skill_boxes,possibilities,highlights] = [[],[],[]]
+    let submit_callback = null
+    let prompt = prompts.feedback
+
+    if(this.props.start_state_mode){
+      if(!this.props.tutor_handles_start_state){
+        return this.render_start_state_mode()
+      }
+      prompt = prompts.start_state_mode
+      submit_callback=()=>{this.send_transition("START_STATE_SET")}
+    }
+    
+    console.log('\n\nrender overlay\n\n')
+
+    let j=0
+    for (let sel of this.state.selection_order){
+      if(this.state.only_show_focused_sel){
+        if(sel != this.state.focus_sel) continue;
+      }
+      let sg = this.state.selection_groups[sel]
+      let bounds = bounding_boxes[sel]
+
+      let hasFocus = false
+      let skill_app_index;
+      if(sel === this.state.focus_sel && this.state.foci_mode_sel == null){
+        skill_app_index = this.state.focus_index
+        let skill_app = sg[skill_app_index]
+        if(skill_app && skill_app.foci_of_attention){
+
+          for (let k=0; k < skill_app.foci_of_attention.length; k++){
+            let foa = skill_app.foci_of_attention[k]
+            highlights.push(
+              <SkillAppProposal bounds={bounding_boxes[foa]}
+                                color = {where_colors[k+1]}
+                                hasFocus={true}
+                                key={'foa'+k.toString()}/>
+            )
+          }
+        }
+        hasFocus = true
+      }else if(staged_sel == sel){
+        skill_app_index = staged_index
+        // skill_app = sg[staged_index]
+      }else{
+        skill_app_index = sg.findIndex(sa => sa.reward > 0) || 0; 
+        if(skill_app_index == -1){skill_app_index = 0} 
+      }
+      let skill_app = sg[skill_app_index]
+      let [correct,incorrect] = [skill_app.reward > 0,skill_app.reward < 0]
+      let is_demonstation = skill_app.stu_resp_type == "HINT_REQUEST"
+
+
+      if(this.state.foci_mode_sel != null){
+        prompt = prompts.select_foci 
+        submit_callback = ()=> toggleFociModeCallback(null,true);
+      }
+
+
+      let { focusCallback, stageCallback, toggleCallback,
+          toggleFociModeCallback, demonstrateCallback,
+          removeCallback} = this.generate_callbacks(sel)
+
+      possibilities.push(
+        <SkillAppProposal
+          key={sel}
+          staged={staged_sel == sel && staged_index == skill_app_index}
+          {...{bounds, skill_app, hasFocus, correct,
+            incorrect, is_demonstation, demonstrateCallback}}
+        />        
+      )
+      
+      console.log("BLEEP", staged_sel == sel ? staged_index : null)
+      skill_boxes.push(
+        <SkillAppBox
+          key={sel}
+          zIndex={j}
+          initial_pos ={{x: bounds.x+bounds.width+10, y: bounds.y-70}}//{{x: 0, y: 0}}
+          staged_index ={staged_sel == sel ? staged_index : null}
+          skill_applications={sg}
+          {...{using_default_staged, focus_index, hasFocus,
+            focusCallback, toggleCallback, stageCallback, removeCallback,
+            toggleFociModeCallback, only_show_focused_index, foci_mode_index
+          }}
+          
+        />
+      )
+      j++
+    }
+
+    let foci_boxes = this.render_foci_boxes()
 
     console.log("submit_callback",submit_callback)
     const out = (
-      <View style={styles.overlay}>
-        {foci_boxes}
+      <View 
+        pointerEvents={'box-none'}
+        style={styles.overlay}>
+        {foci_mode_index != null && this.render_foci_boxes()}
         {highlights}
         {possibilities}
         {skill_boxes}
@@ -450,7 +517,6 @@ class TrainingOverlay extends Component{
       </View>
       )
 
-    // console.timeEnd('overlay_rerender')
     return out
   }
 }
@@ -458,6 +524,9 @@ class TrainingOverlay extends Component{
 const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
+    // width:10,
+    // height:10,
+    // backgroundColor:'red',
     width:"100%",
     height:"100%",
   },
@@ -480,7 +549,7 @@ const styles = StyleSheet.create({
     fontFamily : "Geneva",
   },
   submit_button :{
-    color: 'white',
+    // color: 'white',
     position: "absolute",
     width:80,
     height:80,

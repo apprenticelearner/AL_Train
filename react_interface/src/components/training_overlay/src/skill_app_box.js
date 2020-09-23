@@ -726,8 +726,12 @@ class SkillAppBox extends RisingComponent{
 
   componentDidMount () {
     // console.log("MOUNT")
-    if(this.main_content && this.main_content.current){
-      window.setTimeout(()=>this.main_content.current.measure(this.resize_background),100)
+    try{
+      if(this.main_content && this.main_content.current){
+        window.setTimeout(()=>this.main_content.current.measure(this.resize_background),100)
+      }
+    }catch(err){
+      //pass
     }
   }
   resize_background(ox, oy, width, height, px, py) {
@@ -737,7 +741,7 @@ class SkillAppBox extends RisingComponent{
     console.log("height: " + height);
     console.log("px: " + px);
     console.log("py: " + py);
-    this.setState({content_width:width})
+    if(this.state) this.setState({content_width:width})
   }
 
   render(){

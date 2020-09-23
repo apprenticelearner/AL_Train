@@ -152,6 +152,7 @@ export default class AL_Trainer extends React.Component {
         working_dir =  !!match ? match[1] : ''; //The directory of the training.json
     }
     this.tutor = React.createRef()
+    this.training_overlay = React.createRef()
     this.skill_panel = React.createRef()
     this.buttons = React.createRef()
 
@@ -167,6 +168,11 @@ export default class AL_Trainer extends React.Component {
       interactive : this.props.interactive,
       free_author : this.props.free_author,
       tutor_mode : this.props.tutor_mode,
+      tutor_handles_start_state : true,
+      tutor_handles_demonstration : false,
+      tutor_handles_foci : false,
+
+      prev_interaction_state : "Start",
     }
     // this.state = {prob_obj : null};
   }
@@ -176,13 +182,28 @@ export default class AL_Trainer extends React.Component {
 
     var standard_props = {interactions_state: current,
                           interactions_service : this.interactions_service}
-    this.setState({
+    let prev_interaction_state = this.state.prev_interaction_state                          
+    let nxt_state = {
       default_props : standard_props,
-      Interactions_Machine_State : current.value
-      // buttons_props: standard_props,
-      // tutor_props: standard_props,
-      // skill_panel_props: standard_props,
-    })
+      Interactions_Machine_State : current.value,
+      start_state_mode : current.value == "Setting_Start_State",
+      prev_interaction_state : current.value,
+    }                           
+
+    if(current.context.interactive){
+      if(prev_interaction_state == "Querying_Apprentice"){
+        nxt_state['skill_applications'] = current.context.skill_applications
+        nxt_state['state'] = current.context.state
+        this.updateBounds()
+      }
+      if(prev_interaction_state == "Setting_Start_State" ||
+         prev_interaction_state == "Start"){
+        nxt_state['state'] = current.context.state  
+        this.updateBounds()
+      }
+    }
+
+    this.setState(nxt_state)
   }
 
   onTrainingTransition(current){
@@ -259,7 +280,23 @@ export default class AL_Trainer extends React.Component {
     window.generateBehaviorProfile = this.generateBehaviorProfile
 
 
+    window.addEventListener('resize', this.updateBounds);
+    window.addEventListener('scroll', this.updateBounds);
+    // this.tutor.addEventListener('scroll', this.updateBounds);
+
+
   }
+
+  updateBounds(){
+    if(this.state.interactive && this.tutor){
+      let bounds = this.tutor.current.getBoundingBoxes()
+      delete bounds['top']; delete bounds['left'];
+      delete bounds['bottom']; delete bounds['right'];
+      console.log("Update Bounds", bounds)
+      this.setState({bounding_boxes: bounds})
+    }
+  }
+
 
   generateBehaviorProfile(ground_truth_path="/al_train/ground_truth.json",out_dir=""){
     // window.generateBehaviorProfile = (ground_truth_path,out_dir="") => {
@@ -359,11 +396,21 @@ export default class AL_Trainer extends React.Component {
           </View> 
         }
         {(this.state.interactive && !this.props.use_legacy_interface) && 
-          <TrainingOverlay skill_applications ={skill_applications}
-          bounding_boxes = {bounding_boxes}/>
+          <TrainingOverlay 
+            ref={this.training_overlay}
+            start_state_mode = {this.state.start_state_mode}
+            skill_applications ={this.state.skill_applications}
+            bounding_boxes = {this.state.bounding_boxes}
+            state = {this.state.state}
+            interactions_service={this.interactions_service}
+            tutor_handles_start_state={this.state.tutor_handles_start_state}
+            tutor_handles_demonstration={this.state.tutor_handles_demonstration}
+            tutor_handles_foci={this.state.tutor_handles_foci}
+          />
         }
   			{<Tutor
           style ={styles.overlay}
+          updateBoundsCallback={this.updateBounds}
           //tutor_props = {this.state.prob_obj}
           ref={this.tutor}//{function(tutor) {window.tutor = tutor; console.log("TUTOR IS:",tutor)}}
           id="tutor_iframe"

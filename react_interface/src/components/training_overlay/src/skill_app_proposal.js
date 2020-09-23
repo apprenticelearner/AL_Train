@@ -91,7 +91,8 @@ class SkillAppProposal extends Component {
   }
   render(){
     let {skill_app, bounds, hasFocus, staged,
-         correct, incorrect, is_demonstation, color} = this.props
+         correct, incorrect, is_demonstation,
+         color, editable, textColor} = this.props
     
     let shadow_props = gen_shadow(this.state.elevation);
 
@@ -103,13 +104,14 @@ class SkillAppProposal extends Component {
             (this.props.default_color)
 
     let text = this.state.demonstrate_text || ((skill_app && skill_app.input) || "")//.value || ""
-    let fontSize = (Math.max(bounds.width,100)/((Math.min(text.length||1,8)-1)*.5 + 1))
+    let fontSize = (bounds.width/((Math.min(text.length||1,8)-1)*.5 + 1))
     console.log('fontSize',fontSize)
     
 
     let innerContent;
-    if(skill_app){
-      if(skill_app.action.toLowerCase().includes('press')){
+    if(skill_app || editable){
+      if(skill_app &&
+         skill_app.action.toLowerCase().includes('press')){
         innerContent = <View style ={{position:'absolute',
                                       width:fontSize,
                                       height:fontSize,
@@ -131,7 +133,7 @@ class SkillAppProposal extends Component {
                         <TextInput style = {{
                             textAlign:"center",
                             alignSelf: "center",
-                            color:'dodgerblue',
+                            color:textColor || 'dodgerblue',
                             fontSize : fontSize*.9,
                             width:bounds.width,
                             height:bounds.height,
@@ -159,7 +161,6 @@ class SkillAppProposal extends Component {
                             if(evt.charCode==13 && !evt.shiftKey){
                               console.log("ENTER PRESSED",this.state.demonstrate_text)  
                               this.text_input.current.blur()
-                              // this.submit_demonstrate()
                             }
                           }}
                         />
