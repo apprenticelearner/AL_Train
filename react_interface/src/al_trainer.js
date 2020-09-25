@@ -335,19 +335,18 @@ export default class AL_Trainer extends React.Component {
 
   render(){
     const Tutor = this.props.tutorClass
+    let {training_description, agent_description, problem_description,
+      tutor_mode, default_props, buttons_props, skill_panel_props,
+      use_legacy_interface, interactive, start_state_mode, 
+      skill_applications, bounding_boxes, tutor_handles_start_state,
+      tutor_handles_demonstration, tutor_handles_foci} = this.state
 
     var lower_display;
-    var use_prompt = false
-    if(!this.state.interactive){
-      use_prompt = true
-      var prompt_text
-      // if(this.state.tutor_mode == true){
-      //   prompt_text = "TUTOR MODE\n"
-      // }else if(!this.state.interactive){
-      prompt_text = 
-        this.state.training_description + "\n" +
-        this.state.agent_description + "\n" +
-        this.state.problem_description + "\n"
+    if(!interactive){
+      let prompt_text = 
+        training_description + "\n" +
+        agent_description + "\n" +
+        problem_description + "\n"
 
       lower_display = 
       <View style={styles.prompt}>
@@ -355,21 +354,21 @@ export default class AL_Trainer extends React.Component {
         {prompt_text}
         </Text>
       </View>
-    }else if(this.props.use_legacy_interface){
+    }else if(use_legacy_interface){
       lower_display = 
       <View style={styles.controls}>
-        {!this.state.tutor_mode &&
+        {!tutor_mode &&
         <View style={styles.skill_panel}>
           <SkillPanel ref={this.skill_panel}
-          {...this.state.default_props}
-          {...this.state.skill_panel_props}/>
+          {...default_props}
+          {...skill_panel_props}/>
         </View>
         }
         <View style={styles.buttons}>
           <Buttons ref={this.buttons}
-          {...this.state.default_props}
-          {...this.state.buttons_props}
-          {...{tutor_mode: this.state.tutor_mode}}/>
+          {...default_props}
+          {...buttons_props}
+          {...{tutor_mode: tutor_mode}}/>
         </View>
       </View>
     }
@@ -395,17 +394,17 @@ export default class AL_Trainer extends React.Component {
             />
           </View> 
         }
-        {(this.state.interactive && !this.props.use_legacy_interface) && 
+        {(interactive && !use_legacy_interface) && 
           <TrainingOverlay 
             ref={this.training_overlay}
-            start_state_mode = {this.state.start_state_mode}
-            skill_applications ={this.state.skill_applications}
-            bounding_boxes = {this.state.bounding_boxes}
+            start_state_mode = {start_state_mode}
+            skill_applications ={skill_applications}
+            bounding_boxes = {bounding_boxes}
             state = {this.state.state}
             interactions_service={this.interactions_service}
-            tutor_handles_start_state={this.state.tutor_handles_start_state}
-            tutor_handles_demonstration={this.state.tutor_handles_demonstration}
-            tutor_handles_foci={this.state.tutor_handles_foci}
+            tutor_handles_start_state={tutor_handles_start_state}
+            tutor_handles_demonstration={tutor_handles_demonstration}
+            tutor_handles_foci={tutor_handles_foci}
           />
         }
   			{<Tutor

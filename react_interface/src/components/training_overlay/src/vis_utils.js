@@ -10,7 +10,7 @@ function simple_animate(inst,attr,next,config={speed: 20}){
   const step = (timestamp) => {
       var diff = next - inst.state[attr]
       let speed = (config.speed || 20) / (1000/FRAME_RATE) * (diff > 0 ? 1 : -1)
-      console.log("speed",speed,config.speed)
+      // console.log("speed",speed,config.speed)
       if(Math.abs(diff) > Math.abs(speed)){
         let update = {}
         update[attr] = inst.state[attr] + speed

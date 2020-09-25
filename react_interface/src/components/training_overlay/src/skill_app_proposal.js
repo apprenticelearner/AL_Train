@@ -75,7 +75,7 @@ class SkillAppProposal extends Component {
   // }
 
   componentDidUpdate(prevProps) {
-    console.log(prevProps)
+    // console.log(prevProps)
     if (prevProps.hasFocus !== this.props.hasFocus) {
       this._update_scale_elevation()
       // this.updateAndNotify();

@@ -44,6 +44,27 @@ const prompts = {
   feedback : "Give feedback to all the proposed actions. Or demonstrate the next step.",
 }
 
+function breakUpBounds(bounding_boxes){
+  let minX = Number.MAX_SAFE_INTEGER
+  let minY = Number.MAX_SAFE_INTEGER
+
+  for(var bn in bounding_boxes){
+    let bb = bounding_boxes[bn]
+    if(bb.x < minX) minX = bb.x
+    if(bb.y < minY) minY = bb.y
+  }
+  let offset_bounds = {}
+  for(var bn in bounding_boxes){
+    let bb = bounding_boxes[bn]
+    offset_bounds[bn] = {
+      x: Math.round(bb.x - minX),
+      y: Math.round(bb.y - minY),
+      width: bb.width, height: bb.height
+    }
+  }
+  return [minX,minY,offset_bounds]
+}
+
 
 class Prompts extends Component{
   constructor(props){
@@ -124,6 +145,8 @@ class TrainingOverlay extends Component{
     super(props);
     autobind(this)
     let sk_apps = this.props.skill_applications || null
+
+    let [minX,minY,offset_bounds] = breakUpBounds(this.props.bounding_boxes)    
     this.state = {
      focus_sel : (sk_apps && sk_apps[0].selection) || null,
      focus_index : 0,
@@ -135,9 +158,13 @@ class TrainingOverlay extends Component{
      // only_show_focused_sel: false,
      // staged_index : 0,
      staged_index : null,
-     ...this.group_skill_apps(sk_apps,{})
+     ...this.group_skill_apps(sk_apps,{}),
      // z_order: [...Array((sk_apps || []).length).keys()]
+     offset : new Animated.ValueXY({x: minX, y: minY}),
+     offset_bounds: offset_bounds,
+     // ignore_props : false
     }
+    
 
   }
 
@@ -208,13 +235,40 @@ class TrainingOverlay extends Component{
     }
   }
 
+ 
+
+
+  static getDerivedStateFromProps(nextProps,prevState){
+    // console.log("BOOOOPPERS",nextProps,prevState)
+    let out = {}
+    let [minX,minY,offset_bounds] = breakUpBounds(nextProps.bounding_boxes)
+    prevState.offset.setValue({x:minX,y:minY})
+    if(!prevState.offset_bounds || !deep_equal(offset_bounds,prevState.offset_bounds)){
+      console.log("BEEEEEEPPERS",prevState.offset_bounds,offset_bounds)
+      // this.setState()
+      out['offset_bounds'] = offset_bounds  
+    }
+
+    return out
+  }
+
+  // static getDerivedStateFromProps(nextProps,prevState){
+  //   return this.updateBounds(nextProps,prevState)
+  // }
+
+  shouldComponentUpdate(prevProps,prevState){
+    if(!deep_equal(prevProps.bounding_boxes, this.props.bounding_boxes)){
+      return false  
+    }
+    return true
+  }
+
   componentDidUpdate(prevProps) {
     let prev_sk_apps = prevProps.skill_applications || []
     let next_sk_apps = this.props.skill_applications || []
     if (!deep_equal(prev_sk_apps, next_sk_apps)) {
       this.setState(this.group_skill_apps(next_sk_apps,prev_sk_apps))
     }
-    
   }
 
   send_transition(action_str){
@@ -283,16 +337,19 @@ class TrainingOverlay extends Component{
   }
 
   removeCallback(sel,index){
+    let selection_order = this.state.selection_order
     let _sgs = this.state.selection_groups
     let fi = this.state.focus_index
     let fs = this.state.focus_sel
     _sgs[sel].splice(index,1)
     if(_sgs[sel].length == 0){
       delete _sgs[sel]
+      selection_order.splice(selection_order.indexOf(sel),1)
     }
     fi = fi >= index ? (fi - 1) : fi
     if(fi < 0){[fs,fi] = [selection_order[0],0]}
     this.setState({selection_groups : _sgs,
+                   selection_order: selection_order,
                    focus_sel: fs,
                    focus_index: fi})
     this.toggleFociModeCallback(sel,null,true)
@@ -311,8 +368,17 @@ class TrainingOverlay extends Component{
     let toggleFociModeCallback = (index,force_false) =>
       this.toggleFociModeCallback(sel,index,force_false)
     
-    let demonstrateCallback = (action,input)=>
-      this.demonstrateCallback(sel,action,input)
+    let demonstrateCallback
+    if(this.props.start_state_mode){
+      demonstrateCallback = (action, input) => {
+          let ss_sais = this.state.start_state_sais || {}
+          ss_sais[sel] = {selection: sel, action:action, input: input }
+          this.setState({start_state_sais: ss_sais})
+        } 
+    }else{
+      demonstrateCallback = (action,input)=>
+        this.demonstrateCallback(sel,action,input)
+    }
     
     let removeCallback = (index)=>
       this.removeCallback(sel,index)
@@ -326,7 +392,8 @@ class TrainingOverlay extends Component{
     if(skill_app && skill_app.foci_of_attention && 
        !this.state.foci_mode_sel){
       let highlights = []
-      let {bounding_boxes, where_colors} = this.props
+      let bounding_boxes = this.state.offset_bounds
+      let {where_colors} = this.props
       for (let k=0; k < skill_app.foci_of_attention.length; k++){
         let foa = skill_app.foci_of_attention[k]
         highlights.push(
@@ -343,7 +410,8 @@ class TrainingOverlay extends Component{
   }  
 
   render_foci_boxes(){
-    let {bounding_boxes, where_colors, state} = this.props
+    let bounding_boxes = this.state.offset_bounds
+    let {where_colors, state} = this.props
     let {foci_mode_sel, foci_mode_index} = this.state
     let foci_boxes = []
     if(foci_mode_index != null){
@@ -354,6 +422,7 @@ class TrainingOverlay extends Component{
 
 
       for(let bn in bounding_boxes){
+        if(!this.is_sel_fociable(bn)) continue;
         let fociCallback=()=>{
           
           let _sgs = this.state.selection_groups
@@ -383,47 +452,48 @@ class TrainingOverlay extends Component{
     return foci_boxes
   }
 
-  render_start_state_mode(){
-    let {bounding_boxes, where_colors, state} = this.props
-    let fillables = []
-    console.log("render_start_state_mode", bounding_boxes,state )
-    for(let bn in bounding_boxes){
-      let bounds = bounding_boxes[bn]
-      let elm_obj = (state && state[bn]) || null
-      if(elm_obj && (elm_obj.contentEditable || elm_obj.type == "Button")
-         || !state){
-        let sai = (this.state.start_state_sais || {})[bn] || null
-        let demonstrateCallback = (action, input) => {
-          let ss_sais = this.state.start_state_sais || {}
-          ss_sais[bn] = {selection: bn, action:action, input: input }
-          this.setState({start_state_sais: ss_sais})
-        } 
-        fillables.push(
-          <SkillAppProposal
-            key={bn}
-            bounds={bounds}
-            skill_app={sai}
-            color = {'darkcyan'}
-            textColor = {'darkcyan'}
-            hasFocus={false}
-            demonstrateCallback={demonstrateCallback}
-            editable={true}
-          />        
-        )
-      }
-    }
-    return( 
-      <View 
-        pointerEvents={'box-none'}
-        style={styles.overlay}>
-        {fillables}
-        <Prompts 
-          prompt={prompts.start_state_mode}
-          submitCallback={()=>{this.send_transition("START_STATE_SET")}}
-        />
-      </View>
-      )
-  }
+  // render_start_state_mode(){
+  //   let bounding_boxes = this.state.offset_bounds
+  //   let {where_colors, state} = this.props
+  //   let fillables = []
+  //   console.log("render_start_state_mode", bounding_boxes,state )
+  //   for(let bn in bounding_boxes){
+  //     let bounds = bounding_boxes[bn]
+  //     let elm_obj = (state && state[bn]) || null
+  //     if(elm_obj && (elm_obj.contentEditable || elm_obj.type == "Button")
+  //        || !state){
+  //       let sai = (this.state.start_state_sais || {})[bn] || null
+  //       let demonstrateCallback = (action, input) => {
+  //         let ss_sais = this.state.start_state_sais || {}
+  //         ss_sais[bn] = {selection: bn, action:action, input: input }
+  //         this.setState({start_state_sais: ss_sais})
+  //       } 
+  //       fillables.push(
+  //         <SkillAppProposal
+  //           key={bn}
+  //           bounds={bounds}
+  //           skill_app={sai}
+  //           color = {'darkcyan'}
+  //           textColor = {'darkcyan'}
+  //           hasFocus={false}
+  //           demonstrateCallback={demonstrateCallback}
+  //           editable={true}
+  //         />        
+  //       )
+  //     }
+  //   }
+  //   return( 
+  //     <View 
+  //       pointerEvents={'box-none'}
+  //       style={styles.overlay}>
+  //       {fillables}
+  //       <Prompts 
+  //         prompt={prompts.start_state_mode}
+  //         submitCallback={()=>{this.send_transition("START_STATE_SET")}}
+  //       />
+  //     </View>
+  //     )
+  // }
 
   resolve_SA_and_focus(sel, staged_sel, staged_index){
     let {foci_mode_sel, foci_mode_index, 
@@ -439,91 +509,124 @@ class TrainingOverlay extends Component{
     }else if(staged_sel == sel){
       skill_app_index = staged_index
     }else{
-      let sg = this.state.selection_groups[sel]
+      let sg = this.state.selection_groups[sel] || []
       skill_app_index = sg.findIndex(sa => sa.reward > 0) || 0; 
       if(skill_app_index == -1){skill_app_index = 0} 
     }
     return [skill_app_index,hasFocus]
   }
 
+  is_sel_fociable(sel){
+    if(this.props.state){
+      return !!this.props.state[sel]
+    }
+    return true
+
+  }
+  is_sel_demonstratable(sel){
+    if(this.props.state){
+      let elm = this.props.state[sel]
+      if(elm && (elm.type.includes("Text") || elm.type.includes("Button"))){
+        if(elm.type.includes("Text")){
+          return elm.contentEditable == false ? false : true
+        }else{
+          return true    
+        }
+      }
+      return false
+    }
+    return true
+  }
+
   render(){
-    console.log('\n\nrender overlay\n\n')
-    let {bounding_boxes, where_colors} = this.props
+    let bounding_boxes = this.state.offset_bounds
+    let {where_colors, start_state_mode, tutor_handles_start_state} = this.props
     let {focus_index, only_show_focused_index, foci_mode_index,
          foci_mode_sel, demonstrate_sel, demonstrate_index} = this.state
     let [staged_sel, staged_index, using_default_staged] = this.resolveStaged()         
     let [skill_boxes,possibilities] = [[],[]]
     let [submit_callback,focused_skill_app] = [null,null]
     let prompt = prompts.feedback
+    // let ss_mode = 
 
-    if(this.props.start_state_mode){
-      if(!this.props.tutor_handles_start_state){
-        return this.render_start_state_mode()
+    console.log('\n\nrender overlay', bounding_boxes,'\n\n')
+
+    // if(this.props.start_state_mode){
+    //   if(!this.props.tutor_handles_start_state){
+    //     return this.render_start_state_mode()
+    //   }else{
+    //     submit_callback=()=>{this.send_transition("START_STATE_SET")}
+    //     return (<Prompts 
+    //       prompt={prompts.start_state_mode}
+    //       submitCallback={submit_callback}
+    //     /> )
+    //   }
+    // }
+
+    if(!start_state_mode){
+      let j=0
+      for (let sel of this.state.selection_order){
+        if(this.state.only_show_focused_sel && 
+           sel != this.state.focus_sel){
+          continue;
+        }
+        let sg = this.state.selection_groups[sel]
+        let bounds = bounding_boxes[sel]
+
+        let [skill_app_index, hasFocus] =
+           this.resolve_SA_and_focus(sel, staged_sel, staged_index);
+        let skill_app = sg[skill_app_index]
+        if(hasFocus) focused_skill_app = skill_app
+        let [correct,incorrect] = [skill_app.reward > 0, skill_app.reward < 0]
+        let is_demonstation = skill_app.stu_resp_type == "HINT_REQUEST"
+
+
+        if(this.state.foci_mode_sel != null){
+          prompt = prompts.select_foci 
+          submit_callback = ()=> toggleFociModeCallback(null,true);
+        }
+
+
+        let { focusCallback, stageCallback, toggleCallback,
+            toggleFociModeCallback, demonstrateCallback,
+            removeCallback} = this.generate_callbacks(sel)
+
+        possibilities.push(
+          <SkillAppProposal
+            key={sel}
+            staged={staged_sel == sel && staged_index == skill_app_index}
+            {...{bounds, skill_app, hasFocus, correct,
+              incorrect, is_demonstation, demonstrateCallback}}
+          />        
+        )
+        
+        // console.log("BLEEP", staged_sel == sel ? staged_index : null)
+        skill_boxes.push(
+          <SkillAppBox
+            key={sel} zIndex={j}
+            initial_pos ={{x: bounds.x+bounds.width+10, y: bounds.y-70}}//{{x: 0, y: 0}}
+            staged_index ={staged_sel == sel ? staged_index : null}
+            skill_applications={sg}
+            {...{using_default_staged, focus_index, hasFocus,
+              focusCallback, toggleCallback, stageCallback, removeCallback,
+              toggleFociModeCallback, only_show_focused_index, foci_mode_index
+            }}
+          />
+        )
+        j++
       }
-      prompt = prompts.start_state_mode
-      submit_callback=()=>{this.send_transition("START_STATE_SET")}
-    }
-
-    let j=0
-    for (let sel of this.state.selection_order){
-      if(this.state.only_show_focused_sel && 
-         sel != this.state.focus_sel){
-        continue;
-      }
-      let sg = this.state.selection_groups[sel]
-      let bounds = bounding_boxes[sel]
-
-      let [skill_app_index, hasFocus] =
-         this.resolve_SA_and_focus(sel, staged_sel, staged_index);
-      let skill_app = sg[skill_app_index]
-      if(hasFocus) focused_skill_app = skill_app
-      let [correct,incorrect] = [skill_app.reward > 0, skill_app.reward < 0]
-      let is_demonstation = skill_app.stu_resp_type == "HINT_REQUEST"
-
-
-      if(this.state.foci_mode_sel != null){
-        prompt = prompts.select_foci 
-        submit_callback = ()=> toggleFociModeCallback(null,true);
-      }
-
-
-      let { focusCallback, stageCallback, toggleCallback,
-          toggleFociModeCallback, demonstrateCallback,
-          removeCallback} = this.generate_callbacks(sel)
-
-      possibilities.push(
-        <SkillAppProposal
-          key={sel}
-          staged={staged_sel == sel && staged_index == skill_app_index}
-          {...{bounds, skill_app, hasFocus, correct,
-            incorrect, is_demonstation, demonstrateCallback}}
-        />        
-      )
-      
-      console.log("BLEEP", staged_sel == sel ? staged_index : null)
-      skill_boxes.push(
-        <SkillAppBox
-          key={sel} zIndex={j}
-          initial_pos ={{x: bounds.x+bounds.width+10, y: bounds.y-70}}//{{x: 0, y: 0}}
-          staged_index ={staged_sel == sel ? staged_index : null}
-          skill_applications={sg}
-          {...{using_default_staged, focus_index, hasFocus,
-            focusCallback, toggleCallback, stageCallback, removeCallback,
-            toggleFociModeCallback, only_show_focused_index, foci_mode_index
-          }}
-        />
-      )
-      j++
     }
 
     let unfilled = []
-    if(!foci_mode_sel){
+    if(!foci_mode_sel && !(start_state_mode && tutor_handles_start_state)){
       for(let sel in bounding_boxes){
-        if(sel in this.state.selection_order) continue;
+        if(!this.is_sel_demonstratable(sel)) continue;
         let {demonstrateCallback} = this.generate_callbacks(sel)
         unfilled.push(
           <SkillAppProposal key={sel} bounds={bounding_boxes[sel]}
             demonstrateCallback={demonstrateCallback} editable
+            color={start_state_mode && 'darkcyan'}
+            textColor={start_state_mode && 'darkcyan'}
           />
         )
       }
@@ -531,28 +634,44 @@ class TrainingOverlay extends Component{
 
     console.log("submit_callback",submit_callback)
     const out = (
-      <View 
+
+      <Animated.View
         pointerEvents={'box-none'}
-        style={styles.overlay}>
+        style={[styles.overlay,
+          {transform : [
+              {translateX : this.state.offset.x},
+              {translateY : this.state.offset.y}]
+          }
+        ]}
+      >
         {foci_mode_index != null && this.render_foci_boxes()}
         {this.render_foci_highlights(focused_skill_app)}
         {unfilled}
         {possibilities}
         {skill_boxes}
-        <Prompts 
-          prompt={prompt}
-          submitCallback={submit_callback}
-        />
-      </View>
+        
+      </Animated.View>
+      
       )
 
     return out
   }
 }
 
+{/*<View
+        style={styles.overlay}
+      >
+      <Prompts 
+          prompt={prompt}
+          submitCallback={submit_callback}
+        />
+      </View>
+    */}
+
 const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
+    // overflow: 'hidden',
     // width:10,
     // height:10,
     // backgroundColor:'red',

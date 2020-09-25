@@ -38,7 +38,7 @@ const state = {
   },
 }
 
-const bounding_boxes = {
+const g_bounding_boxes = {
   "A" : {
     x : 100,
     y : 100,
@@ -118,12 +118,53 @@ export default class App extends Component{
   constructor(props){
     super(props);
     autobind(this)
-    this.state = {start_state_mode: false}
+
+    let refs = {}
+    for(let bb_n in g_bounding_boxes){
+      refs[bb_n] = React.createRef() 
+    }
+
+    this.state = {
+      start_state_mode: false,
+      bounding_boxes: {...g_bounding_boxes},
+      refs
+    }
+    this.fake_tutor = React.createRef()
+    
+
+    console.log("GRAPES", refs)
+    
+    window.addEventListener('resize', this.updateBounds);
+    window.addEventListener('scroll', this.updateBounds);
   }
+
+  updateBounds(){
+    // window.fake_tutor = this.fake_tutor
+    let ft = this.fake_tutor.current
+    let promises = []
+    for(let bb_n in this.state.refs){
+      let ref = this.state.refs[bb_n]
+      let pi = new Promise((resolve) => {
+        ref.current.measure((x,y,w,h,pX,pY) => resolve([bb_n,pX,pY,w,h]))  
+      })
+      promises.push(pi);
+    }
+    Promise.all(promises).then((values) => {
+      let bounding_boxes = {}
+      for(let [bb_n,pX,pY,w,h] of values){
+        bounding_boxes[bb_n] = {x:pX,y:pY,width:w,height:h}
+      }
+      this.setState({bounding_boxes: bounding_boxes})
+    });
+  }
+
+
   render(){
+    console.log("FOOD!", this.state.refs)
     let fake_items = []
-    for(let bb_n in bounding_boxes){
-      let bb = bounding_boxes[bb_n]
+    // let bounding_boxes = bounding_boxes
+    for(let bb_n in g_bounding_boxes){
+      let bb = g_bounding_boxes[bb_n]
       fake_items.push(
         <View style={{left: bb.x,
                       top: bb.y,
@@ -133,21 +174,33 @@ export default class App extends Component{
                       position: "absolute"
                     }}
               key={bb_n}
+              ref={this.state.refs[bb_n]}
+              
         /> 
       )
     }
     return (
-      <View style={styles.container}>
-        <TouchableOpacity
-          style={{position:"absolute",bottom:10, right: 10, width:200,height:50,backgroundColor:'green'}}
-          onPress={()=>{this.setState({start_state_mode: !this.state.start_state_mode})}}
+      <View style={{flex:1,overflow:"hidden"}}
+        
+      >
+        <View style={styles.container}
+          onScroll={this.updateBounds}
         >
-          <Text>{"START STATE MODE"}</Text>
-        </TouchableOpacity>
-        {fake_items}
+          <TouchableOpacity
+            style={{position:"absolute",bottom:-100, right: 10, width:200,height:50,backgroundColor:'green'}}
+            onPress={()=>{this.setState({start_state_mode: !this.state.start_state_mode})}}
+          >
+            <Text>{"START STATE MODE"}</Text>
+          </TouchableOpacity>
+          <View style={{justifySelf:"center", alignSelf:"center", width: 500}} ref={this.fake_tutor}>
+            {fake_items}
+          </View>
+          
+        </View>
         <TrainingOverlay skill_applications ={skill_applications}
-          bounding_boxes = {bounding_boxes}
+          bounding_boxes = {this.state.bounding_boxes}
           start_state_mode = {this.state.start_state_mode}
+          state = {state}
         />
       </View>
     );
@@ -155,10 +208,12 @@ export default class App extends Component{
 }
 
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#eeeedc'//'beige',
+    backgroundColor: '#eeeedc',//'beige',
+    overflow:"scroll"
     // backgroundColor: 'white',
     // alignItems: 'center',
     // justifyContent: 'center',

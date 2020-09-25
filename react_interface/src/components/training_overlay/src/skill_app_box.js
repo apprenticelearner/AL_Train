@@ -535,7 +535,7 @@ class SkillAppRow extends RisingComponent {
   }
 
   render(){
-    console.log('RERERERE')
+    // console.log('RERERERE')
     let {correct, incorrect,hasFocus,staged, foci_mode, 
         stageCallback, toggleFociModeCallback, is_demonstation} = this.props
     let bounds_color =  (is_demonstation && 'dodgerblue') ||
@@ -725,6 +725,7 @@ class SkillAppBox extends RisingComponent{
   // }
 
   componentDidMount () {
+    super.componentDidMount()
     // console.log("MOUNT")
     try{
       if(this.main_content && this.main_content.current){
