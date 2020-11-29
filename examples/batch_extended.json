@@ -4,12 +4,15 @@
 		"free_author" : true,
 		"tutor" : "CTAT",
 		"use_foci" : true,
-		"use_skill_labels" : true,
-		"whole_conflict_set" : true,
+		// "use_skill_labels" : true,
+		// "whole_conflict_set" : true,
 		"agent" : {
 			"stay_active": true,
       		"dont_save": true,	
 		},
+		// "when_args":{
+		// 	"cross_rhs_inference" : "implicit_negatives"
+		// }
 		// "abs_qf_paths": true,
 	},//THIS IS A COMMENT
 	"training_set1" : [{
@@ -20,17 +23,20 @@
 			"where_learner": "versionspace",
 			"when_learner": "decisiontree",
 			"planner" : "numba",
-			"when_args" : {"cross_rhs_inference" : "none"},
+			"when_args" : {"cross_rhs_inference" : "implicit_negatives"},
 			"function_set" : ["RipFloatValue","Mod10","Div10","Add","Add3"],
 			"feature_set" : [],
+			"strip_attrs" : ["to_left","to_right","above","below","type","id","offsetParent","dom_class"],
+			"state_variablization" : "metaskill",
+
 		},
+		"repetitions" : 100,
 		"problem_set" : [
 			{"set_params" : 
 				{"HTML": "../model/HTML/MultiColumnArithmatic.html",
-				 "question_file" : "../CognitiveModel/add/777_777.nools"}
+				 "question_file" : "../CognitiveModel/add/random_add.nools"}
 			},
-			{
-			"repetitions":-1}
+			{"repetitions":100}
 		]
 	}]
 }

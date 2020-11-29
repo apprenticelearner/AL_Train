@@ -335,7 +335,7 @@ export default class AL_Trainer extends React.Component {
 
   render(){
     const Tutor = this.props.tutorClass
-    let {training_description, agent_description, problem_description,
+    let{training_description, agent_description, problem_description,
       tutor_mode, default_props, buttons_props, skill_panel_props,
       use_legacy_interface, interactive, start_state_mode, 
       skill_applications, bounding_boxes, tutor_handles_start_state,

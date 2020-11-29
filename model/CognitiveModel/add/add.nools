@@ -330,6 +330,10 @@ rule positive_feedback{
 	}
 	then{
 		console.log("Correct", match.rhs,match.args);
+		
+    	assert(new Skill(match.name, "skills"));
+    	// modify(new CustomField("conflict_set",conflict_set));
+
 		if(checkSAI({selection: match.sel, action: match.action, input: match.input})) {
 			modify(sel, "value", match.input);
 			modify(sel, "enabled", false);

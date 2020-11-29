@@ -137,3 +137,13 @@ define IsHintMatch {
   constructor: function() {
   }
 }
+
+//Skill fact definition
+define Skill {
+  name: null,
+  category: null,
+  constructor: function(n, c) {
+    this.name = n;
+    this.category = c;
+  }
+}

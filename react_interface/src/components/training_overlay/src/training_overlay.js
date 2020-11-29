@@ -634,24 +634,31 @@ class TrainingOverlay extends Component{
 
     console.log("submit_callback",submit_callback)
     const out = (
-
-      <Animated.View
+      <View
         pointerEvents={'box-none'}
-        style={[styles.overlay,
-          {transform : [
-              {translateX : this.state.offset.x},
-              {translateY : this.state.offset.y}]
-          }
-        ]}
+        style={styles.overlay}
       >
-        {foci_mode_index != null && this.render_foci_boxes()}
-        {this.render_foci_highlights(focused_skill_app)}
-        {unfilled}
-        {possibilities}
-        {skill_boxes}
-        
-      </Animated.View>
-      
+        <Animated.View
+          pointerEvents={'box-none'}
+          style={[styles.overlay,
+            {transform : [
+                {translateX : this.state.offset.x},
+                {translateY : this.state.offset.y}]
+            }
+          ]}
+        >
+          {foci_mode_index != null && this.render_foci_boxes()}
+          {this.render_foci_highlights(focused_skill_app)}
+          {unfilled}
+          {possibilities}
+          {skill_boxes}
+          
+        </Animated.View>
+        <Prompts 
+            prompt={prompt}
+            submitCallback={submit_callback}
+          />
+        </View>
       )
 
     return out

@@ -231,7 +231,7 @@ async function printFeedback(context, event) {
   var nl = context.network_layer;
   // var staged_SAI = context.staged_SAI;
   var skill_applications = context.skill_applications// || [staged_SAI]
-  await nl.term_print("----",'INFO')
+  // await nl.term_print("----",'INFO')
   var typ = context.stu_resp_type;
   for (var skill_app of skill_applications) {
     let resp_type = skill_app['stu_resp_type'] || typ

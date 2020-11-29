@@ -59,6 +59,7 @@ async function glob(args,context){
 	}else{
 		matches = matches.map(m => "/"+m)
 	}
+	console.log("GLOBS",matches)
 	return matches
 }
 
@@ -568,12 +569,14 @@ export async function evalString(){
 }
 
 export async function evalJSONFunc(spec, context){
+	console.log("SPEEEC", spec)
 	if(Array.isArray(spec)){
 		return [...spec]
 	}else if(typeof(spec) === 'object'){
 		spec = {...spec};
 
 		var key = Object.keys(spec)[0];
+		console.log("KEY", key)
 		var val = spec[key]
 		if(key in registedFunctions){
 			return await registedFunctions[key](val,context)

@@ -181,7 +181,9 @@ function serve_next_agent(context, event) {
         agent_obj["_rep_count"] = agent_obj["_rep_count"] || 1;
       }
 
-      var problem_set = await evalJSONFunc(agent_obj["problem_set"], context);
+
+      var problem_set = await evalJSONFunc(agent_obj["problem_set"],context)
+      // var problem_set = agent_obj["problem_set"].map(async (x) => {return await evalJSONFunc(x, context)});
       
       if(agent_obj["problem_set"]){
         console.log("RESOLVED PROBLEM SET", [...problem_set]);  

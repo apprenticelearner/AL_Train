@@ -618,7 +618,7 @@ def do_POST ():
 ##SHOULD PROBABLY EVENTUALLY MAKE THIS SAFE BY ONLY RETRIEVE FROM STATIC DIR
 def do_GET(path):
     # if(path == ""): #handle_static("index.html")#path = "index.html"
-    print("GET", path[:])
+    # print("GET", path[:])
     if(path == ""): 
         # headers = {}
         return send_from_directory(os.path.join(al_train_dir,"al_hostserver"),"index.html")
