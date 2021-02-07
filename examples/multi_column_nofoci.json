@@ -22,8 +22,10 @@
 		"agent_type":"ModularAgent",
 		"args": {
 			"search_depth" : 3,
-			"where_learner": "versionspace",
-			"when_learner": "decisiontree",
+			"where_learner": "version_space",
+			"when_learner": "decisiontree2",
+			"which_learner": "nonlinearproportioncorrect",
+			"explanation_choice" : "least_operations",
 			"planner" : "numba",
 			// "when_args" : {"cross_rhs_inference" : "implicit_negatives"},
 			"function_set" : ["RipFloatValue","Mod10","Div10","Add","Add3"],
