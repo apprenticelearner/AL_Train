@@ -1,0 +1,142 @@
+{	
+	"set_params" : {
+		"interactive" : false,
+		"free_author" : true,
+		"tutor" : "CTAT",
+		"use_foci" : true,
+		// "use_skill_labels" : true,
+		// "whole_conflict_set" : true,
+		"agent" : {
+			"stay_active": true,
+      		"dont_save": true,	
+		},
+		"HTML": "../model/HTML/MultiColumnArithmatic.html",
+		// "when_args":{
+		// 	"cross_rhs_inference" : "implicit_negatives"
+		// }
+		"abs_qf_paths": true,
+	},//THIS IS A COMMENT
+
+	"training_set1" : [{
+		"agent_name":"myAgent1",
+		"agent_type":"ModularAgent",
+		"args": {
+			"search_depth" : 3,
+			// "where_learner": "version_space",
+			// "where_learner": "conservative_version_space",
+			"where_learner": "most_specific",
+			"when_learner": "decisiontree2",
+			"when_args": {
+				"impl" : "decision_tree_weighted_gini"
+			},
+			"which_learner": "nonlinearproportioncorrect",
+			"which_args": {
+				"remove_utility_type" : "nonlinearproportioncorrect"
+			},
+			"explanation_choice" : "least_operations",
+			"planner" : "numba",
+			// "when_args" : {"cross_rhs_inference" : "implicit_negatives"},
+			"function_set" : ["RipFloatValue","Mod10","Div10","Add","Add3"],
+			"feature_set" : [],
+			"strip_attrs" : ["to_left","to_right","above","below","type","id","offsetParent","dom_class"],
+			"state_variablization" : "metaskill",
+
+		},
+		"repetitions" : 200,
+		"problem_set" : {
+			"concatenate" : [
+				{"sample" : {
+						"n" : 40,
+						"set" : {
+							"concatenate" : [
+								{"sample" : {
+									"n" : 20,
+									"set" : {
+										"glob" : {
+											"key" : "question_file",
+											"pattern": "/../model/CognitiveModel/add/gen/*"
+										}
+									}
+								}},
+								{"question_file" : "/../model/CognitiveModel/add/spec/777_777.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/431_526.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/347_258.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/381_192.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/916_121.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/178_478.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/136_364.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/495_682.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/580_462.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/789_734.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/724_876.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/497_573.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/999_001.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/999_010.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/999_100.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/999_111.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/999_011.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/999_110.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/999_101.nools"},
+								{"question_file" : "/../model/CognitiveModel/add/spec/000_000.nools"},
+							]
+
+						}
+					}
+				},
+				
+
+				
+
+				// {"question_file" : "/../model/CognitiveModel/add/gen/215_846.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/777_777.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/773_773.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/737_737.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/377_377.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/337_337.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/733_733.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/373_373.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/333_333.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/999_001.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/999_010.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/999_100.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/999_111.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/999_011.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/999_110.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/spec/999_101.nools"},
+
+
+				// {"question_file" : "/../model/CognitiveModel/add/gen/215_846.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/253_006.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/304_107.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/844_238.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/643_837.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/376_516.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/295_393.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/602_134.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/591_237.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/161_850.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/370_107.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/034_647.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/886_607.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/870_727.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/027_035.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/315_723.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/629_625.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/705_161.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/859_004.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/896_942.nools"},
+				// {"question_file" : "/../model/CognitiveModel/add/gen/677_233.nools"},
+				{"sample" : {
+						"n" : 60,
+						"set" : {
+							"glob" : {
+								"key" : "question_file",
+								"pattern": "/../model/CognitiveModel/add/gen/*"
+							}
+						}
+					}
+				}
+			]
+		}
+	}]
+}
