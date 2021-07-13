@@ -30,7 +30,10 @@ HOST_DOMAIN = '127.0.0.1'  # Use this instead of localhost on windows
 #  only safe to set when running locally. On a production server allowing
 #  this to remain true is major security hole.
 AL_HOST_FETCH_ABOVE_ROOT = True
+DEBUGGING_STATE = False
 
+import sys
+sys.path.append('../')
 
 def find_conf(cwd):
     split_path = os.path.normpath(cwd).split(os.sep)
@@ -284,6 +287,9 @@ def parse_args(argv):
                         help="Specifies the directory of the outer loop repo.")
     parser.add_argument('--outer-loop-url', default=None, dest="outer_loop_url",      metavar="<outer_loop_url>",
                         help="Specifies the URL of a running outer loop server.")
+    parser.add_argument('--debug', action='store_true', help="Makes logging messages visible in the console.")
+    parser.add_argument('--debug-agent', action='store_true', dest="debug_agent", help="Makes logging messages for the agent visible in the console.") 
+    parser.add_argument('--debug-performance', action='store_true', dest="debug_performance", help="Makes logging messages for performance visible in the console.")
 
     try:
         args = parser.parse_args(argv)
@@ -328,6 +334,7 @@ def parse_args(argv):
     args.log_dir = os.path.abspath(apply_wd(args.log_dir))
     args.al_dir = os.path.abspath(apply_wd(args.al_dir))
     args.html_bridge_dir = dir_from_package("al_hostserver")
+    args.modular_agent_dir = os.path.abspath(apply_wd(args.al_dir))
     # os.path.join(calling_dir,args.al_dir)
 
     assert os.path.isfile(training_abs), "No such file %r" % training_abs
@@ -362,7 +369,7 @@ def parse_args(argv):
 
 
 def main(args):
-    global al_process, ctat_process, browser_process, outer_loop_process, calling_dir
+    global al_process, ctat_process, browser_process, outer_loop_process, calling_dir, logging_process
 
     if args.no_al_server:
         assert args.al_port is not None, "Must specify AL_PORT in altrain.conf or command line"
@@ -382,6 +389,21 @@ def main(args):
     if(check_port(args.ctat_host, args.ctat_port, args.force)):
         _env = os.environ.copy()
         _env["AL_HOST_FETCH_ABOVE_ROOT"] = str(AL_HOST_FETCH_ABOVE_ROOT)
+        DEBUGGING_STATE = False
+        if(args.debug or args.debug_agent or args.debug_performance):
+            _env["DEBUGGING_STATE"] = "True"
+        else:
+           _env["DEBUGGING_STATE"] = "False"
+        if(args.debug_agent):
+            _env["DEBUGGING_AGENT"] = "True"
+        else:
+            _env["DEBUGGING_AGENT"] = "False"
+        if(args.debug_performance):
+            _env["DEBUGGING_PERFORMANCE"] = "True"
+        else:
+            _env["DEBUGGING_PERFORMANCE"] = "False"
+        logging_process = subprocess.Popen([sys.executable, os.path.join(
+                args.al_dir, "agents", "ModularAgent.py")], env=_env)
         ctat_process = subprocess.Popen([
             sys.executable, os.path.join(
                 args.html_bridge_dir, "host_server.py"),
