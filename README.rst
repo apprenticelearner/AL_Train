@@ -2,8 +2,8 @@
 Apprentice Learner Architecture
 *******************************
 
-.. image:: https://travis-ci.org/apprenticelearner/AL_Train.svg?branch=master
-    :target: https://travis-ci.org/apprenticelearner/AL_Train
+.. image:: https://travis-ci.com/apprenticelearner/AL_Train.svg?branch=master
+    :target: https://travis-ci.com/apprenticelearner/AL_Train
 
 .. image:: https://coveralls.io/repos/github/apprenticelearner/AL_Train/badge.svg?branch=master
 	:target: https://coveralls.io/github/apprenticelearner/AL_Train?branch=master
