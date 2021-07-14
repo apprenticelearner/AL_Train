@@ -21,7 +21,8 @@ import signal
 from glob import glob
 # from flask import Flask, 
 
-FETCH_ABOVE_ROOT = str(os.environ.get("AL_HOST_FETCH_ABOVE_ROOT","False")).lower() == "true" 
+FETCH_ABOVE_ROOT = str(os.environ.get("AL_HOST_FETCH_ABOVE_ROOT","False")).lower() == "true"
+debuggingState = str(os.environ.get("DEBUGGING_STATE", "False")).lower() == "true"
 
 print("FETCH_ABOVE_ROOT", FETCH_ABOVE_ROOT)
 
@@ -99,16 +100,14 @@ def check_started(host,port):
 
 
 class HostServer(Flask):
-  def run(self, host=None, port=None, debug=None, load_dotenv=True, **options):
-    thread = threading.Thread(target=lambda : check_started(host,port))
-    thread.start() 
-    super(HostServer, self).run(host=host, port=port, debug=debug, load_dotenv=load_dotenv, **options)
+    def run(self, host=None, port=None, debug=debuggingState, load_dotenv=True, **options):
+        thread = threading.Thread(target=lambda : check_started(host,port))
+        thread.start() 
+        super(HostServer, self).run(host=host, port=port, debug=debug, load_dotenv=load_dotenv, **options)
     
 print("HOST CWD", os.getcwd(), __name__)
 # app = HostServer(__name__,static_folder='.',root_path=os.getcwd())
 app = HostServer(__name__,static_folder=".")#,root_path=os.getcwd())
-
-
 
 # output.write("Anon Student Id\tSession Id\tTime\tStudent Response Type\tTutor Response Type\tLevel (Unit)\tProblemName\tStep Name\tSelection\tAction\tInput\tFeedback Text\tOutcome\n");
 LOG_HEADERS = {"user_guid"              :"Anon Student Id",
@@ -755,7 +754,7 @@ if __name__ == '__main__':
         log_file_handle = open(output_file_path, 'a', newline='') 
         csv_writer = csv.DictWriter(log_file_handle, LOG_HEADERS.values(),delimiter="\t")
     log = logging.getLogger('werkzeug')
-    log.disabled = True
+    log.disabled
 
     app.run(HOST_DOMAIN,port,threaded=True)
    # print("IT DIED")
