@@ -17,6 +17,7 @@
   "dependencies": {
     "@tensorflow/tfjs": "2.1.0",
     "@tensorflow/tfjs-backend-wasm": "2.1.0",
+    "@unimodules/react-native-adapter": "^6.3.9",
     "class-autobind": "^0.1.4",
     "expo": "^38.0.9",
     "expo-splash-screen": "^0.5.0",

@@ -3,7 +3,7 @@
 		"interactive" : false,
 		"free_author" : true,
 		"tutor" : "CTAT",
-		"use_foci" : false,
+		"use_foci" : false, //Note: this is definitely buggy and will get stuck on when false
 		// "use_skill_labels" : true,
 		// "whole_conflict_set" : true,
 		"agent" : {
