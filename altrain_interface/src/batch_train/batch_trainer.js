@@ -18,15 +18,13 @@ function BatchInfo({style}){
       message = (is_done && "All Done!") || message
       return (  
         <div style={{ ...style,...(is_done && {backgroundColor: 'green'}) }}>
-          {message && <p>{message||"??"}</p>}
+          <p>{message||" "}</p>
           <p>{train_desc||"??"}</p>
           <p>{agent_desc||"??"}</p>
           <p>{prob_desc||"??"}</p>
         </div>
       )
     }
-    
-
 }
 
 export default function BatchTrainer(){

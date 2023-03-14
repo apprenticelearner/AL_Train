@@ -15,8 +15,7 @@ import {useAppStoreChange} from './app_store';
 import BatchTrainer from "./batch_train/batch_trainer";
 import {getURLParams} from "./utils";
 import {Oval} from "react-loader-spinner";
-import AuthoringInterface from "authoring-interface";
-import "./index.css";
+import AuthoringInterface from "./author/author";
 
 function LoadingPage(){
   const [prompt] = useAppStoreChange(['@prompt'])
@@ -36,32 +35,55 @@ function LoadingPage(){
     </div>
   )
 }
-function ErrorPage(){
+function ErrorPage({error:prop_error}){
   const [error] = useAppStoreChange(['@error'])
   return (
     <div style={{...styles.info_page, backgroundColor:"pink"}}>
-      <p style={{textAlign:'center', fontSize:40}}> {error}</p>
+      <p style={{textAlign:'center', fontSize:40}}> {prop_error || error}</p>
     </div>
   )
 }
 
+const default_config = {
+  "agent" : {
+    "name": "Unamed Agent",
+    "type": "CREAgent",
+    "args": {
+      "search_depth" : 2,
+      "how": "set_chaining",
+      "when": "decisiontree",
+      "where": "most_specific",
+      "function_set" : ["Add", "Subtract", "Multiply", "Divide"],
+      "feature_set" : ["Equals"],
+    }
+  },
+  author : true
+}
+
 export default function ALTrain(){
-    const [tutor_class, interactive, loaded, error, setConfig, setLoaded,
-           setTrainingFile] = useAppStoreChange(
-          ['@tutor_class', '@interactive', '@loaded', '@error', 'setConfig', 'setLoaded',
-            'setTrainingFile']
+    const [is_batch_train, is_author,
+           tutor_class,  loaded, error, setConfig, setLoaded, setTrainingConfig] = useAppStoreChange(
+          ['@training_config.batch_train!=null', '@training_config.author!=null', 
+           '@tutor_class', '@loaded', '@error', 'setConfig', 'setLoaded', 'setTrainingConfig']
     )
     // OnMount
     useEffect(() =>{
       setLoaded(false)
       let {training, ...config} = getURLParams()
       // If a training file was provided parse it and write any config.
-      setTrainingFile(training).then( ()=>{
-        // Any config set by the user in URL params should override training file.
-        setConfig(config)
+      if(training){
+        setTrainingConfig(training).then( ()=>{
+          // Any config set by the user in URL params should override training file.
+          setConfig(config)
+          setLoaded(true)
+        })
+      }else{
+        setConfig(default_config)
         setLoaded(true)
-      })
+      }
     }, [])
+
+    console.log("ALTRAIN RENDER", is_batch_train, is_author, loaded, error)
 
     if(error){
       return (<ErrorPage/>)
@@ -69,14 +91,18 @@ export default function ALTrain(){
       return (<LoadingPage/>)
     }
 
-    if(!interactive){
+    if(is_author){
+      return (<AuthoringInterface/>)
+    }
+
+    if(!is_batch_train){
       if(tutor_class){
         return (<BatchTrainer/>)  
       }else{
         return (<ErrorPage/>)
       }
-    } else{
-      return (<AuthoringInterface/>)
+    }else{
+      return (<ErrorPage error="Configuration Missing 'author' or 'batch_train'."/>)
     }
 }
 

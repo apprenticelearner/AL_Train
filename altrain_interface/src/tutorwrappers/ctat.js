@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import deep_equal from 'fast-deep-equal'
 import {baseName, isAbsolute} from "../utils"
 import queryString from "query-string"
@@ -786,9 +786,15 @@ let BaseMixin = (superclass) => class extends superclass {
 
   isDone = () => {return this.is_done};
 
+  componentDidMount = ()=>{
+    let {HTML, question_file} = this?.props?.prob_config ?? {}
+    console.log("componentDidMount", HTML, question_file)
+    if(HTML){
+      this.loadProblem({HTML, question_file})  
+    }
+  }
 
   render = () => {
-    console.log("CTAT RERENDER", this.state.source)
     return (
       <iframe
         title="CTAT_iframe"

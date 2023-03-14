@@ -8,7 +8,7 @@ const tutor_wrappers = (() => ({
   'ctat' : React.lazy(() => import('./tutorwrappers/ctat')),
 }))() // Wrap in function then call to force rebuilt on page refresh
 
-const bool_params = ['interactive', 'use_arg_foci', 'use_skill_label']
+const bool_params = ['use_arg_foci', 'use_skill_label']
 
 export const useAppStore = create((set,get) => ({
     // The URL of the server running the agent. 
@@ -25,9 +25,6 @@ export const useAppStore = create((set,get) => ({
 
     // The parsed contents of training_file 
     training_config: "",
-
-    // Whether is in interactive or batch mode 
-    interactive: true,
 
     // Whether should prompt for or automatically provide argument foci
     use_arg_foci: true,
@@ -79,38 +76,37 @@ export const useAppStore = create((set,get) => ({
       // return 
     },
 
-    setTrainingFile: async (filepath) => {
-      set({training_file: filepath, 
-           error: filepath ? null: "Cannot Batch Train. No Training File Provided."})
-      if(!filepath){return}
+    setTrainingConfig: async (training_config) => {
+      let filepath;
+      if(typeof training_config == "string"){
+        filepath = training_config
+        set({training_file: filepath})
+        training_config = await load_training_file(filepath).catch((e)=>{
+          let error = "Error Loading Training File:\n" + e
+          console.error(error)
+          set({error})
+        })
+      }
 
-      let state = get()
-
-      // console.log("START", filepath)
-      // Load the training file
-      let training_config = await load_training_file(filepath).catch((e)=>{
-        let error = "Error Loading Training File:\n" + e
-        console.error(error)
-        set({error})
-      })
+      set({training_config : training_config, 
+            error: filepath ? null: "No Training Configuration Provided."})  
       if(!training_config){return}
 
-      let {tutor_kind, tutor,...config} = training_config?.set_params ?? {}
-      tutor_kind = (tutor_kind || tutor || state.tutor_kind)
-
-      // console.log("THERE", tutor_kind)
+      let store = get()
+      let {tutor_kind, tutor,...config} = training_config
+      tutor_kind = (tutor_kind || tutor || store.tutor_kind)
 
       // Set with specialized setTutorKind
       if(tutor_kind){
-        await state.setTutorKind(tutor_kind)
+        await store.setTutorKind(tutor_kind)
       }else{
         set({"error" : `Unrecognized Tutor Kind: ${tutor_kind}`})
       }
-      // console.log("CONFIG", training_config)
+      console.log("CONFIG", training_config)
       set({training_config: training_config, error:null})
     },
 
-    setConfig: (config) => set((state) => {
+    setConfig: (config) => set((store) => {
       let d = {}
       let rebuild_network_layer = false
       for (const [key, value] of Object.entries(config)) {
@@ -129,7 +125,7 @@ export const useAppStore = create((set,get) => ({
       return config
     }),
 
-    setLoaded: (loaded) => set((state) => {return {loaded: loaded}}),
+    setLoaded: (loaded) => set((store) => {return {loaded: loaded}}),
 
 }))
 

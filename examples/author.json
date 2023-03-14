@@ -1,0 +1,17 @@
+{	
+	"agent" : {
+	  "name": "Unamed Agent",
+	  "type": "CREAgent",
+	  "args": {
+	    "search_depth" : 2,
+	    "how": "set_chaining",
+	    "when": "decisiontree",
+	    "where": "most_specific",
+	    "function_set" : ["Mod10","Div10","Add","Add3"],
+	    "feature_set" : ["Equals"],
+    }
+  },
+  "author" : {
+  	"prob_config" : {"HTML": "../model/HTML/MultiColumnArithmatic.html"}
+  },
+}

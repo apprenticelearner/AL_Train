@@ -74,94 +74,88 @@ export const useTrainStore = create((set,get) => ({
       : Controls for serving training configuration files
     */ 
     serveTrainingSet: async (training_config, training_file, network_layer) =>  {
-      
-
       // The directory of the training.json
       let match = training_file.match(/(.*)[\/\\]/)
       let working_dir =  !!match ? match[1] : ''; 
 
       set({mode: "ServingTrainingSets",
            network_layer: network_layer,
-           working_dir: working_dir,
+           working_dir:   working_dir,
          })
 
-      // get() should come after set so network layer is defined.
+      // get() should come after set() so network layer is defined.
       let store = get()
-      let file_params = {}
-      // console.log("training_config", training_config)
-      for (let [name, agent_set]  of Object.entries(training_config)) {
-        set({train_desc: `${training_file} (${name})`})
-        // Set the global params at the file level 
-        if(name === "set_params"){
-          file_params = {...file_params, ...agent_set}
-        }else {
-          agent_set = await evalJSONFunc(agent_set, store)
-          if(!Array.isArray(agent_set)){agent_set = [agent_set]}
+      let file_params = training_config.set_params || {}
+      let agent_set = training_config.batch_train
+      let file_agent_config = training_config.agent
+      set({train_desc: baseFile(training_file)})
 
-          for (let agent_config of agent_set) {
-            // Ensure that agent config inherits from 'agent' specified at file level
-            agent_config = {...agent_config,...file_params['agent']}
+      agent_set = await evalJSONFunc(agent_set, store)
+      if(!Array.isArray(agent_set)){agent_set = [agent_set]}
 
-            // Parse name, type, args, problem_set
-            let {agent_name, name,  agent_type, type,
-                 set_params,  args, agent_args, repetitions=1,
-                 problem_set, outer_loop_controller,
-                 ...rest} = agent_config
-            agent_name = agent_name || name
-            agent_type = agent_type || type
-            agent_args = {...(args || agent_args), ...rest}
+      for (let agent_config of agent_set) {
+        // Ensure that agent config inherits from 'agent' specified at file level
+        agent_config = {...agent_config,...file_agent_config}
 
-            if(!agent_name){
-              throw new Error(`Agent config missing 'name'|'agent_name':\n${JSON.stringify(agent_config)}`)
-            }
-            if(!agent_type){
-              throw new Error(`Agent config missing 'type'|'agent_type':\n${JSON.stringify(agent_config)}`)
-            }
+        // Parse name, type, args, problem_set
+        let {agent_name, name,  agent_type, type,
+             set_params,  args, agent_args, repetitions=1,
+             problem_set, outer_loop_controller,
+             ...rest} = agent_config
+        agent_name = agent_name || name
+        agent_type = agent_type || type
+        agent_args = {...(args || agent_args), ...rest}
 
-            // Fill in any set_params at agent level 
-            let agent_params = {...file_params, ...set_params}
-
-            let r = 1
-            while(repetitions === -1 || r <= repetitions){
-              let rep_count = (repetitions && r)
-
-              // Instantiate problem_set or outerloop individually by agent
-              let evaled_problem_set;
-              if(outer_loop_controller){
-                // Instantiate Outerloop Controller
-                evaled_problem_set = [await parseOuterLoopConfig(
-                  outer_loop_controller, problem_set, store
-                )]
-              }else if(problem_set){
-                // Ensure any fixed problem set is evaled
-                evaled_problem_set = await evalJSONFunc(problem_set, store)
-              }else{
-                throw new Error(`Agent config missing 'problem_set'|'outer_loop_controller':\n${JSON.stringify(agent_config)}`)
-              }
-
-              let agent_config = {name: agent_name, type: agent_type, args: agent_args}
-              set({mode: "CreatingAgent", agent_rep_count: rep_count,
-                   user_guid: agent_name, agent_config: agent_config
-              })
-              console.log("CREATE:", agent_name, rep_count)
-              await store.trainAgent(agent_config, agent_params, evaled_problem_set, rep_count)
-              r += 1
-            }
-            set({mode: "ServingTrainingSets"})
-          }
+        if(!agent_name){
+          throw new Error(`Agent config missing 'name'|'agent_name':\n${JSON.stringify(agent_config)}`)
         }
+        if(!agent_type){
+          throw new Error(`Agent config missing 'type'|'agent_type':\n${JSON.stringify(agent_config)}`)
+        }
+
+        // Fill in any set_params at agent level 
+        let agent_params = {...file_params, ...set_params}
+
+        let r = 1
+        while(repetitions === -1 || r <= repetitions){
+          let rep_count = (repetitions && r)
+
+          // Instantiate problem_set or outerloop individually by agent
+          let evaled_problem_set;
+          if(outer_loop_controller){
+            // Instantiate Outerloop Controller
+            evaled_problem_set = [await parseOuterLoopConfig(
+              outer_loop_controller, problem_set, store
+            )]
+          }else if(problem_set){
+            // Ensure any fixed problem set is evaled
+            evaled_problem_set = await evalJSONFunc(problem_set, store)
+          }else{
+            throw new Error(`Agent config missing 'problem_set'|'outer_loop_controller':\n${JSON.stringify(agent_config)}`)
+          }
+
+          let agent_config = {name: agent_name, type: agent_type, args: agent_args}
+          set({mode: "CreatingAgent", agent_rep_count: rep_count,
+               user_guid: agent_name, agent_config: agent_config
+          })
+          console.log("CREATE:", agent_name, rep_count)
+          await store.trainAgent(agent_config, agent_params, evaled_problem_set, rep_count)
+          r += 1
+        }
+        set({mode: "ServingTrainingSets"})
       }
+
       console.log("ALL DONE!")
       set({mode : "AllDone", message: "All Done!"})
     },
 
     trainAgent: async (agent_config, agent_params, problem_set, rep_count=null) =>  {
       let store = get()
-      let {name, type} = agent_config
+      let {name, type, message} = agent_config
       let agent_id = (await store.network_layer.createAgent(agent_config, rep_count))['agent_id']
       set({mode: "Training", 
            agent_desc:`${type}(name='${name}, id=${agent_id})` + (rep_count!=null ? ` (${rep_count})` : ""),
-           agent_id, problem_set}
+           agent_id, problem_set, message}
       )
       while(problem_set.length > 0){
         // Ensure using most up-to-date store
@@ -185,9 +179,10 @@ export const useTrainStore = create((set,get) => ({
       // console.log("prob_config", prob_config)
       let store = get()
       let {network_layer: nl, tutor} = store
-      let {HTML, question_file, prob_rep} = prob_config
+      let {HTML, question_file, prob_rep, message} = prob_config
       let rep_str = prob_rep ? ` (${prob_rep})` : ""
-      set({prob_desc: `HTML: ${baseFile(HTML)}\nProblem: ${baseFile(question_file)}${rep_str}`})
+      set({prob_desc: `HTML: ${baseFile(HTML)}\nProblem: ${baseFile(question_file)}${rep_str}`,
+           message})
 
       let prob_name = baseName(question_file)
       let term_str = `Starting Problem: ${prob_name}${rep_str}`
