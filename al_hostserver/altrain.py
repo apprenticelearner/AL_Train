@@ -18,7 +18,7 @@ from datetime import datetime
 al_process = None
 ctat_process = None
 browser_process = None
-outer_loop_process = None
+outerloop_process = None
 # al_thread = None
 # ctat_thread = Nones
 calling_dir = None
@@ -163,8 +163,8 @@ def kill_all():
         ctat_process.terminate()
     if(browser_process != None):
         browser_process.terminate()
-    if(outer_loop_process != None):
-        outer_loop_process.terminate()
+    if(outerloop_process != None):
+        outerloop_process.terminate()
     # sys.stderr = temp_stderr
     # if(al_process != None): kill_group(al_process)
     # if(ctat_process != None): kill_group(ctat_process)
@@ -274,15 +274,15 @@ def parse_args(argv):
     parser.add_argument('-n', "--nools",  default=None, dest="nools_dir",      metavar="<nools-out-dir>",
                         help="The directory to output the nools production rule code for the agent")
 
-    parser.add_argument('--outer-loop', action='store_true', default=False, dest="outer_loop",
+    parser.add_argument('--outer-loop', action='store_true', default=False, dest="outerloop",
                         help="Specifies that an external outer loop server will be used.")
-    parser.add_argument('--outer-loop-host', default=HOST_DOMAIN, dest="outer_loop_host",     metavar="<outer_loop_host>",
+    parser.add_argument('--outer-loop-host', default=HOST_DOMAIN, dest="outerloop_host",     metavar="<outerloop_host>",
                         help="The host url for the outer loop server. Default=localhost.")
-    parser.add_argument('--outer-loop-port', default=None, dest="outer_loop_port",      metavar="<outer_loop_port>",
+    parser.add_argument('--outer-loop-port', default=None, dest="outerloop_port",      metavar="<outerloop_port>",
                         help="Specifies the port to bind to for running the outer loop server.")
-    parser.add_argument('--outer-loop-dir', default=None, dest="outer_loop_dir",      metavar="<outer_loop_dir>",
+    parser.add_argument('--outer-loop-dir', default=None, dest="outerloop_dir",      metavar="<outerloop_dir>",
                         help="Specifies the directory of the outer loop repo.")
-    parser.add_argument('--outer-loop-url', default=None, dest="outer_loop_url",      metavar="<outer_loop_url>",
+    parser.add_argument('--outer-loop-url', default=None, dest="outerloop_url",      metavar="<outerloop_url>",
                         help="Specifies the URL of a running outer loop server.")
 
     try:
@@ -341,10 +341,10 @@ def parse_args(argv):
         args.output = "%s/%sLog-%s.txt" % (args.log_dir, os.path.basename(
             args.training).split(".")[0], datetime.now().strftime("%Y-%m-%d-%H_%M_%S"))
 
-    if(args.outer_loop_dir is None):
-        args.outer_loop_dir = dir_from_package("al_outerloop")
-        if(args.outer_loop_dir is None and args.outer_loop_dir is not None):
-            args.outer_loop_dir = os.path.abspath(apply_wd(args.outer_loop_dir))
+    if(args.outerloop_dir is None):
+        args.outerloop_dir = dir_from_package("al_outerloop")
+        if(args.outerloop_dir is None and args.outerloop_dir is not None):
+            args.outerloop_dir = os.path.abspath(apply_wd(args.outerloop_dir))
 
     args.output = os.path.abspath(apply_wd(args.output))
 
@@ -362,7 +362,7 @@ def parse_args(argv):
 
 
 def main(args):
-    global al_process, ctat_process, browser_process, outer_loop_process, calling_dir
+    global al_process, ctat_process, browser_process, outerloop_process, calling_dir
 
     if args.no_al_server:
         assert args.al_port is not None, "Must specify AL_PORT in altrain.conf or command line"
@@ -392,24 +392,24 @@ def main(args):
     else:
         port_error("CTAT", args.ctat_port)
 
-    if(args.outer_loop_url is None and args.outer_loop):
-        assert args.outer_loop_dir is not None, "Install AL_outerloop or specify OUTER_LOOP_DIR in altrain.conf"
-        if(not args.outer_loop_port):
-            args.outer_loop_port = get_open_port()
-        if(check_port(args.outer_loop_host, args.outer_loop_port, args.force)):
-            # print([sys.executable, os.path.join(args.outer_loop_dir, "src", "server.py") , "--host", str(args.outer_loop_host),"--port", int(args.outer_loop_port)])
-            outer_loop_process = subprocess.Popen([sys.executable, os.path.join(
-                args.outer_loop_dir, "server.py"), "--host", str(args.outer_loop_host), "--port", str(args.outer_loop_port)])
-            args.outer_loop_url = args.outer_loop_host + \
-                ":" + str(args.outer_loop_port)
+    if(args.outerloop_url is None and args.outerloop):
+        assert args.outerloop_dir is not None, "Install AL_outerloop or specify outerloop_DIR in altrain.conf"
+        if(not args.outerloop_port):
+            args.outerloop_port = get_open_port()
+        if(check_port(args.outerloop_host, args.outerloop_port, args.force)):
+            # print([sys.executable, os.path.join(args.outerloop_dir, "src", "server.py") , "--host", str(args.outerloop_host),"--port", int(args.outerloop_port)])
+            outerloop_process = subprocess.Popen([sys.executable, os.path.join(
+                args.outerloop_dir, "server.py"), "--host", str(args.outerloop_host), "--port", str(args.outerloop_port)])
+            args.outerloop_url = args.outerloop_host + \
+                ":" + str(args.outerloop_port)
         else:
-            port_error("OUTER LOOP", args.outer_loop_port)
-    if(args.outer_loop_url is not None and
-       not (args.outer_loop_url.startswith("http://") or
-            args.outer_loop_url.startswith("https://"))):
-        args.outer_loop_url = "http://" + args.outer_loop_url
+            port_error("OUTER LOOP", args.outerloop_port)
+    if(args.outerloop_url is not None and
+       not (args.outerloop_url.startswith("http://") or
+            args.outerloop_url.startswith("https://"))):
+        args.outerloop_url = "http://" + args.outerloop_url
 
-    ctat_url = "http://%s:%s/?training=/%s&al_url=http://%s:%s" % \
+    ctat_url = "http://%s:%s/?training=/%s&agent_url=http://%s:%s" % \
         (HOST_DOMAIN, args.ctat_port, args.training, HOST_DOMAIN, args.al_port)
     if(args.wd != None):
         ctat_url += "&wd=" + args.wd
@@ -421,8 +421,8 @@ def main(args):
         ctat_url += "&nools_dir=%s" % args.nools_dir
     if(args.tutor):
         ctat_url += "&tutor=%s" % args.tutor
-    if(args.outer_loop_url):
-        ctat_url += "&outer_loop_url=%s" % args.outer_loop_url
+    if(args.outerloop_url):
+        ctat_url += "&outerloop_url=%s" % args.outerloop_url
 
     if(args.browser != None and "selenium" in args.browser):
         from selenium import webdriver

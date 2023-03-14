@@ -23,19 +23,19 @@ from glob import glob
 
 FETCH_ABOVE_ROOT = str(os.environ.get("AL_HOST_FETCH_ABOVE_ROOT","False")).lower() == "true" 
 
-print("FETCH_ABOVE_ROOT", FETCH_ABOVE_ROOT)
+# print("FETCH_ABOVE_ROOT", FETCH_ABOVE_ROOT)
 
 host_dir = os.path.dirname(__file__)
 al_train_dir = os.path.join(host_dir,"..")
-build_dir = os.path.abspath(os.path.join(al_train_dir,"react_interface","build"))
-release_dir = os.path.abspath(os.path.join(al_train_dir,"react_interface","release"))
+build_dir = os.path.abspath(os.path.join(al_train_dir,"altrain_interface","build"))
+release_dir = os.path.abspath(os.path.join(al_train_dir,"altrain_interface","release"))
 dist_dir = release_dir
 if(os.path.isdir(build_dir)): dist_dir = build_dir
 
 static_dir = os.path.abspath(os.path.join(dist_dir,"static"))
 
 
-print("RELEASE DIR", release_dir)
+# print("RELEASE DIR", release_dir)
 if(not os.path.exists(build_dir)): build_dir = release_dir
 
 colorama.init(autoreset=True)
@@ -215,7 +215,7 @@ def _print_and_resp(message=None,m_type="default",outmode=sys.stdout):
             print(Back.GREEN + Fore.BLACK  + message)
         elif m_type == 'incorrect':
             print(Back.RED + Fore.BLACK + message)
-        elif m_type == 'example' or m_type == 'hint_request':
+        elif m_type == 'demo' or m_type == 'example' or m_type == 'hint_request':
             print(Back.BLUE + Fore.YELLOW  +  message)#, file=outmode)
         elif m_type == 'info' or m_type == 'attempt':
             print(Back.WHITE + Fore.BLACK + message)
@@ -687,32 +687,32 @@ def handle_root(path):
 
 @app.route('/static/<path:path>')
 def handle_static(path):
-    print("STATIC",path)
+    # print("STATIC",path)
     return send_from_directory(static_dir,path)
 
 @app.route('/al_train/<path:path>')
 def handle_al_train(path):
-    print("AL_TRAIN (dir)",path)
+    # print("AL_TRAIN (dir)",path)
     return send_from_directory(al_train_dir,path)
 
 @app.route('/build/<path:path>')
 def handle_build(path):
-    print("BUILD",path)
+    # print("BUILD",path)
     return send_from_directory(build_dir,path)
 
 @app.route('/release/<path:path>')
 def handle_release(path):
-    print("RELEASE",path)
+    # print("RELEASE",path)
     return send_from_directory(release_dir,path)
 
 @app.route('/dist/<path:path>')
 def handle_dist(path):
-    print("DIST",path)
+    # print("DIST",path)
     return send_from_directory(dist_dir,path)
 
 @app.route('/host/<path:path>')
 def handle_host(path):
-    print("HOST",path)
+    # print("HOST",path)
     return send_from_directory(host_dir,path)
 
     # if(request.method == "GET"):

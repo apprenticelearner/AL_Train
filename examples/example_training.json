@@ -1,92 +1,154 @@
 {
-	"set_params" : {"README" : "You can set parameters at the file level. These will stick around while this .json is running except for when they are overriden"},
+  "set_params" : {"README" : "You can set parameters at the file level. These will stick around while this .json is running except for when they are overriden"},
 
-	"training_set1" : [
-	{
-		"agent_name":"Treatment_IntegerAddition",
-		"agent_type":"ModularAgent",
-		"args": {
-			"search_depth" : 2,
-			"when_learner": "decisiontree",
-			"where_learner": "MostSpecific",
-			"planner": "numba",
-			"function_set": ["RipFloatValue","Add","Subtract","Multiply","Divide"],
-        	"feature_set": ["Equals"]
-		},			
+  "training_set1" : [
 
-		"problem_set" : [
+  // Define first agent in this training set
+  // {
+  //   "agent_name":"Treatment_IntegerAddition",
+  //   "agent_type":"CREAgent",
+  //   "args": {
+  //     "search_depth" : 2,
+  //     "how": "set_chaining",
+  //     "where": "MostSpecific",
+  //     "when": "decisiontree",
+      
+  //     "function_set": ["Add","Subtract","Multiply","Divide"],
+  //         "feature_set": ["Equals"]
+  //   },      
 
-			{"set_params" : 
-				{"README" : "You can also set parameters at the agent level. These will stick around for just this agent. And override file level parameters.",
-				"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
-				"examples_only" : true}
-			},
+  //   "problem_set" : [
+  //     // A problem definition: "HTML" interface + "question_file".
+  //     {"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
+  //      "question_file" : "IntegerArithmetic/FinalBRDs/1+1.brd",
+  //     },
 
-	 		{"README" : "Problem level parameters will override everything else. But only apply to this problem.",
-	 		"question_file" : "../FinalBRDs/1+1.brd"},
-	 		{"question_file" : "../FinalBRDs/2+1.brd"},
-	 		{"question_file" : "../FinalBRDs/2+2.brd"},
-	 		{"question_file" : "../FinalBRDs/3+4.brd"},
-	 		{"question_file" : "../FinalBRDs/3+5.brd"},
-	 		{"question_file" : "../FinalBRDs/4+3.brd"},
-	 		{"question_file" : "../FinalBRDs/6+9.brd"},
-	 		{"question_file" : "../FinalBRDs/8+7.brd"},
+  //     // Can set "HTML" parameter to use in all items below.
+  //     {"set_params" : 
+  //       {"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html"}
+  //     },
 
-	 		{"README" : "We can also set the number of repetitions for a problem. Default 1. <= 0, nothing happens",
-	 		"question_file" : "../FinalBRDs/9+2.brd",
-	 		"repetitions":7},
+  //     // Now can define problems just by setting "question_file".
+  //     {"question_file" : "IntegerArithmetic/FinalBRDs/2+1.brd"},
+  //     {"question_file" : "IntegerArithmetic/FinalBRDs/2+2.brd"},
+  //     {"question_file" : "IntegerArithmetic/FinalBRDs/3+4.brd"},
+  //     {"question_file" : "IntegerArithmetic/FinalBRDs/3+5.brd"},
+  //     {"question_file" : "IntegerArithmetic/FinalBRDs/4+3.brd"},
+  //     {"question_file" : "IntegerArithmetic/FinalBRDs/6+9.brd"},
+  //     {"question_file" : "IntegerArithmetic/FinalBRDs/8+7.brd"},
 
-	 		{"set_params" : 
-				{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-				"examples_only" : false}
-			},
+  //     // To repeat problems set 'repetitions'.
+  //     {"question_file" : "IntegerArithmetic/FinalBRDs/9+2.brd",
+  //      "repetitions":7
+  //     },
 
-			{"question_file": "../training/AD 1_2_plus_2_3.brd"},
-			{"question_file": "../training/AD 1_4_plus_4_5.brd"},
-			{"question_file": "../training/AS 11_2_plus_3_2.brd"},
-			{"question_file": "../training/AS 3_7_plus_4_7.brd"},
-			{"question_file": "../training/M 2_3_times_1_2.brd"},
-			{"question_file": "../training/M 3_10_times_4_5.brd"}
+  //     // When feedback_mode="demos_only", agent always asks for 
+  //     //  a bottom-out hint.  
+  //     {"set_params" : 
+  //       {"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
+  //       "feedback_mode" : "demos_only"}
+  //     },
 
-		]
-	},
+  //     // Will only get DEMO: experiences for these fraction problems. 
+  //     {"question_file": "FractionArithmetic/training/AD 1_2_plus_2_3.brd"},
+  //     {"question_file": "FractionArithmetic/training/AD 1_4_plus_4_5.brd"},
+  //     {"question_file": "FractionArithmetic/training/AS 11_2_plus_3_2.brd"},
 
-	{
+  //     // Feedback_mode back to normal.
+  //     {"set_params" : 
+  //       {"feedback_mode" : "full"}
+  //     },
 
-		"agent_name":"Control",
-		"agent_type":"ModularAgent",
-		"args": {
-			"search_depth" : 2,
-			"when_learner": "decisiontree",
-			"where_learner": "MostSpecific",
-			"planner": "numba",
-			"function_set": ["RipFloatValue","Add","Subtract","Multiply","Divide"],
-        	"feature_set": ["Equals"]
-		},			
-		"problem_set" : [
+  //     {"question_file": "FractionArithmetic/training/AS 3_7_plus_4_7.brd"},
+  //     {"question_file": "FractionArithmetic/training/M 2_3_times_1_2.brd"},
+  //     {"question_file": "FractionArithmetic/training/M 3_10_times_4_5.brd"}
 
-			{"README" : "If you want to explictly name the HTML each time that's fine too.",
-				
-			"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-			"question_file": "../training/AD 1_2_plus_2_3.brd"},
+  //   ]
+  // },
 
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-			"question_file": "../training/AD 1_4_plus_4_5.brd"},
+  // Start a second agent in this training set.
+  {
+    "agent_name":"Control",
+    "agent_type":"CREAgent",
+    "args": {
+      "search_depth" : 2,
+      "how": "set_chaining",
+      "where": "MostSpecific",
+      "when": "decisiontree",
+      "function_set": ["Add","Subtract","Multiply","Divide"],
+          "feature_set": ["Equals"]
+    },      
+    "problem_set" : [
+      {"set_params" : 
+        {"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html"}
+      },
 
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-			"question_file": "../training/AS 11_2_plus_3_2.brd"},
+      // "glob" will get files satisfying a pattern. This one gets 
+      //  problems where 1/4 is multiplied by something else "*".
+      {"glob" :
+          {"key" : "question_file",
+           "pattern": "FractionArithmetic/training/M 1_4_times*.brd"
+          }
+      },
 
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-			"question_file": "../training/AS 3_7_plus_4_7.brd"},
+      // We can also randomly "sample" from a fixed set.
+      {"sample": {
+          "n" : 3,
+          "set" : [
+            {"question_file" : "FractionArithmetic/training/AD 1_3_plus_3_2.brd"},
+            {"question_file" : "FractionArithmetic/training/AD 5_3_plus_2_5.brd"},
+            {"question_file" : "FractionArithmetic/training/M 4_9_times_3_4.brd"},
+            {"question_file" : "FractionArithmetic/training/M 5_3_times_2_5.brd"},
+            {"question_file" : "FractionArithmetic/training/AS 11_2_plus_3_2.brd"},
+          ],
+      }},
 
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-			"question_file": "../training/M 2_3_times_1_2.brd"},
+      // Or "sample" from the results of "glob".
+      {"sample": {
+          "n" : 3,
+          "set" : {
+            "glob" : {
+              "key" : "question_file",
+              "pattern": "FractionArithmetic/training/*.brd"
+            }
+          }
+      }},
 
-	 		{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html",
-			"question_file": "../training/M 3_10_times_4_5.brd"}
+      // Or "concatenate" and "shuffle" seperate samples.
+      {"shuffle" : {"concatenate" : [
+        {"sample": {
+            "n" : 2,
+            "set" : {
+              "glob" :
+                {"key" : "question_file",
+                 "pattern": "FractionArithmetic/training/AD*.brd",
+                }
+              }
+            }
+          },
+          {"sample": {
+            "n" : 2,
+            "set" : {
+              "glob" :
+                {"key" : "question_file",
+                 "pattern": "FractionArithmetic/training/AS*.brd",
+                }
+              }
+            }
+          },
+          {"sample": {
+            "n" : 2,
+            "set" : {
+              "glob" :
+                {"key" : "question_file",
+                 "pattern": "FractionArithmetic/training/M*.brd",
+                }
+              }
+            }
+          }
+      ]}}
 
-		]
-	}
-
+    ]
+  }
 ]
 }
