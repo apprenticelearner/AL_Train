@@ -1,0 +1,24 @@
+
+Visual (Changed )
+	Change colors
+	Make/Remove Highlight
+	Lock/Unlock Fields
+	Enter/Clear Fields
+Signal Out (callback props)
+	Signal Problem Loaded
+	Signal User Entry/Correctness
+	Signal User Clicks/Selection
+	Signal Next Demonstration
+	Signal Done
+
+Signal In 
+	Make highlights
+	clear_highlights
+	lock_element
+	color_element("EXAMPLE","CORRECT"..etc.)
+
+
+Other
+	Initialize
+	
+	 

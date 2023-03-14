@@ -1,0 +1,3 @@
+import("../add.nools");
+global first_number="291";
+global second_number="965";

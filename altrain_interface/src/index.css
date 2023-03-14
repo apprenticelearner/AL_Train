@@ -1,0 +1,12 @@
+html, body, #root {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  padding : 0;
+  margin: 0;
+}
+
+/* Make sure that <p> tags support \n line-breaks */
+p {
+  white-space: pre-wrap;
+}

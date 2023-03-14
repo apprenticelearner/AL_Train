@@ -1,0 +1,49 @@
+.App {
+  text-align: center;
+  background-color: #eeeedc;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+}
+
+.ToggleKnob {
+  position: 'absolute';
+  flex: 1;
+  border-radius: 40;
+  width:14;
+  background-color: 'rgba(170,170,170,.8)';
+}
+
+.RisingDiv {
+  /*background-color: 'rgba(170,1,1,.8)'; */
+  /*filter: drop-shadow(0 5px 4px #000);*/
+  /*box-shadow: 0 10px 1px #000;*/
+  opacity: 1;
+
+}
+
+.RisingDiv::after {
+  position: absolute;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  filter: drop-shadow(1px 10px 40px #000);
+  /*box-shadow: 0 50px 150px rgba(0,0,0,0.3);*/
+  opacity: 1;
+}
+
+.tab:hover {
+  background-color: darkgrey;
+}
+
+
+
+
+*:focus {
+    outline: none;
+}
+

@@ -9,6 +9,7 @@ net.conf
 alhtml.egg-info
 altrain.egg-info
 al_train.egg-info
+node_modules
 
 examples/INFO
 examples/DEBUG

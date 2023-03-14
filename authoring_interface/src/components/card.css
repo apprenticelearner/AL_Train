@@ -1,0 +1,17 @@
+.translucentHoverable {
+  background-color: transparent;
+  opacity: .2;
+}
+.translucentHoverable:hover {
+  background-color: rgba(120, 120, 120, .2);
+  opacity: .6;
+}
+
+/*.counters {
+  background-color: transparent;
+}
+.counters:hover {
+  background-color: rgba(120, 120, 120, .2);
+}
+*/
+

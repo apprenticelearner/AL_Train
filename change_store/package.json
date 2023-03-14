@@ -1,0 +1,14 @@
+{
+  "name": "change-store",
+  "version": "1.0.0",
+  "description": "Extension for zustand which simplifies writing acessors and conditions.",
+  "main": "change_store.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Daniel Weitekamp",
+  "license": "ISC",
+  "dependencies": {
+    "zustand": "^4.3.6"
+  }
+}

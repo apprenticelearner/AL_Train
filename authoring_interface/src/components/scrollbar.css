@@ -1,0 +1,25 @@
+.scrollable::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scrollable::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0.0);
+  border-radius: 100px;
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+  border-right: 5px solid rgba(0,0,0,0);
+  border-left: 3px solid rgba(0,0,0,0);
+  border-bottom: 4px solid rgba(0,0,0,0);
+  border-top: 1px solid rgba(0,0,0,0);
+  background-color: rgba(80, 80, 120, 0.0);
+  background-clip: padding-box;
+}
+
+.scrollable:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(80, 80, 120, 0.2);
+}
+
+.scrollable_focused::-webkit-scrollbar-thumb {
+  background-color: rgba(80, 80, 120, 0.2);
+}
