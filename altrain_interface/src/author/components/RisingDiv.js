@@ -42,12 +42,12 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, ...
       onMouseEnter={() => {scale.set(hover_scale); shadow.set(hover_shadow); hoverCallback?.()}} 
       onMouseLeave={() => {scale.set(default_scale); shadow.set(default_shadow); unhoverCallback?.()}}
       whileHover={{ zIndex: 100 }}
-        style={{
-            ...style,
-            // willChange : 'filter, scale',
-            ...(props?.shadow_kind=='drop' && {filter :shadow} || {boxShadow :shadow}),
-            scale : scale_anim,
-        }}
+      style={{
+          ...style,
+          // willChange : 'filter, scale',
+          ...(props?.shadow_kind=='drop' && {filter :shadow} || {boxShadow :shadow}),
+          scale : scale_anim,
+      }}
         {...props}
         >
       {children}

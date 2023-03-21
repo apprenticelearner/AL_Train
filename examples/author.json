@@ -12,6 +12,6 @@
     }
   },
   "author" : {
-  	"prob_config" : {"HTML": "../model/HTML/MultiColumnArithmatic.html"}
+  	"prob_config" : {"HTML": "../model/HTML/MultiColumnArithmetic.html"}
   },
 }

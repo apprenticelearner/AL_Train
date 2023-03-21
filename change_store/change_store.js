@@ -59,20 +59,23 @@ export const makeChangeStore = (useStoreHook) =>{
     if(do_update){
       let cmps = args.map(([accessor,...[cmp]])=>cmp || accessor[0]==="@")
       c = (old,nw) =>{
-        let checks_pass = true
+        let not_change = true
         let are_checks = false
         let i = 0
         for(let cmp of cmps){
           if(cmp instanceof Function){
-            checks_pass &= cmp(old[i], nw[i])
+            not_change &= cmp(old[i], nw[i])
             are_checks = true
           }else if(cmp){
-            checks_pass &= old[i] === nw[i]
+            not_change &= old[i] === nw[i]
             are_checks = true
+            // console.log(args[i][0], old[i], nw[i], old[i] === nw[i], not_change)
           }
+
           i++;
         }
-        return checks_pass && are_checks
+        // console.log("NO CHANGE", not_change)
+        return not_change
       }
     }else{
       c = () => true

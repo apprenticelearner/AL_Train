@@ -6,7 +6,7 @@ import './scrollbar.css';
 import './card.css';
 import RisingDiv from "./RisingDiv.js"
 import {CorrectnessToggler, SmallCorrectnessToggler} from "./CorrectnessToggler.js"
-import {useStore, useChangedStore} from "../globalstate.js"
+import {useAuthorStore, useAuthorStoreChange} from "../author_store.js"
 import {shallowEqual} from "../utils.js"
 
 
@@ -15,7 +15,7 @@ const images = {
 };
 
 const FeedbackCounters = ({sel, groupHasHover}) => {
-  let [counts, isExternalHasOnly] = useChangedStore(
+  let [counts, isExternalHasOnly] = useAuthorStoreChange(
       [[(s)=>{
         let counts = {'undef' : 0, 'correct_only' : 0, 'correct' :0, 'incorrect':0}
         for(let id of s.sel_skill_app_ids?.[sel] ?? []){
@@ -96,14 +96,9 @@ const FeedbackCounters = ({sel, groupHasHover}) => {
 }
 
 
-export function SkillAppGroup({x, y, parentRef, sel,
-  // skill_apps,only_show_focused_index, focusCallback, staged_index, focus_index,
-   style,
-  ...props}) {
-  
-
+export function SkillAppGroup({x, y, parentRef, sel, style,...props}) {
   let [hasFocus, skill_app_ids, hasHover, focus_id, 
-        setFocus, setHover] = useChangedStore(
+        setFocus, setHover] = useAuthorStoreChange(
       [[`@focus_sel==${sel}`, (x)=>x!=null], `@sel_skill_app_ids.${sel}`, `@hover_sel==${sel}`, `focus_id`, 
        "setFocus", "setHover"]
   )
@@ -111,8 +106,8 @@ export function SkillAppGroup({x, y, parentRef, sel,
   // const [is_hover, setIsHover] = useState(false)
 
   const ref = useRef(null);
-  const x_anim = useMotionValue(x || 0)
-  const y_anim = useMotionValue(y || 0)
+  const x_anim = useMotionValue(0)
+  const y_anim = useMotionValue(0)
 
   const groupIsDragging = useRef(false);
 
@@ -154,7 +149,7 @@ export function SkillAppGroup({x, y, parentRef, sel,
 
     // let correct = skill_app.reward > 0 || false
     // let incorrect = skill_app.reward < 0 || false
-    // let is_demonstration = skill_app.stu_resp_type == "HINT_REQUEST"
+    // let is_demo = skill_app.stu_resp_type == "HINT_REQUEST"
     // let staged = skill_app.is_staged || false
     // let how_text = skill_app.how
     // const card_ref = useRef(null);
@@ -163,7 +158,7 @@ export function SkillAppGroup({x, y, parentRef, sel,
       <SkillAppCard 
        // correct={correct}
        // incorrect={incorrect}
-       // is_demonstration={is_demonstration}
+       // is_demo={is_demo}
        // staged={staged_index==j}
        // using_default_staged={using_default_staged}
        // hasFocus={focus_index==j}
@@ -213,6 +208,7 @@ export function SkillAppGroup({x, y, parentRef, sel,
 
           style={{
             ...styles.skill_app_group,
+            left: x, top: y,
             x : x_anim, y : y_anim,
             zIndex : groupIsDragging.current && 100 || 1
           }}
@@ -236,16 +232,11 @@ export function SkillAppGroup({x, y, parentRef, sel,
 
           {((hasFocus || hasHover || groupIsDragging.current) &&
           
-          <div className={"scrollable" + (hasFocus && " scrollable_focused" || "")}
-                style={{
-                  ...styles.skill_app_scroll_container,                  
-                }}
-                // onWheel={(e)=>{}}
-                > 
+          <div className={"scrollable scrollable_skill_group" + (hasFocus && " scrollable_focused" || "")}
+                style={styles.skill_app_scroll_container}
+          > 
             <motion.div 
-              style={{
-                ...styles.skill_app_card_area,
-              }}>
+              style={styles.skill_app_card_area}>
               {skill_app_cards}
             </motion.div>
           </div>
@@ -274,17 +265,17 @@ export function SkillAppCard({
         id, groupIsDragging, groupHasHover, 
         // skill_app, correct, incorrect, hasFocus, showAuxilary, staged, 
         // foci_mode, stageCallback, focusCallback, toggleFociModeCallback,
-        // text, sel, index, is_demonstration, groupIsDragging, style,
+        // text, sel, index, is_demo, groupIsDragging, style,
         ...props}) {
   // let id = skill_app_id
   let [skill_app,            hasFocus,           hasStaged,    isExternalHasOnly,         
-      setFocus,   setHover, setReward, setStaged, undoStaged, setOnly, removeSkillApp, setCurrentTab] = useChangedStore(
+      setFocus,   setHover, setReward, setStaged, undoStaged, setOnly, removeSkillApp, setCurrentTab] = useAuthorStoreChange(
       [`@skill_apps.${id}`, `@focus_id==${id}`, `@staged_id==${id}`, `@only_count!=0`, 
       "setFocus", "setHover", 'setReward', 'setStaged', 'undoStaged', 'setOnly', 'removeSkillApp', 'setCurrentTab']
   )
   // console.log("RERENDER CARD", skill_app.input)
   let text = skill_app.input || ""
-  let is_demonstration = skill_app.is_demonstration || false
+  let is_demo = skill_app.is_demo || false
   let correct = skill_app.reward > 0 
   let incorrect = skill_app?.reward < 0 || isExternalHasOnly
   let isImplicit = isExternalHasOnly && skill_app?.reward == 0;
@@ -296,7 +287,7 @@ export function SkillAppCard({
   let minWidth = 60//(hasFocus && 60) || 20
   let maxWidth = 140//(hasFocus && 140) || 40
 
-  let bounds_color =  (is_demonstration && 'dodgerblue') ||
+  let bounds_color =  (is_demo && 'dodgerblue') ||
                         (correct && colors.c_bounds) || 
                         (incorrect && colors.i_bounds) || 
                         colors.u_bounds
@@ -309,7 +300,7 @@ export function SkillAppCard({
                      }) ||{padding: 2, borderWidth:2}
                      )
 
-  let right_border_color = (is_demonstration && 'dodgerblue') ||
+  let right_border_color = (is_demo && 'dodgerblue') ||
                            (correct && colors.c_knob) || 
                            (incorrect && colors.i_knob) || 
                            colors.u_knob
@@ -343,7 +334,7 @@ export function SkillAppCard({
             if(!groupIsDragging.current){
               setFocus(skill_app)
             }
-            if(skill_app.is_demonstration){
+            if(skill_app.is_demo){
               setCurrentTab('demonstrate')
             }else{
               setCurrentTab('other')
@@ -388,7 +379,7 @@ export function SkillAppCard({
           }
             
           {/*Close Button*/}
-          {is_demonstration && 
+          {is_demo && 
             <RisingDiv 
               style={styles.close_button}
               onClick={()=>{removeSkillApp?.(skill_app)}}
@@ -463,7 +454,7 @@ export function SkillAppCard({
           {(hasStaged && correct && 
               <div style={{
                 ...styles.stage_icon,
-                right: styles.stage_icon.right + (is_demonstration && 12)
+                right: styles.stage_icon.right + (is_demo && 12)
               }}>
               <img style={{maxWidth:"75%", maxHeight:"75%", }} src={images.double_chevron}/>
               </div>
@@ -472,7 +463,7 @@ export function SkillAppCard({
           {(hasOnly &&
               <div style={{
                 ...styles.only_icon,
-                right: styles.only_icon.right + (is_demonstration && 12)
+                right: styles.only_icon.right + (is_demo && 12)
               }}>
               <div >{"⦿"}</div>
               </div>
@@ -482,7 +473,8 @@ export function SkillAppCard({
 }
 
 export function SkillAppCardLayer({parentRef, state, style}){
-  let [selectionsWithSkillApps, foci_mode] = useChangedStore(
+  // Get subset of elements modified by skill apps
+  let [selectionsWithSkillApps] = useAuthorStoreChange(
     [[(s) => {
       let used = []
       for (let [k,v] of Object.entries(s.sel_skill_app_ids) ){
@@ -494,27 +486,32 @@ export function SkillAppCardLayer({parentRef, state, style}){
     (o,n) => {
       return shallowEqual(o, n)
     }
-    ],"@foci_mode"] 
+    ]] 
   )
+  let [train_mode, tutor_state] = useAuthorStoreChange(["@mode=='train'", "@tutor_state"])
+  state = state || tutor_state
 
-  console.log("RERENDER LAYER", foci_mode)
+  console.log("RERENDER LAYER", train_mode)
 
   // Make skill application groups
   let skill_app_groups = []  
-  for (let sel of selectionsWithSkillApps){
-    let elem = state[sel]
-    skill_app_groups.push(
-      <SkillAppGroup
-        sel={sel} 
-        parentRef={parentRef} 
-        x={elem.x+elem.width*.9} y={elem.y-20}
-        key={sel+"_skill_app_group"}
-    />)
+  if(train_mode){
+    for (let sel of selectionsWithSkillApps){
+      let elem = state[sel]
+      skill_app_groups.push(
+        <SkillAppGroup
+          sel={sel} 
+          parentRef={parentRef} 
+          x={elem.x+elem.width*.9} y={elem.y-20}
+          key={sel+"_skill_app_group"}
+      />)
+    }  
   }
+  
 
   return (
     <div style={{...style}} >
-      {!foci_mode && skill_app_groups}
+      {skill_app_groups}
     </div>
   )
 

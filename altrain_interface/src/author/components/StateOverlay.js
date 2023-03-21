@@ -1,8 +1,8 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 import { motion } from "framer-motion";
 import '../author.css';
 import '../components/scrollbar.css';
-import {useChangedStore, test_state} from "../globalstate.js"
+import {useAuthorStoreChange} from "../author_store.js"
 
 const images = {
   tap: require('../img/gesture-tap.png'),
@@ -22,7 +22,7 @@ const getFociIndex = (sel) => [
 ]
 
 function OverlayBounds({style, children, sel, elem, color, groupHasFocus, hasStaged, id,...props}){
-    let [foci_index, foci_mode, hasFocus, toggleFoci] = useChangedStore(
+    let [foci_index, foci_mode, hasFocus, toggleFoci] = useAuthorStoreChange(
         [getFociIndex(sel), "@foci_mode", `@focus_id===${id}`, 'toggleFoci']
     )
 
@@ -38,19 +38,14 @@ function OverlayBounds({style, children, sel, elem, color, groupHasFocus, hasSta
     return (      
       <motion.div  style= {{
         ...styles.overlay_bounds,
-        ...{
-          width: elem.width,
-          height: elem.height,
-          x : elem.x,
-          y : elem.y
-        },
+        ...{width: elem.width, height: elem.height, x : elem.x, y : elem.y},
         ...style,
         borderWidth: ((foci_index !== -1 || groupHasFocus) && 8) || 4,
         borderColor: borderColor,
         backgroundColor : backgroundColor,
         opacity : (foci_mode && !hasFocus && .4) || 1
-        // ...(foci_mode && {backgroundColor: 'rbga(256, 0, 120,.8)', boderColor : 'rbga(0,0,0,.0)'})
       }}
+
       {...props}
       onClick={(e)=>{if(foci_mode && !hasFocus){toggleFoci(sel)}}}
       >
@@ -65,7 +60,7 @@ function OverlayBounds({style, children, sel, elem, color, groupHasFocus, hasSta
 function skillAppExtractProps(skill_app, isExternalHasOnly){
   let correct = skill_app?.reward > 0 ?? false;
   let incorrect = (skill_app?.reward < 0 ?? false) || (skill_app?.reward===0 && isExternalHasOnly);
-  let isDemo = skill_app?.is_demonstration ?? false
+  let isDemo = skill_app?.is_demo ?? false
 
   let color = //(isDemo && colors.demo_color) || 
               (correct && colors.correct_color) ||
@@ -100,32 +95,53 @@ const getOverlaySkillApp = (sel) =>{
 
 }
 
-const genDemo = (sel, action_type, input) =>{
-  let demo = {
+
+
+const newSkillApp = (sel, action_type, input, props) =>{
+  let skill_app = {
     selection: sel,
     action_type : action_type,
     input : input,
-    is_demonstration : true,
-    reward : 1,
+    ...props
   } 
-  return demo
+  return skill_app
 }
 
-function TextFieldOverlay({
-    sel, elem,
-  }) {
+const newDemo = (sel, action_type, input) =>{
+  return newSkillApp(sel,action_type,input, {is_demo : true,reward : 1,})
+}
 
+const newTutorPerformed = (sel, action_type, input) =>{
+  return newSkillApp(sel,action_type,input, {tutor_performed : true})
+}
+
+function TextFieldOverlay({sel, elem}) {
   const ref = useRef(null);
   // const did_change = useRef(null);
-  const demo_app_id = useRef(null);
 
-  let [[skill_app, hasStaged], groupHasFocus, isExternalHasOnly, addSkillApp, removeSkillApp, setInput, setFocus, setCurrentTab, setFociMode] = useChangedStore(
-    [getOverlaySkillApp(sel), `@focus_sel===${sel}`, `@only_count!==0`, "addSkillApp", "removeSkillApp", "setInput", "setFocus", "setCurrentTab", "setFociMode"],
+  // True if has focus and empty
+  const [empty_focus, setEmptyFocus] = useState(false);
+
+  let [[skill_app, hasStaged], groupHasFocus, isExternalHasOnly, mode, has_focus, setInputFocus,
+    addSkillApp, removeSkillApp, setInput, setFocus, setMode] = useAuthorStoreChange(
+    [getOverlaySkillApp(sel), `@focus_sel===${sel}`, `@only_count!==0`, "@mode", `@input_focus===${sel}`, "setInputFocus",
+    "addSkillApp", "removeSkillApp", "setInput", "setFocus", "setMode"],
   )
 
-  let {correct, incorrect, isDemo, color, input, id} = skillAppExtractProps(skill_app, isExternalHasOnly)
+  // let empty_focus = (!skill_app?.input && has_focus)
+  // console.log(not_empty.current, skill_app)
 
-  let text = input || ""
+  let text, placeholder, color, id;
+  if(mode == "start_state"){
+    color = "teal"
+    text = (!empty_focus && skill_app?.input) ||  "" 
+    placeholder = (skill_app?.input) ||  "" 
+    
+  }else{
+    let {isDemo, color, input, id} = skillAppExtractProps(skill_app, isExternalHasOnly)
+    text = input || ""  
+  }
+  
   let L = Math.min(text.length || 1, 8)
 
   let mindim = Math.min(elem.width, elem.height)
@@ -142,54 +158,65 @@ function TextFieldOverlay({
         style = {{
            ...styles.textfield,
            fontSize : fontSize,
+           //TODO placeholder style
          }}
         spellCheck="false"
         ref={ref}
         value={text}
+        {...(mode=="start_state" && {placeholder:placeholder})}
         onFocus={(e) => {
           console.log("ON focus")
-          if(!groupHasFocus){
-            ref.current.value=""
-            if(demo_app_id.current){
-              setInput(skill_app, ref.current.value)    
-            }
-          }
-          
+          setInputFocus(sel)
+          setEmptyFocus(true)
         }}
         onBlur={(e) => {
-          console.log("BLUR", demo_app_id.current, skill_app?.id)
-          ref.current.value=skill_app?.input ?? ""
-          if(demo_app_id.current){
-            if(skill_app?.input.length===0){
-              removeSkillApp(skill_app)
-            }else{
-              setFociMode(true)  
-            }
+          console.log("BLUR", skill_app?.id)
+          if(skill_app?.input.length===0){
+            removeSkillApp(skill_app)
+          }else if(mode == "train"){
+            setMode("arg_foci")  
           }
-          demo_app_id.current = null
+          setInputFocus(null)
+          setEmptyFocus(false)
           
         }}
         onChange={(e)=>{
-          console.log("On CHANGE", e.target.value)
+          console.log("On CHANGE", mode, e.target.value)
           // did_change.current = ref.current.value !== ""
-
-          if(!demo_app_id.current){
-            let new_skill_app = genDemo(sel, "UpdateTextField", e.target.value)
+          let new_skill_app;
+          if(mode=="train"){
+            new_skill_app = newDemo(sel, "UpdateTextField", e.target.value)
+          }else{
+            new_skill_app = newTutorPerformed(sel, "UpdateTextField", e.target.value)
+          }
+          // if(mode=="train"){
+          if(!skill_app){
             addSkillApp(new_skill_app)
             setFocus(new_skill_app)
-            setCurrentTab("demonstrate")
-            
-            demo_app_id.current = new_skill_app.id
+            // if(mode=='train'){
+            //   setCurrentTab("demonstrate")  
+            // }
           }else{
-            console.log(">>", text, e.target.value)
+            // console.log(">>", text, e.target.value)
             setInput(skill_app, e.target.value)  
           }
+          setEmptyFocus(false)
+          // }else{
+          //   ref.current.value += e.target.value
+          //   console.log(ref.current.value)
+          // }
+          
+          
         }}
-        onKeyPress={(evt)=>{
-          if(evt.key==="Enter" && !evt.shiftKey){ 
+        onKeyDown={(evt)=>{
+          console.log("KEY", evt.key)
+          if((evt.key==="Enter" && !evt.shiftKey) || evt.key==="Escape"){ 
             ref.current.blur()
-            
-            console.log("Set Foci Mode")
+          }
+          if(mode === "start_state" && empty_focus){
+            if(evt.key==="Delete" || evt.key==="Backspace"){ 
+              removeSkillApp(skill_app)
+            }
           }
         }}
 
@@ -202,7 +229,7 @@ function ButtonOverlay({
     sel, elem,
   }) {
 
-  let [[skill_app,hasStaged], groupHasFocus,  isExternalHasOnly, addSkillApp, removeSkillApp, setInput, setFocus] = useChangedStore( 
+  let [[skill_app,hasStaged], groupHasFocus,  isExternalHasOnly, addSkillApp, removeSkillApp, setInput, setFocus] = useAuthorStoreChange( 
     [getOverlaySkillApp(sel), `@focus_sel===${sel}`, `@only_count!==0`, "addSkillApp", "removeSkillApp", "setInput", "setFocus"]
   )
 
@@ -213,7 +240,7 @@ function ButtonOverlay({
       onClick={(e)=>{
         console.log("BUTTON")
         if(!skill_app){
-          let new_skill_app = genDemo(sel,"PressButton", -1)
+          let new_skill_app = newDemo(sel,"PressButton", -1)
           setFocus(new_skill_app)
           addSkillApp(new_skill_app)  
         }
@@ -230,25 +257,33 @@ function ButtonOverlay({
   )
 }
 
-export function StateOverlayLayer({ state, style }){
+export function StateOverlayLayer({ state, style }) {
 
-  state = state || test_state
+  let [mode, tutor_state] = useAuthorStoreChange(['@mode', '@tutor_state'])
+  state = state || tutor_state || {}
+  // console.log("RENDER OVERLAY", tutor_state)
   
-  // let ref = useRef(null)
-
   // Make interface element overlays
   let elem_overlays = []
   for (let [sel, elem] of Object.entries(state)){
-    const overlay_type = overlay_element_types[elem.type]
-    elem_overlays.push(
-      React.createElement(overlay_type, {
-        sel:sel,
-        elem: elem,
-        key : "overlay_element_"+sel,
-      })
-    )
-  }
+    const type_name = elem.type.toLowerCase()
+    const overlay_type = overlay_element_types?.[type_name]
 
+    // Prevent interacting with buttons on start state
+    if(type_name == 'button' && mode == "start_state"){
+      continue
+    }
+
+    if(overlay_type && (!elem?.locked ?? elem?.visible ?? true)){
+      elem_overlays.push(
+        React.createElement(overlay_type, {
+          sel:sel,
+          elem: elem,
+          key : "overlay_element_"+sel,
+        })
+      )  
+    }
+  }
 
   return (
     <div style={{...style}}>

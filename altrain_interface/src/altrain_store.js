@@ -10,7 +10,7 @@ const tutor_wrappers = (() => ({
 
 const bool_params = ['use_arg_foci', 'use_skill_label']
 
-export const useAppStore = create((set,get) => ({
+export const useALTrainStore = create((set,get) => ({
     // The URL of the server running the agent. 
     agent_url: "",
 
@@ -41,39 +41,19 @@ export const useAppStore = create((set,get) => ({
     // The directory of Nools
     nools_dir: "",
 
-    // A prompt 
-    prompt : "",
-
     // Whether or not has finished loading
     loaded : false,
 
     // An error message 
     error : false,
 
+    getALTrainStore: () => get(),
 
     setTutorKind: async (tutor_kind) =>  {
       // Normalize the tutor kind and path
-
-      // if(false){
-      //   let split = tutor_kind.split("/")
-      //   let dir = split.slice(0,-1).join("/") || "./tutorwrappers/"
-      //   tutor_kind = split[split.length-1]
-      //   let tutor_kind_path = `${dir}${tutor_kind}`
-      //   console.log(tutor_kind_path)
-      //   // Lazy import the tutor class 
-      //   let tutor_class = await import(`${dir}${tutor_kind}`).catch(
-      //       (e) => {
-      //         console.log("ERROR", e);
-      //         set({"error": e})
-      //         return null
-      //       }
-      //   )
-      //   set({tutor_kind, tutor_kind_path, tutor_class, error:false})
-      // }
       let tutor_class = tutor_wrappers[tutor_kind]
       console.log("BLEHH", tutor_kind, tutor_class)
       set({tutor_kind, tutor_class, error:false})
-      // return 
     },
 
     setTrainingConfig: async (training_config) => {
@@ -129,7 +109,7 @@ export const useAppStore = create((set,get) => ({
 
 }))
 
-export let useAppStoreChange = makeChangeStore(useAppStore)
+export let useALTrainStoreChange = makeChangeStore(useALTrainStore)
 
 
 

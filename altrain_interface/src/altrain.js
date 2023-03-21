@@ -11,38 +11,14 @@
  */
 
 import React, { useEffect } from "react";
-import {useAppStoreChange} from './app_store';
-import BatchTrainer from "./batch_train/batch_trainer";
+import {useALTrainStoreChange} from './altrain_store';
+import {useAuthorStore, useAuthorStoreChange} from './author/author_store';
+import BatchTrainer from "./batch_train/train";
 import {getURLParams} from "./utils";
-import {Oval} from "react-loader-spinner";
-import AuthoringInterface from "./author/author";
 
-function LoadingPage(){
-  const [prompt] = useAppStoreChange(['@prompt'])
-  return (
-    <div style={styles.info_page}>
-      <div style={{flexDirection: "column", alignSelf: "center"}}>
-      <Oval
-          height={160} width={160} color="#4fa94d" secondaryColor="#4fa94d"
-          strokeWidth={5} strokeWidthSecondary={5}
-      />
-      <p style={{textAlign:'center',
-                 fontFamily:"Copperplate, Courier New",
-                 fontSize:40}}>
-        loading
-      </p>
-      </div>
-    </div>
-  )
-}
-function ErrorPage({error:prop_error}){
-  const [error] = useAppStoreChange(['@error'])
-  return (
-    <div style={{...styles.info_page, backgroundColor:"pink"}}>
-      <p style={{textAlign:'center', fontSize:40}}> {prop_error || error}</p>
-    </div>
-  )
-}
+import AuthoringInterface from "./author/author";
+import {LoadingPage, ErrorPage} from "./shared/info_pages";
+
 
 const default_config = {
   "agent" : {
@@ -61,29 +37,43 @@ const default_config = {
 }
 
 export default function ALTrain(){
-    const [is_batch_train, is_author,
-           tutor_class,  loaded, error, setConfig, setLoaded, setTrainingConfig] = useAppStoreChange(
-          ['@training_config.batch_train!=null', '@training_config.author!=null', 
+    const [is_batch_train, is_author, getALTrainStore,
+           tutor_class,  loaded, error, setConfig, setLoaded, setTrainingConfig] = useALTrainStoreChange(
+          ['@training_config.batch_train!=null', '@training_config.author!=null', 'getALTrainStore',
            '@tutor_class', '@loaded', '@error', 'setConfig', 'setLoaded', 'setTrainingConfig']
     )
+    const [initializeAuthoring] = useAuthorStoreChange(["initializeAuthoring"])
+
     // OnMount
     useEffect(() =>{
-      setLoaded(false)
-      let {training, ...config} = getURLParams()
-      // If a training file was provided parse it and write any config.
-      if(training){
-        setTrainingConfig(training).then( ()=>{
-          // Any config set by the user in URL params should override training file.
-          setConfig(config)
-          setLoaded(true)
-        })
-      }else{
-        setConfig(default_config)
+      let f = async () => {
+        setLoaded(false)
+        let {training, ...config} = getURLParams()
+        // If a training file was provided parse it and write any config.
+        if(training){
+          // console.log("BEF")
+          await setTrainingConfig(training).then( ()=>{
+            // Any config set in URL params should override training file.
+            // console.log("THEN")
+            setConfig(config)
+          })
+          // console.log("AFT")
+        }else{
+          setConfig(default_config)
+        }
+
         setLoaded(true)
+        let {network_layer, training_config} = getALTrainStore()
+        // console.log("training_config", training_config)
+        if(training_config.author){
+          // console.log("BEF initializeAuthoring")
+          initializeAuthoring(training_config, network_layer)
+        }
       }
+      f()
     }, [])
 
-    console.log("ALTRAIN RENDER", is_batch_train, is_author, loaded, error)
+    // console.log("ALTRAIN RENDER", is_batch_train, is_author, loaded, error)
 
     if(error){
       return (<ErrorPage/>)
@@ -92,7 +82,11 @@ export default function ALTrain(){
     }
 
     if(is_author){
-      return (<AuthoringInterface/>)
+      if(tutor_class){
+        return (<AuthoringInterface/>)  
+      }else{
+        return (<ErrorPage/>)
+      }
     }
 
     if(!is_batch_train){
@@ -107,11 +101,5 @@ export default function ALTrain(){
 }
 
 const styles = {
-  info_page : {
-      display:"flex",
-      justifyContent:'center',
-      alignSelf:'center',
-      width:"100%",
-      height:"100%",
-  },
+
 }

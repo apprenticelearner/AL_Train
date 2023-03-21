@@ -712,7 +712,7 @@ def handle_dist(path):
 
 @app.route('/host/<path:path>')
 def handle_host(path):
-    # print("HOST",path)
+    print("HOST",path)
     return send_from_directory(host_dir,path)
 
     # if(request.method == "GET"):

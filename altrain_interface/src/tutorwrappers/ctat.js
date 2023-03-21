@@ -2,18 +2,29 @@ import React, {useEffect} from "react";
 import deep_equal from 'fast-deep-equal'
 import {baseName, isAbsolute} from "../utils"
 import queryString from "query-string"
+import {LoadingPage, ErrorPage} from "../shared/info_pages";
 
 // const queryString = require("query-string");
 const $ = require("jquery");
 
 
 function checkTypes(element, types) {
-  let ok = false;
   for (let i = types.length - 1; i >= 0; i--) {
     let type = types[i];
-    if (element.classList.contains(type)) ok = true;
+    let cl = [...element.classList]
+    if(typeof type == "string"){
+      if (cl.some(x=>(type==x)) ){
+        return true
+      }
+      //Assume is regex otherwise
+    }else{
+      if (cl.some(x=>type.test(x))){
+        return true
+      }
+    }
+    
   }
-  return ok;
+  return false;
 }
 
 const default_where_colors = ["darkorchid", "#ff884d", "#52d0e0",
@@ -147,24 +158,29 @@ let BaseMixin = (superclass) => class extends superclass {
     console.log("CTAT INITIALIZED!");
     this.init_callback?.(this);
 
+    // Prevent CTAT from adding annoying interior scrollbars
+    this.iframe_content.$("body")[0].style.overflow = "hidden";
     iframe_content.removeEventListener('scroll', this.props.updateBoundsCallback)
     iframe_content.addEventListener('scroll', this.props.updateBoundsCallback)
     
   }
 
   _resolve_HTML_question_file = (prob_config, context) => {
-    let {abs_qf_paths=true, HTML="", question_file="/host/empty.nools"} = prob_config
+    let {abs_qf_paths=true, HTML="", question_file} = prob_config
+    question_file = question_file || "/host/empty.nools"
     let {working_dir, network_layer:nl} = context
 
     //Repalcing ".." w/ "!u" allows the host server to fetch above working dir
     HTML = HTML.replace(/\.\./g,"!u"); 
     question_file = question_file.replace(/\.\./g,"!u"); 
+    console.log("question_file", question_file)
 
     // Ensure that paths have correct root paths
     if (!isAbsolute(HTML)) HTML = (working_dir || "/") + HTML;
     
     if(abs_qf_paths){
       if (!isAbsolute(question_file)) question_file = (working_dir || "/") + question_file
+        console.log(nl.host_url)
       question_file = nl.host_url + question_file
     } 
 
@@ -204,7 +220,7 @@ let BaseMixin = (superclass) => class extends superclass {
     return logging_params
   }
 
-  loadProblem = (prob_config, context={}) => {
+  loadProblem = (prob_config, context={}, ...args) => {
     this.is_done = false
     let promise = new Promise((resolve, reject) => {
 
@@ -215,16 +231,30 @@ let BaseMixin = (superclass) => class extends superclass {
 
       // Note: both prob_rep and agent_rep are necessary to ensure the query string is unique across
       //  various kinds of repetition
-      let {prob_rep=1,agent_rep=1} = prob_config
+      let {prob_rep=1, agent_rep=1} = prob_config
       let logging_params = this._init_logging_params(prob_config, HTML, question_file, context)
       let params = {question_file, ...logging_params, prob_rep, agent_rep}
-
+      console.log("params", params)
       
       this.HTML_path = HTML;
       this.init_callback = () => {
-        console.log("POOOO")
-        resolve();
+        // let {callback} = args
+        // if(callback){
+        let elements = this.generateElementList()
+        let bounding_boxes = this.getBoundingBoxes(elements)
+        let minX, maxX, minY, maxY;
+        for(let [id, rect] of Object.entries(bounding_boxes)){
+          if(!(rect.x >= minX)) minX = rect.x;
+          if(!(rect.y >= minY)) minY = rect.y;
+          let [extX, extY] = [rect.x+rect.width, rect.y+rect.height];
+          if(!(extX <= maxX)) maxX = extX
+          if(!(extY <= maxY)) maxY = extY
+        }
+        console.log("bounding_boxes" ,minX, maxX, minY, maxY)
+        // }
+        resolve({x:minX, y:minY, width: maxX-minX, height:maxY-minY});
       };
+      console.log(HTML)
       let source = HTML + "?" + queryString.stringify(params);
 
       if(source == this.state.source){
@@ -262,19 +292,34 @@ let BaseMixin = (superclass) => class extends superclass {
     return elements
   }
 
-  getBoundingBoxes = () =>{
+  getBoundingBoxes = (elements) =>{
     let bounding_boxes = {}
-    for(let element of this.elements){
-      bounding_boxes[element.id] = element.getBoundingClientRect()
+    for(let element of elements){
+      let elm = (element?.firstElementChild ?? element)
+      let rect = elm.getBoundingClientRect()
+      let style = getComputedStyle(elm)
+      // Remove Padding
+      let {paddingLeft, paddingRight, paddingTop, paddingBottom} = style
+           // 
+      // console.log(style)
+      rect.width -= parseFloat(paddingLeft) + parseFloat(paddingRight)
+      rect.height -= parseFloat(paddingTop) + parseFloat(paddingBottom) 
+      // For some reason CTAT buttons are quite weird
+      // if(elm !== element){
+      //   let {borderLeftWidth, borderRightWidth, borderTopWidth, borderBottomWidth} = style
+      //   console.log("EE", element.id, borderLeftWidth, borderRightWidth, borderTopWidth, borderBottomWidth)
+      // }
+      
+      bounding_boxes[element.id] = rect
     }
     return bounding_boxes
   }
 
   getState = ({
-    encode_relative = true,
+    encode_relative = false,
     strip_offsets = false,
     use_bounds = true,
-    use_class = true,
+    use_class = false,
     use_id = true,
     append_ele = false,
     numeric_values = false,
@@ -284,7 +329,7 @@ let BaseMixin = (superclass) => class extends superclass {
     let HTML_path = this.HTML_path;
 
     let elements = this.generateElementList()
-    let bounding_boxes = this.getBoundingBoxes()
+    let bounding_boxes = this.getBoundingBoxes(elements)
     // state_array.push({current_task: current_task});
 
     let state_json = {};
@@ -306,7 +351,7 @@ let BaseMixin = (superclass) => class extends superclass {
             let rect = bounding_boxes[element.id]
             rect = {x :rect.x, y : rect.y, width : rect.width, height: rect.height }
             Object.assign(obj, rect)
-            obj["offsetParent"] = element.offsetParent.dataset.silexId;
+            // obj["offsetParent"] = element.offsetParent.dataset.silexId;
             // obj["x"] = element.x;
             // obj["y"] = element.y;
             // obj["width"] = element.width;
@@ -317,26 +362,19 @@ let BaseMixin = (superclass) => class extends superclass {
             obj["id"] = element.id;
           }
 
-          if (
-            checkTypes(element, [
-              "CTATTextInput",
-              "CTATComboBox",
-              "CTATTable--cell"
-            ])
-          ) {
+          if (checkTypes(element, ["CTATTextInput","CTATComboBox","CTATTable--cell"])) {
             obj['type'] = "TextField"
             obj["value"] = element.firstElementChild.value;
             if (numeric_values) {
               obj["value"] = Number(obj["value"]) || obj["value"];
             }
-            obj["contentEditable"] =
-              element.firstElementChild.contentEditable === "true";
+            obj["locked"] = element.firstElementChild.contentEditable !== "true";
 
-            if(clear_editable_values && obj["contentEditable"] === true){
+            if(clear_editable_values && obj["locked"] === true){
               obj['value'] = ""
             }
             // obj["name"] = element.id
-          }else if(checkTypes(element, ["CTATButton"])){
+          }else if(checkTypes(element, [/Button/g])){
             obj['type'] = "Button"
           }
           // if(checkTypes(element, ["CTATTextField", "CTATComboBox"])){
@@ -354,37 +392,18 @@ let BaseMixin = (superclass) => class extends superclass {
             }
             obj["options"] = Object.assign({}, temp);
 
-            // }
           }
 
-          if(!obj['type']){ obj['type'] = "Component"}
+          // console.log(">>", element.id, element)
+          obj['visible'] = !((element.firstElementChild?.disabled ?? element.firstElementChild?.visible) ?? false)
+
+          if(!obj['type']){obj['type'] = "Component"}
           let name = (append_ele ? "?ele-" : "") + element.id;
           // console.log(name,append_ele)
           state_json[name] = obj;
           count++;
         }
       }
-      // add question marks for apprentice
-      // element = jQuery.extend({}, element);
-      // element = jQuery.data(element);
-      // if(element && !jQuery.isEmptyObject(element) && element.CTATComponent){
-      //  console.log("ELEEMENT", element);
-      //  // element = jQuery.data(element.CTATComponent);
-      //  element = element.CTATComponent;
-      //  // if(element.CTATComponent){
-      //    // element.CTATComponent = jQuery.data(element.CTATComponent);
-      //  // }
-      //  console.log("KEY ", idx, element.className);
-      //  state_json["?ele-" + idx] = element;
-      //  count++;
-      // }
-
-      // element.component = jQuery.data(element.component);
-
-      // if(element.hasAttribute("removeData") ){
-      //  element.removeData();
-      //  console.log("WOOOPS");
-      // }
     }
 
     // Gets lists of elements that are to the left, right and above the current element
@@ -786,25 +805,33 @@ let BaseMixin = (superclass) => class extends superclass {
 
   isDone = () => {return this.is_done};
 
-  componentDidMount = ()=>{
-    let {HTML, question_file} = this?.props?.prob_config ?? {}
-    console.log("componentDidMount", HTML, question_file)
-    if(HTML){
-      this.loadProblem({HTML, question_file})  
-    }
-  }
+  // componentDidMount = ()=>{
+  //   let {HTML, question_file} = this?.props?.prob_config ?? {}
+  //   console.log("componentDidMount", HTML, question_file)
+  //   let {network_layer} = this?.props
+  //   if(HTML){
+  //     this.loadProblem({HTML, question_file}, {network_layer})  
+  //   }
+  // }
 
   render = () => {
-    return (
-      <iframe
-        title="CTAT_iframe"
-        style={this.props.style}
-        ref={this.ctat_iframe}
-        //originWhitelist={["*"]}
-        src={this.state.source}
-        onLoad={this.state.onLoad}
-      />
-    );
+    console.log("RENDER CTAT", this.state.source)
+    if(this.state.source){
+      return (
+        <iframe
+          title="CTAT_iframe"
+          style={this.props.style}
+          ref={this.ctat_iframe}
+          //originWhitelist={["*"]}
+          src={this.state.source}
+          onLoad={this.state.onLoad}
+          tabIndex="-1"
+        />
+      );
+    }else{
+      return (<LoadingPage/>)
+    }
+    
   }
 }
 
@@ -1118,9 +1145,12 @@ let InteractiveMixin = (superclass) => class extends superclass {
     )[0];
     let sai_obj = new this.iframe_content.CTATSAI(
       sai.selection,
-      sai.action,
-      sai.inputs["value"]
+      sai?.action_type ?? sai.action,
+      sai?.inputs?.value ?? sai.input,
     );
+    console.log(sai.selection,
+      sai.action,
+      sai?.inputs?.value ?? sai.input)
     comp.executeSAI(sai_obj);
     this.lockElement(sai.selection);
   }

@@ -37,7 +37,9 @@ export function getURLParams() {
     config[key] = value;
   }
   if(!config['host_url']){
+
     config['host_url'] = window.location.origin
+    console.log("GET ORIGIN", config['host_url'])
   }
   console.log("getURLParams", config)
   // var props = {
@@ -86,21 +88,18 @@ export const CTATGuid = {
   }
 };
 
-export function isAbsolute(str)
-{
+export function isAbsolute(str){
   if ( /^[A-Za-z]:\\/.test(str) ) return true;
   if ( str.indexOf("\\") === 0 )   return true;
   return false;
 }
 
-export function baseFile(str)
-{
+export function baseFile(str){
    var base = new String(str).substring(str.lastIndexOf('/') + 1); 
    return base;
 }
 
-export function baseName(str)
-{
+export function baseName(str){
    var base = baseFile(str)
     if(base.lastIndexOf(".") !== -1)       
         base = base.substring(0, base.lastIndexOf("."));
