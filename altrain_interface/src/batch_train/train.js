@@ -1,4 +1,4 @@
-import React, {useEffect, Suspense} from "react";
+import React, {useEffect, Suspense, useRef} from "react";
 import {useALTrainStoreChange} from '../altrain_store';
 import {useTrainStoreChange} from './train_store';
 
@@ -32,10 +32,13 @@ export default function BatchTrainer(){
   let [mode, setTutor, serveTrainingSet, setError] = useTrainStoreChange(['@mode', 'setTutor', 'serveTrainingSet', 'setError'])
 
   const Tutor = tutor_class
-
+  let hasStarted = useRef(false)
   // On Mount / Config Change
   useEffect(() =>{
-    if(training_config){
+    
+    if(training_config && !hasStarted.current){
+      console.log("training_config", training_config)
+      hasStarted.current = true
       serveTrainingSet(training_config, training_file, network_layer)
       .catch((e) => {
         setError(String(e))

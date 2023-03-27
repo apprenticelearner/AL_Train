@@ -145,8 +145,9 @@ export const useTrainStore = create((set,get) => ({
         set({mode: "ServingTrainingSets"})
       }
 
-      console.log("ALL DONE!")
+      // Set all done, and kill the host altrain process
       set({mode : "AllDone", message: "All Done!"})
+      network_layer.kill_this("All Done!", "INFO")
     },
 
     trainAgent: async (agent_config, agent_params, problem_set, rep_count=null) =>  {

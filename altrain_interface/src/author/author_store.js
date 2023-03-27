@@ -158,10 +158,13 @@ const makeUndoStagedChanges = (store) => {
   return changes
 }
 
-
+var authorStore;
 const useAuthorStore = create((set,get) => ({
-  // Counter used to force rerenders in absence of meaningful state change
+  get : authorStore=get,
+
+  // Counters for forcing rerenders in absence of meaningful state change
   transaction_count : 0, 
+  n_tutor_loads : 0,
 
   // Skill Applications (queried from the agent)
   skill_apps: {},
@@ -217,9 +220,11 @@ const useAuthorStore = create((set,get) => ({
   },
 
   saveProject(){
-    store = get()
-    let project = {interfaces,questions, agents, selected_interface,
-        selected_question, current_agent} = store
+
+    let store = get()
+    let {interfaces, questions, agents, curr_interface, curr_question, curr_agent} = store
+    let project = {interfaces, questions, agents, curr_interface, curr_question, curr_agent}
+    console.log("SAVE PROJECT", project)
     window.localStorage.setItem("project", JSON.stringify(project))
   },
 
@@ -233,13 +238,14 @@ const useAuthorStore = create((set,get) => ({
     store.loadProject(prob_config)
     store = get()
     console.log("INIT AUTHORING", prob_config)
-    set({mode: 'train', network_layer: network_layer})
+    set({mode: 'train', prob_config, network_layer: network_layer})
     store.createAgent(training_config.agent)
 
     // let store = get()
     store.setInterface(store.interfaces[0])
     
     // store.loadProblem(prob_config)
+
 
 
   }, 
@@ -251,11 +257,10 @@ const useAuthorStore = create((set,get) => ({
 
   loadProblem: async (prob_config) => { 
     let store = get()
-    let {tutor, stage_ref, stage_view_ref, network_layer} = store
+    let {tutor, stage_ref, stage_view_ref, network_layer, n_tutor_loads} = store
     if(tutor){
       let [stage,stage_view] = [stage_ref.current, stage_view_ref.current]
-      set({prob_config: prob_config})
-      let bounds = await tutor.loadProblem(prob_config, {network_layer})
+      let bounds = await tutor.loadProblem({...prob_config, prob_rep: n_tutor_loads}, {network_layer})
       let [midX, midY] = [(bounds.x*2+bounds.width)/2, (bounds.y*2+bounds.height)/2]
       // The difference between the midpoint of the tutor on the stage
       //  and the middle of the stage viewport 
@@ -273,19 +278,19 @@ const useAuthorStore = create((set,get) => ({
       // console.log(stage_view, stage_view.scrollLeft, stage_view.scrollTop)
       let tutor_state = tutor.getState()
       // console.log("tutor_state", tutor_state)
-      set({tutor_state})
+      set({tutor_state, n_tutor_loads: n_tutor_loads+1})
     }
   },
 
   setTutor: (tutor) => set((store) => {
     // Triggered by tutor render. Initializes the tutor. 
     // Note: If run with altrain prob_config should be set by now.
-
     let {prob_config, network_layer} = store
     console.log("setTutor", tutor, prob_config)
     if(prob_config){
-      tutor.loadProblem(prob_config, {network_layer})
+      store.loadProblem(prob_config)
     }
+    // window.addEventListenter("keydown", ()=>{if(e.target == document){onKeyDown(e)}}, true)
     return {tutor: tutor}
   }),
 
@@ -299,59 +304,142 @@ const useAuthorStore = create((set,get) => ({
     let q_items = Object.keys(store.questions[intr])
     console.log("SET INTER", q_items)
     let no_qs = q_items.length == 0
-    if(no_qs){
-      set({curr_interface: intr, curr_question: null})
-    }else{
-      set({curr_interface: intr, curr_question: q_items[0]})
-    }
-    await store.loadProblem({HTML: intr})
+    set({curr_interface: intr})
 
-    set({mode: no_qs ? 'start_state' : 'train'})
+    // NOTE: Not sure why need to await in one case
+    if(no_qs){
+      store.loadProblem({HTML: intr})
+    }else{
+      await store.loadProblem({HTML: intr})
+    }
+    
+    store.setQuestion(q_items[0] || null)
+    set({mode: (no_qs ? 'start_state' : 'train')})  
+    
+    
 
   },
 
   setQuestion: (q_id) => {
     let store = get()
-    let {questions, curr_interface, tutor} = store
-    let question_items = questions[curr_interface] || {}
-    let question = question_items[q_id]
-    console.log(question.skill_apps)
-    for (let [id,sai] of Object.entries(question.skill_apps)){
-      console.log("APPLY", sai)
-      tutor.stageSAI(sai)
+    let {questions, curr_interface, tutor, mode, editing_question_menu} = store
+    if(!editing_question_menu && mode == "start_state"){
+      store.confirmStartState()
     }
-
-    let tutor_state = tutor.getState()
-
-    set({curr_question: q_id, tutor_state})
+    if(mode == "train"){
+      let question_items = questions[curr_interface] || {}
+      let tutor_state = {}
+      if(q_id){
+        tutor.clear()
+        let question = question_items[q_id]
+        for (let [id,sai] of Object.entries(question.skill_apps)){
+          tutor.stageSAI(sai)
+        }
+        tutor_state = tutor.getState()
+      }
+      set({curr_question: q_id, tutor_state})  
+    }else if(mode == "start_state"){
+      let question_items = questions[curr_interface] || {}
+      let skill_apps = {}
+      if(q_id){
+        tutor.clear()
+        let question = question_items[q_id]
+        skill_apps = question.skill_apps || {}
+      }
+      set({curr_question: q_id})  
+      store.setSkillApps(skill_apps)
+    }
+    
   },
 
-  confirmStartState: () =>{
+  setEditingQuestionMenu: (is_editing) => {
     let store = get()
-    let {questions, curr_interface, skill_apps} = store
+    let {editing_question_menu:was_editing} = store
+    if(is_editing){
+      if(store.mode == "start_state"){
+        store.confirmStartState()
+      }
+      set({mode: "start_state"})
+      store.setQuestion(store.curr_question)
+    }else{
+      store.confirmStartState()
+    }
+    if(!was_editing && is_editing){
+      set({editing_question_menu: true, mode : "start_state"})
+    }
+    if(was_editing && !was_editing){
+      set({editing_question_menu: false, mode : "train"})
+    }
+  },
+
+  confirmStartState: (force=false) =>{
+    let store = get()
+    let {questions, curr_interface, skill_apps, editing_question_menu} = store
     let question_items = questions[curr_interface] || {}
 
-    console.log("question_items", question_items)
-
-    // Make new problem name
-    let N = 0
-    for (let [id,{name,n}] of Object.entries(question_items)){
-      if(n > N) N = n;
+    console.log(skill_apps)
+    if(!force && Object.entries(skill_apps).length==0){
+      set({mode: 'train', skill_apps: {}, sel_skill_app_ids: {}})
+      return
     }
-    N++;
-    let new_name = `Question ${N}`
+    
+    let q_id;
+    //Edit Case
+    if(editing_question_menu){
+      let {curr_question} = store
+      questions = {...questions,
+        [curr_interface]: {...question_items,
+          [curr_question] : {...question_items[curr_question], skill_apps}
+        }
+      }
+      q_id = curr_question
+      
+    // New Question Case
+    }else{
+      let N = 0
+      for (let [id,{name,n}] of Object.entries(question_items)){
+        if(n > N) N = n;
+      }
+      N++;
+      let new_name = q_id = `Question ${N}`
 
-    // Modify questions
-    questions = {
-      ...questions,
-      [curr_interface]: {
-        ...question_items,
-        [new_name] : {name: new_name, n:N, skill_apps}
+      questions = {...questions,
+        [curr_interface]: {...question_items,
+          [new_name] : {name: new_name, n:N, skill_apps}
+        }
       }
     }
-    set({questions, mode: 'train', skill_apps: {}, sel_skill_app_ids: {}})
-    console.log("questions", questions)
-    store.setQuestion(new_name)
+    // Modify questions
+    
+    set({questions, mode: 'train', skill_apps: {}, sel_skill_app_ids: {}, editing_question_menu:false})
+    // if(editing_question_menu){
+    store.setQuestion(q_id)
+    store.saveProject()
+  },
+
+  removeQuestion: (id, intr=null) =>{
+    console.log("removeQuestion!")
+    let store = get()
+    let {questions, curr_interface} = store
+    intr = intr || curr_interface;
+    let question_items = questions[intr] || {}
+
+    delete question_items?.[id];
+    questions = {...questions, [intr] : question_items}
+    set({questions})
+
+    // Choose prev question
+    let keys = Object.keys(question_items)
+
+    let new_index = keys.indexOf(id)-1
+    new_index = new_index >= 0 ? new_index : 0  
+    console.log("::", keys, new_index)
+    if(keys.length==0){
+      console.log("!!beginSetStartState")
+      store.beginSetStartState()
+    }else{
+      store.setQuestion(keys[new_index])  
+    }
   },
 
   /*** Train Controls ***/
@@ -393,6 +481,17 @@ const useAuthorStore = create((set,get) => ({
     return {'mode' : mode}
   }),
 
+  beginSetStartState : async () => {
+    let store = get()
+    let {tutor, curr_interface, n_tutor_loads} = store
+    tutor.clear()
+    let tutor_state = tutor.getState()
+    // await store.loadProblem({"HTML" : curr_interface})
+
+    set({mode : 'start_state', tutor_state, editing_question_menu : false})
+    store.setSkillApps({})
+  },
+
   setHasFociSelect : (sel, hasFociSelect) => set((store) => { 
     if(store.focus_id == ""){ return {}}
 
@@ -416,14 +515,34 @@ const useAuthorStore = create((set,get) => ({
 
 
   clickAway : () => { 
-    console.log("CLICK AWAY")
-    let {setFocus} = get();
-    setFocus(null)  
+    let store = get()
+    let {mode, confirmStartState} = store
+    if(mode == "start_state"){
+      let {questions, curr_interface} = store
+      let question_items = questions[curr_interface] || {}
+
+      // Force user to confirm without click-away if no questions
+      if(Object.keys(question_items).length != 0){
+        confirmStartState()  
+      }      
+    }
   },
 
   toggleFoci : (sel) => { let store = get();
     let selected = store.skill_apps?.[store.focus_id]?.arg_foci?.includes(sel) ?? false
     store.setHasFociSelect(sel, !selected)
+  },
+
+  onKeyDown : (e) => {
+    console.log("OUTER KEY", e.key, e)
+    if(e.target == document.body){
+      if(e.key == "Enter"){
+        let {input_focus, mode, confirmStartState} = get()
+        if(mode==="start_state" && !input_focus){
+          confirmStartState(true)
+        } 
+      }
+    }
   },
 
   /*** Getters ***/
@@ -533,4 +652,4 @@ const useAuthorStore = create((set,get) => ({
 
 const useAuthorStoreChange = makeChangeStore(useAuthorStore)
 
-export {useAuthorStore, useAuthorStoreChange, test_state, test_skill_applications};
+export {authorStore, useAuthorStore, useAuthorStoreChange, test_state, test_skill_applications};

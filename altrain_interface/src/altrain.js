@@ -89,7 +89,7 @@ export default function ALTrain(){
       }
     }
 
-    if(!is_batch_train){
+    if(is_batch_train){
       if(tutor_class){
         return (<BatchTrainer/>)  
       }else{

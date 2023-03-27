@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react'
 import { motion } from "framer-motion";
 import '../author.css';
 import '../components/scrollbar.css';
-import {useAuthorStoreChange} from "../author_store.js"
+import {authorStore, useAuthorStoreChange} from "../author_store.js"
 
 const images = {
   tap: require('../img/gesture-tap.png'),
@@ -23,31 +23,35 @@ const getFociIndex = (sel) => [
 
 function OverlayBounds({style, children, sel, elem, color, groupHasFocus, hasStaged, id,...props}){
     let [foci_index, foci_mode, hasFocus, toggleFoci] = useAuthorStoreChange(
-        [getFociIndex(sel), "@foci_mode", `@focus_id===${id}`, 'toggleFoci']
+        [getFociIndex(sel), "@mode=='arg_foci'", `@focus_id===${id}`, 'toggleFoci']
     )
 
     let wrap_index = foci_index % where_colors.length
     let actions_visible = !foci_mode || hasFocus
     // console.log("OverlayBounds", sel, foci_mode, hasFociSelect)
+    let foci_cand = foci_mode && !hasFocus
+    let is_foci = foci_index!==-1
 
-    let backgroundColor = (foci_mode && !hasFocus &&
-                  ((foci_index!==-1 && 'darkorchid') || 'grey')
+    let backgroundColor = (foci_cand &&
+                  ((is_foci && 'darkorchid') || 'grey')
                 ) || 'transparent'
-    let borderColor = (foci_mode && !hasFocus && 'transparent') || (foci_index !== -1  && where_colors[wrap_index]) || color
+    let borderColor = (foci_cand && 'transparent') ||
+                      (is_foci  && where_colors[wrap_index])
+                      || color
 
     return (      
       <motion.div  style= {{
         ...styles.overlay_bounds,
         ...{width: elem.width, height: elem.height, x : elem.x, y : elem.y},
         ...style,
-        borderWidth: ((foci_index !== -1 || groupHasFocus) && 8) || 4,
+        borderWidth: ((groupHasFocus) && 8) || 4,
         borderColor: borderColor,
         backgroundColor : backgroundColor,
-        opacity : (foci_mode && !hasFocus && .4) || 1
+        opacity : (foci_cand && .4) || 1
       }}
 
       {...props}
-      onClick={(e)=>{if(foci_mode && !hasFocus){toggleFoci(sel)}}}
+      onClick={(e)=>{if(foci_cand){toggleFoci(sel)}}}
       >
         {(actions_visible && hasStaged) &&
           <img style ={styles.stage_image} src={images.double_chevron} alt={""}/>
@@ -122,12 +126,10 @@ function TextFieldOverlay({sel, elem}) {
   // True if has focus and empty
   const [empty_focus, setEmptyFocus] = useState(false);
 
-  let [[skill_app, hasStaged], groupHasFocus, isExternalHasOnly, mode, has_focus, setInputFocus,
-    addSkillApp, removeSkillApp, setInput, setFocus, setMode] = useAuthorStoreChange(
-    [getOverlaySkillApp(sel), `@focus_sel===${sel}`, `@only_count!==0`, "@mode", `@input_focus===${sel}`, "setInputFocus",
-    "addSkillApp", "removeSkillApp", "setInput", "setFocus", "setMode"],
+  let [[skill_app, hasStaged], groupHasFocus, isExternalHasOnly, mode, has_focus] = useAuthorStoreChange(
+    [getOverlaySkillApp(sel), `@focus_sel===${sel}`, `@only_count!==0`, "@mode", `@input_focus==${sel}`],
   )
-
+  let {setInputFocus, addSkillApp, removeSkillApp, setInput, setFocus, setMode} = authorStore()
   // let empty_focus = (!skill_app?.input && has_focus)
   // console.log(not_empty.current, skill_app)
 
@@ -209,7 +211,7 @@ function TextFieldOverlay({sel, elem}) {
           
         }}
         onKeyDown={(evt)=>{
-          console.log("KEY", evt.key)
+          console.log("KEY", evt.key, has_focus, evt)
           if((evt.key==="Enter" && !evt.shiftKey) || evt.key==="Escape"){ 
             ref.current.blur()
           }
@@ -229,9 +231,10 @@ function ButtonOverlay({
     sel, elem,
   }) {
 
-  let [[skill_app,hasStaged], groupHasFocus,  isExternalHasOnly, addSkillApp, removeSkillApp, setInput, setFocus] = useAuthorStoreChange( 
-    [getOverlaySkillApp(sel), `@focus_sel===${sel}`, `@only_count!==0`, "addSkillApp", "removeSkillApp", "setInput", "setFocus"]
+  let [[skill_app,hasStaged], groupHasFocus,  isExternalHasOnly] = useAuthorStoreChange( 
+    [getOverlaySkillApp(sel), `@focus_sel===${sel}`, `@only_count!==0`]
   )
+  let {addSkillApp, removeSkillApp, setInput, setFocus} = authorStore()
 
   let {correct, incorrect, isDemo, color, input} = skillAppExtractProps(skill_app, isExternalHasOnly)
 
@@ -274,7 +277,15 @@ export function StateOverlayLayer({ state, style }) {
       continue
     }
 
-    if(overlay_type && (!elem?.locked ?? elem?.visible ?? true)){
+    let should_display = (
+      elem?.visible && (
+        (mode === "train" && (!elem.locked)) || 
+        (mode === "start_state") || 
+        (mode === "arg_foci" && elem.locked)
+      )
+    )
+
+    if(overlay_type && should_display){
       elem_overlays.push(
         React.createElement(overlay_type, {
           sel:sel,

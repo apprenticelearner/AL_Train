@@ -12,17 +12,18 @@ import {Graph} from "./graph.js"
 import ScrollableStage from "./stage.js"
 
 import {useALTrainStoreChange} from '../altrain_store';
-import {useAuthorStore, useAuthorStoreChange, test_state, test_skill_applications} from "./author_store.js"
+import {authorStore, useAuthorStore, useAuthorStoreChange, test_state, test_skill_applications} from "./author_store.js"
 // import MyZustandTest from "./change_store_test.js"
-import {shallowEqual, baseFile} from "../utils.js"
+import {shallowEqual, baseFile, gen_shadow} from "../utils.js"
 import CTATTutorWrapper from "../tutorwrappers/ctat"
-// import microphone_image from "./img/microphone.svg"
 
 
 const images = {
-  left_arrow: require('./img/arrow-left-bold.png'),
-  crosshair: require('./img/crosshairs.png'),
-  microphone: require('./img/microphone.png'),
+  left_arrow: require('/src/img/arrow-left-bold.png'),
+  crosshair: require('/src/img/crosshairs.png'),
+  microphone: require('/src/img/microphone.png'),
+  pencil: require('/src/img/pencil.png'),
+  bar: require('/src/img/bar.png'),
 };
 
 function UnimplementedMenu({name}){
@@ -79,47 +80,61 @@ function DemonstrateMenu({}){
   let demo_text = skill_app?.input ?? ""
   // console.log(demo_text)
 
-  return (
-    <div style={{width:"100%", height:"92%", display : 'flex', alignItems: 'center', flexDirection : 'row'}}>
-      <div style={{display : 'flex', alignItems: 'center', flexDirection : 'column', width:"90%", height:"100%"}}>
-        <div style={styles.value_group}>
-          <div style={styles.label}>{"Demonstrated Value"}</div>
-          <textarea 
-            className="scrollable" style={styles.editable}
-            value={demo_text}
+  let foci_mode_props = {
+    default_scale : 1.1, default_elevation : 8,
+    hover_scale : 1, hover_elevation : 4,
+  }
 
+  return (
+    <div style={styles.demonstrate_menu}>
+      <div style={styles.demonstrate_menu_fields}>
+        <a style={styles.demonstrate_menu_title}>{"Demonstration"}</a>
+        <div style={styles.value_group}>
+          <div style={styles.label}>{"Value"}</div>
+          <textarea 
+            className="scrollable" style={styles.editable_value}
+            value={demo_text}
             onChange={(e)=>{setInput(skill_app, e.target.value)}}
           />
+          <div style={styles.right_space}/>
+
+        </div>
+        <div style={styles.value_group}>
+          <div style={styles.label}>{"Arguments"}</div>
+          <div style={styles.right_space}>
+            <RisingDiv style={{
+              ...styles.circle_button,
+              ...(arg_foci_mode  && {backgroundColor : 'purple'})
+            }}
+            {...{...button_defaults_props,
+             ...(arg_foci_mode && foci_mode_props)}}
+             onClick={(e)=>{setMode(foci_mode ? "train" : "arg_foci"); e.stopPropagation()}}
+           > 
+
+            <img src={images.crosshair} style={{width:"75%",height:"75%"}} />
+            </RisingDiv>
+          </div>
         </div>
         <div style={styles.value_group}>
           <div style={styles.label}>{"Formula Hint"}</div>
-          <textarea className="scrollable" style={styles.editable}>{"this is the value"}</textarea>
+          <textarea className="scrollable" style={styles.editable_value}>{"this is the value"}</textarea>
+          <div style={styles.right_space}>
+            <RisingDiv style={styles.circle_button} {...button_defaults_props}> 
+              <img src={images.microphone} style={{width:"75%",height:"75%"}} />
+            </RisingDiv> 
+          </div>
         </div>
         <div style={styles.value_group}>
           <div style={styles.label}>{`Formula(s): ${0}`}</div>
-          <textarea className="scrollable" style={styles.editable}>{"this is the value"}</textarea>
+          <textarea className="scrollable" style={styles.editable_value}>{"this is the value"}</textarea>
+          <div style={styles.right_space}/>
         </div>
         <div style={styles.value_group}>
           <div style={styles.label}>{"Skill Label"}</div>
-          <textarea className="scrollable" style={styles.editable}>{"this is the value"}</textarea>
+          <textarea className="scrollable" style={styles.editable_value}>{"this is the value"}</textarea>
+          <div style={styles.right_space}/>
         </div>
       </div>
-      <div style={styles.button_area}>
-        <RisingDiv style={{
-            ...styles.circle_button,
-            ...(arg_foci_mode  && {backgroundColor : 'purple'})
-          }}
-          {...{...button_defaults_props,
-           ...(arg_foci_mode && {scale : 1.15, elevation : 18})}}
-           onClick={(e)=>{setMode(foci_mode ? "train" : "arg_foci"); e.stopPropagation()}}
-         > 
-
-          <img style={{width:"75%",height:"75%"}}src={images.crosshair}/>
-        </RisingDiv> 
-        <RisingDiv style={styles.circle_button} {...button_defaults_props}> 
-          <img style={{width:"75%",height:"75%"}}src={images.microphone}/>
-        </RisingDiv> 
-      </div>  
     </div>
   )
 }
@@ -180,57 +195,86 @@ function focusIsDemo(){
   ]
 }
 
-function SubMenuItem({selected, children, onClick, style}){
+function SubMenuItem({id, selected, children, onClick, is_editing, style}){
+  let {removeQuestion} = authorStore()
   let [hasHover, setHover] = useState(false)
+  let ref = useRef(null)
   // let [selected, setSelected] = useState(false)
-  return (<a  style={{
+  return (<div  style={{
             ...styles.submenu_item,
             ...(hasHover && styles.submenu_item_hover),
             ...(selected && styles.submenu_item_selected),
             ...style,
             }}
-            onClick={onClick}
+            onClick={(e)=>{
+              onClick(e)
+            }}
             onMouseEnter={(e)=>setHover(true)}
             onMouseLeave={(e)=>setHover(false)}
+            ref={ref}
           >
-          {children}
-          </a>)
+          {(is_editing && 
+            <RisingDiv style={{...styles.menu_button,
+                height : 20, width : 20, marginLeft: 4, marginRight: 6, borderRadius: 0,
+              }}
+              default_elevation={0}
+              hover_elevation={0}
+              onClick={(e)=>{removeQuestion(id); e.stopPropagation()}}
+            ><img src={images.bar} style={{width:16,height:12}}/>
+            </RisingDiv>) ||
+            <div style={{height : 20, width : 30}}/>
+          }
+          <a>{children}</a>
+          </div>)
 }
 
-function PlusButton({onClick, style, active=true}){
-    let [hasHover, setHover] = useState(false)
+function MenuButton({onClick, style, children}){
+    // let [hasHover, setHover] = useState(false)
   return (
-    <div style={{...styles.plus_button,...(hasHover && styles.plus_button_hover),...style}}
-         onClick={active && onClick || null}
-         onMouseEnter={active && ((e)=>setHover(true)) || null}
-         onMouseLeave={active && ((e)=>setHover(false))|| null}
-    ><a style={{marginBottom:2}}>{'+'}</a></div> 
+    <RisingDiv style={{...styles.menu_button,...style}}
+         onClick={onClick}
+         hover_scale={1.15}
+         hover_elevation={4}
+         default_elevation={0}
+         //onMouseEnter={active && ((e)=>setHover(true)) || null}
+         //onMouseLeave={active && ((e)=>setHover(false))|| null}
+    >{children}</RisingDiv> 
   )
 }
 
 function ProblemMenu({}){
-  let [mode, curr_interface, curr_question, interfaces, questions] = useAuthorStoreChange(
-    ['@mode','@curr_interface', '@curr_question', '@interfaces', '@questions'])
+  let [mode, curr_interface, curr_question, interfaces, questions, is_editing] = useAuthorStoreChange(
+    ['@mode','@curr_interface', '@curr_question', '@interfaces', '@questions', '@editing_question_menu'])
+
+  let {beginSetStartState, confirmStartState, setQuestion, setEditingQuestionMenu} = authorStore()
 
   console.log(curr_interface)
-  let question_items = {...questions[curr_interface] || {}}
+  let question_items = {...questions?.[curr_interface] || {}}
   
   console.log(curr_interface, curr_question)
   console.log(interfaces.map((x)=>baseFile(x)))
 
-  if(mode == "start_state"){
-    question_items["z"] = {"name" : "In Progress...", in_progress : true}
+  let is_new = !is_editing && mode == "start_state"
+
+  if(is_new){
+    question_items["__start_state__"] = {"name" : "Set Start State...", in_progress : true}
+    curr_question = "__start_state__"
   }
+  
   // interfaces = ['Interface 1']
   // question_items = ['question 1','question 2', 'question 3', 'question 4', 'question 5', 'question 6','question 7', 'question 8', 'question 9', 'question 10']
   // let [intr, setInterface] = useState("")
   // let [question, setQuestion] = useState("")
   return (
     <div style={styles.problem_menu}>
+
+      {/* Interface Menu */}
       <div style={{... styles.submenu, maxHeight: "30%"}}>
         <div style={styles.submenu_title_area}>
           <header style={styles.submenu_title}>Interface</header>
-          <PlusButton/>
+          <MenuButton>
+            <a style={{marginBottom:2}}>{'+'}</a>
+          </MenuButton>
         </div>
         <div className='scrollable' style={styles.submenu_content}>
           {interfaces && interfaces.map((x)=>(
@@ -243,20 +287,38 @@ function ProblemMenu({}){
           )}
         </div>
       </div>
+
+      {/* Question Menu */}
       <div style={{... styles.submenu, maxHeight: "70%"}}> 
         <div style={styles.submenu_title_area}>
           <header style={styles.submenu_title}>Question</header>
-          <PlusButton 
-            style={(mode==='start_state' && styles.plus_button_start_active)}
-            active={(mode!=='start_state')}
-          />
+          <div style={styles.menu_button_area}>
+            <MenuButton 
+              style={(is_editing && styles.plus_button_start_active)}
+              onClick={() => setEditingQuestionMenu(!is_editing)}
+            >
+              <img src={images.pencil} style={{width:"60%",height:"60%"}}/>
+            </MenuButton>
+            <MenuButton 
+              style={(is_new && styles.plus_button_start_active)}
+              onClick={(!is_new && beginSetStartState) || confirmStartState}
+            >
+              <a style={{marginBottom:2}}>{'+'}</a>
+            </MenuButton>
+            
+          </div>
         </div>
         <div className='scrollable' style={styles.submenu_content}>
           {question_items && Object.entries(question_items).map(([x,{name, in_progress}])=>(
             <SubMenuItem
-              //onClick={(e)=>setQuestion(x)}
+              onClick={(e)=>{
+                console.log(e.target)
+                setQuestion(x)
+              }}
               style={in_progress && {"backgroundColor" : 'teal'}}
               selected={x===curr_question}
+              is_editing={is_editing}
+              id={x}
               key={"question:"+x}
             >{(name || x)}
             </SubMenuItem>)
@@ -268,8 +330,8 @@ function ProblemMenu({}){
 }
 
 const menus = {
-  demonstrate : DemonstrateMenu,
-  skills : SkillsMenu,
+  // demonstrate : DemonstrateMenu,
+  // skills : SkillsMenu,
   problem : ProblemMenu
 }
 
@@ -301,7 +363,7 @@ function MultiMenu({style}){
 }
 
 function ContinueButton() {
-  let [input_focus, confimStartState] = useAuthorStoreChange(["@input_focus", "confirmStartState"])
+  let [input_focus, confirmStartState] = useAuthorStoreChange(["@input_focus", "confirmStartState"])
   let no_input_focus = !input_focus
   console.log("input_focus", input_focus, )
   return (
@@ -311,7 +373,7 @@ function ContinueButton() {
            ...button_defaults_props,
            ...(no_input_focus && {scale : 1.1, elevation : 10})
       }}
-      onClick={(e)=>{confimStartState()}}
+      onClick={(e)=>{confirmStartState()}}
     >
       {"✔"}
       <div style={styles.continue_button_inner_message}>
@@ -321,12 +383,18 @@ function ContinueButton() {
   )
 }
 
-function PopUpLayer({children}) {
-  let [mode] = useAuthorStoreChange(["@mode"])
+function PopupLayer({children}) {
+  let [is_demo, mode] = useAuthorStoreChange([focusIsDemo(), "@mode"])
+  
+  
   return (
     <div style={{...styles.popup_layer}}>
       {(mode==="start_state" &&
-        <ContinueButton/>)
+        <ContinueButton/>) ||
+       // (mode==="arg_foci" &&
+       //  <ContinueButton/>) ||
+       (is_demo &&
+        <DemonstrateMenu/>) 
       }
     </div>
   )
@@ -338,32 +406,28 @@ function PopUpLayer({children}) {
 export default function AuthoringInterface({props}) {
   let [training_config, training_file, tutor_class, network_layer] = useALTrainStoreChange(
     ['@training_config','@training_file', '@tutor_class', 'network_layer'])
-  let [transaction_count, clickAway, addSkillApp, removeSkillApp, 
-       setSkillApps, setStaged, incTransactionCount, setFocus, setConfig, createAgent,
-       setTutor] = useAuthorStoreChange(
-      ["@transaction_count", "clickAway", "addSkillApp", "removeSkillApp", 
-       "setSkillApps", "setStaged", "incTransactionCount", "setFocus", "setConfig", "createAgent",
-       "setTutor"]
-  )
+  let [transaction_count] = useAuthorStoreChange(["@transaction_count"])
+  let {addSkillApp, removeSkillApp,  setSkillApps, setStaged, onKeyDown,
+      incTransactionCount, setFocus, setConfig, createAgent, setTutor} = authorStore ()
 
   let Tutor = tutor_class
 
   console.log("RENDER AUTHOR", transaction_count, tutor_class, network_layer)
+  
   // OnMount
-  // useEffect(() =>{
-    // let skill_apps = test_skill_applications
-    // setSkillApps(skill_apps)
-    // incTransactionCount()
-    // console.log("ON MOUNT", Object.values(skill_apps)[0])
-    // setConfig({network_layer: network_layer})
-    // createAgent(training_config.agent)
-  // }, [])
+  useEffect(() =>{
+    document.addEventListener('keydown', onKeyDown);
+    return function cleanup() {
+      document.removeEventListener('keydown', onKeyDown);
+    }
+  }, [])
 
   let state = state || test_state
 
   let fallback_page = (<div style={styles.tutor}>Loading...</div>)
 
   const stage_ref = useRef(null)
+  // const ref = useRef(null)
 
   let sw = window.screen.width
   let sh = window.screen.height*1.5;
@@ -373,31 +437,43 @@ export default function AuthoringInterface({props}) {
   let tv_ph = .7
 
   return (
-      <div style={styles.authoring}>
-        <div style={styles.side_tools}>
-          <Profiler id="Graph" onRender={(id,phase,actualDuration)=>{
-            console.log("actualDuration", actualDuration)
-          }}>
-            <Graph style={styles.graph}/>
-          </Profiler>
-          <MultiMenu/>
+      <div style={styles.authoring}
+        //onKeyDown={(e)=>{console.log(e.target);;}}
+        //Necessary for key presses to be registered
+        //tabIndex="-1"
+        //ref={ref}
+      >
+        <div style={styles.header}>
         </div>
 
-        <div style={styles.center_content}> 
-          <ScrollableStage ref={stage_ref}>
-            <Suspense fallback={fallback_page}>        
-              <Tutor style={{...styles.tutor, width: sw*tv_pw, height:sh*tv_ph}}
-                ref={setTutor}
-              />
-            </Suspense>
-            <StateOverlayLayer parentRef={stage_ref} 
-             style={{...styles.overlay_layer,   zIndex: 1}}/>
-            <SkillAppCardLayer parentRef={stage_ref} 
-              style={{...styles.overlay_layer,   zIndex: 2, "backgroundColor": 'pink'}}/>
-          </ScrollableStage>
-          <PopUpLayer style={styles.overlay_layer}/>
-        </div>
-        
+        <div style={styles.main_content}>
+          <div style={styles.left_tools}>
+            <Profiler id="Graph" onRender={(id,phase,actualDuration)=>{
+              console.log("actualDuration", actualDuration)
+            }}>
+              <Graph style={styles.graph}/>
+            </Profiler>
+            <MultiMenu/>
+          </div>
+
+          <div style={styles.center_content}> 
+            <ScrollableStage ref={stage_ref}>
+              <Suspense fallback={fallback_page}>        
+                <Tutor style={{...styles.tutor, width: sw*tv_pw, height:sh*tv_ph}}
+                  ref={setTutor}
+                />
+              </Suspense>
+              <StateOverlayLayer parentRef={stage_ref} 
+               style={{...styles.overlay_layer,   zIndex: 1}}/>
+              <SkillAppCardLayer parentRef={stage_ref} 
+                style={{...styles.overlay_layer,   zIndex: 2, "backgroundColor": 'pink'}}/>
+            </ScrollableStage>
+            <PopupLayer style={styles.popup_layer}/>
+          </div>
+
+          <div style={styles.right_tools}> 
+          </div>          
+        </div>  
       </div>
   );
 }
@@ -406,6 +482,20 @@ const highlight_color = 'rgb(229,244,255)'
 
 
 const styles = {
+  authoring: {
+    display:'flex',
+    flexDirection: 'column',
+    overflow : "hidden",
+  },
+  header :{
+    height : 80,
+    backgroundColor : "rgb(50,50,50)"
+  },
+  main_content :{
+    display:'flex',
+    flexDirection: 'row',
+    overflow : "hidden",
+  },
   multimenu :{
     boxShadow: "1px 1px 3px rgba(0,0,0,1)",
     backgroundColor: "white",//'rgba(80,80,120,.1)',
@@ -477,7 +567,12 @@ const styles = {
     fontWeight: "bold",
     // backgroundColor : 'red'
   },
-  plus_button : {
+  menu_button_area : {
+    display : 'flex',
+    flexDirection : 'row',
+    height : 26,
+  },
+  menu_button : {
     display : 'flex',
     flexDirection : 'column',
     justifyContent : 'center',
@@ -485,13 +580,14 @@ const styles = {
     width : 24,
     height : 24,
     fontSize : 26,
+    marginLeft : 6,
     borderRadius : 100,
-    // backgroundColor : 'lightgrey'
+    backgroundColor : 'transparent'
   },
-  plus_button_hover :{
-    fontWeight : "bold"
-    // backgroundColor : highlight_color
-  },
+  // plus_button_hover :{
+  //   fontWeight : "bold"
+  //   // backgroundColor : highlight_color
+  // },
   plus_button_start_active:{
     backgroundColor:'teal',
     color:'darkgrey',
@@ -499,12 +595,16 @@ const styles = {
     borderColor : 'rgb(100,200,200)'
   },
   submenu_item : {
+    display : 'flex',
+    flexDirection : 'row',
+
     border: "2px solid",
     // borderLeftWidth: 0,
     borderColor: 'rgba(0,0,0,0.0)',
     fontFamily : "Arial",
     fontSize : 16,
-    padding: "6px 6px 6px 32px",
+    padding: 6
+    // padding: "6px 6px 6px 32px",
   },
   submenu_item_hover : {
     borderColor: 'dodgerblue',
@@ -533,86 +633,48 @@ const styles = {
     borderBottomWidth: 1,
     borderColor: 'lightgrey',
   },
-  button_area: {
-    height: "100%",
-    display : 'flex',
-    flexDirection : 'column',
-    paddingTop: 72,
-  },
-  circle_button : {
-    display : 'flex',
-    alignItems:'center',
-    justifyContent:'center',
-    backgroundColor : 'rgba(200,200,205,1)',
-    margin : 10,
-    marginBottom : 32,
-    width : 50,
-    height : 50,
-    borderRadius : 1000,
-  },
-  value_group : {
-    flexDirection : 'column',
-    display:"flex",
-    padding : 2,
-    margin : 4,
-    width : "100%",
-    flexWrap: "wrap"
-  },
-  label : {
-    padding : 2,
-    margin : 4,
-    marginLeft : 14,
-    userSelect: "none",
-  },
-
-  editable : {
-    padding : 2,
-    margin : 4,
-    marginLeft : 10,
-    marginRight : 10,
-    backgroundColor: 'white',
-    textAlign : 'center',
-    // flex : "0 0 1",
-
-    maxWidth : "100%",
+  // button_area: {
+  //   height: "100%",
+  //   display : 'flex',
+  //   flexDirection : 'column',
+  //   paddingTop: 72,
+  // },
+  
+  
 
 
-    display: "flex",
-    textAlign:"center",
-    // alignSelf: "center",
-    color: 'black',//textColor || 'dodgerblue',
-    // width : "99%",
-    maxHeight : 200,
-    // backgroundColor :'transparent',
-    borderColor :'transparent',
-    resize: "none",
-    borderRadius : 4,
-    // lineHeight : "1em",
-  },
 
-  value : {
-    padding : 2,
-    margin : 4,
-    backgroundColor: 'lightgrey',
-    borderRadius : 2,
-  },
+  
 
-  authoring: {
-    display:'flex',
-    flexDirection: 'row',
-    // backgroundColor : '#eeeedc',
-    // width:1000,
-    overflow : "hidden",
-    // height:"100%",
-    // width:"100%"
-  },
-
-  side_tools: {
+  left_tools: {
+    // Fixed Width
+    flex: "0 0 350px",
     display:'flex',
     flexDirection: 'column',
-    flex : 0,
+
+    // flex : 0,
     // backgroundColor : '#eeeedc',
-    width:350,
+    // width:350,
+    height:"100%",
+    zIndex: 4,
+  },
+
+  center_content : {
+    display : "flex",
+    flexDirection: 'column',
+    // width : "100%",
+    // height : "100%",
+    overflow : "hidden",
+  },
+
+  right_tools: {
+    // Fixed Width
+    flex: "0 0 200px",
+    display:'flex',
+    flexDirection: 'column',
+    // flex : 0,
+    backgroundColor : '#eeeedc',
+    // width:350,
     height:"100%",
     zIndex: 4,
   },
@@ -630,13 +692,7 @@ const styles = {
   //   height : "100%",
   //   userSelect:"none",
   // },
-  center_content : {
-    display : "flex",
-    flexDirection: 'column',
-    width : "100%",
-    height : "100%",
-    overflow : "hidden",
-  },
+  
 
   tutor : {
     pointerEvents:"none",
@@ -660,7 +716,7 @@ const styles = {
     zIndex : 4,
     margin: 0,
     left: 350,
-    right: 0,
+    right: 200,
     top: 0,
     bottom: 0,
     pointerEvents: "none"
@@ -693,7 +749,122 @@ const styles = {
     textAlign : 'center',
     backgroundColor : 'rgb(100,200,200)',
     bottom: -26,
-  }
+  },
+
+  demonstrate_menu :{
+    display : 'flex',
+    flexDirection : 'row',
+    minWidth: "50%",
+    maxWidth:"90%",
+    height:"30%",
+    alignItems: 'center', 
+    
+    marginBottom : 30,
+    backgroundColor : 'white',
+    border: '4px solid',
+    borderColor: 'dodgerblue',
+    borderRadius: 10,
+    pointerEvents: "auto",
+    boxShadow : gen_shadow(14),
+
+    // Make not in center
+    // alignSelf: 'start', 
+  },
+
+  demonstrate_menu_fields :{
+    display : 'flex',
+    flexDirection : 'column',
+    // minWidth: 0,
+    // maxWidth: "100%",
+    // backgroundColor : 'green',
+    // alignItems: 'center', 
+    width:"100%",
+    height:"100%",
+    // margin: 6,
+  },
+
+  demonstrate_menu_title :{
+    fontFamily : "Arial",
+    fontSize : 20,
+    // width : "100%",
+    // fontWeight : "bold",
+    // margin : 10,
+    padding: 6,
+    paddingLeft : 20,
+    // left : 0,
+    // backgroundColor  : 'red',
+    border: '0px solid',
+    borderBottomWidth: 1,
+    borderColor: 'lightgrey',
+    // backgroundColor : 'blue',
+  },
+
+  value_group : {
+    flexDirection : 'row',
+    display:"flex",
+    justifyContent : 'stretch',
+    alignItems : 'center',
+    // padding : 2,
+    margin : 6,
+    width : "100%",
+    flexWrap: "wrap",
+    // backgroundColor : 'red',
+  },
+  label : {
+    fontSize : 16,
+    fontFamily : "Arial",
+    padding : 2,
+    // margin : 4,
+    marginLeft : 14,
+    userSelect: "none",
+    width : 120,
+    // backgroundColor : 'red',
+  },
+
+  editable_value : {
+    flex : "1 1 auto",
+    // marginRight : 50,
+
+    fontSize : 16,
+    fontFamily : "Arial",
+    backgroundColor: 'white',
+    textAlign:"center",
+    textJustify:"center",
+    color: 'black',
+    resize: "none",
+    lineHeight : "1em",
+
+
+    borderRadius : 4,
+    border : "1px solid",
+    borderColor : "lightgrey"
+  },
+
+  right_space : {
+    width : 64,
+    height : 34,
+    marginLeft : "auto",
+    // backgroundColor :'yellow',
+  },
+
+  circle_button : {
+    // alignSelf : 'end',
+    // position : 'absolute',
+
+    display : 'flex',
+    alignItems:'center',
+    justifyContent:'center',
+    backgroundColor : 'rgba(200,200,205,1)',
+    // right : 0,
+    marginLeft : 14,
+    
+    width : 34,
+    height : 34,
+    borderRadius : 100,
+  },
+
+
+
 }
 
 

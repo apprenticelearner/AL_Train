@@ -51,7 +51,12 @@ let DomEditMixin = (superclass) => class extends superclass {
   getElement = (name) => this.iframe_content.document.getElementById(name)
   lockElement = (name) => this.getComponent(name)?.setEnabled(false)
   unlockElement = (name) => this.getComponent(name)?.setEnabled(true)
-  clearElement = (name) => this.getElement(name).firstElementChild.value = ""
+  clearElement = (name) => {
+    let elm = this.getElement(name)
+    if(elm.firstElementChild){
+      elm.firstElementChild.value = ""  
+    }
+  }
   
   colorElement = (name, type) => {
     this.getElement(name)?.firstElementChild?.setAttribute("class", this.color_class_map[type]);
@@ -220,6 +225,21 @@ let BaseMixin = (superclass) => class extends superclass {
     return logging_params
   }
 
+  clear = () => {
+    for (let elem of this.generateElementList()){
+      
+      // let c = elem.firstElementChild
+
+      let is_visible = getComputedStyle(elem).visibility != "hidden"
+      // If visible 
+      // console.log(elem?.id, getComputedStyle(elem).visibility)
+      if(is_visible){
+        this.clearElement(elem?.id)
+        this.unlockElement(elem?.id)  
+      }
+    }
+  }
+
   loadProblem = (prob_config, context={}, ...args) => {
     this.is_done = false
     let promise = new Promise((resolve, reject) => {
@@ -316,7 +336,7 @@ let BaseMixin = (superclass) => class extends superclass {
   }
 
   getState = ({
-    encode_relative = false,
+    encode_relative = true,
     strip_offsets = false,
     use_bounds = true,
     use_class = false,
@@ -366,11 +386,12 @@ let BaseMixin = (superclass) => class extends superclass {
             obj['type'] = "TextField"
             obj["value"] = element.firstElementChild.value;
             if (numeric_values) {
-              obj["value"] = Number(obj["value"]) || obj["value"];
+              let num_val = Number(obj["value"])
+              if(num_val != null) obj["value"] = num_val;
             }
-            obj["locked"] = element.firstElementChild.contentEditable !== "true";
+            obj["locked"] = element.firstElementChild.contentEditable != "true";
 
-            if(clear_editable_values && obj["locked"] === true){
+            if(clear_editable_values && !obj["locked"]){
               obj['value'] = ""
             }
             // obj["name"] = element.id
@@ -395,7 +416,8 @@ let BaseMixin = (superclass) => class extends superclass {
           }
 
           // console.log(">>", element.id, element)
-          obj['visible'] = !((element.firstElementChild?.disabled ?? element.firstElementChild?.visible) ?? false)
+
+          obj['visible'] = getComputedStyle(element).visibility != "hidden"//!((element.firstElementChild?.disabled ?? element.firstElementChild?.visible) ?? false)
 
           if(!obj['type']){obj['type'] = "Component"}
           let name = (append_ele ? "?ele-" : "") + element.id;
@@ -1103,7 +1125,7 @@ let InteractiveMixin = (superclass) => class extends superclass {
   clearProposedSAI = () => {
     if (this.proposed_SAI) {
       this.clearElement(this.proposed_SAI.selection);
-      this.unlockElement(this.proposed_SAI.selection.replace("?ele-", ""));
+      this.unlockElement(this.proposed_SAI.selection);
       this.unhighlightAll();
       this.proposed_SAI = null;
     }
@@ -1148,9 +1170,9 @@ let InteractiveMixin = (superclass) => class extends superclass {
       sai?.action_type ?? sai.action,
       sai?.inputs?.value ?? sai.input,
     );
-    console.log(sai.selection,
-      sai.action,
-      sai?.inputs?.value ?? sai.input)
+    // console.log(sai.selection,
+    //   sai.action,
+    //   sai?.inputs?.value ?? sai.input)
     comp.executeSAI(sai_obj);
     this.lockElement(sai.selection);
   }

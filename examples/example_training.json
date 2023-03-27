@@ -6,11 +6,11 @@
       "args": {
         "search_depth" : 1,
         "how": "set_chaining",
-        "where": "MostSpecific",
+        "where": "most_specific",
         "when": "decisiontree",
         
         "function_set": ["Add","Subtract","Multiply","Divide"],
-            "feature_set": ["Equals"]
+        "feature_set": ["Equals"],
       },      
 
       // Give it a problem_set to solve
@@ -76,7 +76,7 @@
         "where": "MostSpecific",
         "when": "decisiontree",
         "function_set": ["Add","Subtract","Multiply","Divide"],
-            "feature_set": ["Equals"]
+        "feature_set": ["Equals"],
       },      
       "problem_set" : [
         {"set_params" : 
@@ -84,10 +84,10 @@
         },
 
         // "glob" will get files satisfying a pattern. This one gets 
-        //  problems where 1/4 is multiplied by something else "*".
+        //  problems where 5/3 is added to something else "*".
         {"glob" :
             {"key" : "question_file",
-             "pattern": "FractionArithmetic/training/M 1_4_times*.brd"
+             "pattern": "FractionArithmetic/training/AD 5_3_plus_*.brd"
             }
         },
 

@@ -65,16 +65,15 @@ RUNNING = True
 
 #defining function to run on shutdown
 def cleanup(*args):
+    print("Cleaning up host server...")
     global write_queue
     global post_queue
     global log_file_handle
 
     RUNNING = False
     post_queue.join()
-    time.sleep(2*WRITE_WAIT_TIME)
     write_queue.join()
     log_file_handle.close()
-    # print("CLEANUP")
 
 #Register the function to be called on exit
 atexit.register(cleanup)
@@ -194,10 +193,17 @@ def _fill_from_elm(log_dict, elm,typ='tutor', date_time=None, timezone=None):
 
 
 def shutdown_server():
+    # This is deprecated, but give it a shot anyway
     func = request.environ.get('werkzeug.server.shutdown')
-    if func is None:
-        raise RuntimeError('Not running with the Werkzeug Server')
-    func()
+    if func is not None:
+        func()
+    
+    # Backup. Raise a SIGABRT to the calling process
+    import signal
+    cleanup()
+    signal.raise_signal(signal.SIGABRT)
+
+    
         
 
 def _print_and_resp(message=None,m_type="default",outmode=sys.stdout):
@@ -712,7 +718,7 @@ def handle_dist(path):
 
 @app.route('/host/<path:path>')
 def handle_host(path):
-    print("HOST",path)
+    # print("HOST",path)
     return send_from_directory(host_dir,path)
 
     # if(request.method == "GET"):

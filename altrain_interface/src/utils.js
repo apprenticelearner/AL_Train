@@ -88,6 +88,7 @@ export const CTATGuid = {
   }
 };
 
+/* File Path Funcitons */
 export function isAbsolute(str){
   if ( /^[A-Za-z]:\\/.test(str) ) return true;
   if ( str.indexOf("\\") === 0 )   return true;
@@ -106,6 +107,8 @@ export function baseName(str){
    return base;
 }
 
+
+/* Randomness Functions */
 export function shuffleArray(array) {
   array = [...array]
   for (let i = array.length - 1; i > 0; i--) {
@@ -118,6 +121,19 @@ export function shuffleArray(array) {
 export function sampleArray(array, n) {
   return shuffleArray(array).slice(0, n)
 }
+
+/* Style Functions */
+export const gen_shadow = (x,kind='box') => {
+  let shadow_props = `0px ${(x*.4).toFixed(2)}px ${(x* .20).toFixed(2)}px rgba(0,0,0,${0.10 + x * 0.015})`
+  if(kind == 'drop'){
+    return `drop-shadow(${shadow_props})`
+  }else{
+    return shadow_props
+  }
+  return 
+}
+
+
 
 // export function removeEmpty(obj) {
 //   var out = {};

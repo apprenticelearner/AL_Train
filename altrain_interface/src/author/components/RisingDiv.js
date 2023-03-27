@@ -1,16 +1,9 @@
 import React, { Component, createRef, useState } from 'react'
 import { motion, useMotionValue, useSpring } from "framer-motion";
+import { gen_shadow } from "../../utils";
 // import * as Animatable from 'react-native-animatable';
 
-let gen_shadow = (x,kind='box') => {
-	let shadow_props = `0px ${(.5+x*.4).toFixed(2)}px ${(x* .20).toFixed(2)}px rgba(0,0,0,${0.10 + x * 0.015})`
-	if(kind == 'drop'){
-		return `drop-shadow(${shadow_props})`
-	}else{
-		return shadow_props
-	}
-  return 
-}
+
 
 
 let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, ...props}) =>{
@@ -35,7 +28,6 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, ...
   const shadow = useMotionValue(default_shadow)
   if('elevation' in props){shadow.set(default_shadow)}
 
-  // console.log("RERENDER", shadow_kind, default_shadow)
   return (
     <motion.div 
       ref={innerRef}

@@ -47,7 +47,7 @@ const ScrollableStage = React.forwardRef(({children}, ref) => {
     }
   }
   const handleMouseUp = (e) => {
-    if(targetIsBackground){
+    if(targetIsBackground(e)){
       clickAway()
     }
     is_dragging_stage.current = false

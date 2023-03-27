@@ -16,7 +16,7 @@ import time
 from datetime import datetime
 
 al_process = None
-ctat_process = None
+tutor_process = None
 browser_process = None
 outerloop_process = None
 # al_thread = None
@@ -144,13 +144,13 @@ def kill_group(p):
 
 
 def kill_all():
-    global al_process, ctat_process, browser_process
+    global al_process, tutor_process, browser_process
     # al_process.stderr = None
-    # ctat_process.stderr = None
+    # tutor_process.stderr = None
     # al_process.stdout = None
-    # ctat_process.stdout = None
+    # tutor_process.stdout = None
     # al_process.stderr.close()
-    # ctat_process.stderr.close()
+    # tutor_process.stderr.close()
     # temp_stderr = sys.stderr
     # sys.stderr = None
     # sys.stdout = None
@@ -159,15 +159,15 @@ def kill_all():
     # else:
     if(al_process != None):
         al_process.terminate()
-    if(ctat_process != None):
-        ctat_process.terminate()
+    if(tutor_process != None):
+        tutor_process.terminate()
     if(browser_process != None):
         browser_process.terminate()
     if(outerloop_process != None):
         outerloop_process.terminate()
     # sys.stderr = temp_stderr
     # if(al_process != None): kill_group(al_process)
-    # if(ctat_process != None): kill_group(ctat_process)
+    # if(tutor_process != None): kill_group(tutor_process)
 
 
 def apply_wd(path):
@@ -353,7 +353,7 @@ def parse_args(argv):
 # RUN = True
 
 # def stop(sig, frame):
-#     print("SIGNAL CAUGHT", sig,al_process,ctat_process)
+#     print("SIGNAL CAUGHT", sig,al_process,tutor_process)
 #     RUN =False
 #     kill_all()
 
@@ -362,7 +362,7 @@ def parse_args(argv):
 
 
 def main(args):
-    global al_process, ctat_process, browser_process, outerloop_process, calling_dir
+    global al_process, tutor_process, browser_process, outerloop_process, calling_dir
 
     if args.no_al_server:
         assert args.al_port is not None, "Must specify AL_PORT in altrain.conf or command line"
@@ -382,11 +382,10 @@ def main(args):
     if(check_port(args.ctat_host, args.ctat_port, args.force)):
         _env = os.environ.copy()
         _env["AL_HOST_FETCH_ABOVE_ROOT"] = str(AL_HOST_FETCH_ABOVE_ROOT)
-        ctat_process = subprocess.Popen([
-            sys.executable, os.path.join(
-                args.html_bridge_dir, "host_server.py"),
+        tutor_process = subprocess.Popen([
+            sys.executable, os.path.join(args.html_bridge_dir, "host_server.py"),
             str(args.ctat_port), args.output], env=_env)
-        # ctat_thread = threading.Thread(target=waitAndExit, args=(ctat_process, kill_all))
+        # ctat_thread = threading.Thread(target=waitAndExit, args=(tutor_process, kill_all))
         # ctat_thread.start()
 
     else:
@@ -461,15 +460,9 @@ def main(args):
     # al_process.wait()
     # print("AL PROCESS")
     while True:
-        if((not args.no_al_server and al_process.poll() != None) or ctat_process.poll() != None):
+        if((not args.no_al_server and al_process.poll() != None) or tutor_process.poll() != None):
             break
-        # try:
-        time.sleep(.1)
-        # ctat_process.wait(.1)
-        # except:
-        # pass
-
-    # ctat_thread.join()
+        time.sleep(.5)
 
     kill_all()
     sys.exit()

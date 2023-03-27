@@ -32,7 +32,7 @@ export const makeChangeStore = (useStoreHook) =>{
               val = Number(val) ||
                     (val=="true" ? true : null) ||
                     (val=="false" ? true : null)||
-                    val.replace(/['"]+/g, '')
+                    (val=="null" ? null : val.replace(/['"]+/g, ''))
               a = a.split(".")
               return (s) => (cmpr( a.reduce((o,p) => o?.[p], s) , val))
           }
