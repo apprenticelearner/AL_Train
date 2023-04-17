@@ -1,5 +1,5 @@
 import create from "zustand";
-import {randomID} from "./utils.js";
+import {randomUID, arraysEqual} from "../utils.js";
 import {makeChangeStore} from "change-store";
 
 const test_state = {
@@ -70,33 +70,33 @@ const test_state = {
 }
 
 const test_skill_applications = [
-        {"selection" : "A", "action" : "UpdateTextField", "input" : "6",
+        {"selection" : "A", "action_type" : "UpdateTextField", "input" : "6",
           "how": "Add(?,?,?) ","reward": 0, only: false},
 
-        { "selection" : "B", "action" : "UpdateTextField", "input" : "long long long long long long long long sdf sdf sjif sd",
+        { "selection" : "B", "action_type" : "UpdateTextField", "input" : "long long long long long long long long sdf sdf sjif sd",
           "how": "Add(?,?,?)", "reward": 0},
-        { "selection" : "B", "action" : "UpdateTextField", "input" : "8x + 4 + 7 + 9 + 2+6+5",
+        { "selection" : "B", "action_type" : "UpdateTextField", "input" : "8x + 4 + 7 + 9 + 2+6+5",
           "how": "x0 + x1 + x2", "reward": 0,
           arg_foci: ["E","F"]},
-        { "selection" : "B", "action" : "UpdateTextField", "input" : "9",
+        { "selection" : "B", "action_type" : "UpdateTextField", "input" : "9",
           "how": "Add(?,?,?)", "reward": 0},
-        { "selection" : "B", "action" : "UpdateTextField", "input" : "5",
+        { "selection" : "B", "action_type" : "UpdateTextField", "input" : "5",
           "how": "Add(?,?,?)", "reward": 0},
-        { "selection" : "B", "action" : "UpdateTextField", "input" : "12",
+        { "selection" : "B", "action_type" : "UpdateTextField", "input" : "12",
           "how": "Add(?,?,?)", "reward": 0},
-        { "selection" : "B", "action" : "UpdateTextField", "input" : "16x - 8",
+        { "selection" : "B", "action_type" : "UpdateTextField", "input" : "16x - 8",
           "how": "Subtract(?,Add(?,?))", "reward": 0},
 
-        { "selection" : "C", "action" : "UpdateTextField", "input" : "8x + 4",
+        { "selection" : "C", "action_type" : "UpdateTextField", "input" : "8x + 4",
           "how": "x0 + x1 + x2", "reward": 0,
           arg_foci: ["E","F"]},
-        { "selection" : "C", "action" : "UpdateTextField", "input" : "9",
+        { "selection" : "C", "action_type" : "UpdateTextField", "input" : "9",
           "how": "Add(?,Subtract(?,?,?),?, Subtract(?,?,?))", "reward": 0},
-        { "selection" : "C", "action" : "UpdateTextField", "input" : "5",
+        { "selection" : "C", "action_type" : "UpdateTextField", "input" : "5",
           "how": "Add(?,?,?)", "reward": 0},
-        { "selection" : "C", "action" : "UpdateTextField", "input" : "12",
+        { "selection" : "C", "action_type" : "UpdateTextField", "input" : "12",
           "how": "Add(?,?,?)", "reward": 0},
-        { "selection" : "C", "action" : "UpdateTextField", "input" : "16x - 8",
+        { "selection" : "C", "action_type" : "UpdateTextField", "input" : "16x - 8",
           "how": "Subtract(?,Add(?,?))", "reward": 0},
 
         // { "selection" : "Button", "action" : "PressButton", "input" : "-1",
@@ -104,22 +104,22 @@ const test_skill_applications = [
 ]
 
 for(let sa of test_skill_applications){
-  sa.id = randomID()
+  sa.uid = randomUID()
 }
 
 
 const removeKey = (key, {[key]: _, ...rest}) => rest;
 
-const setSkillAppAttr = (store, skill_app, attr, val) => {
+const applySkillAppAttr = (store, skill_app, attr, val) => {
   return {skill_apps : {
         ...store.skill_apps,
-        [skill_app.id] : {...store.skill_apps[skill_app.id], [attr]:val}
+        [skill_app.uid] : {...store.skill_apps[skill_app.uid], [attr]:val}
   }}
 }
 
 const makeOnlyChanges = (store, skill_app, only) => {
-  let old = store.skill_apps[skill_app.id].only ?? false
-  let changes = setSkillAppAttr(store, skill_app, 'only', only)
+  let old = store.skill_apps[skill_app.uid].only ?? false
+  let changes = applySkillAppAttr(store, skill_app, 'only', only)
   if(old != only){
     let only_count = changes['only_count'] = store.only_count+(only-old)
     console.log("-------", changes['only_count'], (only-old), only, old)
@@ -131,15 +131,18 @@ const findStageCandidate = (store) =>{
 
 }
 
+// GLOBAL CONFIG
+const EXPLAIN_DEMO_REFRESH_DELAY = 0
+
 
 const makeUndoStagedChanges = (store) => {
   let stack = store.stage_undo_stack
-  let changes = {staged_id: "", staged_sel:"", stage_undo_stack:[]}
+  let changes = {staged_uid: "", staged_sel:"", stage_undo_stack:[]}
   let okay = false
   while(stack.length > 0){
 
     changes = {...stack.pop(), stage_undo_stack:stack}
-    if(store.skill_apps[changes.staged_id]?.reward > 0){
+    if(store.skill_apps[changes.staged_uid]?.reward > 0){
       okay = true
       break
     }
@@ -149,7 +152,7 @@ const makeUndoStagedChanges = (store) => {
     for(let skill_app of Object.values(store.skill_apps)){
       if(skill_app?.reward > 0){
         console.log("+++", skill_app.input)
-        changes = {staged_id: skill_app.id, staged_sel:skill_app.selection, stage_undo_stack:[]}
+        changes = {staged_uid: skill_app.uid, staged_sel:skill_app.selection, stage_undo_stack:[]}
         break
       }
     }
@@ -162,13 +165,22 @@ var authorStore;
 const useAuthorStore = create((set,get) => ({
   get : authorStore=get,
 
+  // List of descriptor objects for each of the user's current agents
+  agents : {},
+  // The unique id of the currently selected agent.
+  agent_uid : null,
+  // A promise that resolves when a selected / newly created agent is loaded
+  agentPromise : null,
+
   // Counters for forcing rerenders in absence of meaningful state change
   transaction_count : 0, 
   n_tutor_loads : 0,
 
+  skills : {},
+
   // Skill Applications (queried from the agent)
   skill_apps: {},
-  sel_skill_app_ids: {},
+  sel_skill_app_uids: {},
 
   /* Tutor  */
   // A reference to the tutor wrapper instance.
@@ -182,11 +194,11 @@ const useAuthorStore = create((set,get) => ({
 
   /* Authoring Interactivity States  */
   input_focus : "",
-  focus_id : "",
+  focus_uid : "",
   focus_sel : "",
-  hover_id : "",
+  hover_uid : "",
   hover_sel : "",
-  staged_id : "",
+  staged_uid : "",
   staged_sel : "",
   stage_undo_stack : [],
   only_count : 0,
@@ -210,20 +222,22 @@ const useAuthorStore = create((set,get) => ({
         agents : {},
         curr_interface : "",
         curr_question : "",
-        curr_agent : "",
+        agent_uid : "",
       }
       window.localStorage.setItem("project", JSON.stringify(project))
     }
     console.log("PROJECT", project)
+
     // If project has no question_files then 
-    set(project)
+    let agentPromise = new Promise((resolve)=>{resolve(project.agent_uid)})
+    set({...project, agentPromise})
   },
 
   saveProject(){
 
     let store = get()
-    let {interfaces, questions, agents, curr_interface, curr_question, curr_agent} = store
-    let project = {interfaces, questions, agents, curr_interface, curr_question, curr_agent}
+    let {interfaces, questions, agents, curr_interface, curr_question, agent_uid} = store
+    let project = {interfaces, questions, agents, curr_interface, curr_question, agent_uid}
     console.log("SAVE PROJECT", project)
     window.localStorage.setItem("project", JSON.stringify(project))
   },
@@ -234,15 +248,26 @@ const useAuthorStore = create((set,get) => ({
     let store = get()
     let {set_params, author} = training_config
     let prob_config = author?.prob_config || set_params
-    console.log(store)
     store.loadProject(prob_config)
-    store = get()
+    let {agent_uid, setInterface, setAgent, createAgent, interfaces, saveProject} = get()
     console.log("INIT AUTHORING", prob_config)
     set({mode: 'train', prob_config, network_layer: network_layer})
-    store.createAgent(training_config.agent)
 
+    console.log("BEEFOR")
+    if(!agent_uid){
+      createAgent(training_config.agent).then((agent_uid) =>{
+        setAgent(agent_uid)
+      })
+      saveProject()
+    }else{
+      setAgent(agent_uid)
+    }
+    
+      // store.updateAgentNextActions()
+    // })
+    // console.log("AFTERR")
     // let store = get()
-    store.setInterface(store.interfaces[0])
+    setInterface(interfaces[0])
     
     // store.loadProblem(prob_config)
 
@@ -250,10 +275,28 @@ const useAuthorStore = create((set,get) => ({
 
   }, 
 
-  createAgent: (agent_config) => set(async (store) => { 
-    let resp = await store.network_layer.createAgent(agent_config)
-    return {"agent_config" : {...agent_config, ...resp}}
-  }),
+  createAgent: (agent_config) =>  {
+    let {agents, network_layer} = get()
+
+    console.log("BEGIN CREATE AGENT")
+
+    let agentPromise = new Promise( async (resolve, reject) =>{
+      let resp = await network_layer.createAgent(agent_config)
+      let {agent_uid} = resp
+      agents[agent_uid] = agent_config
+      set({agents})  
+      resolve(agent_uid)
+    })
+    set({agentPromise})
+    return agentPromise
+  },
+
+  setAgent: (agent_uid) => {
+    let {updateSkills} = get()
+    console.log("SET AGENT", agent_uid)
+    set({agent_uid})
+    updateSkills()
+  },
 
   loadProblem: async (prob_config) => { 
     let store = get()
@@ -320,19 +363,20 @@ const useAuthorStore = create((set,get) => ({
 
   },
 
-  setQuestion: (q_id) => {
+  setQuestion: (q_id, interal=false) => {
     let store = get()
-    let {questions, curr_interface, tutor, mode, editing_question_menu} = store
-    if(!editing_question_menu && mode == "start_state"){
-      store.confirmStartState()
+    let {questions, curr_interface, tutor, mode,
+        editing_question_menu, setFocus, updateAgentNextActions, setSkillApps} = store
+    if(!interal && mode == "start_state"){
+      store.confirmStartState(false,false)
     }
     if(mode == "train"){
       let question_items = questions[curr_interface] || {}
       let tutor_state = {}
-      if(q_id){
+      if(q_id && tutor){
         tutor.clear()
         let question = question_items[q_id]
-        for (let [id,sai] of Object.entries(question.skill_apps)){
+        for (let [uid,sai] of Object.entries(question.skill_apps)){
           tutor.stageSAI(sai)
         }
         tutor_state = tutor.getState()
@@ -347,39 +391,42 @@ const useAuthorStore = create((set,get) => ({
         skill_apps = question.skill_apps || {}
       }
       set({curr_question: q_id})  
-      store.setSkillApps(skill_apps)
+      setSkillApps(skill_apps)
     }
+    setFocus(null)
+    updateAgentNextActions()
     
   },
 
-  setEditingQuestionMenu: (is_editing) => {
+  beginEditingQuestionMenu: (will_be_editing) => {
     let store = get()
     let {editing_question_menu:was_editing} = store
-    if(is_editing){
-      if(store.mode == "start_state"){
-        store.confirmStartState()
-      }
+    if(will_be_editing){
+      // if(store.mode == "start_state"){
+      //   store.confirmStartState()
+      // }
       set({mode: "start_state"})
       store.setQuestion(store.curr_question)
     }else{
       store.confirmStartState()
     }
-    if(!was_editing && is_editing){
+    if(!was_editing && will_be_editing){
       set({editing_question_menu: true, mode : "start_state"})
     }
-    if(was_editing && !was_editing){
+    if(was_editing && !will_be_editing){
       set({editing_question_menu: false, mode : "train"})
     }
   },
 
-  confirmStartState: (force=false) =>{
+  confirmStartState: (force=false, return_to_train=true) =>{
     let store = get()
-    let {questions, curr_interface, skill_apps, editing_question_menu} = store
+    let {questions, curr_interface, skill_apps, editing_question_menu, setSkillApps} = store
     let question_items = questions[curr_interface] || {}
 
     console.log(skill_apps)
     if(!force && Object.entries(skill_apps).length==0){
-      set({mode: 'train', skill_apps: {}, sel_skill_app_ids: {}})
+      set({mode: 'train'})
+      setSkillApps({})
       return
     }
     
@@ -411,10 +458,14 @@ const useAuthorStore = create((set,get) => ({
     }
     // Modify questions
     
-    set({questions, mode: 'train', skill_apps: {}, sel_skill_app_ids: {}, editing_question_menu:false})
-    // if(editing_question_menu){
-    store.setQuestion(q_id)
+    set({questions})
     store.saveProject()
+
+    if(return_to_train){
+      set({mode : 'train', editing_question_menu:false})
+      setSkillApps({})
+      store.setQuestion(q_id, true)
+    }
   },
 
   removeQuestion: (id, intr=null) =>{
@@ -433,9 +484,9 @@ const useAuthorStore = create((set,get) => ({
 
     let new_index = keys.indexOf(id)-1
     new_index = new_index >= 0 ? new_index : 0  
-    console.log("::", keys, new_index)
+    // console.log("::", keys, new_index)
     if(keys.length==0){
-      console.log("!!beginSetStartState")
+      // console.log("!!beginSetStartState")
       store.beginSetStartState()
     }else{
       store.setQuestion(keys[new_index])  
@@ -444,22 +495,117 @@ const useAuthorStore = create((set,get) => ({
 
   /*** Train Controls ***/
 
-  setFocus: (skill_app) => set((store) => { 
+  explainDemo : async (skill_app) => {
+    let store = get()
+    let {network_layer, tutor_state, skill_apps, agentPromise} = store
+
+    set({skill_apps : {
+        ...skill_apps,
+        [skill_app.uid] : {...skill_apps[skill_app.uid],
+        'explanation_is_pending': true
+        }
+      }
+    })
+
+
+    let skill_app_uid = skill_app.uid
+    let agent_uid = await agentPromise
+
+    // Re-get since could have updated while waiting for agent to load
+    store = get()
+    skill_app = store.skill_apps[skill_app_uid]
+    console.log(skill_app)
+    let {selection, action_type, inputs, reward=0, ...rest} = skill_app
+    let sai = {selection, action_type, inputs}
+
+    // Have agent explain the demo's sai
+    let {skill_explanations, func_explanations} = 
+      await network_layer.explain_demo(agent_uid, tutor_state, sai, reward, rest);
+
+    // Format the explanations so that 'react-select' can use them
+    let skill_options = [];
+    let defaultOption = null
+    for(let sa of (skill_explanations ?? [])){
+      let option = {
+        label: sa?.how_part?.minimal_str,
+        value : `Skill Explanations, ${sa.uid}`,
+        kind : "skill_app",
+        data : sa,
+      }
+      defaultOption = defaultOption || option
+      skill_options.push(option);
+    }
+    let func_options = [];
+    let i = 0;
+    for(let expl of (func_explanations ?? [])){
+      let option = {
+        label: expl?.func?.minimal_str,
+        value : `Function Explanations, ${i}`,
+        kind : "func",
+        data : expl,
+      }
+      defaultOption = defaultOption || option
+      func_options.push(option);
+      i++;
+    }
+    let explanation_options = [
+      {'label' : "Skill Explanations", options: skill_options},
+      {'label' : "Function Explanations", options: func_options},
+    ]
+
+    let explanation_time = Date.now()
+    console.log("Explanations", explanation_options, explanation_time)
+
+    let explanation_selected = {...defaultOption, explicit : false}
+
+    set({skill_apps : {
+        ...skill_apps,
+        [skill_app_uid] : {...skill_apps[skill_app_uid],
+          explanation_options, explanation_time, explanation_selected,
+          explanation_is_pending : false
+        }
+      }
+    })
+
+    // set(applySkillAppAttr(store, skill_app, 'explanations', explanations))
+    // }
+  },
+
+  selectExplanation: (skill_app, explanation) =>{
+    let {skill_apps} = get()
+    set({skill_apps : {
+        ...skill_apps,
+        [skill_app.uid] : {...skill_apps[skill_app.uid],
+          explanation_selected: {...explanation, explicit : true}
+        }
+      }
+    })
+  },
+
+  setFocus: (skill_app) => { 
+    let {explainDemo, skill_apps} = get()
+    if(skill_app && !skill_apps?.[skill_app?.uid]){
+      console.warn("Tried to focus un-added skill app",skill_app)
+      return
+    }
     // console.log("setFocus", skill_app?.selection)
-    return {focus_sel : skill_app?.selection ?? "", focus_id : skill_app?.id ?? ""}
-  }),
+    set({focus_sel : skill_app?.selection ?? "", focus_uid : skill_app?.uid ?? ""})
+    if(skill_app && skill_app?.is_demo){
+      explainDemo(skill_app)
+    }    
+  },
 
   // Assigned to the focus of 
   setInputFocus: (sel) => set({input_focus:sel}),
 
-  setHover: ({sel,id}) => set((store) => {
-    return {hover_sel : sel ?? store.hover_sel , hover_id : id ?? store.hover_id}     
+  setHover: ({sel,uid}) => set((store) => {
+    return {hover_sel : sel ?? store.hover_sel , hover_uid : uid ?? store.hover_uid}     
   }),
 
   setStaged: (skill_app, store_prev=true) => set((store) => { 
-    let changes = {staged_sel : skill_app.selection, staged_id : skill_app.id}
-    if(store_prev && store.staged_id != ""){
-      changes['stage_undo_stack'] = [...store.stage_undo_stack, {staged_id: store.staged_id, staged_sel : store.staged_sel}]
+    let changes = {staged_sel : skill_app.selection, staged_uid : skill_app.uid}
+    if(store_prev && store.staged_uid != ""){
+      changes['stage_undo_stack'] = [...store.stage_undo_stack, {staged_uid: store.staged_uid, staged_sel : store.staged_sel}]
     }
     return changes
   }),
@@ -492,23 +638,116 @@ const useAuthorStore = create((set,get) => ({
     store.setSkillApps({})
   },
 
-  setHasFociSelect : (sel, hasFociSelect) => set((store) => { 
-    if(store.focus_id == ""){ return {}}
+  beginSetArgFoci : () => {
+    set({mode : "arg_foci"})
+  },
 
-    let focus_app = {...store.skill_apps?.[store.focus_id]}
+  confirmArgFoci : () => {
+    let {skill_apps, focus_uid} = get()
+    let skill_app = skill_apps?.[focus_uid];
+    
+    console.log("confirm arg foci");
+    set({mode : "train"})
+    if(skill_app){
+      skill_app.arg_foci_set = true;
+      set({skill_apps : {...skill_apps, [focus_uid] : skill_app}})
+    }  
+    
+  },
+
+  setFociSelect : (sel, hasFociSelect) => { 
+    let {skill_apps, focus_uid} = get()
+    if(focus_uid == "") return
+
+    let focus_app = {...skill_apps?.[focus_uid]}
     let arg_foci = focus_app?.arg_foci || []
-    console.log(arg_foci, arg_foci.filter((x)=>x!==sel))
+    // console.log(arg_foci, arg_foci.filter((x)=>x!==sel))
     if(!hasFociSelect){
-      console.log(arg_foci, arg_foci.filter((x)=>x!==sel))
-      focus_app.arg_foci = arg_foci.filter((x)=>x!==sel)
+      // console.log(arg_foci, arg_foci.filter((x)=>x!==sel))
+      arg_foci = focus_app.arg_foci = arg_foci.filter((x)=>x!==sel)
     }else if(!arg_foci.includes(sel)){
-      focus_app.arg_foci = [...arg_foci, sel]
+      arg_foci = focus_app.arg_foci = [...arg_foci, sel]
     }else{
       // No Change
-      return {}
+      return
     }
-    return {'skill_apps' : {...store.skill_apps, [store.focus_id] :  focus_app}}
-  }),
+    set({'skill_apps' : {...skill_apps, [focus_uid] :  focus_app}})
+    let prev_focus_uid = focus_uid
+    setTimeout(async ()=>{
+      
+      // If the arg foci haven't changed in 200ms then poll for new set of explanations
+      let {skill_apps, focus_uid, explainDemo} = get()
+      let focus_app = skill_apps?.[focus_uid]
+
+      console.log("TIMEOUT TRIGGER", prev_focus_uid, focus_uid, arg_foci,  focus_app?.arg_foci ?? [])
+
+      if(prev_focus_uid == focus_uid && arraysEqual(arg_foci,  focus_app?.arg_foci ?? [])){
+        console.log("EQUAL")
+        await explainDemo(focus_app)
+      }
+    }, EXPLAIN_DEMO_REFRESH_DELAY)
+
+  },
+
+  updateAgentNextActions : async () => {
+    console.log("Fetch Next Actions")
+    //Make sure the agent exists before we query it for actions 
+    let {agentPromise} = get()
+    await agentPromise
+
+    let {network_layer, tutor_state, agent_uid, setSkillApps} = get()
+
+    //NOTE: Should really be stashed until return to mode==train
+    setSkillApps({})
+    let new_skill_apps = await network_layer.act(agent_uid, tutor_state, {return_all: true, return_kind : 'skill_app'})
+    console.log("new_skill_apps", new_skill_apps)
+    setSkillApps(new_skill_apps)
+  },
+
+  confirmFeedback : async () => {
+    let {network_layer, mode, skill_apps, tutor_state, agent_uid, staged_uid, tutor,
+        confirmArgFoci, updateAgentNextActions, updateSkills, saveProject} = get()
+    if(mode == 'arg_foci'){
+      confirmArgFoci()
+    }
+
+    console.log("CONFIRM", agent_uid)
+    for (let [key, skill_app] of Object.entries(skill_apps)){
+      let {selection, action_type, inputs, reward=0, ...rest} = skill_app
+      if(reward != 0){
+        let sai = {selection, action_type, inputs}
+        await network_layer.train(agent_uid, tutor_state, sai, reward, rest)
+      }
+    }
+
+    saveProject()
+
+
+    if(staged_uid){
+      await tutor.stageSAI(skill_apps[staged_uid])    
+    }
+    
+
+    set({focus_uid : "", hover_uid : "", staged_uid : ""})
+
+    tutor_state = tutor.getState()
+    set({tutor_state})
+
+    await updateAgentNextActions()
+    await updateSkills()
+
+  },
+
+  updateSkills : async () => {
+    let {network_layer, agent_uid} = get()
+    let skill_arr = await network_layer.get_skills(agent_uid)
+    let skills = {}
+    for(let skill of skill_arr){
+      skills[skill.uid] = skill
+    }
+    console.log("SKILLS", skills)
+    set({skills})
+  },
 
 
   /*** Events ***/
@@ -516,7 +755,11 @@ const useAuthorStore = create((set,get) => ({
 
   clickAway : () => { 
     let store = get()
-    let {mode, confirmStartState} = store
+    let {mode, confirmStartState, beginSetArgFoci, confirmArgFoci, setFocus, setMode} = store
+    // let focus_is_demo = store.skill_apps?.[store.focus_uid]?.is_demo ?? false
+
+
+    console.log("CLICK AWAY")
     if(mode == "start_state"){
       let {questions, curr_interface} = store
       let question_items = questions[curr_interface] || {}
@@ -525,123 +768,226 @@ const useAuthorStore = create((set,get) => ({
       if(Object.keys(question_items).length != 0){
         confirmStartState()  
       }      
-    }
+    }else{
+      // console.log("Set Focus Null")
+      if(mode == "arg_foci"){
+        confirmArgFoci()
+        // setMode('train')
+      }
+      set({hover_uid : "", hover_sel : ""})
+      setFocus(null)
+    }//else if(mode == "train" && focus_is_demo){
+    //  beginSetArgFoci()
+    //}
   },
 
-  toggleFoci : (sel) => { let store = get();
-    let selected = store.skill_apps?.[store.focus_id]?.arg_foci?.includes(sel) ?? false
-    store.setHasFociSelect(sel, !selected)
+  toggleFoci : (sel) => { 
+    let store = get();
+    let selected = store.skill_apps?.[store.focus_uid]?.arg_foci?.includes(sel) ?? false
+    store.setFociSelect(sel, !selected)
   },
 
   onKeyDown : (e) => {
     console.log("OUTER KEY", e.key, e)
     if(e.target == document.body){
       if(e.key == "Enter"){
-        let {input_focus, mode, confirmStartState} = get()
+        let {input_focus, mode, confirmStartState, confirmArgFoci} = get()
         if(mode==="start_state" && !input_focus){
           confirmStartState(true)
+        }else if(mode==="arg_foci"){
+          confirmArgFoci()
         } 
       }
     }
   },
 
+  /*** useStore Hook Getters ***/
+
+  getFeedbackCounts : (sel) => (store) => {
+    // If sel is null then use all otherwise only those associated with sel
+    let {skill_apps, sel_skill_app_uids} = store
+    let skill_app_uids_subset = sel ? sel_skill_app_uids?.[sel] ?? [] : Object.keys(skill_apps)
+
+    let counts = {'undef' : 0, 'demo_correct_only' : 0, 'demo_correct' :0, 'demo_incorrect':0,
+                  'correct_only' : 0, 'correct' :0, 'incorrect':0,
+                 }
+    for(let uid of skill_app_uids_subset){
+      let {reward, is_demo, only} = skill_apps[uid]
+      if(reward == null || reward == 0){
+        counts.undef++
+      }else if(reward > 0){
+        if(only){
+          if(is_demo){
+            counts.demo_correct_only++  
+          }else{
+            counts.correct_only++
+          }
+        }else{
+          if(is_demo){
+            counts.demo_correct++  
+          }else{
+            counts.correct++
+          }
+        }
+      }else{
+        if(is_demo){
+            counts.demo_incorrect++  
+          }else{
+            counts.incorrect++
+          }
+      }
+    }
+    return counts
+  },
+
   /*** Getters ***/
 
-  // getFocusedSkillApp : (name) => get((store) => {
-  //   return store?.skill_apps?.[store.focus_id]
-  // }),
+  getFocusApp : () => {
+    let {skill_apps, focus_uid} = get()
+    return skill_apps?.[focus_uid]
+  },
+
+  extractArgFoci : (skill_app) =>{
+    let arg_foci = skill_app?.arg_foci
+    let foci_explicit = true
+    if(!arg_foci){
+      if(skill_app?.is_demo){
+        arg_foci = skill_app?.explanation_selected?.data?.args
+        foci_explicit = false
+      }else{
+        arg_foci = skill_app?.args
+        foci_explicit = true
+      }
+    }
+    // console.log("::: EXPL", arg_foci, foci_explicit)
+    return {arg_foci, foci_explicit}
+  },
 
   // getHoverSkillApp : (name) => get((store) => { 
-  //   return store?.skill_apps?.[store.hover_id]
+  //   return store?.skill_apps?.[store.hover_uid]
   // }),
 
-  /*** Adding + Removing Skill Applications ***/
+  /*** Skill Application (Adding & Removing)  ***/
 
-  addSkillApp: (skill_app) => set((store) => { 
+  addSkillApp: (skill_app) => { 
+    let {sel_skill_app_uids, skill_apps, only_count, staged_uid} = get()
     let sel = skill_app.selection
-    skill_app.id = skill_app.id || randomID()
-    return {
-      sel_skill_app_ids : {
-      ...store.sel_skill_app_ids,
-      [sel] : [skill_app.id, ...(store.sel_skill_app_ids[sel]||[])]
+    set({
+      sel_skill_app_uids : {
+      ...sel_skill_app_uids,
+      [sel] : [skill_app.uid, ...(sel_skill_app_uids[sel]||[])]
       },
       skill_apps: {
-        ...store.skill_apps,
-        [`${skill_app.id}`] : skill_app,
+        ...skill_apps,
+        [skill_app.uid] : skill_app,
       },
-      only_count : store.only_count + (skill_app?.only || 0)
-    }
-  }),
+      only_count : only_count + (skill_app?.only || 0),
+      staged_uid : staged_uid || (skill_app.reward > 0 && skill_app.uid),
+    })
+  },
 
-  removeSkillApp: (skill_app) => set((store) => {
-    if(!skill_app) return {};
+  removeSkillApp: (skill_app) => {
+    if(!skill_app) return;
+    let {skill_apps, sel_skill_app_uids, only_count, focus_uid, hover_uid, staged_uid} = get()
     let sel = skill_app.selection
-    console.log(sel, store.sel_skill_app_ids[sel])
-    console.log(skill_app.id)
-    console.log("%%", store.sel_skill_app_ids[sel].filter((x)=>x!=skill_app.id))
-    return {
-      skill_apps: removeKey(skill_app.id, store.skill_apps),
-      sel_skill_app_ids : {
-        ...store.sel_skill_app_ids,
-        [sel] : store.sel_skill_app_ids[sel].filter((x)=>x!=skill_app.id)
+    set({
+      skill_apps: removeKey(skill_app.uid, skill_apps),
+      sel_skill_app_uids : {
+        ...sel_skill_app_uids,
+        [sel] : sel_skill_app_uids[sel].filter((x)=>x!=skill_app.uid)
       },
-      only_count : store.only_count - (skill_app?.only || 0)
-    }
-  }),
+      only_count : only_count - (skill_app?.only || 0),
+      focus_uid: skill_app.uid == focus_uid ? "" : focus_uid,
+      hover_uid: skill_app.uid == hover_uid ? "" : hover_uid,
+      staged_uid: skill_app.uid == staged_uid ? "" : staged_uid,
+    })
+  },
 
-  setSkillApps: (skill_apps) => set((store) => {
+  setSkillApps: (skill_apps) => {
     let skill_apps_by_sel = {}
     let _skill_apps = {}
-    let staged = {staged_id: "", staged_sel : "", stage_undo_stack: []}
+    let staged = {staged_uid: "", staged_sel : "", stage_undo_stack: []}
 
-    // Make skill_apps and sel_skill_app_ids
-    for (let sa of Object.values(skill_apps)){
+    let only_count = 0 
+    // Make skill_apps and sel_skill_app_uids
+    for (let sa of Object.values(skill_apps || {})){
       let lst = skill_apps_by_sel?.[sa.selection] ?? []
-      lst.push(sa.id)
+      lst.push(sa.uid)
       skill_apps_by_sel[sa.selection] = lst
-      _skill_apps[sa.id] = sa
+      _skill_apps[sa.uid] = sa
 
       //Ensure that we stage a skill app if it came with reward > 0
-      if(staged.staged_id == "" && sa.reward > 0){
-        staged.staged_id = sa.id
+      if(staged.staged_uid == "" && sa.reward > 0){
+        staged.staged_uid = sa.uid
         staged.staged_sel = sa.sel
       }
+      if(sa.only){
+        only_count += 1
+      }
     }
-    let changes = {
+
+    set({
         skill_apps: _skill_apps,
-        sel_skill_app_ids: skill_apps_by_sel,
-        ...staged
-    }
-    return changes
-  }),
+        sel_skill_app_uids: skill_apps_by_sel,
+        only_count : only_count,
+        ...staged,
+    })
+  },
 
-  /*** Modifying Skill Applications ***/
+  /*** Skill Applications (Modifying) ***/
 
-  setReward : (skill_app, reward) => set((store) => {
-    let changes = setSkillAppAttr(store, skill_app,'reward', reward)
-    // console.log("SET REW", store.skill_apps[skill_app.id])
+  setReward : (skill_app, reward) => {
+    let store = get()
+    let changes = applySkillAppAttr(store, skill_app,'reward', reward)
+    // console.log("SET REW", store.skill_apps[skill_app.uid])
     if(skill_app.reward >= 0 && reward < 0){
-      changes = makeOnlyChanges({...store,...changes}, store.skill_apps[skill_app.id], false)
-      if(skill_app.id == store.staged_id){
+      changes = makeOnlyChanges({...store,...changes}, store.skill_apps[skill_app.uid], false)
+      if(skill_app.uid == store.staged_uid){
         changes = {...changes, ...makeUndoStagedChanges({...store,...changes})}
       }
-    }else if(skill_app.reward <= 0 && reward > 0 && store.staged_id == ""){
+    }else if(skill_app.reward <= 0 && reward > 0 && store.staged_uid == ""){
       changes = {...changes, ...makeUndoStagedChanges({...store,...changes})}
     }
-    console.log("SET REW", changes)
-    return changes
-  }),
+    let {staged_uid} = store
 
-  setInput : (skill_app, input) => set((store) => (
-    setSkillAppAttr(store, skill_app,'input', input)
+    console.log("BEF", staged_uid)
+    if(!staged_uid && reward > 0){
+      console.log("APPLY STAGED")
+      changes['staged_uid'] = skill_app.uid
+    }
+    set(changes)
+  },
+
+  toggleReward : (skill_app, force_reward=null) => {
+    let {setReward} = get()
+    if(force_reward > 0){
+      setReward(skill_app, 1)
+      return
+    }
+    if(force_reward < 0){
+      setReward(skill_app, -1)
+      return
+    }
+    console.log("TOGGLE reward")
+    if(skill_app.reward == 0){
+      setReward(skill_app, 1)
+    }else if(skill_app.reward > 0){
+      setReward(skill_app, -1)
+    }else{
+      setReward(skill_app, 1)
+    }
+  },
+
+  setInputs : (skill_app, inputs) => set((store) => (
+    applySkillAppAttr(store, skill_app,'inputs', inputs)
   )),
 
   setSkillLabel : (skill_app, skill_label) => set((store) => (
-    setSkillAppAttr(store, skill_app,'skill_label', skill_label)
+    applySkillAppAttr(store, skill_app,'skill_label', skill_label)
   )),
 
   setHowPart : (skill_app, how_part) => set((store) => (
-    setSkillAppAttr(store, skill_app,'how_part', how_part)
+    applySkillAppAttr(store, skill_app,'how_part', how_part)
   )),
 
   setOnly: (skill_app, only) => set((store) => (

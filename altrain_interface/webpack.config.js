@@ -36,8 +36,13 @@ module.exports = {
       },
       {
         test: /\.(css)$/, 
-        exclude: /node_modules/, 
+        // exclude: /node_modules/, 
         use: [ 'style-loader', 'css-loader']
+      },
+      {
+        test: /\.(sass|less|scss)$/, 
+        exclude: /node_modules/, 
+        use: [ 'style-loader', 'css-loader', 'less-loader', 'url-loader']
       },
       {
         test: /\.(jpe?g|png|gif|svg)$/i, 

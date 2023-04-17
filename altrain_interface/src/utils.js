@@ -11,6 +11,7 @@
  */
 
 import RJSON from "relaxed-json";
+import CryptoJS, {WordArray} from "crypto-js"
 
 
 export function load_training_file(training_file) {
@@ -132,6 +133,47 @@ export const gen_shadow = (x,kind='box') => {
   }
   return 
 }
+
+
+
+
+// TODO: This method isn't quite the same as the AL_CORE verison because it uses '-' and '_'
+let randArr = CryptoJS.lib.WordArray.random
+let Base64url = CryptoJS.enc.Base64url
+export let randomUID = () => Base64url.stringify(randArr(30));
+
+export function shallowEqual(object1, object2) {
+  let t1 = typeof object1
+  let t2 = typeof object2
+  if(t1 != t2){
+    return false
+  }
+  if(t1 == "object"){
+    const keys1 = Object.keys(object1);
+    const keys2 = Object.keys(object2);
+    if (keys1.length !== keys2.length) {
+      return false;
+    }
+    for (let key of keys1) {
+      if (object1[key] !== object2[key]) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+export function arraysEqual(a, b) {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.length !== b.length) return false;
+  for (var i = 0; i < a.length; ++i) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+// export {randomID, shallowEqual};
 
 
 

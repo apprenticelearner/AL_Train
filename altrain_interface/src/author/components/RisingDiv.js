@@ -6,7 +6,7 @@ import { gen_shadow } from "../../utils";
 
 
 
-let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, ...props}) =>{
+let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hover_style, ...props}) =>{
   const springConfig = {
     stiffness: props?.stiffness ?? 2000,
     damping: props?.damping ?? 50 
@@ -16,7 +16,7 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, ...
   const hover_scale = props?.scale ?? props?.hover_scale ?? 1.2
   const scale = useMotionValue(default_scale);  
   const scale_anim = useSpring(scale, springConfig);
-  if('scale' in props){scale.set(default_scale)}
+  scale.set(default_scale)
   	
 
   //Control shadow
@@ -26,14 +26,16 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, ...
   const default_shadow = gen_shadow(default_elevation, shadow_kind)
   const hover_shadow = gen_shadow(hover_elevation, shadow_kind)
   const shadow = useMotionValue(default_shadow)
-  if('elevation' in props){shadow.set(default_shadow)}
+  shadow.set(default_shadow)
+
+  // console.log("RISING DIV", children)
 
   return (
     <motion.div 
       ref={innerRef}
       onMouseEnter={() => {scale.set(hover_scale); shadow.set(hover_shadow); hoverCallback?.()}} 
       onMouseLeave={() => {scale.set(default_scale); shadow.set(default_shadow); unhoverCallback?.()}}
-      whileHover={{ zIndex: 100 }}
+      whileHover={{ zIndex: 100,...hover_style}}
       style={{
           ...style,
           // willChange : 'filter, scale',

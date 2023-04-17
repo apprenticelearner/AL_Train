@@ -43,14 +43,17 @@ const ScrollableStage = React.forwardRef(({children}, ref) => {
       startX.current = e.pageX - stage_view_ref.current.offsetLeft;
       scrollLeft.current = stage_view_ref.current.scrollLeft;
       startY.current = e.pageY - stage_view_ref.current.offsetTop;
-      scrollTop.current = stage_view_ref.current.scrollTop;  
+      scrollTop.current = stage_view_ref.current.scrollTop;
+      stage_view_ref.current.style.cursor = "move"
+      console.log()
     }
   }
   const handleMouseUp = (e) => {
-    if(targetIsBackground(e)){
+    if(is_dragging_stage.current && targetIsBackground(e)){
       clickAway()
     }
     is_dragging_stage.current = false
+    stage_view_ref.current.style.cursor = "auto"
   }
   const handleMouseLeave = () => {
     is_dragging_stage.current = false

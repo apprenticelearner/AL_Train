@@ -1,4 +1,4 @@
-import React, { Component, createRef, useState, useEffect, useRef, Profiler, Suspense } from 'react'
+import React, { Component, createRef, useState, useEffect, useRef, Profiler, Suspense, memo } from 'react'
 import { motion, useMotionValue, useSpring, useScroll } from "framer-motion";
 // import * as Animatable from 'react-native-animatable';
 import autobind from "class-autobind";
@@ -7,15 +7,20 @@ import './components/scrollbar.css';
 import RisingDiv from "./components/RisingDiv.js"
 import {CorrectnessToggler, SmallCorrectnessToggler} from "./components/CorrectnessToggler.js"
 import {SkillAppCardLayer, SkillAppGroup, DownChevron} from "./components/SkillAppCard.js"
+import {FeedbackCounters} from "./components/icons.js"
 import {StateOverlayLayer} from "./components/StateOverlay.js"
+import {Icon} from "./components/icons.js"
 import {Graph} from "./graph.js"
 import ScrollableStage from "./stage.js"
+import Color from "color"
 
 import {useALTrainStoreChange} from '../altrain_store';
 import {authorStore, useAuthorStore, useAuthorStoreChange, test_state, test_skill_applications} from "./author_store.js"
 // import MyZustandTest from "./change_store_test.js"
 import {shallowEqual, baseFile, gen_shadow} from "../utils.js"
 import CTATTutorWrapper from "../tutorwrappers/ctat"
+import {colors, where_colors} from "./themes.js"
+
 
 
 const images = {
@@ -59,79 +64,318 @@ let button_defaults_props = {
 
 function getDemoSkillApp(){
   return [(s)=>{
-    let skill_app = s.skill_apps[s.focus_id] || s.skill_apps[s.hover_id]
+    let skill_app = s.skill_apps[s.focus_uid] || s.skill_apps[s.hover_uid]
     return skill_app
   },
   (o,n) =>{
-    return o?.id == n?.id && o?.input == n?.input && o?.skill_label == n?.skill_label
+    for (let [key, value] in n){
+      if(o?.[key] != value){
+        return false
+      }
+    }
+    return true
+    // return o?.id == n?.id && o?.input == n?.input && o?.skill_label == n?.skill_label
   }
   ]
 }
 
 
+function ArgsRow(){
+  let {beginSetArgFoci, confirmArgFoci, extractArgFoci} = authorStore()
+  let [skill_app, arg_foci_mode] = useAuthorStoreChange(
+      [getDemoSkillApp(), "@mode=='arg_foci'"],
+  )
+  let arg_items = []
+  
+  let {arg_foci, foci_explicit} = extractArgFoci(skill_app)
+  if(arg_foci_mode && !foci_explicit){
+    arg_foci = []
+  }
 
-function DemonstrateMenu({}){
+  for (let [i,foci] of (arg_foci || []).entries()){
+    let color = where_colors[i]
+    if(!foci_explicit){
+      color = Color(color).lighten(.35).hexa()
+    }
+
+    arg_items.push(
+      <div style={{...styles.arg_item, borderColor: color}} key={`arg${i}`}>
+        <a style={{fontWeight:"bold", color: color, fontSize:"1.1em", marginLeft:3, marginRight:7}}>
+          {arg_symbols[i]}
+        </a>
+        <a style={{color:'grey'}}> {`  ${foci}`}</a> 
+      </div>)
+  }
+
+  const foci_mode_props = {
+    default_scale : 1.25, default_elevation : 12,
+    hover_scale : 1.2, hover_elevation : 8,
+  }
+
+  return (
+    <div style={styles.value_group}>
+      <div style={styles.label}>{"Args"}</div>
+      <div style={styles.arg_container}>
+        {arg_items}
+      </div>  
+      <div style={styles.right_space}>
+        <RisingDiv style={{
+          ...styles.circle_button,
+          flexDirection : 'column',
+          ...(arg_foci_mode  && {backgroundColor : 'purple'})
+        }}
+        {...{...button_defaults_props,
+         ...(arg_foci_mode && foci_mode_props)}}
+         onMouseDown={(e)=>{let callback = (arg_foci_mode ? confirmArgFoci : beginSetArgFoci); callback()}}
+        > 
+          <img src={images.crosshair} style={{width:"75%",height:"75%"}} />
+          {arg_foci_mode && 
+          <div style={styles.foci_button_inner_message}>
+            {"Press Enter"}
+          </div>
+          }
+        </RisingDiv>
+      </div>
+    </div>
+  )
+}
+
+const fxDropDownStyles = {
+  control: (styles) => ({
+   ...styles,
+   backgroundColor: 'white',
+   // margin: 6,
+
+ }),
+  option: (styles, { data, isDisabled, isFocused, isSelected }) => {
+    // console.log("OPTION")
+    return {
+      ...styles,
+      paddingRight : 8,
+      // ...styles.submenu_item,
+      color : 'black',
+      border : "2px solid transparent",
+      backgroundColor : 'white',
+      ...(isFocused && {border : "2px solid dodgerblue",}),
+      ...(isSelected && {backgroundColor : colors.menu_highlight_color}),
+      ':active': {fontWeight: 'bold', backgroundColor : colors.menu_highlight_color},
+    };
+  },
+
+  // input: (styles) => ({ ...styles}),
+  // placeholder: (styles) => ({ ...styles}),
+  // singleValue: (styles, { data }) => ({ ...styles}),
+  indicatorSeparator: (styles) => ({display : 'none'}),
+  dropdownIndicator: (styles) => ({...styles,padding : 4}),
+  valueContainer: (styles) => ({...styles,paddingRight : 0}),
+  menu : (styles) => ({...styles,paddingRight : 0}),
+};
+
+const highlightVars = (text, vars) => {
+  let var_groups = vars.join("|")
+  let regex = new RegExp(`\d*(?<![a-zA-z])(${var_groups})\\b`, 'g')
+
+  const textArray = text.split(regex);
+  let output = []
+  let i = 0;
+  for (let str of textArray){
+    if(str){
+      let index = vars.indexOf(str)
+      if(index != -1){
+        output.push(
+          <span 
+            key={`${str}_${i}`}
+            style={{color:  where_colors[index], fontWeight: 'bold'}}
+          >{str.toUpperCase()}</span>)
+      }else{
+        output.push(str)
+      }
+    }
+    i++
+  }
+  return output
+};
+
+const FxOption = (props) =>{
+  let {style, children, innerProps, isDisabled, isSelected, data, selectOption} = props
+  let [hasHover, setHover] = useState(false)
+
+  return (!isDisabled &&
+    <div style={{
+        ...styles.fx_option_container,
+        ...(isSelected && styles.submenu_item_selected),
+        ...(hasHover && styles.submenu_item_hover)
+      }}
+      onMouseDown={(e)=>{selectOption(data)}}
+      onMouseEnter={(e)=>setHover(true)}
+      onMouseLeave={(e)=>setHover(false)}
+      >
+      {children}
+    </div> 
+  )
+}
+
+const FxFormatOptionLabel = ({ label, data={} }, {context}) => {
+  let {skills} = authorStore()
+
+  let {func, skill_uid, uid, matches=[]} = data
+  func = func || skills?.[skill_uid||uid]?.how?.func || {}
+  let {minimal_str="??", vars=[]} = func
   
 
-  let [skill_app, arg_foci_mode, setMode, addSkillApp, removeSkillApp, setInput, setFocus, ] = useAuthorStoreChange(
+  let is_const = (vars?.length == 0) ?? true
+
+  let highlighted_eq = highlightVars(minimal_str, vars.map(({alias})=>alias))
+  
+  return (
+    <div style={styles.fx_option}>
+      <div style={{fontFamily : "Arial", color: "rbg(20,20,20)", fontSize: 20}}>
+        {highlighted_eq}
+      </div>
+      
+      <div style={{ marginLeft: "auto", color: "#ccc", fontSize : 12}}>
+        {(is_const && 'constant') ||
+          matches.join(", ")
+        }
+      </div>
+    </div>
+    )
+};
+
+const FxMenuList = (props) => {
+  const { children, innerRef, innerProps } = props;
+  return (
+    <div
+      className='scrollable'
+      style={{maxHeight : 300, overflowY: "scroll"}}
+      //{...getStyleProps(props, 'menu', { menu: true })}
+      ref={innerRef}
+      {...innerProps}
+    >
+      {children}
+    </div>
+  );
+};
+
+function FxRow(){
+  let {beginSetArgFoci, confirmArgFoci, selectExplanation} = authorStore()
+  let [skill_app, arg_foci_mode] = useAuthorStoreChange(
+      [getDemoSkillApp(), "@mode=='arg_foci'"],
+  )
+  console.log(skill_app?.explanation_options)
+
+  return (
+    <div style={styles.value_group}>
+      <div style={styles.label}>{`ƒ(𝑥)`}</div>
+      <div style={{flex: 1}}>
+        <Select 
+          className="scrollable"
+          styles={fxDropDownStyles}
+          value={skill_app?.explanation_selected}
+          options={skill_app?.explanation_options}
+          formatOptionLabel={FxFormatOptionLabel}
+          onChange={(value, {action})=>{
+            console.log(value, action)
+            if(action == 'select-option'){
+              selectExplanation(skill_app, value)
+            }
+          }}
+          readOnly={true}
+          menuPlacement={'top'}
+          //menuIsOpen={true}
+          components={{Option: FxOption, MenuList: FxMenuList}} 
+        />
+      </div>
+      <div style={styles.right_space}/>
+    </div>
+  )
+}
+
+const arg_symbols = ["A","B","C","D","E","F","G","H","I","J"]
+
+function DemonstrateMenu({}){
+  let [skill_app, arg_foci_mode, setMode, addSkillApp, removeSkillApp, setInput, setFocus] = useAuthorStoreChange(
       [getDemoSkillApp(), "@mode=='arg_foci'", "setMode", "addSkillApp", "removeSkillApp", "setInput", "setFocus"],
   )
 
-  let demo_text = skill_app?.input ?? ""
+  let demo_text = skill_app?.inputs?.value ?? skill_app?.input ?? ""
   // console.log(demo_text)
-
-  let foci_mode_props = {
-    default_scale : 1.1, default_elevation : 8,
-    hover_scale : 1, hover_elevation : 4,
-  }
+  let kind = "demo" + ((skill_app.reward > 0) ? "_correct" : "_incorrect") + (skill_app?.only ? "_only" : "")
+  // console.log("KIND", kind)
 
   return (
     <div style={styles.demonstrate_menu}>
       <div style={styles.demonstrate_menu_fields}>
-        <a style={styles.demonstrate_menu_title}>{"Demonstration"}</a>
+        
+        <div style={styles.demonstrate_menu_title}>
+          <Icon size={styles.demonstrate_menu_title.fontSize} kind={kind}
+                />
+          <a style={{marginLeft: 12, fontWeight: "bold"}}>{"Demonstration"}</a>
+        </div>
         <div style={styles.value_group}>
           <div style={styles.label}>{"Value"}</div>
           <textarea 
-            className="scrollable" style={styles.editable_value}
+            className="scrollable" style={{...styles.editable_value, height : 34}}
             value={demo_text}
             onChange={(e)=>{setInput(skill_app, e.target.value)}}
           />
           <div style={styles.right_space}/>
 
         </div>
+        <FxRow/>
+        <ArgsRow/>
         <div style={styles.value_group}>
-          <div style={styles.label}>{"Arguments"}</div>
-          <div style={styles.right_space}>
-            <RisingDiv style={{
-              ...styles.circle_button,
-              ...(arg_foci_mode  && {backgroundColor : 'purple'})
-            }}
-            {...{...button_defaults_props,
-             ...(arg_foci_mode && foci_mode_props)}}
-             onClick={(e)=>{setMode(foci_mode ? "train" : "arg_foci"); e.stopPropagation()}}
-           > 
-
-            <img src={images.crosshair} style={{width:"75%",height:"75%"}} />
-            </RisingDiv>
-          </div>
-        </div>
-        <div style={styles.value_group}>
-          <div style={styles.label}>{"Formula Hint"}</div>
-          <textarea className="scrollable" style={styles.editable_value}>{"this is the value"}</textarea>
+          <div style={styles.label}>{"ƒ Hint"}</div>
+          <textarea className="scrollable" 
+                    style={styles.editable_value}
+                    onChange={()=>{}}
+                    value={"this is the value"}/>
           <div style={styles.right_space}>
             <RisingDiv style={styles.circle_button} {...button_defaults_props}> 
               <img src={images.microphone} style={{width:"75%",height:"75%"}} />
             </RisingDiv> 
           </div>
         </div>
-        <div style={styles.value_group}>
-          <div style={styles.label}>{`Formula(s): ${0}`}</div>
-          <textarea className="scrollable" style={styles.editable_value}>{"this is the value"}</textarea>
-          <div style={styles.right_space}/>
-        </div>
+        {/*
         <div style={styles.value_group}>
           <div style={styles.label}>{"Skill Label"}</div>
-          <textarea className="scrollable" style={styles.editable_value}>{"this is the value"}</textarea>
+          <textarea className="scrollable" style={styles.editable_value}
+                    value={"this is the value"}/>
+          <div style={styles.right_space}/>
+        </div>
+        */}
+      </div>
+    </div>
+  )
+}
+
+function AgentActionMenu({}){
+  let [skill_app] = useAuthorStoreChange([getDemoSkillApp()])
+
+  let reward = skill_app?.reward ?? 0
+  let border_color = (reward > 0 && colors.correct_color) ||
+                     (reward < 0 && colors.incorrect_color) ||
+                     colors.default_color
+
+  let kind = 'undef'
+  if((skill_app?.reward ?? 0) != 0){
+    kind = ((skill_app.reward > 0) ? "correct" : "incorrect") + (skill_app?.only ? "_only" : "")
+  }
+
+
+  return (
+  <div style={{...styles.agent_action_menu, borderColor: border_color}}>
+      <div style={styles.agent_action_menu_fields}>
+        <div style={styles.agent_action_menu_title}>
+          <Icon size={styles.agent_action_menu_title.fontSize} kind={kind}
+                />
+          <a style={{marginLeft: 12, fontWeight: "bold"}}>{"Agent Action"}</a>
+        </div>
+        <div style={styles.value_group}>
+          <div style={styles.label}>{`ƒ(𝑥)`}</div>
+          <FxFormatOptionLabel
+            data={skill_app}
+          />
           <div style={styles.right_space}/>
         </div>
       </div>
@@ -186,7 +430,7 @@ function Tab({name}){
 
 function focusIsDemo(){
   return [(s)=>{
-    let skill_app = s.skill_apps?.[s.focus_id]
+    let skill_app = s.skill_apps?.[s.focus_uid]
     return skill_app?.is_demo ?? false
   },
   (o,n) =>{
@@ -246,7 +490,7 @@ function ProblemMenu({}){
   let [mode, curr_interface, curr_question, interfaces, questions, is_editing] = useAuthorStoreChange(
     ['@mode','@curr_interface', '@curr_question', '@interfaces', '@questions', '@editing_question_menu'])
 
-  let {beginSetStartState, confirmStartState, setQuestion, setEditingQuestionMenu} = authorStore()
+  let {beginSetStartState, confirmStartState, setQuestion, beginEditingQuestionMenu} = authorStore()
 
   console.log(curr_interface)
   let question_items = {...questions?.[curr_interface] || {}}
@@ -290,12 +534,14 @@ function ProblemMenu({}){
 
       {/* Question Menu */}
       <div style={{... styles.submenu, maxHeight: "70%"}}> 
+
+        {/* Question Menu - Title Area */}
         <div style={styles.submenu_title_area}>
           <header style={styles.submenu_title}>Question</header>
           <div style={styles.menu_button_area}>
             <MenuButton 
               style={(is_editing && styles.plus_button_start_active)}
-              onClick={() => setEditingQuestionMenu(!is_editing)}
+              onClick={() => beginEditingQuestionMenu(!is_editing)}
             >
               <img src={images.pencil} style={{width:"60%",height:"60%"}}/>
             </MenuButton>
@@ -308,6 +554,8 @@ function ProblemMenu({}){
             
           </div>
         </div>
+
+        {/* Question Menu - Options */}
         <div className='scrollable' style={styles.submenu_content}>
           {question_items && Object.entries(question_items).map(([x,{name, in_progress}])=>(
             <SubMenuItem
@@ -384,17 +632,21 @@ function ContinueButton() {
 }
 
 function PopupLayer({children}) {
-  let [is_demo, mode] = useAuthorStoreChange([focusIsDemo(), "@mode"])
+  let {focus_uid} = authorStore()
+  let [is_demo, any_focus, mode] = useAuthorStoreChange([focusIsDemo(), "@focus_uid!=''", "@mode"])
   
-  
+  console.log("any_focus", any_focus, focus_uid)
   return (
     <div style={{...styles.popup_layer}}>
       {(mode==="start_state" &&
         <ContinueButton/>) ||
        // (mode==="arg_foci" &&
        //  <ContinueButton/>) ||
-       (is_demo &&
-        <DemonstrateMenu/>) 
+        (is_demo &&
+          <DemonstrateMenu/>) ||
+        (any_focus && 
+          <AgentActionMenu/>
+        )
       }
     </div>
   )
@@ -402,6 +654,174 @@ function PopupLayer({children}) {
 
 
 
+//<select style={styles.agent_select} name="agents" id="agents">
+//          {Object.entries(agents).map( ([key, info]) => (
+//            console.log("MAPPP",key, info ) ||
+//            <option value="key">
+//              <div>
+//              {info?.name || "Unnamed"}
+//              </div>
+//              <div style={{fontColor: "lightgrey", leftMargin:'auto'}}>
+//                {key.slice(4,8)}
+//              </div>
+//            </option>
+//            ))
+//          }
+//          <option value="Agent A">{"Agent A"}</option>
+//          <option value="Agent B">{"Agent B"}</option>
+//          <option value="Agent C">{"Agent C"}</option>
+//        </select>
+
+import Select, { StylesConfig } from 'react-select';
+
+
+const agentDropDownStyles = {
+  control: (styles) => ({
+   ...styles,
+   backgroundColor: 'white',
+   margin: 6
+ }),
+  option: (styles, { data, isDisabled, isFocused, isSelected }) => {
+    console.log()
+    return {
+      ...styles,
+      paddingRight : 8,
+      // ...styles.submenu_item,
+      color : 'black',
+      border : "2px solid transparent",
+      backgroundColor : 'white',
+      ...(isFocused && {border : "2px solid dodgerblue",}),
+      ...(isSelected && {backgroundColor : colors.menu_highlight_color}),
+      ':active': {fontWeight: 'bold', backgroundColor : colors.menu_highlight_color},
+    };
+  },
+  input: (styles) => ({ ...styles}),
+  placeholder: (styles) => ({ ...styles}),
+  singleValue: (styles, { data }) => ({ ...styles}),
+  indicatorSeparator: (styles, { data }) => ({display : 'none'}),
+  dropdownIndicator: (styles, { data }) => ({...styles,padding : 4}),
+  valueContainer: (styles, { data }) => ({...styles,paddingRight : 0}),
+};
+
+const agentFormatOptionLabel = ({ value, label, uid }, {context}) => (
+  console.log("REST", context) || 
+  <div style={{ display: "flex", flexDirection : 'row', alignItems: 'end', paddingRight: 2}}>
+    <div>{label}</div>
+    {context == 'menu' && 
+      <div style={{ marginLeft: "auto", color: "#ccc", fontSize : 10, fontFamily : 'monospace'}}>
+        {uid}
+      </div>
+    }
+  </div>
+);
+
+function AgentArea(){
+  let [agents] = useAuthorStoreChange(
+      [[(s)=>s.agents, (o,n) => shallowEqual(o, n)]]
+  )
+  console.log("AGENT AREA", JSON.stringify(agents))
+
+  let options = Object.entries(agents).map( ([key, info]) => (
+    {value : key, label: info.name || "Unnamed",  uid:  key.slice(3,8)}
+  ))
+
+  const defaultOption = options[0];
+
+  
+
+  return(
+    <div style={{...styles.submenu, ...styles.agent_area}}>
+      <div style={styles.submenu_title_area}>
+          <header style={styles.submenu_title}>Agent</header>
+      </div>
+      <div style={{...styles.submenu_content, overflow : "visible"}}>
+          <Select 
+            styles={agentDropDownStyles}
+            options={options}
+            value={defaultOption}
+            placeholder="Select an option" 
+            formatOptionLabel={agentFormatOptionLabel}
+            readOnly={true} 
+          />
+      </div>
+    </div>
+  )
+}
+
+function SkillArea(){
+  return(
+  <div style={{...styles.submenu, ...styles.skills_area}}>
+      <div style={styles.submenu_title_area}>
+          <header style={styles.submenu_title}>Skills</header>
+      </div>
+      <div className='scrollable' style={styles.submenu_content}>
+        { [1,2,3,4,5,6,7,8].map((x) =>(
+          <SubMenuItem
+            selected={x===1}
+            key={"question:"+x}
+          >
+            {`Skill ${x}`}
+          </SubMenuItem>  
+          ))
+        
+        }
+      </div>
+    </div>
+  )
+}
+
+
+
+function ConfirmButton() {
+  let {confirmStartState, confirmFeedback} = authorStore()
+  return (
+    <RisingDiv 
+      style={styles.confirm_button}
+      {...{default_scale : 1, default_elevation : 8}}
+      {...{hover_scale : 1.05, hover_elevation : 12}}
+      onClick={confirmFeedback}
+    >
+      {"Confirm"}
+      <div style={styles.confirm_button_inner_message}
+        >
+        {"Press Enter"}
+      </div>
+    </RisingDiv>
+  )
+}
+
+function StagedFeedbackArea(){
+  return(
+  <div style={{...styles.submenu, ...styles.stage_feedback_area}}>
+      <div style={styles.submenu_title_area}>
+          <header style={styles.submenu_title}>Confirm Feedback</header>
+      </div>
+      <div style={{
+          ...styles.submenu_content, 
+          ...styles.staged_feedback_submenu
+          }}>
+        <div style={styles.feedback_counters_area}> 
+          <FeedbackCounters 
+            
+            counter_style={{
+              fontSize : 18,
+              borderWidth: 2,
+              // padding: 2,
+              paddingTop: 2,
+              paddingBottom: 2,
+              paddingRight: 6,
+              paddingLeft: 6
+            }}
+            count_text_style={{minWidth: 16}}
+          />
+        </div>
+        <div style={styles.confirm_button_area}>
+          <ConfirmButton/>         
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function AuthoringInterface({props}) {
   let [training_config, training_file, tutor_class, network_layer] = useALTrainStoreChange(
@@ -472,13 +892,16 @@ export default function AuthoringInterface({props}) {
           </div>
 
           <div style={styles.right_tools}> 
+            <AgentArea/>
+            <SkillArea/>
+            <StagedFeedbackArea/>
           </div>          
         </div>  
       </div>
   );
 }
 
-const highlight_color = 'rgb(229,244,255)'
+// const highlight_color = 'rgb(229,244,255)'
 
 
 const styles = {
@@ -546,6 +969,7 @@ const styles = {
 
     minHeight: 0,
     maxHeight: "100%",
+    width : "100%",
     overflowY : 'scroll',
     
   },
@@ -598,19 +1022,20 @@ const styles = {
     display : 'flex',
     flexDirection : 'row',
 
-    border: "2px solid",
+    border: "2px solid transparent",
     // borderLeftWidth: 0,
-    borderColor: 'rgba(0,0,0,0.0)',
+    // borderColor: 'rgba(0,0,0,0.0)',
     fontFamily : "Arial",
     fontSize : 16,
     padding: 6
     // padding: "6px 6px 6px 32px",
   },
   submenu_item_hover : {
-    borderColor: 'dodgerblue',
+    border: "2px solid dodgerblue",
+    // borderColor: 'dodgerblue',
   },
   submenu_item_selected : {
-    backgroundColor : highlight_color
+    backgroundColor : colors.menu_highlight_color
   },
   // legacy_tab : {
   //   height: 20,
@@ -673,8 +1098,9 @@ const styles = {
     display:'flex',
     flexDirection: 'column',
     // flex : 0,
-    backgroundColor : '#eeeedc',
+    // backgroundColor : '#eeeedc',
     // width:350,
+    userSelect: 'none',
     height:"100%",
     zIndex: 4,
   },
@@ -754,7 +1180,7 @@ const styles = {
   demonstrate_menu :{
     display : 'flex',
     flexDirection : 'row',
-    minWidth: "50%",
+    minWidth: "40%",
     maxWidth:"90%",
     height:"30%",
     alignItems: 'center', 
@@ -784,13 +1210,16 @@ const styles = {
   },
 
   demonstrate_menu_title :{
+    display : 'flex',
+    flexDirection : 'row',
     fontFamily : "Arial",
     fontSize : 20,
+    alignItems : 'center',
     // width : "100%",
     // fontWeight : "bold",
     // margin : 10,
     padding: 6,
-    paddingLeft : 20,
+    paddingLeft : 12,
     // left : 0,
     // backgroundColor  : 'red',
     border: '0px solid',
@@ -799,45 +1228,101 @@ const styles = {
     // backgroundColor : 'blue',
   },
 
+  agent_action_menu :{
+    display : 'flex',
+    flexDirection : 'row',
+    minWidth: "40%",
+    maxWidth: "90%",
+    height: "20%",
+    alignItems: 'center', 
+    
+    marginBottom : 30,
+    backgroundColor : 'white',
+    border: '4px solid',
+    borderColor: colors.default_color,
+    borderRadius: 10,
+    pointerEvents: "auto",
+    boxShadow : gen_shadow(14),
+
+    // Make not in center
+    // alignSelf: 'start', 
+  },
+
+  agent_action_menu_fields :{
+    display : 'flex',
+    flexDirection : 'column',
+    // minWidth: 0,
+    // maxWidth: "100%",
+    // backgroundColor : 'green',
+    // alignItems: 'center', 
+    width:"100%",
+    height:"100%",
+    // margin: 6,
+  },
+
+  agent_action_menu_title :{
+    display : 'flex',
+    flexDirection : 'row',
+    fontFamily : "Arial",
+    fontSize : 20,
+    alignItems : 'center',
+    // width : "100%",
+    // fontWeight : "bold",
+    // margin : 10,
+    padding: 6,
+    paddingLeft : 12,
+    // left : 0,
+    // backgroundColor  : 'red',
+    border: '0px solid',
+    borderBottomWidth: 1,
+    borderColor: 'lightgrey',
+    // backgroundColor : 'blue',
+  },
+
+
   value_group : {
     flexDirection : 'row',
     display:"flex",
     justifyContent : 'stretch',
-    alignItems : 'center',
+    // alignItems : 'end',
     // padding : 2,
-    margin : 6,
+    margin : 10,
     width : "100%",
     flexWrap: "wrap",
     // backgroundColor : 'red',
   },
   label : {
-    fontSize : 16,
+    fontSize : 20,
     fontFamily : "Arial",
-    padding : 2,
+    padding : 4,
     // margin : 4,
     marginLeft : 14,
     userSelect: "none",
-    width : 120,
+    width : 84,
+    // fontWeight : 'bold'
     // backgroundColor : 'red',
   },
 
   editable_value : {
-    flex : "1 1 auto",
+    flex : "1 0 90px",
+    minWidth : 0,
     // marginRight : 50,
 
-    fontSize : 16,
+    fontSize : 20,
     fontFamily : "Arial",
     backgroundColor: 'white',
-    textAlign:"center",
-    textJustify:"center",
+    textAlign: "center",
+    textJustify: "center",
     color: 'black',
     resize: "none",
+    
     lineHeight : "1em",
-
+    height : 20,
+    padding : 4,
 
     borderRadius : 4,
     border : "1px solid",
-    borderColor : "lightgrey"
+    borderColor : "lightgrey",
   },
 
   right_space : {
@@ -847,9 +1332,47 @@ const styles = {
     // backgroundColor :'yellow',
   },
 
+  arg_container : {
+    flex : "1 1 auto",
+    display : 'flex',
+    flexDirection : 'row',
+    flexWrap: 'wrap',
+    maxWidth : "60%",
+    // backgroundColor : 'red',
+  },
+
+  arg_item : {
+    display : "flex",
+    alignItems : "center",
+    margin: 2,
+    padding: 4,
+
+    // backgroundColor : '#EEE',
+    // backgroundColor : 'grey',
+    border : "2px solid",
+    borderColor : "darkgrey",
+    borderRadius : 4,
+    
+
+  },
+
+  foci_button_inner_message : {
+    position : "absolute",
+    userSelect: "none",
+    fontSize: 8,
+    borderRadius : 10,
+    width : 50,
+    padding : 3.5,
+    color: 'white',
+    textAlign : 'center',
+    backgroundColor : 'purple',
+    bottom: -10,
+
+  },
+
   circle_button : {
     // alignSelf : 'end',
-    // position : 'absolute',
+    position : 'relative',
 
     display : 'flex',
     alignItems:'center',
@@ -862,6 +1385,124 @@ const styles = {
     height : 34,
     borderRadius : 100,
   },
+
+  /** Agent Area **/
+
+  agent_area : {
+    // maxHeight : "10%",
+    minHeight : "10%",
+    marginTop : 4,
+    overflow : 'visible',
+  },
+
+  agent_select: {
+    // height : 20,
+    flex : 1,
+    margin : 8,
+    padding : 4,
+    borderRadius : 5,
+    borderColor : 'lightgrey',
+    backgroundColor : 'white',
+  },
+
+  /** Skills Area **/
+
+  skills_area : {
+    maxHeight : "20%",
+    marginTop : 4,
+  },
+
+  /** Staged Feedback Area **/
+
+  stage_feedback_area : {
+    height : "25%",
+    marginTop : "auto",
+    borderColor : "auto",
+    // border: '0px solid',
+    borderTopWidth: 2,
+    borderColor: 'lightgrey',
+  },
+
+  staged_feedback_submenu : {
+    width : "100%",
+    overflow : 'hidden',
+    alignItems : "stretch",
+    // padding : 8,
+  },
+
+  feedback_counters_area :{
+    display : 'flex',
+    flexDirection : 'row',
+    flex : "0 0 28px",
+    // height : 30,
+    // border: '0px solid',
+    // borderBottomWidth: 1,
+    // borderColor: 'lightgrey',
+    alignItems : 'center',
+    backgroundColor : 'rgb(242,242,242)',
+    marginLeft:  8,
+    marginRight:  8,
+    borderRadius : 10,
+    padding : 3,
+  },
+
+  confirm_button_area :{
+    display: "flex",
+    justifyContent:  "center",
+    alignItems:  "center",
+    flex : 1,
+  },
+
+  confirm_button :{
+    display : "flex",
+    flexDirection: 'column',
+    justifyContent : "center",
+    alignItems : "center",
+    fontSize: 24,
+    width : 120,
+    height : 60,
+    // border : "2px solid",
+    borderRadius : 20,
+    backgroundColor : 'lightgrey',
+    // borderColor : 'lightgrey',
+    marginBottom : 60,
+    pointerEvents: "auto",
+    userSelect: 'none',
+    marginTop : 30
+  },
+
+  confirm_button_inner_message : {
+    position : "absolute",
+    fontSize: 14,
+    borderRadius : 10,
+    width : 80,
+    padding : 3.5,
+    color: 'white',
+    textAlign : 'center',
+    backgroundColor : 'grey',
+    bottom: -20,
+  },
+
+  fx_option_container : {
+    border: "2px solid transparent",
+  },
+
+  fx_option : {
+    // display : 'block',
+    flex : 1,
+    display : 'flex',
+    flexDirection : 'row',
+    alignItems : 'end',
+    
+
+    padding : 4,
+    userSelect : "none",
+    maxWidth: '100%',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+
 
 
 

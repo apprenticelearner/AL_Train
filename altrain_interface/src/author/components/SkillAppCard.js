@@ -6,102 +6,151 @@ import './scrollbar.css';
 import './card.css';
 import RisingDiv from "./RisingDiv.js"
 import {CorrectnessToggler, SmallCorrectnessToggler} from "./CorrectnessToggler.js"
-import {useAuthorStore, useAuthorStoreChange} from "../author_store.js"
-import {shallowEqual} from "../utils.js"
+import {authorStore, useAuthorStore, useAuthorStoreChange} from "../author_store.js"
+import {FeedbackCounters} from "./icons.js"
+import {shallowEqual} from "../../utils.js"
 
 
 const images = {
-  double_chevron : require('../img/double_chevron_300x400.png')
+  // double_chevron : require('../img/double_chevron_300x400.png'),
+  double_chevron : require('../../img/double_chevron_300x400.svg'),
+  // pencil : require('../../img/pencil.png')
 };
 
-const FeedbackCounters = ({sel, groupHasHover}) => {
-  let [counts, isExternalHasOnly] = useAuthorStoreChange(
-      [[(s)=>{
-        let counts = {'undef' : 0, 'correct_only' : 0, 'correct' :0, 'incorrect':0}
-        for(let id of s.sel_skill_app_ids?.[sel] ?? []){
-          let sa = s.skill_apps[id]
-          if(sa.reward == 0){
-            counts.undef++
-          }else if(sa.reward > 0){
-            if(sa.only){
-              counts.correct_only++
-            }else{
-              counts.correct++
-            }
-          }else{
-            counts.incorrect++
-          }
-        }
-        return counts
-      },(o,n)=>{
-        return shallowEqual(o,n)
-      }
-      ],"@only_count!=0"]
-  )
 
-  // If any are correct_only mark all undefined as incorrect 
-  if(isExternalHasOnly){
-    counts.incorrect += counts.undef  
-    counts.undef = 0
-  }
+// export const Icon = ({size, kind}) => {
+//   let is_demo = kind.includes('demo') 
+//   let is_only = kind.includes('only') //&& key != 'only'
+//   let is_correct = !kind.includes('incorrect')
+//   let color = (is_demo && 'dodgerblue') ||
+//               (kind.includes('incorrect') && 'red') ||
+//               (kind.includes('correct') && 'limegreen') ||
+//               'black'
+//   let icon = (kind.includes('incorrect') && '✖') ||
+//               // (key=='only' && '⦿') ||
+//               (kind.includes('correct') && '✔') ||            
+//               '━'
+
+//   let inner_size = (is_only && size * .7) || size * .8
+//   return (
+//     <div
+//       style={{
+//         display : 'flex',
+//         width : size, height: size *.8,
+//         justifyContent : 'center',
+//         alignItems : 'center',
+//         ...(is_only && {border : `1px solid ${color}`, borderRadius : 50}),
+//       }}
+//     > 
+//       {(is_demo && 
+//         <img
+//           src={images.pencil}
+//           style={{width : inner_size, height: inner_size, 
+//             filter: is_correct ? dodger_blue_filter : crimson_filter
+//           }}
+//         />) ||
+//         <a style={{color: color, fontSize: size}}>{icon}</a>
+//       }
+//     </div> 
+//   )
+// }
+
+// export const FeedbackCounter = ({style, kind, count, clickHandler, count_text_style}) => {
+//   style = {...styles.counter_container,...style}
+//   let icon_size = (style.fontSize || 10) 
+//   // let inner_size = (is_only && icon_size * .7) || icon_size * .8
+//   return (
+//     <div style={style}
+//         onClick={clickHandler}
+//       > 
+//         <Icon {...{size: icon_size, kind, count}} />
+//         <a style={{...styles.count_text_style, ...count_text_style}}>{count}</a>
+//     </div>
+//   )
+// }
+
+// export const FeedbackCounters = ({sel, groupHasHover, style, counter_style, count_text_style}) => {
+//   let {getFeedbackCounts} = authorStore()
+//   let [counts,                                isExternalHasOnly] = useAuthorStoreChange(
+//       [[getFeedbackCounts(sel),shallowEqual] ,"@only_count!=0"]
+//   )
+
+//   // If any are correct_only mark all undefined as incorrect 
+//   if(isExternalHasOnly){
+//     counts.incorrect += counts.undef  
+//     counts.undef = 0
+//   }
+
+//   let counters = Object.entries(counts).map( ([key, count]) => {
+//     let clickHandler = () => {}
+//     return (count != 0 && <FeedbackCounter {
+//               ...{style: counter_style, count_text_style, kind:key, count, clickHandler}
+//               }
+//               key={key}
+//             />
+//           )
+//   })
   
 
+//   return (
+//   <div style={{
+//     ...styles.feedback_counters,
+//     ...style
+//     // ...(groupHasHover && {backgroundColor: 'rgba(120, 120, 120, .1)'})
+//     }}
+//     onClick={()=>{}}
+//   >  
+//     {counters}    
+//   </div>
+//   )
+// }
 
-  return (
-  <div style={{
-    ...styles.feedback_counters,
-    // ...(groupHasHover && {backgroundColor: 'rgba(120, 120, 120, .1)'})
-    }}
-    onClick={()=>{}}
-  >  
-    {counts.undef != 0 && 
-    <div style={styles.counter_container}
+/*
+{counts.undef != 0 && 
+    <div style={{...styles.counter_container,...counter_style}}
       onClick={()=>{}}
     >
       <a style={{color: 'black'}}>━</a>
-      {counts.undef}
+      <a style={count_text_style}>{counts.undef}</a>
     </div>
     }
 
     {counts.correct_only != 0 && 
-    <div style={styles.counter_container}
+    <div style={{...styles.counter_container,...counter_style}}
       onClick={()=>{}}
     >
-      <a style={{fontSize: 8, color: 'limegreen'}}>⦿</a>
-      {counts.correct_only}
+      <a style={{color: 'limegreen'}}>⦿</a>
+      <a style={count_text_style}>{counts.correct_only}</a>
     </div>
     }
 
     {counts.correct != 0 && 
-    <div style={styles.counter_container}
+    <div style={{...styles.counter_container,...counter_style}}
       onClick={()=>{}}
     >
       <a style={{color: 'limegreen'}}>✔</a>
-      {counts.correct}
+      <a style={count_text_style}>{counts.correct}</a>
     </div>
     }
 
     {counts.incorrect != 0 && 
-    <div style={styles.counter_container}
+    <div style={{...styles.counter_container,...counter_style}}
       onClick={()=>{}}
     >
       <a style={{color: 'red'}}>✖</a>
-      {counts.incorrect}
+      <a style={count_text_style}>{counts.incorrect}</a>
     </div>
     }
-    
-  </div>
-  )
-
-}
+  */
 
 
 export function SkillAppGroup({x, y, parentRef, sel, style,...props}) {
-  let [hasFocus, skill_app_ids, hasHover, focus_id, 
+  let [hasFocus, skill_app_uids, hasHover, focus_uid, 
         setFocus, setHover] = useAuthorStoreChange(
-      [[`@focus_sel==${sel}`, (x)=>x!=null], `@sel_skill_app_ids.${sel}`, `@hover_sel==${sel}`, `focus_id`, 
+      [[`@focus_sel==${sel}`, (x)=>x!=null], `@sel_skill_app_uids.${sel}`, `@hover_sel==${sel}`, `focus_uid`, 
        "setFocus", "setHover"]
   )
+
 
   // const [is_hover, setIsHover] = useState(false)
 
@@ -111,75 +160,37 @@ export function SkillAppGroup({x, y, parentRef, sel, style,...props}) {
 
   const groupIsDragging = useRef(false);
 
+  // console.log("RERENDER GROUP", hasFocus, hasHover, groupIsDragging.current)
+
   //Ensure that there are refs for all cards
   const cardsRef = useRef([]);
   useEffect(() => {
-       cardsRef.current = cardsRef.current.slice(0, skill_app_ids.length);
+       cardsRef.current = cardsRef.current.slice(0, skill_app_uids.length);
 
-  }, [skill_app_ids]);
+  }, [skill_app_uids]);
 
   // Effect for focus_index change
   useEffect(() => {    
     // if(hasFocus){ref.current.focus()}
-    let card = cardsRef.current[skill_app_ids.indexOf(focus_id)]
-    console.log("HAS FOCUS",focus_id)
+    let card = cardsRef.current[skill_app_uids.indexOf(focus_uid)]
+    console.log("HAS FOCUS",focus_uid)
     card?.scrollIntoView({behavior:"smooth", "block" : "nearest"})
-  }, [focus_id]);
+  }, [focus_uid]);
 
-
-  // const keyDownHandler = (e) => {
-  //   if(e.keyCode >= 49 && e.keyCode <= 58){
-  //     let index = Math.min(parseInt(e.key)-1, skill_app_ids.length-1)
-      
-  //     focusCallback({sel: skill_apps[0].selection, index:index})
-  //     console.log("KEY", e.key, index)  
-  //   }
-  // };
-
-  
-  // const hasFocus = focus_index >= 0
 
   let skill_app_cards = []
   let card_refs = []
-  for(let j=0; j < skill_app_ids.length; j++){
-    // console.log(skill_app_ids)
-    // if(only_show_focused_index && j != focus_index) continue;
-    let id = skill_app_ids[j]
-  // for (let skill_app of (skill_apps || [])){
-
-    // let correct = skill_app.reward > 0 || false
-    // let incorrect = skill_app.reward < 0 || false
-    // let is_demo = skill_app.stu_resp_type == "HINT_REQUEST"
-    // let staged = skill_app.is_staged || false
-    // let how_text = skill_app.how
-    // const card_ref = useRef(null);
-    
+  for(let j=0; j < skill_app_uids.length; j++){
+    let uid = skill_app_uids[j]
     skill_app_cards.push(
       <SkillAppCard 
-       // correct={correct}
-       // incorrect={incorrect}
-       // is_demo={is_demo}
-       // staged={staged_index==j}
-       // using_default_staged={using_default_staged}
-       // hasFocus={focus_index==j}
-       // showAuxilary={hasFocus || is_hover}
-       id={id}
-       // how_text={how_text}
-       // text={skill_app.input}
-       // focusCallback={focusCallback}
-       // sel={skill_app.selection}
+       uid={uid}
        groupHasHover={hasHover}
        index={j}
        groupIsDragging={groupIsDragging}
-       // toggleCallback={toggleCallback}
-       // stageCallback={stageCallback}
-       // removeCallback={removeCallback}
-       // foci_mode={foci_mode_index==j}
-       // toggleFociModeCallback={toggleFociModeCallback}
-       key={id}
+       key={uid}
        innerRef={el => cardsRef.current[j] = el} 
        {...props}
-
       />
     )
   }
@@ -192,7 +203,6 @@ export function SkillAppGroup({x, y, parentRef, sel, style,...props}) {
   return (
         <RisingDiv 
           innerRef={ref}
-          id='keyboard'
           tabIndex="0"
           // onKeyDown={keyDownHandler}
           drag
@@ -262,30 +272,28 @@ const gen_recolor = (color) =>{
 
 
 export function SkillAppCard({
-        id, groupIsDragging, groupHasHover, 
-        // skill_app, correct, incorrect, hasFocus, showAuxilary, staged, 
-        // foci_mode, stageCallback, focusCallback, toggleFociModeCallback,
-        // text, sel, index, is_demo, groupIsDragging, style,
+        uid, groupIsDragging, groupHasHover,
         ...props}) {
-  // let id = skill_app_id
-  let [skill_app,            hasFocus,           hasStaged,    isExternalHasOnly,         
-      setFocus,   setHover, setReward, setStaged, undoStaged, setOnly, removeSkillApp, setCurrentTab] = useAuthorStoreChange(
-      [`@skill_apps.${id}`, `@focus_id==${id}`, `@staged_id==${id}`, `@only_count!=0`, 
-      "setFocus", "setHover", 'setReward', 'setStaged', 'undoStaged', 'setOnly', 'removeSkillApp', 'setCurrentTab']
-  )
-  // console.log("RERENDER CARD", skill_app.input)
-  let text = skill_app.input || ""
+  let {setFocus,   setHover, toggleReward, setStaged, undoStaged, setOnly, removeSkillApp} = authorStore()
+  let [skill_app, hasFocus, hasStaged, isExternalHasOnly] = useAuthorStoreChange(
+      [`@skill_apps.${uid}`, `@focus_uid==${uid}`, `@staged_uid==${uid}`, `@only_count!=0`])
+
+  let [buttonAreaHover, setButtonAreaHover] = useState(false)
+  
+  let text = skill_app?.input ?? skill_app?.inputs?.value ?? ""
+  // console.log("RERENDER CARD", text)
+  let reward = (skill_app?.reward ?? 0)
   let is_demo = skill_app.is_demo || false
-  let correct = skill_app.reward > 0 
-  let incorrect = skill_app?.reward < 0 || isExternalHasOnly
-  let isImplicit = isExternalHasOnly && skill_app?.reward == 0;
+  let correct = reward > 0 
+  let incorrect = reward < 0 || isExternalHasOnly
+  let isImplicit = isExternalHasOnly && reward == 0;
   let hasOnly = skill_app.only
   let sel = skill_app.selection
 
-  let minHeight = (hasFocus && 60) || 20
-  let maxHeight = (!hasFocus && 20)
-  let minWidth = 60//(hasFocus && 60) || 20
-  let maxWidth = 140//(hasFocus && 140) || 40
+  let minHeight = (hasFocus && 60) || 34
+  let maxHeight = (!hasFocus && 40)
+  let minWidth = 100//(hasFocus && 60) || 20
+  let maxWidth = 160//(hasFocus && 140) || 40
 
   let bounds_color =  (is_demo && 'dodgerblue') ||
                         (correct && colors.c_bounds) || 
@@ -309,40 +317,16 @@ export function SkillAppCard({
                             borderRightColor:right_border_color,
                             borderRightWidth:4})
 
-  const toggleReward = (force_corr, force_incorr) =>{
-    if(force_corr){
-      setReward(skill_app, 1)
-      return
-    }
-    if(force_incorr){
-      setReward(skill_app, -1)
-      return
-    }
-    console.log("TOGGLE reward")
-    if(skill_app.reward == 0){
-      setReward(skill_app, 1)
-    }else if(skill_app.reward > 0){
-      setReward(skill_app, -1)
-    }else{
-      setReward(skill_app, 1)
-    }
-  }
   return (
         <RisingDiv 
           onClick={(e)=>{
-            // console.log("<<", e)
             if(!groupIsDragging.current){
               setFocus(skill_app)
             }
-            if(skill_app.is_demo){
-              setCurrentTab('demonstrate')
-            }else{
-              setCurrentTab('other')
-            }
             e.stopPropagation()
           }}
-          hoverCallback={(e)=>setHover({sel : sel, id: id})}
-          unhoverCallback={(e)=>setHover({id: ""})}
+          hoverCallback={(e)=>setHover({sel : sel, uid: uid})}
+          unhoverCallback={(e)=>setHover({uid: ""})}
           style={{
             ...styles.skill_app_card,
             ...border_style,
@@ -367,27 +351,69 @@ export function SkillAppCard({
           </div>
 
           {/*Skill Label + How*/}
-          {hasFocus && 
-          <div style={styles.extra_text}>
-            <div style={styles.label_text}>
-            {skill_app.skill_label || 'no label'}
-            </div>
-            <div style={styles.how_text}>
-            {skill_app.how}
-            </div>
+          
+          <div 
+            style={styles.card_button_area}
+            onMouseEnter={()=>setButtonAreaHover(true)}
+            onMouseLeave={()=>setButtonAreaHover(false)}
+          >
+            {/*Close Button*/}
+            {is_demo && hasFocus && 
+              <RisingDiv 
+                style={{...styles.card_button, ...styles.remove_button}}
+                onMouseDown={(e)=>{
+                  // console.log("CLOSE")
+                  e.stopPropagation()
+                  removeSkillApp?.(skill_app);
+                  }}
+              >{"✕"}
+              {buttonAreaHover && 
+                <div style={styles.card_button_text}>remove</div>
+              }
+              </RisingDiv>
+            }
+
+            {/*Stage Button*/}
+            {correct && 
+              <RisingDiv 
+                style={{...styles.card_button, ...styles.stage_button,
+                  ...(hasStaged && styles.card_button_selected)
+                }}
+                onMouseDown={(e)=>{
+                  console.log("Stage")
+                  e.stopPropagation(); 
+                  hasStaged ? undoStaged() : setStaged(skill_app)
+                  }}
+              >
+                <img style={{width:"100%", height:"100%"}} src={images.double_chevron}/>
+                {buttonAreaHover && 
+                  <div style={styles.card_button_text}>stage</div>
+                }
+              </RisingDiv>
+            }
+
+            {/*Only Button*/}
+            {correct && 
+              <RisingDiv 
+                style={{...styles.card_button, ...styles.only_button,
+                  ...(skill_app?.only && styles.card_button_selected)
+                }}
+                onClick={(e)=>{
+                  console.log("ONLY")
+                  e.stopPropagation(); 
+                  setOnly(skill_app, !skill_app.only)
+                }}
+              >
+                <div >{"⦿"}</div>
+                {buttonAreaHover && 
+                  <div style={styles.card_button_text}>only</div>
+                }
+              </RisingDiv>
+            }
           </div>
-          }
-            
-          {/*Close Button*/}
-          {is_demo && 
-            <RisingDiv 
-              style={styles.close_button}
-              onClick={()=>{removeSkillApp?.(skill_app)}}
-            >{"✕"}</RisingDiv>
-          }
 
           {/*Toggler*/}
-     {/*     {(hasFocus &&
+          {/*     {(hasFocus &&
             <CorrectnessToggler 
               style={styles.toggler}
               correct={correct}
@@ -416,57 +442,13 @@ export function SkillAppCard({
                   color: 'blue',
                   width: 20,
                   height: 20,
-                  // backgroundColor:'purple',
-                  // paddingBottom:4
                 }}
                 text_color={(isImplicit && 'white') || 'black'}
                 correct={correct}
                 incorrect={incorrect}
-                onPress={toggleReward}
+                onPress={() => toggleReward(skill_app)}
               />
-              {/*Only Button*/}
-              {(correct && hasFocus && 
-              <div className={'translucentHoverable'} 
-                onClick={()=>setOnly(skill_app, !skill_app.only)}
-                style={{...styles.left_item,  
-                  ...(hasOnly && {opacity: 1})
-                }}>
-                <div >{"⦿"}</div>
-                <div style={styles.left_item_text}>only</div>
-              </div>
-              )}
-
-              {/*Stage Button*/}
-              {(correct && hasFocus && 
-              <div className={'translucentHoverable'} 
-                onClick={()=>hasStaged ? undoStaged() : setStaged(skill_app)}
-                style={{...styles.left_item, paddingBottom:2, color: "grey",
-                  ...(hasStaged && {opacity: 1})
-                }}>
-                <img style={{maxWidth:"75%", maxHeight:"75%", }} src={images.double_chevron}/>
-                <div style={styles.left_item_text}>stage</div>
-              </div>
-              )}
             </div>
-          )}
-
-          {/*Stage Icon*/}
-          {(hasStaged && correct && 
-              <div style={{
-                ...styles.stage_icon,
-                right: styles.stage_icon.right + (is_demo && 12)
-              }}>
-              <img style={{maxWidth:"75%", maxHeight:"75%", }} src={images.double_chevron}/>
-              </div>
-          )}
-          {/*Only Icon*/}
-          {(hasOnly &&
-              <div style={{
-                ...styles.only_icon,
-                right: styles.only_icon.right + (is_demo && 12)
-              }}>
-              <div >{"⦿"}</div>
-              </div>
           )}
         </RisingDiv>
     )
@@ -477,7 +459,7 @@ export function SkillAppCardLayer({parentRef, state, style}){
   let [selectionsWithSkillApps] = useAuthorStoreChange(
     [[(s) => {
       let used = []
-      for (let [k,v] of Object.entries(s.sel_skill_app_ids) ){
+      for (let [k,v] of Object.entries(s.sel_skill_app_uids) ){
         if(v?.length > 0){used.push(k)}
       }
       used.sort();
@@ -502,7 +484,7 @@ export function SkillAppCardLayer({parentRef, state, style}){
         <SkillAppGroup
           sel={sel} 
           parentRef={parentRef} 
-          x={elem.x+elem.width*.9} y={elem.y-20}
+          x={elem.x+elem.width+10} y={elem.y-20}
           key={sel+"_skill_app_group"}
       />)
     }  
@@ -549,9 +531,9 @@ SkillAppGroup.defaultProps = {
 
 
 const colors = {
-  "c_bounds" : 'rgba(10,220,10,.6)',
-  "i_bounds" : 'rgba(255,0,0,.6)',
-  "u_bounds" : 'rgba(120,120,120,.5)',
+  "c_bounds" : 'rgba(10,220,10)',
+  "i_bounds" : 'rgba(255,0,0)',
+  "u_bounds" : 'rgba(120,120,120)',
   "c_knob" : 'limegreen',
   "i_knob" : 'red',
   "u_knob" : 'lightgray',
@@ -600,9 +582,9 @@ const styles = {
     overflowX: "clip",
 
     ///GOOD 
-    paddingLeft : 29, 
-    left : -25,
-    marginRight : -31,
+    // paddingLeft : 29, 
+    // left : -25,
+    // marginRight : -31,
     //
 
     paddingLeft : 29, 
@@ -633,16 +615,83 @@ const styles = {
     borderRadius : 3,
   },
 
-  close_button: {
+  card_button_area: {
     position : 'absolute',
-    right:2,
-    top:2,
-    backgroundColor : 'rgba(0,0,120,.05)',
-    width: 12,
-    height: 12,
-    fontSize : 10,
+    right : 0,
+    paddingLeft: 4,
+    height : "100%",
+    
+    // backgroundColor : "red",
+    display : "flex",
+    flexDirection : "column",
+  },
+
+  card_button: {
+    display : "flex",
+    alignItems : 'center',
+    justifyContent : 'center',
+    position : 'relative',
+    // right:2,
+    // top:2,
+    padding : "2px 2px 2px 2px",
+    margin : 2,
+    opacity : .2,
+    // border : "solid 1px rgb(230,230,230)",
+    border : "solid 1px black",
+    // backgroundColor : 'rgb(240,256,240)',
+    color : "black",
+    backgroundColor : 'white',
+    width: 9,
+    height: 9,
+    fontSize : 8,
+    fontWeight : 'bold',
     borderRadius: 20,
     textAlign:'center',
+  },
+
+  card_button_hover : {
+    opacity : .4,
+  },
+
+  card_button_selected: {
+    // backgroundColor : 'rgb(200,200,200)',
+    // border : "solid 2px rgb(160,160,160)",
+
+    border : "solid 2px black",
+    borderRadius : 4,
+    padding : "1px 1px 1px 1px",
+    opacity : .7,
+  },
+
+  remove_button : {
+    fontSize : 10,
+  },
+
+  stage_button : {
+    marginTop : "auto",
+
+  },
+
+  only_button : {
+    bottom : 0,
+    marginBottom : 5,
+    padding : "2px 2px 3px 2px",
+  },
+
+  card_button_text: {
+    display : "flex",
+    position:'absolute',
+    backgroundColor : "white",
+    border : "solid 1px lightgray",
+    color : "black",
+    padding : 1,
+    paddingRight : 2,
+    paddingLeft : 2,
+    borderRadius : 6,
+    top: 0,
+    right: 16,
+    fontSize: 8,
+    
   },
 
   card_text: {
@@ -654,7 +703,8 @@ const styles = {
     paddingLeft: 4,
     fontFamily : "Geneva",
     fontWeight: 'bold',
-    overflow: "hidden",
+    overflowY: "hidden",
+    overflowX: "visible",
   },
 
   extra_text : {
@@ -721,73 +771,51 @@ const styles = {
     // left : -22,
   },
 
-  stage_button : {
-    display : "flex",
-    position: 'absolute',
-    flex: 1,
-    width : 10,
-    height: 13,
-    alignContent: "center",
-    justifyContent: "center",
-    fontSize : 12,
-    borderRadius: 40,
-    padding: 0,
-    backgroundColor: 'rgba(190,190,190,.8)',
-    left : -6,
-    bottom : -6,
-    // fontWeight: 'bold',
-  },
+  // stage_button : {
+  //   display : "flex",
+  //   position: 'absolute',
+  //   flex: 1,
+  //   width : 10,
+  //   height: 13,
+  //   alignContent: "center",
+  //   justifyContent: "center",
+  //   fontSize : 12,
+  //   borderRadius: 40,
+  //   padding: 0,
+  //   backgroundColor: 'rgba(190,190,190,.8)',
+  //   left : -6,
+  //   bottom : -6,
+  //   // fontWeight: 'bold',
+  // },
 
-  only_icon : {
-    display : "flex",
-    position : "absolute",
-    width : 7,
-    height : 8,
-    alignContent: "center",
-    justifyContent: "center",
-    // left: 0,
-    right: 10,
-    top:0,
-    opacity:.6,
-    fontSize: 6
-  },
+  // only_icon : {
+  //   display : "flex",
+  //   position : "absolute",
+  //   width : 7,
+  //   height : 8,
+  //   alignContent: "center",
+  //   justifyContent: "center",
+  //   // left: 0,
+  //   right: 10,
+  //   top:0,
+  //   opacity:.6,
+  //   fontSize: 6
+  // },
 
-  stage_icon : {
-    display : "flex",
-    position : "absolute",
-    width : 7,
-    height : 8,
-    alignContent: "center",
-    justifyContent: "center",
-    // left: -.5,
-    // bottom: -1.5,
-    right: 2,
-    opacity:.6,
-  },
+  // stage_icon : {
+  //   display : "flex",
+  //   position : "absolute",
+  //   width : 7,
+  //   height : 8,
+  //   alignContent: "center",
+  //   justifyContent: "center",
+  //   // left: -.5,
+  //   // bottom: -1.5,
+  //   right: 2,
+  //   opacity:.6,
+  // },
 
-  feedback_counters: {
-    display: "flex",
-    flexDirection: "row",
-    fontSize: 10,
-    flex: 1,
-    padding: 3,
-    borderRadius : 10
-  },
-
-  counter_container: {
-    height: 10,
-    backgroundColor:'rgba(235,235,235,1)',
-    marginLeft: 1.5,
-    marginRight: 1.5,
-    borderRadius : 5,
-    display:"flex",
-    flexDirection:"row",
-    alignItems:"center",
-    justifyItems:"center",
-    filter: 'drop-shadow(0px .7px .7px rgba(60,60,60,.7))',
-    paddingLeft: 3, paddingRight: 3
-  },
-
+  
 
   foci_button: {
     position: 'absolute',

@@ -9,7 +9,8 @@
 	    "where": "most_specific",
 	    "function_set" : ["Mod10","Div10","Add","Add3"],
 	    "feature_set" : ["Equals"],
-    }
+      },
+      "stay_active" : true,
   },
   "author" : {
   	"prob_config" : {"HTML": "../model/HTML/MultiColumnArithmetic.html"}

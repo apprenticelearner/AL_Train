@@ -153,10 +153,10 @@ export const useTrainStore = create((set,get) => ({
     trainAgent: async (agent_config, agent_params, problem_set, rep_count=null) =>  {
       let store = get()
       let {name, type, message} = agent_config
-      let agent_id = (await store.network_layer.createAgent(agent_config, rep_count))['agent_id']
+      let agent_uid = (await store.network_layer.createAgent(agent_config, rep_count))['agent_uid']
       set({mode: "Training", 
-           agent_desc:`${type}(name='${name}, id=${agent_id})` + (rep_count!=null ? ` (${rep_count})` : ""),
-           agent_id, problem_set, message}
+           agent_desc:`${type}(name='${name}, uid=${agent_uid})` + (rep_count!=null ? ` (${rep_count})` : ""),
+           agent_uid, problem_set, message}
       )
       while(problem_set.length > 0){
         // Ensure using most up-to-date store
@@ -171,12 +171,12 @@ export const useTrainStore = create((set,get) => ({
           problem_set.unshift({...prob_config, prob_rep:prob_rep+1})
         }
         set({"prob_config" : prob_config})
-        await store.trainProblem(agent_id, {...prob_config, agent_rep:rep_count}, agent_params)
+        await store.trainProblem(agent_uid, {...prob_config, agent_rep:rep_count}, agent_params)
       }
     },
 
 
-    trainProblem: async (agent_id, prob_config, agent_params) =>  {
+    trainProblem: async (agent_uid, prob_config, agent_params) =>  {
       // console.log("prob_config", prob_config)
       let store = get()
       let {network_layer: nl, tutor} = store
@@ -207,8 +207,8 @@ export const useTrainStore = create((set,get) => ({
       while(!tutor.isDone()){
         let sai = null
         if(do_act){
-          sai = await nl.act(agent_id, tutor_state);
-          if(Object.keys(sai).length === 0) sai = null  
+          sai = await nl.act(agent_uid, tutor_state);
+          if(!sai || (sai && Object.keys(sai).length === 0)) sai = null  
         } 
 
         let need_demo = do_demo && !sai
@@ -247,7 +247,7 @@ export const useTrainStore = create((set,get) => ({
         }
         
         if(need_demo || do_feedback){
-          await nl.train(agent_id, tutor_state, sai, reward, {is_demo:need_demo})  
+          await nl.train(agent_uid, tutor_state, sai, reward, {is_demo:need_demo})  
         }
         
         if(reward > 0) tutor_state = tutor.getState();

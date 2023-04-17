@@ -48,7 +48,7 @@ const fetch_retry = async (
 };
 
 const JSON_HEADERS = {
-  Accept: "application/json",
+  Accept: "application/json;charset=utf-8",
   "Content-Type": "application/json"
 };
 
@@ -59,15 +59,19 @@ export default class NetworkLayer {
     this.outerloop_url = outerloop_url;
     this.request_history = [];
     autobind(this);
-    // this.createAgent = this.createAgent.bind(this)
-    // this.sendFeedback = this.sendFeedback.bind(this)
-    // this.sendTrainingData = this.sendTrainingData.bind(this)
-    // this.queryApprentice = this.queryApprentice.bind(this)
-    // this.term_print = this.term_print.bind(this)
-    // this.kill_this = this.kill_this.bind(this)
+  }
+
+  listAgents() {
+    return fetch_retry(self.agent_url + "/list_agents/", {
+      method: "GET",
+      headers: JSON_HEADERS,
+      body: JSON.stringify("", ignoreKeys)
+    })
+      .then(res => res.json())
   }
 
   createAgent(agent_config, rep=null) {
+    console.log("CREATE AGENT")
     let {name} = agent_config
     this.term_print("Creating Agent: " + name + (rep!=null ? ` (${rep})` : ""), "INFO");
     var data = {...agent_config, project_id : -1}
@@ -82,83 +86,13 @@ export default class NetworkLayer {
     .then(res => res.json())
   }
 
-  _pack_feedback_data(skill_app,context){
-    var data = {
-        state: context.state,
-        next_state: context.tutor.getState(),
-        selection: skill_app["selection"],
-        action: skill_app["action"],
-        inputs: skill_app["inputs"],
-        foci_of_attention: skill_app["foci_of_attention"],
-        rhs_id: skill_app["rhs_id"],
-        mapping: skill_app["mapping"],
-        reward: skill_app["reward"],
-        stu_resp_type: skill_app['stu_resp_type'] || context.stu_resp_type
-      };
-    // console.log("DATA", data,skill_app)
-    return data
-  }
-
-  sendFeedback(context, event) {
-    const skill_applications = context.skill_applications
-
-    if (context.skill_applications === null) {
-      console.error("cannot give feedback on no action.");
-    }
-
-    var out = new Promise((resolve)=>{resolve(null)})
-    var d_list = [];
-    for (var skill_app of skill_applications) {
-      let data = this._pack_feedback_data(skill_app,context);
-      
-      if (context.interactive) {
-        data["add_skill_info"] = true;
-      }
-
-      out = out.then((resp)=>this.sendTrainingData(data,context.agent_id))
-
-      if(this.outerloop_url){
-        out = out.then((resp)=>
-          this.updateOuterLoopController(data, context)
-        )
-      }
-    }
-    return out;
-  }
-
-
-  train(agent_id, state, sai, reward, rest={}) {
-    // console.log("sendTrainingData");
-    let data = {state, ...sai, reward, ...rest}
-    const URL = this.agent_url + "/train/" + agent_id + "/";
-    return fetch_retry(URL, {
-      method: "POST",
-      headers: JSON_HEADERS,
-      body: JSON.stringify(data, ignoreKeys)
-    })
-      .then(response => response.text())
-      .then(text => {
-        try {
-          const data = JSON.parse(text);
-          return data;
-        } catch (err) {
-          return {};
-        }
-      });
-  }
-
-  act(agent_id, state, context={}) {
-    let data = {state}
-    var kwargs = {}
-    if (context.interactive) kwargs['add_skill_info'] = true;
-    if (context.whole_conflict_set) kwargs['n'] = 0;
-
-    data["kwargs"] = kwargs
+  act(agent_uid, state, rest={}) {
+    let data = {agent_uid, state, ...rest}
 
     this.request_history.push(data);
 
-    const URL = this.agent_url + "/act/" + agent_id + "/";
-
+    const URL = this.agent_url + "/act/"
+    console.log(data)
     return fetch_retry(URL, {
       method: "POST",
       headers: JSON_HEADERS,
@@ -166,11 +100,35 @@ export default class NetworkLayer {
     }).then(res => res.json());
   }
 
-  check(agent_id, state, sai, context={}) {
-    console.log("checkApprentice");
-    var data = {state, sai}
+  train(agent_uid, state, sai, reward, rest={}) {
+    let data = {agent_uid, state, ...sai, reward, ...rest}
+    console.log("TRAIN DATA", data)
+    const URL = this.agent_url + "/train/"
+    return fetch_retry(URL, {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data, ignoreKeys)
+    })
+      .then(res => res.json());
+  }
 
-    const URL = this.agent_url + "/check/" + agent_id + "/";
+  explain_demo(agent_uid, state, sai, reward, rest={}) {
+    let data = {agent_uid, state, ...sai, reward, ...rest}
+    console.log("EXPLAIN DEMO DATA", data)
+    const URL = this.agent_url + "/explain_demo/"
+    return fetch_retry(URL, {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data, ignoreKeys)
+    })
+      .then(res => res.json());
+  }
+
+  check(agent_uid, state, sai, context={}) {
+    console.log("checkApprentice");
+    var data = {agent_uid, state, sai}
+
+    const URL = this.agent_url + "/check/"
 
     return fetch_retry(URL, {
       method: "POST",
@@ -178,8 +136,23 @@ export default class NetworkLayer {
       body: JSON.stringify(data)
     })
       .then(res => res.json())
-      .then(json => +json["reward"]);
+      .then(json => json["reward"]);
   }
+
+  get_skills(agent_uid, rest={}) {
+    console.log("Get Skills");
+    var data = {agent_uid, ...rest}
+
+    const URL = this.agent_url + "/get_skills/"
+
+    return fetch_retry(URL, {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data)
+    })
+      .then(res => res.json())
+  }
+
 
   term_print(message, type = "default") {
     var data = { message: message, type: type };
@@ -222,7 +195,7 @@ export default class NetworkLayer {
   }
 
   generate_nools(context, event) {
-    const URL = this.agent_url + "/get_skills/" + context.agent_id + "/";
+    const URL = this.agent_url + "/get_skills/" + context.agent_uid + "/";
     var data = { states: this.request_history.map(x => x["state"]) };
     return fetch_retry(URL, {
       method: "POST",
@@ -246,7 +219,7 @@ export default class NetworkLayer {
   }
 
   
-
+  // TODO : Depricated
   generateBehaviorProfile(context, event = {}) {
     // data = {'states':request_history.map(x => x['state'])}
     // console.log(JSON.stringify(data))
@@ -278,7 +251,7 @@ export default class NetworkLayer {
           kwargs: { add_skill_info: true, n: -1 }
         };
         var resp = await fetch_retry(
-          agent_url + "/request/" + context.agent_id + "/",
+          agent_url + "/request/" + context.agent_uid + "/",
           {
             method: "POST",
             headers: JSON_HEADERS,
@@ -319,7 +292,7 @@ export default class NetworkLayer {
       outer_loop_type: controller["type"] || controller["outer_loop_type"],
       problem_set: controller["problem_set"],
       outer_loop_args: controller["args"] || controller["outer_loop_args"],
-      id: context.agent_id
+      id: context.agent_uid
     };
 
     if(!this.outerloop_url){
@@ -359,7 +332,7 @@ export default class NetworkLayer {
 
   nextProblem(controller, context) {
     var data = {
-      id: context.agent_id
+      id: context.agent_uid
     };
 
     var out = fetch(this.outerloop_url, {

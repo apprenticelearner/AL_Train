@@ -318,17 +318,15 @@ let BaseMixin = (superclass) => class extends superclass {
       let elm = (element?.firstElementChild ?? element)
       let rect = elm.getBoundingClientRect()
       let style = getComputedStyle(elm)
+
+      if(element.classList.contains("CTATTextInput")){
+        rect.width += 1
+        rect.height += 1
+      }
       // Remove Padding
-      let {paddingLeft, paddingRight, paddingTop, paddingBottom} = style
-           // 
-      // console.log(style)
-      rect.width -= parseFloat(paddingLeft) + parseFloat(paddingRight)
-      rect.height -= parseFloat(paddingTop) + parseFloat(paddingBottom) 
-      // For some reason CTAT buttons are quite weird
-      // if(elm !== element){
-      //   let {borderLeftWidth, borderRightWidth, borderTopWidth, borderBottomWidth} = style
-      //   console.log("EE", element.id, borderLeftWidth, borderRightWidth, borderTopWidth, borderBottomWidth)
-      // }
+      // let {paddingLeft, paddingRight, paddingTop, paddingBottom} = style
+      // rect.width -= parseFloat(paddingLeft) + parseFloat(paddingRight)
+      // rect.height -= parseFloat(paddingTop) + parseFloat(paddingBottom)
       
       bounding_boxes[element.id] = rect
     }
@@ -763,18 +761,28 @@ let BaseMixin = (superclass) => class extends superclass {
         sel_elm.dispatchEvent(incorrect_event);
       }
 
+      let action_type = sai?.action_type ?? sai.action
+
       // Force buttons to have input -1.
-      if (sai.action === "ButtonPressed") sai.inputs = { value: -1 };
+      if (action_type === "ButtonPressed") sai.inputs = { value: -1 };
 
       // Apply the SAI
       const {CTATSAI,CTATCommShell} = this.iframe_content;
-      let input = (sai.inputs && sai.inputs["value"]) || sai.input
-      let sai_obj = new CTATSAI(sai.selection, sai.action, input);
+      let input = (sai.inputs && sai.inputs["value"]) || sai.input      
+      let sai_obj = new CTATSAI(sai.selection, action_type, input);
       CTATCommShell.commShell.processComponentAction(sai_obj, true)
       // console.log("sai_obj",sai_obj)
     })
     return promise
   }
+
+  // applySAIDefault = (sai) => {
+  //     await this.applySAI(sai)
+  //     if(sai.action_type == "UpdateTextField"){
+  //       this.lockElement(sai.selection);
+  //     }
+  //     return sai.selection == "done"
+  // }
 
   getConflictSet = () => {
     const promise = new Promise((resolve, reject) => {
