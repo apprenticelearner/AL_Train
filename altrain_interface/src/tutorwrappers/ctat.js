@@ -238,6 +238,7 @@ let BaseMixin = (superclass) => class extends superclass {
         this.unlockElement(elem?.id)  
       }
     }
+    this.is_done = false
   }
 
   loadProblem = (prob_config, context={}, ...args) => {
@@ -331,7 +332,7 @@ let BaseMixin = (superclass) => class extends superclass {
       bounding_boxes[element.id] = rect
     }
     return bounding_boxes
-  }
+  };
 
   getState = ({
     encode_relative = true,
@@ -543,7 +544,27 @@ let BaseMixin = (superclass) => class extends superclass {
 
     console.log("STATE JSON", state_json);
     return state_json;
-  }
+  };
+
+  setTutorState = (state_dict) =>{
+    this.clear()
+    for (let [key, obj] of Object.entries(state_dict)){
+      let elem = this.iframe_content.document.getElementById(key)
+      if(elem){
+        if((obj?.['type'] ?? "").toLowerCase().includes("text")){
+          elem.firstElementChild.value = obj.value
+        }
+      }
+      let locked = obj?.['locked'] ?? null
+      if(locked != null){
+        if(typeof(locked) == "string"){
+          locked = (locked.toLowerCase() == 'true' && true) || false
+        }
+        let comp = this.getComponent(key)
+        comp?.setEnabled(!locked)
+      }
+    }
+  };
 
   /* Legacy: Forgot what this was for. Probably for ignoring steps in pretraining. */ 
   _shouldSkipTraining = (sai) => {
@@ -671,7 +692,7 @@ let BaseMixin = (superclass) => class extends superclass {
   _cleanSAI = (sai) =>{
     if(!('selection' in sai)){ sai['selection'] = sai['sel'] || null}    
     if(!('inputs' in sai)){ sai['inputs'] = {'value' : sai['input'] || null}}
-    if(!('foci_of_attention' in sai)){ sai['foci_of_attention'] = sai['args'] || null} 
+    if(!('arg_foci' in sai)){ sai['arg_foci'] = sai['args'] || null} 
     console.log("CLEAN!",sai)   
     return sai
   }
@@ -821,9 +842,8 @@ let BaseMixin = (superclass) => class extends superclass {
         resolve(sai);
       }else{
         let conflict_set = await this.getConflictSet();
-        let sai = this._cleanSAI(conflict_set[0])
-        // console.log("EXAMPLE SAI", sai);
-        
+        console.log("conflict_set", conflict_set);
+        let sai = this._cleanSAI(conflict_set[0])        
         resolve(sai);
 
        // console.log("IT HAS ENDED") 
@@ -1183,6 +1203,9 @@ let InteractiveMixin = (superclass) => class extends superclass {
     //   sai?.inputs?.value ?? sai.input)
     comp.executeSAI(sai_obj);
     this.lockElement(sai.selection);
+    if(sai.selection == "done"){
+      this.is_done = true
+    }
   }
 
   confirmProposedSAI = () => {

@@ -1,0 +1,77 @@
+{ 
+  "batch_train" : [
+    //First agent
+    { "name": "MC Foci",
+      "type": "CREAgent",
+      "args": {
+        "search_depth" : 2,
+        "how": "set_chaining",
+        "where": "most_specific",
+        "when": "decisiontree",
+        
+        "function_set" : ["Mod10","Div10","Add","Add3"],
+        "feature_set": ["Equals"],
+      },      
+
+      // Give it a problem_set to solve
+      "problem_set" : [
+        {"set_params" : {
+            "HTML": "HTML/MultiColumnArithmetic.html",
+            "use_arg_foci" : false
+          }
+        },
+
+        {"concatenate" : [
+          {"sample" : {
+              "n" : 40,
+              "set" : {
+                "concatenate" : [
+                  {"sample" : {
+                    "n" : 20,
+                    "set" : {
+                      "glob" : {
+                        "key" : "question_file",
+                        "pattern": "nools/gen/*"
+                      }
+                    }
+                  }},
+                  {"question_file" : "nools/spec/777_777.nools"},
+                  {"question_file" : "nools/spec/431_526.nools"},
+                  {"question_file" : "nools/spec/347_258.nools"},
+                  {"question_file" : "nools/spec/381_192.nools"},
+                  {"question_file" : "nools/spec/916_121.nools"},
+                  {"question_file" : "nools/spec/178_478.nools"},
+                  {"question_file" : "nools/spec/136_364.nools"},
+                  {"question_file" : "nools/spec/495_682.nools"},
+                  {"question_file" : "nools/spec/580_462.nools"},
+                  {"question_file" : "nools/spec/789_734.nools"},
+                  {"question_file" : "nools/spec/724_876.nools"},
+                  {"question_file" : "nools/spec/497_573.nools"},
+                  {"question_file" : "nools/spec/999_001.nools"},
+                  {"question_file" : "nools/spec/999_010.nools"},
+                  {"question_file" : "nools/spec/999_100.nools"},
+                  {"question_file" : "nools/spec/999_111.nools"},
+                  {"question_file" : "nools/spec/999_011.nools"},
+                  {"question_file" : "nools/spec/999_110.nools"},
+                  {"question_file" : "nools/spec/999_101.nools"},
+                  {"question_file" : "nools/spec/000_000.nools"},
+                ]
+
+              }
+            }
+          },
+          {"sample" : {
+              "n" : 110,
+              "set" : {
+                "glob" : {
+                  "key" : "question_file",
+                  "pattern": "nools/gen/*"
+                }
+              }
+            }
+          }]
+        }
+      ]
+    }
+  ]
+}

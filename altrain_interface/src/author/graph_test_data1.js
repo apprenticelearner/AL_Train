@@ -1,307 +1,378 @@
 
 export let graph_data = {
     "certain": false,
-    "nextID": 19,
-    "startNodeID": 0,
-    "endNodeID": -1,
-    "currentNodeID": 1,
-    "nodes": [
-    {
-        "i": 0,
-        "id": 0,
-        "name": "State 0",
-        "level": 1,
-        "level_index" : 0,
-    },
-    {
-        "i": 1,
-        "id": 1,
-        "name": "State 1",
-        "level": 2,
-        "level_index" : 0,
-    },
-    {
-        "i": 2,
-        "id": 2,
-        "name": "State 2",
-        "level": 3,
-        "level_index" : 0,
-    },
-    {
-        "i": 3,
-        "id": 3,
-        "name": "State 3",
-        "level": 4,
-        "level_index" : 0,
-    },
-    {
-        "i": 4,
-        "id": 4,
-        "name": "State 4",
-        "level": 5,
-        "level_index" : 0,
-    },
-    {
-        "i": 5,
-        "id": 5,
-        "name": "State 5",
-        "level": 6,
-        "level_index" : 0,
-    },
-    {
-        "i": 6,
-        "id": 6,
-        "name": "State 6",
-        "level": 7,
-        "level_index" : 0,
-    },
-    {
-        "i": 7,
-        "id": 7,
-        "name": "State 7",
-        "level": 8,
-        "level_index" : 0,
-    },
-    {
-        "i": 8,
-        "id": 8,
-        "name": "State 8",
-        "level": 2,
-        "level_index" : 1,
-    },
-    {
-        "i": 9,
-        "id": 9,
-        "name": "State 9",
-        "level": 2,
-        "level_index" : 2,
-    },
-    {
-        "i": 10,
-        "id": 10,
-        "name": "State 10",
-        "level": 2,
-        "level_index" : 3,
-    },
-    {
-        "i": 11,
-        "id": 11,
-        "name": "State 11",
-        "level": 3,
-        "level_index" : 1,
-    },
-    {
-        "i": 12,
-        "id": 12,
-        "name": "State 12",
-        "level": 3,
-        "level_index" : 2,
-    },
-    {
-        "i": 13,
-        "id": 13,
-        "name": "State 13",
-        "level": 3,
-        "level_index" : 3,
-    },
-    {
-        "i": 14,
-        "id": 14,
-        "name": "State 14",
-        "level": 3,
-        "level_index" : 4,
-    },
-    {
-        "i": 15,
-        "id": 15,
-        "name": "State 15",
-        "level": 3,
-        "level_index" : 5,
-    },
-    {
-        "i": 16,
-        "id": 16,
-        "name": "State 16",
-        "level": 3,
-        "level_index" : 6,
-    },
-    {
-        "i": 17,
-        "id": 17,
-        "name": "State 17",
-        "level": 3,
-        "level_index" : 7,
-    },
-    {
-        "i": 18,
-        "id": 18,
-        "name": "State 18",
-        "level": 3,
-        "level_index" : 8,
-    }
-],
-    "links": [
-        {
-            "source": 0,
-            "target": 1,
-            "skill": "",
-            "correct": true,
-            "new": "out1: 4"
+    "start_uid": 0,
+    "end_uid": -1,
+    "current_uid": 8,
+    "states": {
+        0 : {
+            "uid": 0,
+            "name": "State 0",
+            "depth": 1,
+            "depth_index" : 0,
+            "out_skill_app_uids" : ['A0', 'A7', 'A8', 'A9'],
         },
-        {
-            "source": 1,
-            "target": 2,
-            "skill": "",
-            "correct": true,
-            "new": "carry1: 1"
+        1 : {
+            "uid": 1,
+            "name": "State 1",
+            "depth": 2,
+            "depth_index" : 0,
+            "out_skill_app_uids" : ['A1', 'A19', 'A20'],
+            "in_skill_app_uids" : ['A0'],
         },
-        {
-            "source": 2,
-            "target": 3,
-            "skill": "",
-            "correct": true,
-            "new": "out2: 5"
+        2 : {
+            "uid": 2,
+            "name": "State 2",
+            "depth": 3,
+            "depth_index" : 0,
+            "out_skill_app_uids" : ['A2'],
+            "in_skill_app_uids" : ['A1', 'A16', 'A18'],
         },
-        {
-            "source": 3,
-            "target": 4,
-            "skill": "",
-            "correct": true,
-            "new": "carry2: 1"
+        3 : {
+            "uid": 3,
+            "name": "State 3",
+            "depth": 4,
+            "depth_index" : 0,
+            "out_skill_app_uids" : ['A3'],
+            "in_skill_app_uids" : ['A2'],
         },
-        {
-            "source": 4,
-            "target": 5,
-            "skill": "",
-            "correct": true,
-            "new": "out3: 5"
+        4 : {
+            "uid": 4,
+            "name": "State 4",
+            "depth": 5,
+            "depth_index" : 0,
+            "out_skill_app_uids" : ['A4'],
+            "in_skill_app_uids" : ['A3'],
         },
-        {
-            "source": 5,
-            "target": 6,
-            "skill": "",
-            "correct": true,
-            "new": "carry3: 1"
+        5 : {
+            "uid": 5,
+            "name": "State 5",
+            "depth": 6,
+            "depth_index" : 0,
+            "out_skill_app_uids" : ['A5'],
+            "in_skill_app_uids" : ['A4'],
         },
-        {
-            "source": 6,
-            "target": 7,
-            "skill": "",
-            "correct": true,
-            "new": "out4: 1"
+        6 : {
+            "uid": 6,
+            "name": "State 6",
+            "depth": 7,
+            "depth_index" : 0,
+            "out_skill_app_uids" : ['A6'],
+            "in_skill_app_uids" : ['A5'],
         },
-        {
-            "source": 0,
-            "target": 8,
-            "skill": "",
-            "correct": false,
-            "new": "carry2: 1"
+        7 : {
+            "uid": 7,
+            "name": "State 7",
+            "depth": 8,
+            "depth_index" : 0,
+            "in_skill_app_uids" : ['A6'],
         },
-        {
-            "source": 0,
-            "target": 9,
-            "skill": "",
-            "correct": false,
-            "new": "carry1: 1"
+        8 : {
+            "uid": 8,
+            "name": "State 8",
+            "depth": 2,
+            "depth_index" : 1,
+            "out_skill_app_uids" : ['A10', 'A11', 'A12', 'A13', 'A18'],
+            "in_skill_app_uids" : ['A7'],
         },
-        {
-            "source": 0,
-            "target": 10,
-            "skill": "",
-            "correct": false,
-            "new": "done: -1"
+        9 : {
+            "uid": 9,
+            "name": "State 9",
+            "depth": 2,
+            "depth_index" : 2,
+            "out_skill_app_uids" : ['A14', 'A15', 'A16', 'A17'],
+            "in_skill_app_uids" : ['A8'],
         },
-        {
-            "source": 8,
-            "target": 11,
-            "skill": "",
-            "correct": false,
-            "new": "out3: 5"
+        10 : {
+            "uid": 10,
+            "name": "State 10",
+            "depth": 2,
+            "depth_index" : 3,
+            "in_skill_app_uids" : ['A9'],
         },
-        {
-            "source": 8,
-            "target": 12,
-            "skill": "",
-            "correct": false,
-            "new": "carry3: 1"
+        11 : {
+            "uid": 11,
+            "name": "State 11",
+            "depth": 3,
+            "depth_index" : 1,
+            "in_skill_app_uids" : ['A10'],
         },
-        {
-            "source": 8,
-            "target": 13,
-            "skill": "",
-            "correct": false,
-            "new": "out1: 4"
+        12 : {
+            "uid": 12,
+            "name": "State 12",
+            "depth": 3,
+            "depth_index" : 2,
+            "in_skill_app_uids" : ['A11'],
         },
-        {
-            "source": 8,
-            "target": 14,
-            "skill": "",
-            "correct": false,
-            "new": "done: -1"
+        13 : {
+            "uid": 13,
+            "name": "State 13",
+            "depth": 3,
+            "depth_index" : 3,
+            "in_skill_app_uids" : ['A12', 'A19'],
         },
-        {
-            "source": 9,
-            "target": 15,
-            "skill": "",
-            "correct": false,
-            "new": "out2: 5"
+        14 : {
+            "uid": 14,
+            "name": "State 14",
+            "depth": 3,
+            "depth_index" : 4,
+            "in_skill_app_uids" : ['A13'],
         },
-        {
-            "source": 9,
-            "target": 16,
-            "skill": "",
-            "correct": false,
-            "new": "carry2: 1"
+        15 : {
+            "uid": 15,
+            "name": "State 15",
+            "depth": 3,
+            "depth_index" : 5,
+            "in_skill_app_uids" : ['A14'],
         },
-        {
-            "source": 9,
-            "target": 2,
-            "skill": "",
-            "correct": false,
-            "new": "out1: 4"
+        16 : {
+            "uid": 16,
+            "name": "State 16",
+            "depth": 3,
+            "depth_index" : 6,
+            "in_skill_app_uids" : ['A15'],
         },
-        {
-            "source": 9,
-            "target": 17,
-            "skill": "",
-            "correct": false,
-            "new": "done: -1"
+        17 : {
+            "uid": 17,
+            "name": "State 17",
+            "depth": 3,
+            "depth_index" : 7,
+            "in_skill_app_uids" : ['A17'],
         },
-        {
-            "source": 8,
-            "target": 2,
-            "skill": "",
-            "correct": false,
-            "new": "out1: 4"
-        },
-        {
-            "source": 8,
-            "target": 18,
-            "skill": "",
-            "correct": false,
-            "new": "out1: 4"
-        },
-        {
-            "source": 1,
-            "target": 13,
-            "skill": "",
-            "correct": false,
-            "new": "carry2: 1"
-        },
-        {
-            "source": 1,
-            "target": 18,
-            "skill": "",
-            "correct": false,
-            "new": "done: -1"
+        18 : {
+            "uid": 18,
+            "name": "State 18",
+            "depth": 3,
+            "depth_index" : 8,
+            "in_skill_app_uids" : ['A20'],
         }
-    ]
+    },
+    "actions": {
+        A0 : {
+            "uid": "A0",
+            "state_uid": 0,
+            "next_state_uid": 1,
+            "skill": "",
+            "correct": true,
+            "skill_app" : { "selection" : "out1", "action_type" : "UpdateTextField", "inputs" : {"value" : "4"},
+                            "reward" : 1, is_demo : true}
+        },
+        A1 : {
+            "uid": "A1",
+            "state_uid": 1,
+            "next_state_uid": 2,
+            "skill": "",
+            "correct": true,
+            "skill_app" : { "selection" : "carry1", "action_type" : "UpdateTextField", "inputs" : {"value" : "1"},
+                            "reward" : -1}
+        },
+        A2 : {
+            "uid": "A2",
+            "state_uid": 2,
+            "next_state_uid": 3,
+            "skill": "",
+            "correct": true,
+            "skill_app" : { "selection" : "out2", "action_type" : "UpdateTextField", "inputs" : {"value" : "5"},
+                            "reward" : 0}
+        },
+        A3 : {
+            "uid": "A3",
+            "state_uid": 3,
+            "next_state_uid": 4,
+            "skill": "",
+            "correct": true,
+            "skill_app" : { "selection" : "carry2", "action_type" : "UpdateTextField", "inputs" : {"value" : "1"},
+                            "reward" : 0}
+        },
+        A4 : {
+            "uid": "A4",
+            "state_uid": 4,
+            "next_state_uid": 5,
+            "skill": "",
+            "correct": true,
+            "skill_app" : { "selection" : "out3", "action_type" : "UpdateTextField", "inputs" : {"value" : "5"},
+                            "reward" : 0}
+        },
+        A5 : {
+            "uid": "A5",
+            "state_uid": 5,
+            "next_state_uid": 6,
+            "skill": "",
+            "correct": true,
+            "skill_app" : { "selection" : "carry3", "action_type" : "UpdateTextField", "inputs" : {"value" : "1"},
+                            "reward" : 0}
+        },
+        A6 : {
+            "uid": "A6",
+            "state_uid": 6,
+            "next_state_uid": 7,
+            "skill": "",
+            "correct": true,
+            "skill_app" : { "selection" : "out4", "action_type" : "UpdateTextField", "inputs" : {"value" : "1"},
+                            "reward" : 0}
+        },
+        A7 : {
+            "uid": "A7",
+            "state_uid": 0,
+            "next_state_uid": 8,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "carry2", "action_type" : "UpdateTextField", "inputs" : {"value" : "1"},
+                            "reward" : 1}
+        },
+        A8 : {
+            "uid": "A8",
+            "state_uid": 0,
+            "next_state_uid": 9,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "carry1", "action_type" : "UpdateTextField", "inputs" : {"value" : "1"},
+                            "reward" : 0}
+        },
+        A9 : {
+            "uid": "A9",
+            "state_uid": 0,
+            "next_state_uid": 10,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "done", "action_type" : "UpdateTextField", "inputs" : {"value" : "-1"},
+                            "reward" : 0}
+        },
+        A10 : {
+            "uid": "A10",
+            "state_uid": 8,
+            "next_state_uid": 11,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "out3", "action_type" : "UpdateTextField", "inputs" : {"value" : "5"},
+                            "reward" : 1}
+        },
+        A11 : {
+            "uid": "A11",
+            "state_uid": 8,
+            "next_state_uid": 12,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "carry3", "action_type" : "UpdateTextField", "inputs" : {"value" : "1"},
+                            "reward" : 0}
+        },
+        A12 : {
+            "uid": "A12",
+            "state_uid": 8,
+            "next_state_uid": 13,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "out1", "action_type" : "UpdateTextField", "inputs" : {"value" : "4"},
+                            "reward" : 0}
+        },
+        A13 : {
+            "uid": "A13",
+            "state_uid": 8,
+            "next_state_uid": 14,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "done", "action_type" : "UpdateTextField", "inputs" : {"value" : "-1"},
+                            "reward" : 0}
+        },
+        A14 : {
+            "uid": "A14",
+            "state_uid": 9,
+            "next_state_uid": 15,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "out2", "action_type" : "UpdateTextField", "inputs" : {"value" : "5"},
+                            "reward" : 0}
+        },
+        A15 : {
+            "uid": "A15",
+            "state_uid": 9,
+            "next_state_uid": 16,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "carry2", "action_type" : "UpdateTextField", "inputs" : {"value" : "1"},
+                            "reward" : 0}
+        },
+        A16 : {
+            "uid": "A16",
+            "state_uid": 9,
+            "next_state_uid": 2,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "out1", "action_type" : "UpdateTextField", "inputs" : {"value" : "4"},
+                            "reward" : 0}
+        },
+        A17 : {
+            "uid": "A17",
+            "state_uid": 9,
+            "next_state_uid": 17,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "done", "action_type" : "UpdateTextField", "inputs" : {"value" : "-1"},
+                            "reward" : 0}
+        },
+        A18 : {
+            "uid": "A18",
+            "state_uid": 8,
+            "next_state_uid": 2,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "out1", "action_type" : "UpdateTextField", "inputs" : {"value" : "4"},
+                            "reward" : 0}
+        },
+        A19 : {
+            "uid": "A19",
+            "state_uid": 8,
+            "next_state_uid": 18,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "out1", "action_type" : "UpdateTextField", "inputs" : {"value" : "4"},
+                            "reward" : 0}
+        },
+        A19 : {
+            "uid": "A19",
+            "state_uid": 1,
+            "next_state_uid": 13,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "carry2", "action_type" : "UpdateTextField", "inputs" : {"value" : "1"},
+                            "reward" : 0}
+        },
+        A20 : {
+            "uid": "A20",
+            "state_uid": 1,
+            "next_state_uid": 18,
+            "skill": "",
+            "correct": false,
+            "skill_app" : { "selection" : "done", "action_type" : "UpdateTextField", "inputs" : {"value" : "-1"},
+                            "reward" : 0}
+        }
+    }
 }
 
+let {states, actions} = graph_data
+console.log(states, actions)
+let actions_by_state = {}
+for(let action of Object.values(actions)){
+    let lst = actions_by_state?.[action.state_uid] ?? []
+    lst.push(action.uid)
+    actions_by_state[action.state_uid] = lst
+}
 
-let nodes = [...graph_data.nodes].map((node) =>{
-  return {i: node.i, id: node.id, name: node.name, level: node.level}
-})
+console.log(actions_by_state)
+
+let actions_by_next_state = {}
+for(let action of Object.values(actions)){
+    let lst = actions_by_next_state?.[action.next_state_uid] ?? []
+    lst.push(action.uid)
+    actions_by_next_state[action.next_state_uid] = lst
+}
+
+console.log(actions_by_next_state)
+
+
+// let nodes = [...graph_data.nodes].map((node) =>{
+//   return {i: node.i, id: node.id, name: node.name, depth: node.depth}
+// })
 // for(let node of nodes){
 //   delete node.data;
 //   delete node.dy;
@@ -315,7 +386,7 @@ let nodes = [...graph_data.nodes].map((node) =>{
 //   delete node.x0;
 //   delete node.y0;
 // }
-console.log(nodes)
+// console.log(nodes)
 // alert("HI")
 
 

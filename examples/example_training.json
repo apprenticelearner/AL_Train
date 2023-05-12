@@ -1,7 +1,7 @@
 {
   "batch_train" : [
     //First agent
-    { "name": "Treatment_IntegerAddition",
+    { "name": "First_Example_Agent",
       "type": "CREAgent",
       "args": {
         "search_depth" : 1,
@@ -25,7 +25,7 @@
           {"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html"}
         },
 
-        // Now can define problems just by setting "question_file".
+        // Now we can define problems just by setting "question_file".
         {"question_file" : "IntegerArithmetic/FinalBRDs/2+1.brd"},
         {"question_file" : "IntegerArithmetic/FinalBRDs/2+2.brd"},
         {"question_file" : "IntegerArithmetic/FinalBRDs/3+4.brd"},
@@ -49,9 +49,9 @@
         },
 
         // Will only get DEMO: experiences for these fraction problems. 
-        {"question_file": "FractionArithmetic/training/AD 1_2_plus_2_3.brd"},
-        {"question_file": "FractionArithmetic/training/AD 1_4_plus_4_5.brd"},
-        {"question_file": "FractionArithmetic/training/AS 11_2_plus_3_2.brd"},
+        {"question_file": "FractionArithmetic/brds/AD 1_2_plus_2_3.brd"},
+        {"question_file": "FractionArithmetic/brds/AD 1_4_plus_4_5.brd"},
+        {"question_file": "FractionArithmetic/brds/AS 11_2_plus_3_2.brd"},
 
         // Feedback_mode back to normal.
         {"set_params" : 
@@ -59,16 +59,16 @@
            "message" : "Full feedback for the last ones."}
         },
 
-        {"question_file": "FractionArithmetic/training/AS 3_7_plus_4_7.brd"},
-        {"question_file": "FractionArithmetic/training/M 2_3_times_1_2.brd"},
-        {"question_file": "FractionArithmetic/training/M 3_10_times_4_5.brd"}
+        {"question_file": "FractionArithmetic/brds/AS 3_7_plus_4_7.brd"},
+        {"question_file": "FractionArithmetic/brds/M 2_3_times_1_2.brd"},
+        {"question_file": "FractionArithmetic/brds/M 3_10_times_4_5.brd"}
 
       ]
     },
 
     // Start a second agent in this training set.
     {
-      "agent_name": "Control",
+      "agent_name": "Second_Example_Agent",
       "agent_type": "CREAgent",
       "args": {
         "search_depth" : 1,
@@ -87,7 +87,7 @@
         //  problems where 5/3 is added to something else "*".
         {"glob" :
             {"key" : "question_file",
-             "pattern": "FractionArithmetic/training/AD 5_3_plus_*.brd"
+             "pattern": "FractionArithmetic/brds/AD 5_3_plus_*.brd"
             }
         },
 
@@ -95,11 +95,11 @@
         {"sample": {
             "n" : 3,
             "set" : [
-              {"question_file" : "FractionArithmetic/training/AD 1_3_plus_3_2.brd"},
-              {"question_file" : "FractionArithmetic/training/AD 5_3_plus_2_5.brd"},
-              {"question_file" : "FractionArithmetic/training/M 4_9_times_3_4.brd"},
-              {"question_file" : "FractionArithmetic/training/M 5_3_times_2_5.brd"},
-              {"question_file" : "FractionArithmetic/training/AS 11_2_plus_3_2.brd"},
+              {"question_file" : "FractionArithmetic/brds/AD 1_3_plus_3_2.brd"},
+              {"question_file" : "FractionArithmetic/brds/AD 5_3_plus_2_5.brd"},
+              {"question_file" : "FractionArithmetic/brds/M 4_9_times_3_4.brd"},
+              {"question_file" : "FractionArithmetic/brds/M 5_3_times_2_5.brd"},
+              {"question_file" : "FractionArithmetic/brds/AS 11_2_plus_3_2.brd"},
             ],
         }},
 
@@ -109,7 +109,7 @@
             "set" : {
               "glob" : {
                 "key" : "question_file",
-                "pattern": "FractionArithmetic/training/*.brd"
+                "pattern": "FractionArithmetic/brds/*.brd"
               }
             }
         }},
@@ -121,7 +121,7 @@
               "set" : {
                 "glob" :
                   {"key" : "question_file",
-                   "pattern": "FractionArithmetic/training/AD*.brd",
+                   "pattern": "FractionArithmetic/brds/AD*.brd",
                   }
                 }
               }
@@ -131,7 +131,7 @@
               "set" : {
                 "glob" :
                   {"key" : "question_file",
-                   "pattern": "FractionArithmetic/training/AS*.brd",
+                   "pattern": "FractionArithmetic/brds/AS*.brd",
                   }
                 }
               }
@@ -141,7 +141,7 @@
               "set" : {
                 "glob" :
                   {"key" : "question_file",
-                   "pattern": "FractionArithmetic/training/M*.brd",
+                   "pattern": "FractionArithmetic/brds/M*.brd",
                   }
                 }
               }

@@ -13,6 +13,11 @@
       "stay_active" : true,
   },
   "author" : {
-  	"prob_config" : {"HTML": "../model/HTML/MultiColumnArithmetic.html"}
+  	"interfaces" : [
+  		{"HTML": "MultiColumnArithmetic/HTML/MultiColumnArithmetic.html"},
+  		{"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},
+  		{"HTML": "OtherTutors/HTML/TriangleArea.html"},
+  		//{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html"}
+  	]	
   },
 }

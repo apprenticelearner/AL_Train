@@ -12,7 +12,7 @@
 
 import React, { useEffect } from "react";
 import {useALTrainStoreChange} from './altrain_store';
-import {useAuthorStore, useAuthorStoreChange} from './author/author_store';
+import {authorStore, useAuthorStore, useAuthorStoreChange} from './author/author_store';
 import BatchTrainer from "./batch_train/train";
 import {getURLParams} from "./utils";
 
@@ -37,36 +37,35 @@ const default_config = {
 }
 
 export default function ALTrain(){
-    const [is_batch_train, is_author, getALTrainStore,
-           tutor_class,  loaded, error, setConfig, setLoaded, setTrainingConfig] = useALTrainStoreChange(
-          ['@training_config.batch_train!=null', '@training_config.author!=null', 'getALTrainStore',
-           '@tutor_class', '@loaded', '@error', 'setConfig', 'setLoaded', 'setTrainingConfig']
+    const [is_batch_train, is_author,
+           tutor_class,  loaded, error, getALTrainStore] = useALTrainStoreChange(
+          ['@training_config.batch_train!=null', '@training_config.author!=null', 
+           '@tutor_class', '@loaded', '@error', 'getALTrainStore']
     )
-    const [initializeAuthoring] = useAuthorStoreChange(["initializeAuthoring"])
 
     // OnMount
     useEffect(() =>{
       let f = async () => {
+        let {setConfig, setLoaded, setTrainingConfig} = getALTrainStore()
         setLoaded(false)
         let {training, ...config} = getURLParams()
+        let network_layer, training_config;
         // If a training file was provided parse it and write any config.
         if(training){
-          // console.log("BEF")
-          await setTrainingConfig(training).then( ()=>{
-            // Any config set in URL params should override training file.
-            // console.log("THEN")
-            setConfig(config)
-          })
-          // console.log("AFT")
+          training_config = await setTrainingConfig(training)
+          // Apply after so configs set in URL params override training file.
+          setConfig(config)
+          // Abort loading/parsing training config parsing (ensures earliest error shown).
+          if(!training_config){return};
         }else{
           setConfig(default_config)
         }
 
+        ({network_layer, training_config, setLoaded} = getALTrainStore());
         setLoaded(true)
-        let {network_layer, training_config} = getALTrainStore()
-        // console.log("training_config", training_config)
+        if(!training_config){return};
         if(training_config.author){
-          // console.log("BEF initializeAuthoring")
+          let {initializeAuthoring} = authorStore()
           initializeAuthoring(training_config, network_layer)
         }
       }

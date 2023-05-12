@@ -66,7 +66,9 @@ export const useALTrainStore = create((set,get) => ({
           console.error(error)
           set({error})
         })
+        if(!training_config){return}
       }
+      
 
       set({training_config : training_config, 
             error: filepath ? null: "No Training Configuration Provided."})  
@@ -84,9 +86,10 @@ export const useALTrainStore = create((set,get) => ({
       }
       console.log("CONFIG", training_config)
       set({training_config: training_config, error:null})
+      return training_config
     },
 
-    setConfig: (config) => set((store) => {
+    setConfig: (config) => {
       let d = {}
       let rebuild_network_layer = false
       for (const [key, value] of Object.entries(config)) {
@@ -100,12 +103,15 @@ export const useALTrainStore = create((set,get) => ({
       if(rebuild_network_layer){
         let {agent_url, host_url, outerloop_url} = config
         let nl = new NetworkLayer(agent_url, host_url, outerloop_url)
-        return {...config, network_layer: nl}
+        set({...config, network_layer: nl})
+        return 
       }
-      return config
-    }),
+      set(config)
+    },
 
-    setLoaded: (loaded) => set((store) => {return {loaded: loaded}}),
+    setLoaded: (loaded) => {
+      set({loaded: loaded})
+    }
 
 }))
 

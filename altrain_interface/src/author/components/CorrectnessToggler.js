@@ -105,51 +105,80 @@ export let SmallCorrectnessToggler = ({style, correct, incorrect, onPress, onOnl
 		setIncorrect(corr)
 		setOnly(false)
 	}
+  let force_reward = null
+  if(!correct && !incorrect){
+    force_reward = (is_hover == "top" && 1) ||
+                   (is_hover == "bottom" && -1) ||
+                   null
+  }
+  
+  let left_size = (force_reward < 0 && 16) ||
+                  (!force_reward && 10) ||
+                  7
 
-  let force_corr = (!correct && !incorrect) && is_hover == "right"
-  let force_incorr = (!correct && !incorrect) && is_hover == "left"
-
-	let text = (correct && "✔") || 
-	           (incorrect && "✖") ||
-             (force_corr && "✔") || 
-             (force_incorr && "✖") ||
-	           "━"
+  let right_size = (force_reward > 0 && 16) ||
+                  (!force_reward && 10) ||
+                  7
 
 
+  let font_color = (!undef && is_hover && correct && colors.i_knob) ||
+                   (!undef && is_hover && incorrect && colors.c_knob) ||
+                   'black' 
 
-	let bg_color = (correct && colors.c_knob_back) || 
-	               (incorrect && colors.i_knob_back) ||
-	               colors.u_knob_back
+  let bottom_color = (force_reward < 0 && colors.i_knob) || 'black'
+  let top_color = (force_reward > 0 && colors.c_knob) || 'black'
+
+	let text =  (((is_hover && incorrect) || (!is_hover && correct)) && "✔") || 
+              (((is_hover && correct) || (!is_hover && incorrect)) && "✖") ||
+              (
+               <div style={{display:"flex", flexDirection: 'column', alignItems : "center"}}>
+                <a style={{margin: 1, textAlign:'center',
+                      fontSize: right_size, color: top_color}}>{"✔"}</a>
+                 <a style={{margin: 1, textAlign:'center',
+                      fontSize: left_size, color: bottom_color}}>{"✖"}</a>
+               </div>
+              )
+
+
+  let font_size = (undef && !force_reward && 10) || 14
+
+
+	let bg_color = (is_hover && 'rgb(220, 220, 220)') || 
+                 (correct && 'limegreen') || 
+	               (incorrect && 'red') ||
+	               'rgb(220, 220, 220)'
 
 	// console.log("<<", style)
 	// let text = inner_text={((correct  || undef)
 	return (
-		<div style = {{width:30, position:'absolute',  ...style}}>
+		<div 
+      onMouseLeave={()=>setIsHover(false)}
+      style = {{width:40, position:'absolute',  ...style}}>
 			<CorrectnessTogglerKnob
           inner_text={text}
-          text_color={text_color}
+          text_color={font_color}
           is_hover={is_hover}
           hasFocus={true}
           force_show_other={false}
           is_small={true}
           style={{
-          ...styles.feedback_button, 
-          ...(incorrect && styles.incorrect_selected),
-          ...(correct && styles.correct_selected)}}
-			>
-			{/*{(is_pressed || only) && <OnlyBubble/>}*/}
-			</CorrectnessTogglerKnob>
+          ...styles.feedback_button,
+          ...{backgroundColor : bg_color}
+          }}
+          // ...{fontSize: font_size},
+          // ...(incorrect && styles.incorrect_selected),
+          // ...(correct && styles.correct_selected)}}
+			/>
       <div 
-        style={styles.touch_area_left}
-        onClick={(e)=>{e.stopPropagation();onPress?.(force_corr, force_incorr)}}
-        onMouseEnter={()=>{setIsHover('left');}}
-        onMouseLeave={()=>setIsHover(false)}
+        style={styles.touch_area_top}
+        onClick={(e)=>{e.stopPropagation();onPress?.(force_reward);setIsHover(false)}}
+        onMouseEnter={()=>{setIsHover('top');}}
       />
 			<div 
-        style={styles.touch_area_right}
-        onClick={(e)=>{e.stopPropagation();onPress?.(force_corr, force_incorr)}}
-        onMouseEnter={()=>{setIsHover('right');}}
-        onMouseLeave={()=>setIsHover(false)}
+        style={styles.touch_area_bottom}
+        onClick={(e)=>{e.stopPropagation();onPress?.(force_reward);setIsHover(false)}}
+        onMouseEnter={()=>{setIsHover('bottom');}}
+        
       />
 	       
 		</div>
@@ -325,30 +354,35 @@ const colors = {
 const styles = {
 
   feedback_button:{
+    display : "flex",
+    alignItems : "center",
+    justifyContent : "center",
+
     userSelect: "none",
     // position: 'absolute',
-    fontSize : 12,
+    // fontSize : 14,
     // flex: 1,
-    borderRadius: 40,
-    width:15,
-    height:15,
+    borderRadius: 8,
+    height:24,
+    width : 16,
+    padding : 2,
     backgroundColor: 'rgba(170,170,170,.8)',//'rgba(190,190,190,.8)'//"lightgray",
     textAlign:'center',
     pointerEvents:'none'
     // paddingTop:1,
   },
-  incorrect_selected:{
-    backgroundColor: "red",
-  },
-  correct_selected:{
-    backgroundColor: "limegreen",
-  },
+  // incorrect_selected:{
+  //   backgroundColor: "red",
+  // },
+  // correct_selected:{
+  //   backgroundColor: "limegreen",
+  // },
   staged_selected:{
     backgroundColor: "dodgerblue",
   },
 
   toggler: {
-    height:36,
+    height:38,
     width:12,
     left: 3,
     top: 6,
@@ -359,23 +393,23 @@ const styles = {
     // ...gen_shadow(5)
   },
 
-  touch_area_left: {
-		width:18,
+  touch_area_top: {
+		width:32,
     height:24,
     position:'absolute',
     alignItems:"center",
-    top: -2,//-4,touch_area: 
-    left: -8,
+    top: -10,
+    left: -2,
     // backgroundColor: 'rgba(0,255,0,.2)',	
   },
-  touch_area_right: {
-    width:11,
+  touch_area_bottom: {
+    width:32,
     height:24,
     // right : 15,
-    position:'absolute',
-    alignItems:"center",
-    top: -2,//-4,touch_area: 
-    left: 10,
+    position: 'absolute',
+    alignItems: "center",
+    top:  14,
+    left: -2,
     // backgroundColor: 'rgba(0,0,255,.2)',  
   },
   only_bubble: {

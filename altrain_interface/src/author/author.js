@@ -17,10 +17,9 @@ import Color from "color"
 import {useALTrainStoreChange} from '../altrain_store';
 import {authorStore, useAuthorStore, useAuthorStoreChange, test_state, test_skill_applications} from "./author_store.js"
 // import MyZustandTest from "./change_store_test.js"
-import {shallowEqual, baseFile, gen_shadow} from "../utils.js"
+import {shallowEqual, baseFile, gen_shadow, arg_symbols} from "../utils.js"
 import CTATTutorWrapper from "../tutorwrappers/ctat"
 import {colors, where_colors} from "./themes.js"
-
 
 
 const images = {
@@ -79,7 +78,6 @@ function getDemoSkillApp(){
   ]
 }
 
-
 function ArgsRow(){
   let {beginSetArgFoci, confirmArgFoci, extractArgFoci} = authorStore()
   let [skill_app, arg_foci_mode] = useAuthorStoreChange(
@@ -95,12 +93,12 @@ function ArgsRow(){
   for (let [i,foci] of (arg_foci || []).entries()){
     let color = where_colors[i]
     if(!foci_explicit){
-      color = Color(color).lighten(.35).hexa()
+      color = Color(color).lighten(.25).hexa()
     }
 
     arg_items.push(
       <div style={{...styles.arg_item, borderColor: color}} key={`arg${i}`}>
-        <a style={{fontWeight:"bold", color: color, fontSize:"1.1em", marginLeft:3, marginRight:7}}>
+        <a style={{fontWeight:"bold", color: color, fontSize:"1.6em", marginLeft:3, marginRight:5}}>
           {arg_symbols[i]}
         </a>
         <a style={{color:'grey'}}> {`  ${foci}`}</a> 
@@ -121,6 +119,7 @@ function ArgsRow(){
       <div style={styles.right_space}>
         <RisingDiv style={{
           ...styles.circle_button,
+          zIndex : (arg_foci_mode && 2) || 1,
           flexDirection : 'column',
           ...(arg_foci_mode  && {backgroundColor : 'purple'})
         }}
@@ -128,13 +127,50 @@ function ArgsRow(){
          ...(arg_foci_mode && foci_mode_props)}}
          onMouseDown={(e)=>{let callback = (arg_foci_mode ? confirmArgFoci : beginSetArgFoci); callback()}}
         > 
-          <img src={images.crosshair} style={{width:"75%",height:"75%"}} />
-          {arg_foci_mode && 
-          <div style={styles.foci_button_inner_message}>
-            {"Press Enter"}
+          <img src={images.crosshair} style={{width:"75%",height:"75%"}} />          
+          <div style={{...styles.circle_button_inner_message, 
+                ...(arg_foci_mode && {backgroundColor: 'purple', color:'white'})
+                }}>
+             {(arg_foci_mode && "Confrim Args\n[Enter]") || "Select Args"}
           </div>
-          }
         </RisingDiv>
+      </div>
+    </div>
+  )
+}
+
+function FxHintRow(){
+  let {startSpeechRecognition, setOperationalHint} = authorStore()
+  let [skill_app, arg_foci_mode, listening] = useAuthorStoreChange([
+        getDemoSkillApp(), "@mode=='arg_foci'", "@speech_recognition_listening"])
+
+
+  const listening_props = {
+    default_scale : 1.25, default_elevation : 12,
+    hover_scale : 1.2, hover_elevation : 8,
+  }
+
+  return (
+      <div style={styles.value_group}>
+      <div style={styles.label}>{"ƒ Hint"}</div>
+      <textarea className="scrollable" 
+                style={{...styles.editable_value,height: 40}}
+                onChange={(e)=>{setOperationalHint(skill_app, e.target.value)}}
+                value={skill_app?.operational_hint ?? ""}/>
+      <div style={styles.right_space}>
+        <RisingDiv 
+          style={{...styles.circle_button, 
+                  ...(listening && {backgroundColor: 'purple', zIndex: 2})}}
+          elevation={(listening && 12) || 6}
+          onClick={startSpeechRecognition}
+          {...(listening && listening_props) || button_defaults_props}> 
+          <img src={images.microphone} style={{width:"75%",height:"75%"}} />
+          <div style={{...styles.circle_button_inner_message, 
+                ...(listening && {backgroundColor: 'purple', color:'white'})
+                }}>
+             {(listening && "Recording...") || "Record Hint"}
+          </div>
+        </RisingDiv> 
       </div>
     </div>
   )
@@ -215,13 +251,14 @@ const FxOption = (props) =>{
   )
 }
 
-const FxFormatOptionLabel = ({ label, data={} }, {context}) => {
+const FxContent = ({ label, data={},...rest}, {context}) => {
+  // console.log("CONTENT ", label, data, rest)
+
   let {skills} = authorStore()
 
   let {func, skill_uid, uid, matches=[]} = data
   func = func || skills?.[skill_uid||uid]?.how?.func || {}
-  let {minimal_str="??", vars=[]} = func
-  
+  let {minimal_str="??", vars=[]} = func  
 
   let is_const = (vars?.length == 0) ?? true
 
@@ -262,7 +299,7 @@ function FxRow(){
   let [skill_app, arg_foci_mode] = useAuthorStoreChange(
       [getDemoSkillApp(), "@mode=='arg_foci'"],
   )
-  console.log(skill_app?.explanation_options)
+  // console.log(skill_app?.explanation_options)
 
   return (
     <div style={styles.value_group}>
@@ -273,7 +310,7 @@ function FxRow(){
           styles={fxDropDownStyles}
           value={skill_app?.explanation_selected}
           options={skill_app?.explanation_options}
-          formatOptionLabel={FxFormatOptionLabel}
+          formatOptionLabel={FxContent}
           onChange={(value, {action})=>{
             console.log(value, action)
             if(action == 'select-option'){
@@ -291,12 +328,11 @@ function FxRow(){
   )
 }
 
-const arg_symbols = ["A","B","C","D","E","F","G","H","I","J"]
 
 function DemonstrateMenu({}){
-  let [skill_app, arg_foci_mode, setMode, addSkillApp, removeSkillApp, setInput, setFocus] = useAuthorStoreChange(
-      [getDemoSkillApp(), "@mode=='arg_foci'", "setMode", "addSkillApp", "removeSkillApp", "setInput", "setFocus"],
-  )
+  let {setMode, addSkillApp, removeSkillApp, setInputs} = authorStore()
+  let [skill_app, arg_foci_mode] = useAuthorStoreChange([
+        getDemoSkillApp(), "@mode=='arg_foci'"])
 
   let demo_text = skill_app?.inputs?.value ?? skill_app?.input ?? ""
   // console.log(demo_text)
@@ -304,38 +340,27 @@ function DemonstrateMenu({}){
   // console.log("KIND", kind)
 
   return (
-    <div style={styles.demonstrate_menu}>
-      <div style={styles.demonstrate_menu_fields}>
+    <div style={styles.demo_menu}>
+      <div style={styles.demo_menu_fields}>
         
-        <div style={styles.demonstrate_menu_title}>
-          <Icon size={styles.demonstrate_menu_title.fontSize} kind={kind}
+        <div style={styles.demo_menu_title}>
+          <Icon size={styles.demo_menu_title.fontSize} kind={kind}
                 />
           <a style={{marginLeft: 12, fontWeight: "bold"}}>{"Demonstration"}</a>
         </div>
         <div style={styles.value_group}>
           <div style={styles.label}>{"Value"}</div>
           <textarea 
-            className="scrollable" style={{...styles.editable_value, height : 34}}
+            className="scrollable" style={{...styles.editable_value, ...styles.value_input}}
             value={demo_text}
-            onChange={(e)=>{setInput(skill_app, e.target.value)}}
+            onChange={(e)=>{setInputs(skill_app, {value : e.target.value})}}
           />
           <div style={styles.right_space}/>
 
         </div>
         <FxRow/>
         <ArgsRow/>
-        <div style={styles.value_group}>
-          <div style={styles.label}>{"ƒ Hint"}</div>
-          <textarea className="scrollable" 
-                    style={styles.editable_value}
-                    onChange={()=>{}}
-                    value={"this is the value"}/>
-          <div style={styles.right_space}>
-            <RisingDiv style={styles.circle_button} {...button_defaults_props}> 
-              <img src={images.microphone} style={{width:"75%",height:"75%"}} />
-            </RisingDiv> 
-          </div>
-        </div>
+        <FxHintRow/>
         {/*
         <div style={styles.value_group}>
           <div style={styles.label}>{"Skill Label"}</div>
@@ -373,7 +398,7 @@ function AgentActionMenu({}){
         </div>
         <div style={styles.value_group}>
           <div style={styles.label}>{`ƒ(𝑥)`}</div>
-          <FxFormatOptionLabel
+          <FxContent
             data={skill_app}
           />
           <div style={styles.right_space}/>
@@ -463,7 +488,10 @@ function SubMenuItem({id, selected, children, onClick, is_editing, style}){
               }}
               default_elevation={0}
               hover_elevation={0}
-              onClick={(e)=>{removeQuestion(id); e.stopPropagation()}}
+              onClick={(e)=>{
+                e.stopPropagation()
+                removeQuestion(id); 
+              }}
             ><img src={images.bar} style={{width:16,height:12}}/>
             </RisingDiv>) ||
             <div style={{height : 20, width : 30}}/>
@@ -490,13 +518,14 @@ function ProblemMenu({}){
   let [mode, curr_interface, curr_question, interfaces, questions, is_editing] = useAuthorStoreChange(
     ['@mode','@curr_interface', '@curr_question', '@interfaces', '@questions', '@editing_question_menu'])
 
-  let {beginSetStartState, confirmStartState, setQuestion, beginEditingQuestionMenu} = authorStore()
+  let {beginSetStartState, confirmStartState,
+      setInterface, setQuestion, beginEditingQuestionMenu} = authorStore()
 
-  console.log(curr_interface)
+  // console.log(curr_interface)
   let question_items = {...questions?.[curr_interface] || {}}
   
-  console.log(curr_interface, curr_question)
-  console.log(interfaces.map((x)=>baseFile(x)))
+  // console.log(curr_interface, curr_question)
+  // console.log(Object.keys(interfaces))
 
   let is_new = !is_editing && mode == "start_state"
 
@@ -521,12 +550,12 @@ function ProblemMenu({}){
           </MenuButton>
         </div>
         <div className='scrollable' style={styles.submenu_content}>
-          {interfaces && interfaces.map((x)=>(
+          {interfaces && Object.keys(interfaces).map((intr_name)=>(
             <SubMenuItem
-              //onClick={(e)=>setInterface(x)}
-              selected={x===curr_interface}
-              key={"question:"+x}
-            >{baseFile(x)}
+              onClick={(e)=>setInterface(intr_name)}
+              selected={intr_name===curr_interface}
+              key={"question:"+intr_name}
+            >{intr_name}
             </SubMenuItem>)
           )}
         </div>
@@ -562,6 +591,7 @@ function ProblemMenu({}){
               onClick={(e)=>{
                 console.log(e.target)
                 setQuestion(x)
+
               }}
               style={in_progress && {"backgroundColor" : 'teal'}}
               selected={x===curr_question}
@@ -662,7 +692,7 @@ function PopupLayer({children}) {
 //              {info?.name || "Unnamed"}
 //              </div>
 //              <div style={{fontColor: "lightgrey", leftMargin:'auto'}}>
-//                {key.slice(4,8)}
+//                {key.slice(3,8)}
 //              </div>
 //            </option>
 //            ))
@@ -749,22 +779,37 @@ function AgentArea(){
 }
 
 function SkillArea(){
+  let [skills] = useAuthorStoreChange(["@skills"])
+
+  let skill_items = []
+  console.log("SKILLS", skills)
+
+  for (let [uid, skill] of Object.entries(skills)){
+    console.log(uid, skill)
+    skill_items.push(
+      <SubMenuItem
+        selected={0}
+        key={uid}
+      >
+        <FxContent data={{skill_uid : uid}} /> 
+      </SubMenuItem>  
+    )
+  }
+
+  
+  console.log("SKILL ITEMS", skill_items)
+
+  
+
+
   return(
   <div style={{...styles.submenu, ...styles.skills_area}}>
       <div style={styles.submenu_title_area}>
           <header style={styles.submenu_title}>Skills</header>
       </div>
       <div className='scrollable' style={styles.submenu_content}>
-        { [1,2,3,4,5,6,7,8].map((x) =>(
-          <SubMenuItem
-            selected={x===1}
-            key={"question:"+x}
-          >
-            {`Skill ${x}`}
-          </SubMenuItem>  
-          ))
-        
-        }
+      
+        {skill_items}
       </div>
     </div>
   )
@@ -828,7 +873,7 @@ export default function AuthoringInterface({props}) {
     ['@training_config','@training_file', '@tutor_class', 'network_layer'])
   let [transaction_count] = useAuthorStoreChange(["@transaction_count"])
   let {addSkillApp, removeSkillApp,  setSkillApps, setStaged, onKeyDown,
-      incTransactionCount, setFocus, setConfig, createAgent, setTutor} = authorStore ()
+      incTransactionCount, setConfig, createAgent, setTutor} = authorStore ()
 
   let Tutor = tutor_class
 
@@ -1177,12 +1222,13 @@ const styles = {
     bottom: -26,
   },
 
-  demonstrate_menu :{
+  demo_menu :{
     display : 'flex',
     flexDirection : 'row',
-    minWidth: "40%",
+    minWidth: "42%",
     maxWidth:"90%",
-    height:"30%",
+    minHeight:"30%",
+    maxHeight:"40%",
     alignItems: 'center', 
     
     marginBottom : 30,
@@ -1197,7 +1243,7 @@ const styles = {
     // alignSelf: 'start', 
   },
 
-  demonstrate_menu_fields :{
+  demo_menu_fields :{
     display : 'flex',
     flexDirection : 'column',
     // minWidth: 0,
@@ -1209,7 +1255,7 @@ const styles = {
     // margin: 6,
   },
 
-  demonstrate_menu_title :{
+  demo_menu_title :{
     display : 'flex',
     flexDirection : 'row',
     fontFamily : "Arial",
@@ -1284,13 +1330,20 @@ const styles = {
     flexDirection : 'row',
     display:"flex",
     justifyContent : 'stretch',
-    // alignItems : 'end',
+    alignItems : 'stretch',
     // padding : 2,
-    margin : 10,
+    margin : 8,
     width : "100%",
-    flexWrap: "wrap",
+    // flexWrap: "wrap",
     // backgroundColor : 'red',
   },
+
+  value_input : {
+    height : 36,
+    // minHeight : 20,
+    // maxHeight : 34,
+  },
+
   label : {
     fontSize : 20,
     fontFamily : "Arial",
@@ -1317,7 +1370,7 @@ const styles = {
     resize: "none",
     
     lineHeight : "1em",
-    height : 20,
+    // height : 20,
     padding : 4,
 
     borderRadius : 4,
@@ -1326,7 +1379,9 @@ const styles = {
   },
 
   right_space : {
-    width : 64,
+    width : 70,
+    // minWidth : 64,
+    // maxWidth : 70,
     height : 34,
     marginLeft : "auto",
     // backgroundColor :'yellow',
@@ -1337,7 +1392,8 @@ const styles = {
     display : 'flex',
     flexDirection : 'row',
     flexWrap: 'wrap',
-    maxWidth : "60%",
+    maxWidth : "90%",
+    minWidth : "40%",
     // backgroundColor : 'red',
   },
 
@@ -1345,7 +1401,9 @@ const styles = {
     display : "flex",
     alignItems : "center",
     margin: 2,
-    padding: 4,
+    padding: 2,
+    paddingRight: 4,
+    fontSize: 12,
 
     // backgroundColor : '#EEE',
     // backgroundColor : 'grey',
@@ -1356,17 +1414,20 @@ const styles = {
 
   },
 
-  foci_button_inner_message : {
+  circle_button_inner_message : {
     position : "absolute",
+    fontFamily : "Arial",
+    backgroundColor : "rgba(200,200,205,1)",
+    color : "rgba(60,60,70,1)",
     userSelect: "none",
-    fontSize: 8,
+    fontSize:  9,
     borderRadius : 10,
-    width : 50,
-    padding : 3.5,
-    color: 'white',
+    width : 54,
+    padding : 2,
+    // color: 'white',
     textAlign : 'center',
-    backgroundColor : 'purple',
-    bottom: -10,
+    // backgroundColor : 'purple',
+    top: 26,
 
   },
 
@@ -1379,7 +1440,7 @@ const styles = {
     justifyContent:'center',
     backgroundColor : 'rgba(200,200,205,1)',
     // right : 0,
-    marginLeft : 14,
+    marginLeft : 16,
     
     width : 34,
     height : 34,

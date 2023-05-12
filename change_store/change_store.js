@@ -67,7 +67,7 @@ export const makeChangeStore = (useStoreHook) =>{
             not_change &= cmp(old[i], nw[i])
             are_checks = true
           }else if(cmp){
-            not_change &= old[i] === nw[i]
+            not_change &= old[i] == nw[i]
             are_checks = true
             // console.log(args[i][0], old[i], nw[i], old[i] === nw[i], not_change)
           }

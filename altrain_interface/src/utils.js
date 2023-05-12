@@ -97,15 +97,16 @@ export function isAbsolute(str){
 }
 
 export function baseFile(str){
-   var base = new String(str).substring(str.lastIndexOf('/') + 1); 
-   return base;
+  console.log(str)
+  var base = new String(str).substring(str.lastIndexOf('/') + 1); 
+  return base;
 }
 
 export function baseName(str){
-   var base = baseFile(str)
+  var base = baseFile(str)
     if(base.lastIndexOf(".") !== -1)       
-        base = base.substring(0, base.lastIndexOf("."));
-   return base;
+      base = base.substring(0, base.lastIndexOf("."));
+  return base;
 }
 
 
@@ -113,8 +114,8 @@ export function baseName(str){
 export function shuffleArray(array) {
   array = [...array]
   for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
   }
   return array
 }
@@ -124,8 +125,9 @@ export function sampleArray(array, n) {
 }
 
 /* Style Functions */
-export const gen_shadow = (x,kind='box') => {
-  let shadow_props = `0px ${(x*.4).toFixed(2)}px ${(x* .20).toFixed(2)}px rgba(0,0,0,${0.10 + x * 0.015})`
+export const gen_shadow = (x,kind='box',rest={}) => {
+  let {red=0,green=0,blue=0} = rest
+  let shadow_props = `0px ${(x*.4).toFixed(2)}px ${(x* .20).toFixed(2)}px rgba(${red},${green},${blue},${0.10 + x * 0.015})`
   if(kind == 'drop'){
     return `drop-shadow(${shadow_props})`
   }else{
@@ -140,7 +142,7 @@ export const gen_shadow = (x,kind='box') => {
 // TODO: This method isn't quite the same as the AL_CORE verison because it uses '-' and '_'
 let randArr = CryptoJS.lib.WordArray.random
 let Base64url = CryptoJS.enc.Base64url
-export let randomUID = () => Base64url.stringify(randArr(30));
+export let randomUID = () => Base64url.stringify(randArr(30)).replace('-', 'A').replace('_', 'B');
 
 export function shallowEqual(object1, object2) {
   let t1 = typeof object1
@@ -172,6 +174,9 @@ export function arraysEqual(a, b) {
   }
   return true;
 }
+
+
+export const arg_symbols = ["A","B","C","D","E","F","G","H","I","J"]
 
 // export {randomID, shallowEqual};
 

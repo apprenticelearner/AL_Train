@@ -6,10 +6,10 @@ function sleep(time) {
   return new Promise(resolve => setTimeout(resolve, time));
 }
 
-function ignoreKeys(key, value) {
-  if (key === "matches") return undefined;
-  else return value;
-}
+// function ignoreKeys(key, value) {
+//   if (key === "matches") return undefined;
+//   else return value;
+// }
 
 async function wait(ms) {
   return new Promise(resolve => {
@@ -52,6 +52,23 @@ const JSON_HEADERS = {
   "Content-Type": "application/json"
 };
 
+const send_post = (URL, data, n=AL_RETRY_LIMIT, t=TIMEOUT) => {
+  return fetch_retry(URL, {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data)
+  }).then(res => res.json())
+}
+
+const send_get = (URL, data, n=AL_RETRY_LIMIT, t=TIMEOUT) => {
+  return fetch_retry(URL, {
+      method: "GET",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data)
+  }).then(res => res.json())
+}
+
+
 export default class NetworkLayer {
   constructor(agent_url, host_url, outerloop_url) {
     this.agent_url = agent_url;
@@ -62,12 +79,8 @@ export default class NetworkLayer {
   }
 
   listAgents() {
-    return fetch_retry(self.agent_url + "/list_agents/", {
-      method: "GET",
-      headers: JSON_HEADERS,
-      body: JSON.stringify("", ignoreKeys)
-    })
-      .then(res => res.json())
+    return send_get(self.agent_url + "/list_agents/", "")
+    
   }
 
   createAgent(agent_config, rep=null) {
@@ -78,81 +91,72 @@ export default class NetworkLayer {
     // console.log(this.agent_url + "/create/", name, agent_config);
 
     this.request_history = [];
-    return fetch_retry(
-      this.agent_url + "/create/",
-      { method: "POST", headers: JSON_HEADERS, body: JSON.stringify(data) },
-      6,
-      1000)
-    .then(res => res.json())
+    return send_post(this.agent_url + "/create/", data, 6, 1000)
   }
 
   act(agent_uid, state, rest={}) {
     let data = {agent_uid, state, ...rest}
-
     this.request_history.push(data);
+    console.log("ACT", data)
+    return send_post(this.agent_url + "/act/", data)
+  }
 
-    const URL = this.agent_url + "/act/"
-    console.log(data)
-    return fetch_retry(URL, {
-      method: "POST",
-      headers: JSON_HEADERS,
-      body: JSON.stringify(data)
-    }).then(res => res.json());
+  act_all(agent_uid, state, rest={}) {
+    let data = {agent_uid, state, ...rest}
+    this.request_history.push(data);
+    console.log("ACT ALL", data)
+    return send_post(this.agent_url + "/act_all/", data)
+  }
+
+  act_rollout(agent_uid, state, rest={}) {
+    let t0 = window.performance.now()//new Date();
+
+    let data = {agent_uid, state, ...rest}
+    console.log("ACT ROLLOUT", data)
+    let resp = send_post(this.agent_url + "/act_rollout/", data)
+    resp.then(() =>{
+      console.log("act_rollout duration: ", (window.performance.now()-t0).toFixed(4), "ms")  
+    })
+    
+    return resp
   }
 
   train(agent_uid, state, sai, reward, rest={}) {
     let data = {agent_uid, state, ...sai, reward, ...rest}
     console.log("TRAIN DATA", data)
-    const URL = this.agent_url + "/train/"
-    return fetch_retry(URL, {
-      method: "POST",
-      headers: JSON_HEADERS,
-      body: JSON.stringify(data, ignoreKeys)
-    })
-      .then(res => res.json());
+    return send_post(this.agent_url + "/train/", data)
   }
 
-  explain_demo(agent_uid, state, sai, reward, rest={}) {
+  train_all(agent_uid, states, sais, rewards, rest={}) {
     let data = {agent_uid, state, ...sai, reward, ...rest}
+    console.log("TRAIN DATA", data)
+    return send_post(this.agent_url + "/train/", data)
+  }
+
+  explain_demo(agent_uid, state, sai, rest={}) {
+    let data = {agent_uid, state, ...sai, ...rest}
     console.log("EXPLAIN DEMO DATA", data)
-    const URL = this.agent_url + "/explain_demo/"
-    return fetch_retry(URL, {
-      method: "POST",
-      headers: JSON_HEADERS,
-      body: JSON.stringify(data, ignoreKeys)
-    })
-      .then(res => res.json());
+    return send_post(this.agent_url + "/explain_demo/", data)
+  }
+
+  predict_next_state(agent_uid, state, sai, rest={}) {
+    let data = {agent_uid, state, ...sai, ...rest}
+    console.log("PREDICT NEXT STATE DATA", data)
+    return send_post(this.agent_url + "/predict_next_state/", data)
   }
 
   check(agent_uid, state, sai, context={}) {
-    console.log("checkApprentice");
     var data = {agent_uid, state, sai}
-
-    const URL = this.agent_url + "/check/"
-
-    return fetch_retry(URL, {
-      method: "POST",
-      headers: JSON_HEADERS,
-      body: JSON.stringify(data)
-    })
-      .then(res => res.json())
-      .then(json => json["reward"]);
+    console.log("CHECK", data);
+    return send_post(this.agent_url + "/check/", data)
+        .then(json => json["reward"]);
   }
 
   get_skills(agent_uid, rest={}) {
     console.log("Get Skills");
     var data = {agent_uid, ...rest}
-
-    const URL = this.agent_url + "/get_skills/"
-
-    return fetch_retry(URL, {
-      method: "POST",
-      headers: JSON_HEADERS,
-      body: JSON.stringify(data)
-    })
-      .then(res => res.json())
+    return send_post(this.agent_url + "/get_skills/", data)
   }
-
 
   term_print(message, type = "default") {
     var data = { message: message, type: type };
@@ -200,7 +204,7 @@ export default class NetworkLayer {
     return fetch_retry(URL, {
       method: "POST",
       headers: JSON_HEADERS,
-      body: JSON.stringify(data, ignoreKeys)
+      body: JSON.stringify(data)
     })
       .then(res => res.json())
       .then(json => {
@@ -213,7 +217,7 @@ export default class NetworkLayer {
         return fetch(this.host_url, {
           method: "GEN_NOOLS",
           headers: JSON_HEADERS,
-          body: JSON.stringify(out_data, ignoreKeys)
+          body: JSON.stringify(out_data)
         });
       });
   }

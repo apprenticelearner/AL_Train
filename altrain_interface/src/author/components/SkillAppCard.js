@@ -145,13 +145,14 @@ const images = {
 
 
 export function SkillAppGroup({x, y, parentRef, sel, style,...props}) {
-  let [hasFocus, skill_app_uids, hasHover, focus_uid, 
-        setFocus, setHover] = useAuthorStoreChange(
-      [[`@focus_sel==${sel}`, (x)=>x!=null], `@sel_skill_app_uids.${sel}`, `@hover_sel==${sel}`, `focus_uid`, 
-       "setFocus", "setHover"]
+  let {setHover} = authorStore()
+  let [hasFocus, hasHover, skill_app_uids,  focus_uid] = useAuthorStoreChange(
+      [`@focus_sel=='${sel}'`, `@hover_sel=='${sel}'`, `@sel_skill_app_uids.${sel}`, `focus_uid`]
   )
 
+  let first_uid = skill_app_uids?.[0] || ""
 
+  console.log("SkillAppGroup", sel, hasHover, hasFocus)
   // const [is_hover, setIsHover] = useState(false)
 
   const ref = useRef(null);
@@ -212,9 +213,10 @@ export function SkillAppGroup({x, y, parentRef, sel, style,...props}) {
           dragTransition={{ timeConstant: 60, power: .15}}
           onDragStart = {(e) => groupIsDragging.current = true}
           onDragEnd = {(e) => setTimeout(()=>groupIsDragging.current = false,100)}
-          onMouseEnter={()=>setHover({sel : sel})}
-          onMouseLeave={()=>setHover({sel : ""})}
+          onMouseEnter={()=>setHover(first_uid)}
+          onMouseLeave={(e)=>{console.log("LEAVE:", e);setHover("")}}
           onMouseMove={(e)=>{if(!groupIsDragging.current){e.stopPropagation()}}}
+          className="SkillAppGroup"
 
           style={{
             ...styles.skill_app_group,
@@ -224,6 +226,8 @@ export function SkillAppGroup({x, y, parentRef, sel, style,...props}) {
           }}
           {...props}
         >
+          {/* Transparent Box For Easier Hovering */}
+          <div style={styles.skill_app_group_pointer_extension}/>
 
           <div style={{position: 'relative', display: 'flex', flexDirection:"row", alignItems:'center'}}>
             {/*<div style = {styles.handle}>
@@ -239,6 +243,8 @@ export function SkillAppGroup({x, y, parentRef, sel, style,...props}) {
             </div>
 
           </div>
+
+          
 
           {((hasFocus || hasHover || groupIsDragging.current) &&
           
@@ -285,7 +291,7 @@ export function SkillAppCard({
   let reward = (skill_app?.reward ?? 0)
   let is_demo = skill_app.is_demo || false
   let correct = reward > 0 
-  let incorrect = reward < 0 || isExternalHasOnly
+  let incorrect = reward < 0 || (reward == 0 && isExternalHasOnly)
   let isImplicit = isExternalHasOnly && reward == 0;
   let hasOnly = skill_app.only
   let sel = skill_app.selection
@@ -317,16 +323,17 @@ export function SkillAppCard({
                             borderRightColor:right_border_color,
                             borderRightWidth:4})
 
+  console.log("CARD", sel)
   return (
         <RisingDiv 
           onClick={(e)=>{
             if(!groupIsDragging.current){
-              setFocus(skill_app)
+              setFocus(skill_app.uid)
             }
             e.stopPropagation()
           }}
-          hoverCallback={(e)=>setHover({sel : sel, uid: uid})}
-          unhoverCallback={(e)=>setHover({uid: ""})}
+          hoverCallback={(e)=>setHover(uid)}
+          //unhoverCallback={(e)=>setHover("")}
           style={{
             ...styles.skill_app_card,
             ...border_style,
@@ -350,7 +357,7 @@ export function SkillAppCard({
             </div>
           </div>
 
-          {/*Skill Label + How*/}
+          {/*Various Buttons*/}
           
           <div 
             style={styles.card_button_area}
@@ -380,14 +387,13 @@ export function SkillAppCard({
                   ...(hasStaged && styles.card_button_selected)
                 }}
                 onMouseDown={(e)=>{
-                  console.log("Stage")
                   e.stopPropagation(); 
                   hasStaged ? undoStaged() : setStaged(skill_app)
                   }}
               >
                 <img style={{width:"100%", height:"100%"}} src={images.double_chevron}/>
                 {buttonAreaHover && 
-                  <div style={styles.card_button_text}>stage</div>
+                  <div style={styles.card_button_text}>{"next"}</div>
                 }
               </RisingDiv>
             }
@@ -399,14 +405,13 @@ export function SkillAppCard({
                   ...(skill_app?.only && styles.card_button_selected)
                 }}
                 onClick={(e)=>{
-                  console.log("ONLY")
                   e.stopPropagation(); 
                   setOnly(skill_app, !skill_app.only)
                 }}
               >
                 <div >{"⦿"}</div>
                 {buttonAreaHover && 
-                  <div style={styles.card_button_text}>only</div>
+                  <div style={styles.card_button_text}>{"only"}</div>
                 }
               </RisingDiv>
             }
@@ -424,7 +429,8 @@ export function SkillAppCard({
           ((hasFocus || groupHasHover) &&
             <div style={{
               position: "absolute",
-              left: hasFocus ? -25 : -22,
+              left: hasFocus ? -27 : -23,
+              top: 5,
               width: 20,
               height: "100%",
               // backgroundColor: 'red',
@@ -438,15 +444,12 @@ export function SkillAppCard({
             >
               <SmallCorrectnessToggler 
                 style={{
-                  ...styles.toggler_small,
-                  color: 'blue',
-                  width: 20,
-                  height: 20,
+                  ...styles.toggler_small
                 }}
                 text_color={(isImplicit && 'white') || 'black'}
                 correct={correct}
                 incorrect={incorrect}
-                onPress={() => toggleReward(skill_app)}
+                onPress={(force_reward) => toggleReward(skill_app, force_reward)}
               />
             </div>
           )}
@@ -480,13 +483,15 @@ export function SkillAppCardLayer({parentRef, state, style}){
   if(train_mode){
     for (let sel of selectionsWithSkillApps){
       let elem = state[sel]
-      skill_app_groups.push(
+      if(elem){
+        skill_app_groups.push(
         <SkillAppGroup
           sel={sel} 
           parentRef={parentRef} 
           x={elem.x+elem.width+10} y={elem.y-20}
           key={sel+"_skill_app_group"}
-      />)
+      />)  
+      }
     }  
   }
   
@@ -555,6 +560,11 @@ const styles = {
     borderRadius : 5,
   },
 
+  skill_app_group_pointer_extension : {
+    position: 'absolute', zindex: -1, backgroundColor: "transparent",
+    left: -4, top: 20, height : 44, width : 60 
+  },
+
   handle: {
     // alignSelf: "end",
     fontSize : 12,
@@ -587,9 +597,9 @@ const styles = {
     // marginRight : -31,
     //
 
-    paddingLeft : 29, 
-    left : -25,
-    marginRight : -34
+    paddingLeft : 40, 
+    left : -36,
+    marginRight : -46
   },
 
   skill_app_card_area : {
@@ -690,7 +700,7 @@ const styles = {
     borderRadius : 6,
     top: 0,
     right: 16,
-    fontSize: 8,
+    fontSize: 9,
     
   },
 
@@ -762,8 +772,8 @@ const styles = {
   // },
 
   toggler_small: {
-    width:20,
-    height:20,
+    width: 26,
+    height:26,
     position:'relative',
     display:"flex",
     justifyContent : "center",

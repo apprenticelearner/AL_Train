@@ -5,7 +5,7 @@ import '../components/scrollbar.css';
 import {authorStore, useAuthorStoreChange} from "../author_store.js"
 import {colors, where_colors} from "../themes.js"
 import Color from 'color'
-import {randomUID, shallowEqual} from "../../utils.js";
+import {randomUID, shallowEqual, arraysEqual,  arg_symbols} from "../../utils.js";
 
 const images = {
   tap: require('../img/gesture-tap.png'),
@@ -13,24 +13,24 @@ const images = {
   double_chevron : require('../img/double_chevron_300x400.png')
 };
 
-
-const getFociIndexAndExplicit = (elem_id) => [
+const getFociIndexInfo = (elem_id) => [
   (s) => {
     let skill_app = s.skill_apps?.[s.focus_uid];
-    let {arg_foci, foci_explicit} = s.extractArgFoci(skill_app)
-    if(arg_foci){
-      return [arg_foci.indexOf(elem_id),foci_explicit]
-    }else if(skill_app?.mapping) {
-      for(let [key,id] of Object.entries(skill_app?.mapping)){
-        if(elem_id === id && key.includes('arg')){
-         return [Number(key.match(/\d+/)[0]),foci_explicit]
-        }
-      }
+    let hover = false
+    if(!skill_app){
+      skill_app = s.skill_apps?.[s.hover_uid];   
+      hover = !!skill_app
     }
-    return [-1, true]
+    let {arg_foci, foci_explicit} = s.extractArgFoci(skill_app)
+    
+    if(arg_foci){
+      let index = arg_foci.indexOf(elem_id)
+      return [index, foci_explicit, hover && (index != -1)]
+    }
+    return [-1, true, false]
   },
   (o, n) => {
-    return o[0] === n[0] && o[1] === n[1]
+    return o[0] === n[0] && o[1] === n[1] && o[2] === n[2]
   }
 ]
 
@@ -41,22 +41,38 @@ const getFociIndexAndExplicit = (elem_id) => [
 // console.log("foci_cand_bg_color", foci_cand_bg_color)
 
 function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacity=.4, ...props}){
-    let [[skill_app, hasStaged], groupHasFocus,  mode, isExternalHasOnly, elem_locked] = useAuthorStoreChange(
-      [getOverlaySkillApp(sel), `@focus_sel==${sel}`,  "@mode", "@only_count!=0", `@tutor_state.${sel}.locked`],
+    let {setHover} = authorStore()
+    let [[skill_app, hasStaged], groupHasFocus, hasHover, skill_app_uids,
+          mode, isExternalHasOnly, elem_locked] = useAuthorStoreChange(
+      [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@hover_sel==${sel}`, `@sel_skill_app_uids.${sel}`,
+       "@mode", "@only_count!=0", `@tutor_state.${sel}.locked`],
     )
-    // console.log("OVERLAY BOUNDS", sel, elem_locked)
+    // console.log("OVERLAY BOUNDS", sel, skill_app)
 
-    let [hasFocus, [foci_index,foci_explicit], foci_mode, toggleFoci] = useAuthorStoreChange(
-        [`@focus_uid==${skill_app?.uid}`, getFociIndexAndExplicit(sel), "@mode=='arg_foci'", 'toggleFoci']
+    let [[foci_index, foci_explicit, foci_hover],
+         hasSkillAppFocus, foci_mode, toggleFoci] = useAuthorStoreChange(
+        [getFociIndexInfo(sel),
+         `@focus_uid==${skill_app?.uid}`,  "@mode=='arg_foci'", 'toggleFoci']
     )
 
-    let foci_cand = foci_mode && !hasFocus
+    let first_uid = skill_app_uids?.[0] || ""
+    let var_name = arg_symbols?.[foci_index];
+
+    let foci_cand = foci_mode && !hasSkillAppFocus
     let is_foci = (foci_index!==-1) && (mode=="train" || foci_explicit)
     let wrap_index = foci_index % where_colors.length
-    let foci_color = where_colors[wrap_index]
-    if(!foci_explicit){
-      foci_color = Color(foci_color).lighten(.35).hexa()
+    let foci_color = null
+    if(wrap_index !== -1){
+      foci_color = where_colors[wrap_index]
     }
+
+    if(!foci_explicit || foci_hover){
+      foci_color = Color(foci_color).lighten(.25).hexa()
+    }
+
+    // console.log("UPDATE OVERLAY", sel, "|", hasSkillAppFocus, ":", foci_index, arg_hover)
+
+    let arg_hover = mode=='arg_foci' && hasHover
     // let actions_visible = !foci_mode || hasFocus
     // console.log("OverlayBounds", sel, foci_mode, hasFociSelect)
     
@@ -71,34 +87,40 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
     let foci_cand_bg_color = Color('rgb(127,127,127)').alpha(bg_foci_opacity).hexa()
 
     let backgroundColor = (elem_locked && 'rgb(240,240,240)') ||
-                          (hasFocus && clear_bg_color) || 
+                          (hasSkillAppFocus && clear_bg_color) || 
                           (is_foci && clear_bg_color) || 
                           (foci_cand && foci_cand_bg_color) ||
                           clear_bg_color
 
-    let borderColor = ((hasFocus || mode == 'start_state') && color) || 
-                      (is_foci  && foci_color) ||
+    let borderColor = ((hasSkillAppFocus || mode == 'start_state') && color) || 
+                      ((is_foci || foci_hover) && foci_color) ||
+                      (arg_hover && color) ||
                       (foci_cand && 'transparent') ||
                       (elem_locked && colors.locked_color) || 
                       (groupHasFocus && color) ||
                       colors.default_color
 
+
+
     let borderWidth = ((is_foci || groupHasFocus) && 5) ||
+                      (arg_hover && 3) ||
                       (foci_cand && 3) ||
                       (elem_locked && 3) || 
                       4
 
     // Adjust the draw rects so that centers of thick borders overlap original bounds.                
     //   Add a negative margin of same amount to keep content stationary on style change.
-    let hbw = borderWidth / 2
+    let hbw =  borderWidth / 2
     let rect = {width: elem.width, height: elem.height, x : elem.x-hbw, y : elem.y-hbw,
                 ...((bg_opacity==1) && {marginLeft : -hbw, marginTop : -hbw,})}
+    let click_rect = {...rect, padding: 6}
 
     // console.log("::", sel, skill_app?.uid, color)
     let corsor_kind = (foci_cand && 'crosshair') ||
                       (elem_locked && 'default') ||
                       'auto'
 
+    console.log("__>", sel, borderColor, foci_color, foci_index, foci_explicit, foci_hover)
     return (      
       <motion.div  style= {{
         ...styles.overlay_bounds,
@@ -116,10 +138,25 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         // If toggling foci prevent default so elem doesn't take focus
         foci_cand ? (e) => {toggleFoci(sel); e.preventDefault(); console.log("click")} : props.onClick
       )}
+      onMouseEnter={()=>{setHover(first_uid)}}
+      onMouseLeave={()=>{setHover("")}}
       >
+        {/* Transparent Background Div to make slightly larger */}
+        <div style={{...styles.stage_image, backgroundColor: "transparent", position: "absolute",...click_rect}}/>
+
+        {/* Double Chevron */}
         {(hasStaged) &&
           <img style ={styles.stage_image} src={images.double_chevron} alt={""}/>
         }
+
+        {/* Variable Name Indictor */}
+        {(var_name) &&
+          <div style={{...styles.var_indicator, backgroundColor : borderColor}}> 
+            {var_name.toUpperCase()}
+          </div>
+        }
+
+        {/* Internals e.g. textarea, button, etc. */}
         {children}
       </motion.div>
   )
@@ -172,7 +209,7 @@ const getOverlaySkillApp = (sel) =>{
 
 const newSkillApp = (sel, action_type, input, props) =>{
   let skill_app = {
-    uid : `SKA_${randomUID()}`,
+    uid : `A_${randomUID()}`,
     selection: sel,
     action_type : action_type,
     inputs : {value :input},
@@ -212,7 +249,7 @@ function TextFieldOverlay({sel, elem}) {
     // color = "teal"
     fontColor = 'black'
   }else{
-    fontColor = ((groupHasFocus || !input) && 'black') || 'lightgrey'
+    fontColor = ((groupHasFocus || !input) && 'black') || 'grey'
   }
 
 
@@ -303,7 +340,7 @@ function TextFieldOverlay({sel, elem}) {
               removeSkillApp(skill_app)
             }
             addSkillApp(new_skill_app)
-            setFocus(new_skill_app)
+            setFocus(new_skill_app.uid)
             // if(mode=='train'){
             //   setCurrentTab("demonstrate")  
             // }
@@ -343,7 +380,7 @@ function ButtonOverlay({
   let [[skill_app,hasStaged], groupHasFocus,  isExternalHasOnly] = useAuthorStoreChange( 
     [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@only_count!=0`]
   )
-  let {addSkillApp, removeSkillApp, setInput, setFocus} = authorStore()
+  let {addSkillApp, removeSkillApp, setFocus} = authorStore()
 
   console.log("skill_app", skill_app)
   let {correct, incorrect, isDemo, color, input} = skillAppExtractProps(skill_app, isExternalHasOnly)
@@ -360,7 +397,7 @@ function ButtonOverlay({
         if(!skill_app){
           let new_skill_app = newDemo(sel, "PressButton", -1)
           addSkillApp(new_skill_app)  
-          setFocus(new_skill_app)
+          setFocus(new_skill_app.uid)
         }
       }}
     >
@@ -497,6 +534,35 @@ const styles = {
     top:"-6%",
     pointerEvents : "none",
     userSelect: "none",
-  }
+  },
+
+  var_indicator : {
+    display : "flex",
+    justifyContent : 'center',
+    alignItems : 'center',
+    flex:1,
+    position:'absolute',
+    maxWidth:"100%",
+    maxHeight:"100%",
+    fontSize : 14,
+    fontWeight : 'bold',
+    color : 'white',
+
+    width : 18,
+    height : 18,
+    borderRadius : 20,
+    padding : 2,
+    // zIndex:-1,
+    // opacity:.08,
+    right:-11,
+    top:-10,
+    pointerEvents : "none",
+    userSelect: "none",
+  },
+
+  // var_indicator_text : {
+    
+  // }
+
 
 }

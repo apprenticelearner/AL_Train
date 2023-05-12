@@ -23,10 +23,16 @@ export const Icon = ({size, kind}) => {
               'black'
   let icon = (kind.includes('incorrect') && '✖') ||
               // (key=='only' && '⦿') ||
-              (kind.includes('correct') && '✔') ||            
-              '━'
+              (kind.includes('correct') && '✔') ||
+              "•"
+            
+              //'━'
 
   let inner_size = (is_only && size * .7) || size * .8
+  let icon_size = size
+  if(icon == "•"){
+    icon_size *= 1.5
+  }
   return (
     <div
       style={{
@@ -44,7 +50,7 @@ export const Icon = ({size, kind}) => {
             filter: is_correct ? dodger_blue_filter : crimson_filter
           }}
         />) ||
-        <a style={{color: color, fontSize: size}}>{icon}</a>
+        <a style={{color: color, fontSize: icon_size}}>{icon}</a>
       }
     </div> 
   )

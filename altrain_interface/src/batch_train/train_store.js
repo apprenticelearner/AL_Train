@@ -182,6 +182,14 @@ export const useTrainStore = create((set,get) => ({
       let {network_layer: nl, tutor} = store
       let {HTML, question_file, prob_rep, message} = prob_config
       let rep_str = prob_rep ? ` (${prob_rep})` : ""
+      if(!HTML){
+        console.warn("Problem Config:", prob_config)
+        throw new Error("Problem Configuration Missing HTML")
+      }
+      if(!question_file){
+        console.warn("Problem Config:", prob_config)
+        throw new Error("Problem Configuration Missing 'question_file'")
+      }
       set({prob_desc: `HTML: ${baseFile(HTML)}\nProblem: ${baseFile(question_file)}${rep_str}`,
            message})
 
@@ -199,6 +207,9 @@ export const useTrainStore = create((set,get) => ({
         nl.kill_this(res);
         return
       })
+
+      let use_arg_foci = (prob_config?.use_arg_foci ?? true)
+
       console.log("END LOAD")
 
       let tutor_state = tutor.getState()
@@ -234,6 +245,7 @@ export const useTrainStore = create((set,get) => ({
         if(!sai){
           // Get demo SAI anytime no sai because logging may occur at this step.
           sai = await tutor.getDemo(true)  
+          
           if(need_demo){
             await tutor.applySAI(sai)    
             tutor?.colorElement(sai.selection, "DEMO");
@@ -244,6 +256,11 @@ export const useTrainStore = create((set,get) => ({
           // Print Feedback
           let print_type = reward > 0 ? "CORRECT" : "INCORRECT"
           nl.term_print(`${print_type}: ${sai.selection} -> ${JSON.stringify(sai.inputs)}`, print_type);
+        }
+
+        // If use_arg_foci == false then remove arg_foci from sai
+        if(!use_arg_foci){
+          delete sai['arg_foci']
         }
         
         if(need_demo || do_feedback){
