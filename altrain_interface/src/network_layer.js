@@ -127,10 +127,10 @@ export default class NetworkLayer {
     return send_post(this.agent_url + "/train/", data)
   }
 
-  train_all(agent_uid, states, sais, rewards, rest={}) {
-    let data = {agent_uid, state, ...sai, reward, ...rest}
-    console.log("TRAIN DATA", data)
-    return send_post(this.agent_url + "/train/", data)
+  train_all(agent_uid, training_set, states, rest={}) {
+    let data = {agent_uid, training_set, states, ...rest}
+    console.log("TRAIN ALL DATA", data)
+    return send_post(this.agent_url + "/train_all/", data)
   }
 
   explain_demo(agent_uid, state, sai, rest={}) {

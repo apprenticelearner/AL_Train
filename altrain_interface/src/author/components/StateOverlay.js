@@ -1,7 +1,8 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, memo } from 'react'
 import { motion } from "framer-motion";
 import '../author.css';
 import '../components/scrollbar.css';
+import RisingDiv from "./RisingDiv.js"
 import {authorStore, useAuthorStoreChange} from "../author_store.js"
 import {colors, where_colors} from "../themes.js"
 import Color from 'color'
@@ -10,7 +11,9 @@ import {randomUID, shallowEqual, arraysEqual,  arg_symbols} from "../../utils.js
 const images = {
   tap: require('../img/gesture-tap.png'),
   left_arrow: require('../img/arrow-left-bold.png'),
-  double_chevron : require('../img/double_chevron_300x400.png')
+  // double_chevron : require('../img/double_chevron_300x400.png')
+  double_chevron : require('../../img/double_chevron_300x400.svg'),
+  next : require('../../img/next.svg')
 };
 
 const getFociIndexInfo = (elem_id) => [
@@ -33,6 +36,48 @@ const getFociIndexInfo = (elem_id) => [
     return o[0] === n[0] && o[1] === n[1] && o[2] === n[2]
   }
 ]
+
+let PopUpConfirmButton = memo(({sel, skill_app}) => {
+  let {setStaged, setReward, confirmFeedback} = authorStore();
+  let rd_props = {
+    hover_scale : 1.1,
+    default_scale : 1,
+    hover_elevation : 10,
+    default_elevation : 6
+  }
+  let is_undef = (skill_app?.reward ?? 0) == 0
+
+  let [hasHover, setHover] = useState(false)
+
+  return (<RisingDiv
+      hoverCallback={(e)=>{setHover(true)}}
+      unhoverCallback={(e)=>{setHover(false)}}
+      onClick={()=>{if(is_undef){setReward(skill_app, 1)}; setStaged(skill_app); confirmFeedback()}}
+      scale={(hasHover && 1.1) || 1}
+      elevation={(hasHover && 10) || 6}
+      //onMouseEnter={(e)=>{console.log("OVER:", e)}}
+      //onMouseLeave={(e)=>{console.log("LEAVE:", e)}}
+      style={{position: "absolute", display: "flex", flexDirection:'row', alignItems:'center', 
+               bottom: -12, left: -10, padding: 6, paddingBottom:1, paddingTop:1, borderRadius: 5,  
+               backgroundColor: 'rgb(230,230,230)',
+               color: (is_undef && hasHover && colors.correct) || 'black',
+               fontWeight:'bold',
+               fontSize:12}}
+      //{...rd_props}
+  > 
+    {is_undef && 
+      <a style={{margin: 1, pointerEvents:'none', fontSize : '1.1em',
+                }}>{"✔"}</a>
+    }
+    <a style={{margin: 1, pointerEvents:'none'}}>{(is_undef && "Yes") || "Confirm"}</a>
+    <img style={{width:12, height:12, margin: 1, marginLeft:2, pointerEvents:'none'}} 
+         src={images.next}
+
+       />
+  </RisingDiv>
+  )
+})
+
 
 // const foci_bg_color = Color('darkorchid').alpha(.4).hexa()
 // const foci_cand_bg_color = Color('grey').alpha(.4).hexa()
@@ -60,6 +105,8 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
 
     let foci_cand = foci_mode && !hasSkillAppFocus
     let is_foci = (foci_index!==-1) && (mode=="train" || foci_explicit)
+    let is_incorrect = (skill_app?.reward ?? 0) < 0
+
     let wrap_index = foci_index % where_colors.length
     let foci_color = null
     if(wrap_index !== -1){
@@ -79,8 +126,13 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
 
 
     let {color} = skillAppExtractProps(skill_app, isExternalHasOnly)
+    
+
     if(mode == "start_state"){
       color = 'teal'
+      elem_locked = false
+    }else if(skill_app && !hasSkillAppFocus && !hasHover){
+      color = Color(color).lighten(.25).hexa()
     }
 
     let clear_bg_color  = Color("white").alpha(bg_opacity).hexa()
@@ -96,22 +148,23 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
                       ((is_foci || foci_hover) && foci_color) ||
                       (arg_hover && color) ||
                       (foci_cand && 'transparent') ||
-                      (elem_locked && colors.locked_color) || 
+                      (elem_locked && colors.locked) || 
                       (groupHasFocus && color) ||
-                      colors.default_color
+                      color
 
 
 
     let borderWidth = ((is_foci || groupHasFocus) && 5) ||
+                      ((hasHover) && 4) ||
                       (arg_hover && 3) ||
                       (foci_cand && 3) ||
                       (elem_locked && 3) || 
-                      4
+                      3
 
     // Adjust the draw rects so that centers of thick borders overlap original bounds.                
     //   Add a negative margin of same amount to keep content stationary on style change.
     let hbw =  borderWidth / 2
-    let rect = {width: elem.width, height: elem.height, x : elem.x-hbw, y : elem.y-hbw,
+    let rect = {width: elem.width+1, height: elem.height+1, x : elem.x-hbw-.5, y : elem.y-hbw-.5,
                 ...((bg_opacity==1) && {marginLeft : -hbw, marginTop : -hbw,})}
     let click_rect = {...rect, padding: 6}
 
@@ -120,7 +173,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
                       (elem_locked && 'default') ||
                       'auto'
 
-    console.log("__>", sel, borderColor, foci_color, foci_index, foci_explicit, foci_hover)
+    // console.log("__>", sel, borderColor, foci_color, foci_index, foci_explicit, foci_hover)
     return (      
       <motion.div  style= {{
         ...styles.overlay_bounds,
@@ -144,9 +197,9 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         {/* Transparent Background Div to make slightly larger */}
         <div style={{...styles.stage_image, backgroundColor: "transparent", position: "absolute",...click_rect}}/>
 
-        {/* Double Chevron */}
+        {/* Next Icon */}
         {(hasStaged) &&
-          <img style ={styles.stage_image} src={images.double_chevron} alt={""}/>
+          <img style ={{...styles.stage_image, top:"5%", height:"90%", width:"90%"}} src={images.next} alt={""}/>
         }
 
         {/* Variable Name Indictor */}
@@ -158,6 +211,11 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
 
         {/* Internals e.g. textarea, button, etc. */}
         {children}
+
+        {/* Pop-up Confirm Button */}
+        {(mode == "train" && skill_app && !is_incorrect) && 
+          <PopUpConfirmButton sel={sel} skill_app={skill_app}/>
+        }
       </motion.div>
   )
 }
@@ -167,12 +225,12 @@ function skillAppExtractProps(skill_app, isExternalHasOnly){
   let incorrect = (skill_app?.reward < 0 ?? false) || (skill_app?.reward===0 && isExternalHasOnly);
   let isDemo = skill_app?.is_demo ?? false
 
-  // console.log(isDemo, correct, incorrect, colors.demo_color)
-  let color = (isDemo && colors.demo_color) || 
-              (correct && colors.correct_color) ||
-              (incorrect && colors.incorrect_color) ||
-              (colors.default_color)
-  // console.log(isDemo, correct, incorrect, colors.demo_color, color)
+  // console.log(isDemo, correct, incorrect, colors.demo)
+  let color = (isDemo && colors.demo) || 
+              (correct && colors.correct) ||
+              (incorrect && colors.incorrect) ||
+              (colors.default)
+  // console.log(isDemo, correct, incorrect, colors.demo, color)
   let input = skill_app?.inputs.value ?? skill_app?.input ?? ""
   let uid = skill_app?.uid ?? ""
   return {correct, incorrect, isDemo, color, input, uid}
@@ -187,17 +245,24 @@ const getOverlaySkillApp = (sel) =>{
         skill_app = s?.skill_apps[s.staged_uid]
       }
 
+      // If skill_app is not focused or staged then prefer demos and correct
       if(!skill_app){
-        let skill_app_uids = s.sel_skill_app_uids?.[sel]
+        let skill_app_uids = s.sel_skill_app_uids?.[sel];
         if(skill_app_uids?.length > 0){
-          skill_app = s.skill_apps[skill_app_uids[0]]
+          let skill_apps = skill_app_uids.map((uid)=>s.skill_apps[uid])
+          skill_apps?.sort((sa,sb)=>{
+            let r0 = (sa?.reward ?? 0) + (sa?.is_demo ?? 0)
+            let r1 = (sb?.reward ?? 0) + (sb?.is_demo ?? 0)
+            return r1 - r0
+          })
+          skill_app = skill_apps[0];
         }
       }
       return [skill_app, s.staged_uid === skill_app?.uid]
     },
       ([o,os],[n,ns])=>{
         // console.log("Recalc", sel, n?.reward, o?.reward)
-        return n?.uid === o?.uid && shallowEqual(n?.inputs, o?.inputs)   && n?.reward === o?.reward && os === ns
+        return n?.uid === o?.uid && shallowEqual(n?.inputs, o?.inputs)  && n?.reward === o?.reward && os === ns
     }]
 }
 
@@ -236,7 +301,7 @@ function TextFieldOverlay({sel, elem}) {
   let [[skill_app, hasStaged], groupHasFocus, isExternalHasOnly, mode, has_focus] = useAuthorStoreChange(
     [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@only_count!=0`, "@mode", `@input_focus==${sel}`],
   )
-  let {setInputFocus, addSkillApp, removeSkillApp, setInputs, setFocus, beginSetArgFoci} = authorStore()
+  let {setInputFocus, addSkillApp, removeSkillApp, setInputs, setFocus, beginSetArgFoci, confirmArgFoci} = authorStore()
   // let empty_focus = (!skill_app?.input && has_focus)
   // console.log(not_empty.current, skill_app)
 
@@ -252,9 +317,13 @@ function TextFieldOverlay({sel, elem}) {
     fontColor = ((groupHasFocus || !input) && 'black') || 'grey'
   }
 
+  if(!empty_focus && skill_app){
+    text = input
+  }else if(mode != "start_state"){
+    text = elem.value
+  }
 
-  
-  text = (!empty_focus &&  input) ||  (elem.value) || "" 
+  text = text || ""
   placeholder = (input) ||  ""   
   //Ensure only highlight color on focus
   
@@ -311,9 +380,9 @@ function TextFieldOverlay({sel, elem}) {
             if((input.length ?? 0)===0){
               removeSkillApp(skill_app)
             }else if(mode == "train"){
-              if(!(skill_app?.arg_foci_set ?? false)){
-                beginSetArgFoci()  
-              }
+              // if(!(skill_app?.arg_foci_set ?? false)){
+              //   beginSetArgFoci()  
+              // }
             }
           }
           setInputFocus(null)
@@ -321,45 +390,50 @@ function TextFieldOverlay({sel, elem}) {
           
         }}
         onChange={(e)=>{
-          console.log("On CHANGE", mode, e.target.value)
+          let new_value = e.target.value
+          console.log("On CHANGE", mode, new_value)
           // did_change.current = ref.current.value !== ""
+
+          // In start_state mode remove when "" 
+          if(skill_app && mode=="start_state" && (!new_value || empty_focus)){
+            removeSkillApp(skill_app)
+            skill_app = null
+          }
           
-          // if(mode=="train"){
-          if(!skill_app || empty_focus){
-            console.log("New Input", text, e.target.value)
+          if((!skill_app || empty_focus) && new_value){
+            console.log("New Input", text, new_value, skill_app, empty_focus)
 
             let new_skill_app;
             if(mode=="train"){
-              new_skill_app = newDemo(sel, "UpdateTextField", e.target.value)
+              new_skill_app = newDemo(sel, "UpdateTextField", new_value)
             }else{
-              new_skill_app = newTutorPerformed(sel, "UpdateTextField", e.target.value)
+              new_skill_app = newTutorPerformed(sel, "UpdateTextField", new_value)
             }
-
-            // In start_state mode replace instead of add. 
-            if(mode=="start_state"){
-              removeSkillApp(skill_app)
-            }
+            
             addSkillApp(new_skill_app)
             setFocus(new_skill_app.uid)
-            // if(mode=='train'){
-            //   setCurrentTab("demonstrate")  
-            // }
-          }else{
-            console.log("Set Input", text, e.target.value)
-            setInputs(skill_app, {value: e.target.value})  
+            if(mode == "train"){
+              beginSetArgFoci()  
+            }
+            
+
+          }else if(skill_app){
+            console.log("Set Input", text, "->", new_value)
+            setInputs(skill_app, {value: new_value})  
           }
           setEmptyFocus(false)
-          // }else{
-          //   ref.current.value += e.target.value
-          //   console.log(ref.current.value)
-          // }
-          
           
         }}
         onKeyDown={(evt)=>{
           console.log("KEY", evt.key, has_focus, evt)
           if((evt.key==="Enter" && !evt.shiftKey) || evt.key==="Escape"){ 
             ref.current.blur()
+
+            // Only confirm foci on blur if any were set
+            // if(skill_app?.arg_foci?.length > 0 && mode == "arg_foci"){
+            if(mode == "arg_foci"){
+              confirmArgFoci()
+            }
           }
           if(mode === "start_state" && empty_focus){
             if(evt.key==="Delete" || evt.key==="Backspace"){ 
@@ -386,12 +460,12 @@ function ButtonOverlay({
   let {correct, incorrect, isDemo, color, input} = skillAppExtractProps(skill_app, isExternalHasOnly)
 
   color = (groupHasFocus && color) ||
-          (elem.locked && colors.locked_color) || 
-          colors.default_color
+          (elem.locked && colors.locked) || 
+          colors.default
 
   return (
     <OverlayBounds {...{sel, elem, color}}
-      style={{cursor : skill_app ? 'auto' : 'pointer', overflow: 'clip'}}
+      style={{cursor : skill_app ? 'auto' : 'pointer'}}
       onClick={(e)=>{
         console.log("BUTTON")
         if(!skill_app){
@@ -403,7 +477,7 @@ function ButtonOverlay({
     >
     {skill_app &&
       <div style={{
-        borderRadius:100,
+        borderRadius:100, overflow: 'clip',
         ...(groupHasFocus && {backgroundColor: color})
         }}> 
         <img 

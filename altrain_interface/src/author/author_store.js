@@ -158,20 +158,22 @@ const useAuthorStore = create((set,get) => ({
   skills : {},
 
   // Skill Applications (queried from the agent)
-  skill_apps: {},
-  sel_skill_app_uids: {},
+  skill_apps : {},
+  sel_skill_app_uids : {},
 
-  // Graph stuff
+  // Skill Applications for tutor performed actions that set start state.
+  // start_skill_apps : {},
+
+  /* Graph  */
   graph : null,
   graph_states : (GRAPH_DEBUG_MODE && debug_graph_states) || {},
   graph_actions : (GRAPH_DEBUG_MODE && debug_graph_actions) || {},
   graph_prev_update_time : null,
   graph_demo_count : 0, // Simply used as rerender trigger  
 
-
   /* Tutor  */
   // A reference to the tutor wrapper instance.
-  tutor: null,
+  tutor : null,
 
   // The JSON state of the tutor experienced by the agent
   tutor_state : null,
@@ -287,8 +289,10 @@ const useAuthorStore = create((set,get) => ({
 
   startSpeechRecognition : () =>{
     let {speech_recognition} = get()
-    speech_recognition.start()
-    set({speech_recognition_listening : true})
+    if(speech_recognition){
+      speech_recognition.start()
+      set({speech_recognition_listening : true})  
+    }
   },
 
   onSpeechRecognitionResult : (e)=>{
@@ -309,7 +313,14 @@ const useAuthorStore = create((set,get) => ({
 
   initializeSpeechRecognition : () =>{
     let {onSpeechRecognitionResult, onSpeechRecognitionEnd} = get()
-    let rec = new webkitSpeechRecognition()
+    let rec;
+    try{
+      rec = new webkitSpeechRecognition()  
+    }catch(e){
+      set({speech_recognition : null});
+      return
+    }
+    
     rec.onresult = onSpeechRecognitionResult
     rec.onend = onSpeechRecognitionEnd
     rec.continuous = false;
@@ -397,50 +408,67 @@ const useAuthorStore = create((set,get) => ({
     set({graph: graph})
   },  
 
+  setGraphBounds: (graph_bounds) => {
+    set({graph_bounds: graph_bounds})
+  },  
+
   setStageViewRef : (stage_view_ref) => set((store) => ({stage_view_ref})),
   setStageRef : (stage_ref) => set((store) => ({stage_ref})),
 
   /*** Problem Controls */
 
   setInterface: async (intr_name) => {
-    let {interfaces, questions, loadProblem, setQuestion} = get()
+    let {interfaces, questions, loadProblem, setQuestion, beginSetStartState} = get()
     let prob_config = interfaces[intr_name]
     let q_items = Object.keys(questions[intr_name])
-    console.log("SET INTER", q_items)
-    let no_qs = q_items.length == 0
+    
+    let no_qs = (q_items?.length ?? 0) == 0
     set({curr_interface: intr_name})
 
-    // NOTE: Not sure why need to await in one case
-    if(no_qs){
-      loadProblem(prob_config)
-    }else{
-      await loadProblem(prob_config)
-    }
-    
-    setQuestion(q_items[0] || null)
-    set({mode: (no_qs ? 'start_state' : 'train')})  
-    
-    
+    console.log("SET INTER", q_items, no_qs)
 
+    await loadProblem(prob_config)
+    if(no_qs){      
+      console.log("beginSetStartState")
+      beginSetStartState()
+    }else{
+      set({mode: 'train'})  
+      setQuestion(q_items[0])
+    }
+    // set({mode: (no_qs ? 'start_state' : 'train')})  
+    
   },
 
   setQuestion: (q_id, interal=false) => {
-    console.log("SET QUESTION", q_id, interal)
-    let {confirmStartState, mode} = get()
-    if(!interal && mode == "start_state"){
-      confirmStartState(false,false)
+    let {mode, curr_question, confirmStartState,  clearInterface} = get()
+    console.log("SET QUESTION", curr_question, q_id, interal)
+    if(q_id != curr_question && !interal && mode == "start_state"){
+      confirmStartState(false,true)
     }
+
+    clearInterface()
 
     let store = get()
     let {questions, curr_interface, tutor, editing_question_menu, setFocus,
         updateAgentNextActions, setSkillApps} = store;
     ({mode} = store);
     
-    if(mode == "train"){
+    if(mode == "start_state"){
+      let question_items = questions[curr_interface] || {}
+      let skill_apps = {}
+      if(q_id){
+        // tutor.clear()
+        let question = question_items[q_id]
+        skill_apps = question.skill_apps || {}
+      }
+      set({curr_question: q_id})  
+      console.log("SET Q SKILL APPS", skill_apps)
+      setSkillApps(skill_apps)
+    }else{
       let question_items = questions[curr_interface] || {}
       let tutor_state = {}
       if(q_id && tutor){
-        tutor.clear()
+        // tutor.clear()
         let question = question_items[q_id]
         for (let [uid,sai] of Object.entries(question.skill_apps)){
           tutor.stageSAI(sai)
@@ -448,33 +476,25 @@ const useAuthorStore = create((set,get) => ({
         tutor_state = tutor.getState()
       }
       set({curr_question: q_id, tutor_state})  
-    }else if(mode == "start_state"){
-      let question_items = questions[curr_interface] || {}
-      let skill_apps = {}
-      if(q_id){
-        tutor.clear()
-        let question = question_items[q_id]
-        skill_apps = question.skill_apps || {}
-      }
-      set({curr_question: q_id})  
-      setSkillApps(skill_apps)
     }
-    setFocus(null)
-    updateAgentNextActions(false)
-    
+
+    if(mode == "train"){
+      console.log("DO UPDATE")
+      updateAgentNextActions(false)
+    }
   },
 
   beginEditingQuestionMenu: (will_be_editing) => {
-    let store = get()
-    let {editing_question_menu:was_editing} = store
+    let {editing_question_menu:was_editing, confirmStartState,
+          setQuestion, curr_question} = get()
     if(will_be_editing){
       // if(store.mode == "start_state"){
       //   store.confirmStartState()
       // }
       set({mode: "start_state"})
-      store.setQuestion(store.curr_question)
+      setQuestion(curr_question)
     }else{
-      store.confirmStartState()
+      confirmStartState()
     }
     if(!was_editing && will_be_editing){
       set({editing_question_menu: true, mode : "start_state"})
@@ -486,15 +506,17 @@ const useAuthorStore = create((set,get) => ({
 
   confirmStartState: (force=false, return_to_train=true) =>{
     let store = get()
-    let {questions, curr_interface, skill_apps, editing_question_menu, setSkillApps} = store
+    let {questions, curr_interface, skill_apps, editing_question_menu, setSkillApps, clearInterface} = store
     let question_items = questions[curr_interface] || {}
 
     console.log(skill_apps)
     // If the new problem is empty don't save it.
     if(!force && Object.entries(skill_apps).length==0){
-      console.log("EMPTY PROBLEM")
+      console.log("EMPTY PROBLEM" ,question_items)
       set({mode: 'train', editing_question_menu:false})
-      setSkillApps({})
+      // clearInterface()
+      store.setQuestion(Object.keys(question_items)?.[0], true)
+      // setSkillApps({})
       return
     }
     
@@ -530,7 +552,7 @@ const useAuthorStore = create((set,get) => ({
 
     if(return_to_train){
       set({mode : 'train', editing_question_menu:false})
-      setSkillApps({})
+      // clearInterface()
       store.setQuestion(q_id, true)
     }
   },
@@ -637,7 +659,7 @@ const useAuthorStore = create((set,get) => ({
     let {network_layer, modifySkillApp} = get()
 
 
-    modifySkillApp(skill_app, {explanation_is_pending : true})
+    modifySkillApp(skill_app, {awaiting_explanation : true})
 
     console.log("agentPromise", agentPromise)
     let {skill_apps, agentPromise, tutor_state} = get()
@@ -685,9 +707,11 @@ const useAuthorStore = create((set,get) => ({
       func_options.push(option);
       i++;
     }
+    let n_s = skill_explanations?.length ?? 0
+    let n_f = func_explanations?.length ?? 0
     let explanation_options = [
-      {'label' : "Skill Explanations", options: skill_options},
-      {'label' : "Function Explanations", options: func_options},
+      {'label' : `${n_s} Skill Explanations`, value: "Skill Explanations", options: skill_options},
+      {'label' : `${n_f} Function Explanations`, value: "Function Explanations", options: func_options},
     ]
 
     let explanation_time = Date.now()
@@ -697,14 +721,14 @@ const useAuthorStore = create((set,get) => ({
 
     modifySkillApp(skill_app, {
       explanation_options, explanation_time,
-      explanation_selected, explanation_is_pending : false
+      explanation_selected, awaiting_explanation : false
     })
 
     // set({skill_apps : {
     //     ...skill_apps,
     //     [skill_app_uid] : {...skill_apps[skill_app_uid],
     //       explanation_options, explanation_time, explanation_selected,
-    //       explanation_is_pending : false
+    //       awaiting_explanation : false
     //     }
     //   }
     // })
@@ -712,16 +736,20 @@ const useAuthorStore = create((set,get) => ({
     // set(applySkillAppAttr(store, skill_app, 'explanations', explanations))
     // }
   },
+  clearExplanation: (skill_app) =>{
+    let {skill_apps, modifySkillApp} = get()
+    let explanation = (skill_app.explanation_options?.[0]?.options?.[0] ?? 
+                       skill_app.explanation_options?.[1]?.options?.[0]) ?? null
+    if(explanation){
+      explanation = {...explanation, explicit : false}
+    }
+
+    modifySkillApp(skill_app, {explanation_selected: explanation})
+  },
 
   selectExplanation: (skill_app, explanation) =>{
-    let {skill_apps} = get()
-    set({skill_apps : {
-        ...skill_apps,
-        [skill_app.uid] : {...skill_apps[skill_app.uid],
-          explanation_selected: {...explanation, explicit : true}
-        }
-      }
-    })
+    let {skill_apps, modifySkillApp} = get()
+    modifySkillApp(skill_app, {explanation_selected: {...explanation, explicit : true}})
   },
 
   setFocus: (skill_app_uid) => { 
@@ -735,9 +763,9 @@ const useAuthorStore = create((set,get) => ({
       setTutorState(state_uid)  
     }
     
-    if(skill_app && skill_app?.is_demo){
-      explainDemo(skill_app)
-    }    
+    // if(skill_app && skill_app?.is_demo){
+    //   explainDemo(skill_app)
+    // }    
   },
 
 
@@ -793,6 +821,10 @@ const useAuthorStore = create((set,get) => ({
   }),
 
   setStaged: (skill_app, store_prev=true) => set((store) => { 
+    if(typeof(skill_app) == 'string'){
+      let {skill_apps} = get()
+      skill_app = skill_apps[skill_app]
+    }
     let changes = {staged_sel : skill_app.selection, staged_uid : skill_app.uid}
     if(store_prev && store.staged_uid != ""){
       changes['stage_undo_stack'] = [...store.stage_undo_stack, {staged_uid: store.staged_uid, staged_sel : store.staged_sel}]
@@ -870,17 +902,24 @@ const useAuthorStore = create((set,get) => ({
   },
 
   beginSetStartState : async () => {
-    let {tutor, curr_interface, n_tutor_loads, setSkillApps} = get()
-    tutor.clear()
-    let tutor_state = tutor.getState()
+    let {tutor, curr_interface, n_tutor_loads, setSkillApps, clearInterface} = get()
+    // tutor.clear()
+    
     // await store.loadProblem({"HTML" : curr_interface})
 
-    set({mode : 'start_state', tutor_state, editing_question_menu : false,
-        graph_states: {}, graph_actions: {}})
-    setSkillApps({})
+    clearInterface()
+    let tutor_state = tutor.getState()
+
+    set({mode : 'start_state', tutor_state, curr_question: "[setting start]", editing_question_menu : false})
+    
+    // setSkillApps({})
   },
 
   beginSetArgFoci : () => {
+    let {stage_view_ref} = get()
+
+    // document.body.cursor = 'none'
+    // document.
     set({mode : "arg_foci"})
   },
 
@@ -907,6 +946,9 @@ const useAuthorStore = create((set,get) => ({
     if(!hasFociSelect){
       // console.log(arg_foci, arg_foci.filter((x)=>x!==sel))
       arg_foci = focus_app.arg_foci = arg_foci.filter((x)=>x!==sel)
+      if(arg_foci.length == 0){
+        arg_foci = null
+      }
     }else if(!arg_foci.includes(sel)){
       arg_foci = focus_app.arg_foci = [...arg_foci, sel]
     }else{
@@ -996,7 +1038,7 @@ const useAuthorStore = create((set,get) => ({
             for (let a_uid of s_obj.out_skill_app_uids){
               let a = actions[a_uid] 
               delete actions[a_uid]
-              let in_s = a.next_state_uid
+              let in_s = states[a.next_state_uid]
               in_s.in_skill_app_uids = (in_s?.in_skill_app_uids ?? []).filter((x)=>x.uid==a_uid)
             }
           }
@@ -1042,7 +1084,12 @@ const useAuthorStore = create((set,get) => ({
     
 
     console.log("curr_state", states[curr_state_uid])
-    showStateSkillApps(curr_state_uid)
+    let skill_apps = showStateSkillApps(curr_state_uid)
+
+    let {setFocus} = get()
+    console.log("FOCUS", skill_apps?.[0]?.uid ?? "")
+    setFocus(skill_apps?.[0]?.uid ?? "")
+    //set({focus_uid: })
     
   },
 
@@ -1051,31 +1098,30 @@ const useAuthorStore = create((set,get) => ({
     let curr_out_uids = states[state_uid]?.out_skill_app_uids??[]
     let new_skill_apps = curr_out_uids.map((a_uid) => actions[a_uid].skill_app)
     console.log("new_skill_apps", new_skill_apps)
-    setSkillApps(new_skill_apps)
-    
+    setSkillApps(new_skill_apps)    
+    return new_skill_apps
   },
 
   confirmFeedback : async () => {
-    let {network_layer, mode, skill_apps, tutor_state, agent_uid, staged_uid, tutor,
-        confirmArgFoci, updateAgentNextActions, updateSkills, saveProject,
-        graph_states, graph_actions, beginSetStartState} = get()
+    let {network_layer, mode, skill_apps, curr_state_uid, tutor_state, agent_uid, staged_uid, tutor,
+        confirmArgFoci, updateAgentNextActions, updateSkills, saveProject, 
+        graph_states, graph_actions, beginSetStartState, modifySkillApp} = get()
     if(mode == 'arg_foci'){
       confirmArgFoci()
     }
 
-    console.log("CONFIRM", agent_uid)
+    let training_set = [] 
+    let states = {[curr_state_uid]: tutor_state} 
     for (let [key, skill_app] of Object.entries(skill_apps)){
-      let {selection, action_type, inputs, reward=0, ...rest} = skill_app
-      if(reward != 0){
-        let sai = {selection, action_type, inputs}
-        await network_layer.train(agent_uid, tutor_state, sai, reward, rest)
+      if((skill_app?.reward ?? 0) != 0){
+        training_set.push({state: curr_state_uid, ...skill_app})
       }
     }
+    let train_promise = network_layer.train_all(agent_uid, training_set, states)
 
     saveProject()
 
-
-
+    // Apply the staged action
     if(staged_uid){
       let skill_app = skill_apps[staged_uid]
       await tutor.stageSAI(skill_app)    
@@ -1092,15 +1138,19 @@ const useAuthorStore = create((set,get) => ({
       }
       
     }
-    
 
-    set({focus_uid : "", hover_uid : "", staged_uid : ""})
+    set({focus_uid : "", hover_uid : "", staged_uid : "", 
+         focus_sel: "", hover_sel: "", staged_sel: ""})
 
     tutor_state = tutor.getState()
     set({tutor_state})
 
-    await updateAgentNextActions(true)
+    await train_promise
+    for (let ti of training_set){
+      modifySkillApp(ti.uid, {"confirmed" : true})
+    }
     await updateSkills()
+    await updateAgentNextActions(true)    
 
   },
 
@@ -1273,7 +1323,7 @@ const useAuthorStore = create((set,get) => ({
 
   addSkillApp: (skill_app) => { 
     let {sel_skill_app_uids, skill_apps, only_count, staged_uid,
-        graph_actions, curr_state_uid, updateGraphConnections} = get()
+        graph_actions, curr_state_uid, updateGraphConnections, explainDemo} = get()
     let sel = skill_app.selection
     let store_changes = {
       sel_skill_app_uids : {
@@ -1306,9 +1356,15 @@ const useAuthorStore = create((set,get) => ({
     if(!skill_app?.tutor_performed){
       updateGraphConnections(skill_app)
     }
+
+    if(skill_app.is_demo){
+      explainDemo(skill_app)
+    }
+
   },
 
   modifySkillApp : (skill_app, changes) => {
+    console.log(skill_app, changes)
     let {skill_apps, graph_actions} = get()
     if(typeof(skill_app) == "string"){
       let skill_app_uid = skill_app
@@ -1332,6 +1388,7 @@ const useAuthorStore = create((set,get) => ({
       }
     }
     set(store_changes)
+    console.log(store_changes)
     return changed_skill_app
   },
 
@@ -1382,6 +1439,19 @@ const useAuthorStore = create((set,get) => ({
 
       set({graph_states, graph_actions})
     }
+  },
+
+  clearInterface : (clear_tutor=true) => {
+    let {setSkillApps, tutor} = get()
+    if(tutor && clear_tutor){tutor.clear()}
+    set({focus_uid : "", hover_uid : "", staged_uid : "", 
+         focus_sel: "", hover_sel: "", staged_sel: "",
+         skill_apps : {},
+         graph_states: {}, graph_actions: {},
+         sel_skill_app_uids : {},
+         only_count : 0,
+         stage_undo_stack: []})
+    //setSkillApps({})
   },
 
   setSkillApps: (skill_apps) => {

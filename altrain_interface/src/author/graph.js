@@ -1,25 +1,25 @@
 // import React, { useState, useEffect } from 'react';
 import React, { Component, createRef, useState, useEffect, useRef, Profiler, Suspense, memo } from 'react'
-import * as d3 from "d3"
-import "d3-selection-multi";
+// import * as d3 from "d3"
+// import "d3-selection-multi";
 import "./graph.css"
 import {graph_data} from "./graph_test_data1.js"
 import {authorStore, useAuthorStore, useAuthorStoreChange} from "./author_store.js"
-import { animated, motion, useMotionValue, useSpring, useScroll } from "framer-motion";
+import { animate, motion, MotionValue, useSpring} from "framer-motion";
 import { gen_shadow, arraysEqual } from "../utils";
+import { colors, where_colors } from "./themes.js"
+import ScrollableStage from "./stage.js"
+import {Transform, identity as zoomIdentity} from "./zoom.js"
 
+const images = {
+  next : require('../img/next.svg')
+};
 
-const colors = {
-  "c_bounds" : 'rgba(10,220,10)',
-  "i_bounds" : 'rgba(255,0,0)',
-  "u_bounds" : 'rgba(120,120,120)',
-  "c_knob" : 'limegreen',
-  "i_knob" : 'red',
-  "u_knob" : 'lightgray',
-  "c_knob_back" : 'rgb(100,200,100)',
-  "i_knob_back" : 'rgb(200,100,100)',
-  "u_knob_back" : 'rgb(180,180,180)'
-}
+// const colors = {
+//   "correct" : 'rgba(10,220,10)',
+//   "incorrect" : 'rgba(255,0,0)',
+//   "default" : 'rgba(129,125,144)',
+// }
 
 
 const nodeRadius = 26;
@@ -54,10 +54,6 @@ function gen_node_path(s) {
     let path = `M ${hw*.8},${-hh}` +
                `Q ${hw*1},${-hh} ${hw*1.1},${-hh*.8} ` +
                `Q ${hw*1.5},0 ${hw*1.1},${hh*.8} ` +
-               //`Q ${hw*.93},${-hh} ${hw},${-hh*.7} ` +
-               // Half Circle Part
-                //`A ${hw*2},${hh*2} 0 0,1 ${hw*.93},${hh} ` +
-               // `Q ${hw*.7},${hh} ${hw},${hh*.7} ` +
                `Q ${hw*1},${hh} ${hw*.8},${hh} ` +
 
                `H ${-hw*.8}` +
@@ -79,6 +75,7 @@ function gen_double_chevron(s) {
                `L ${hw*.8},${0}` 
     return path
 }
+
 
 function gen_curve_path(a, states, relative=false) {
     let {state_uid, next_state_uid} = a
@@ -138,10 +135,9 @@ export function organizeByDepth(states){
     return ascending_depth
 }
 
-function layoutNodesEdges(states, actions){
-    console.log(states, actions)
-    
+function layoutNodesEdges(states, actions){    
     let objs_by_depth = organizeByDepth(states)
+
     // Establish the general layout of nodes and edges
     let prev_depthY_center = 0
     for(let [depth, depth_objs] of objs_by_depth){
@@ -182,7 +178,7 @@ function layoutNodesEdges(states, actions){
             for(let out_uid of out_skill_app_uids){
                 a_obj = actions?.[out_uid];
                 if(!a_obj) continue;
-                    
+
                 a_obj.x = Math.max(s_obj.depth, 0) * depthSpacing + (nodeWidth / 2) + leftActionMargin
                 a_obj.y = depth_maxY + (edge_index * vertActionSpacing)
                 a_obj.color = 'grey' //"hsl(" + Math.random() * 360 + ",100%,50%)"
@@ -220,7 +216,9 @@ function layoutNodesEdges(states, actions){
 
             let out_skill_app_uids = s_obj?.out_skill_app_uids ?? []
             for(let out_uid of out_skill_app_uids){
-                let a_obj = actions[out_uid]
+                let a_obj = actions?.[out_uid];
+                if(!a_obj) continue;
+
                 a_obj.y += center_diffY
                 if(a_obj.y+actionHeight > maxY){
                     maxY = a_obj.y+actionHeight
@@ -232,26 +230,39 @@ function layoutNodesEdges(states, actions){
         prev_depthY_center = (depth_maxY / 2) + center_diffY
     }
 
+    let graphBounds = {minX:0, minY:0, maxX:0, maxY:0}
+
     // Set in_index and out_index for each edge to minimize rendering
     //  overlap between edges.
     for(let [uid, s_obj] of Object.entries(states)){
         let srted;
-        srted = (s_obj?.out_skill_app_uids ?? []).map((a_uid)=>actions[a_uid])
+
+        // Update graph X Bounds
+        if(s_obj.x < graphBounds.minX){graphBounds.minX = s_obj.x}
+        if(s_obj.x+nodeWidth > graphBounds.maxX){graphBounds.maxX = s_obj.x+nodeWidth}
+
+        // Sort + Set Out Indices 
+        srted = (s_obj?.out_skill_app_uids ?? [])
+        .reduce((lst, a_uid)=>{let a = actions?.[a_uid]; if(a) lst.push(a); return lst},[])
         .sort((a0_obj, a1_obj) => a0_obj.y-a1_obj.y)
-            // states[a0_obj.next_state_uid].y-states[a1_obj.next_state_uid].y
 
         for(let [index, a_obj] of srted.entries()){
             a_obj.out_index = index
+
+            // Update graph Y bounds
+            if(a_obj.y < graphBounds.minY){graphBounds.minY = a_obj.y}        
+            if(a_obj.y > graphBounds.maxY){graphBounds.maxY = a_obj.y}        
         }
 
+        // Sort + Set In Indices
         srted = (s_obj?.in_skill_app_uids ?? []).map((a_uid)=>actions[a_uid])
         .sort((a0_obj, a1_obj) => a0_obj.y-a1_obj.y)
-            // states[a0_obj.state_uid].y-states[a1_obj.state_uid].y
 
         for(let [index, a_obj] of srted.entries()){
             a_obj.in_index = index
         }
-    }  
+    }
+    return graphBounds  
 }
 
 // ---------------------------------------
@@ -285,6 +296,8 @@ const Edge = ({skill_app_uid}) =>{
 
     let reward = (skill_app?.reward ?? 0)
     let is_demo = skill_app.is_demo || false
+    let confirmed = skill_app?.confirmed ?? false
+    let undef = reward == 0 
     let correct = reward > 0 
     let incorrect = reward < 0 || (reward == 0 && isExternalHasOnly)
     let isImplicit = isExternalHasOnly && reward == 0;
@@ -298,10 +311,10 @@ const Edge = ({skill_app_uid}) =>{
                  (hasHover && gen_shadow(12,'drop',shadow_colors)) ||
                  gen_shadow(8,'drop', shadow_colors)
 
-    let stroke_color =  (is_demo && 'dodgerblue') ||
-                        (correct && colors.c_bounds) || 
-                        (incorrect && colors.i_bounds) || 
-                        colors.u_bounds
+    let stroke_color =  (is_demo && colors.demo) ||
+                        (correct && colors.correct) || 
+                        (incorrect && colors.incorrect) || 
+                        colors.default
 
     let edge_stroke_width = (hasHover && hasFocus && 13) ||
                        (hasFocus && 12) || 
@@ -320,14 +333,14 @@ const Edge = ({skill_app_uid}) =>{
                     (incorrect && "url(#x)") ||
                     "url(#arrow)"
 
-    console.log("RERENDER EDGE", text, isExternalHasOnly, incorrect)
+    // console.log("RERENDER EDGE", text, isExternalHasOnly, incorrect)
 
     return (
         <g className="edge"
             skill_app_uid={skill_app_uid}
             filter={shadow}
-            onMouseEnter={()=>{setHover(skill_app_uid); console.log("HI")}}
-            onMouseLeave={()=>{setHover(""); console.log("BYE")}}
+            onMouseEnter={()=>{setHover(skill_app_uid)}}
+            onMouseLeave={()=>{setHover("")}}
             //Note: onMouseDown is handled at the graph level because d3.zoom consumes
             >
 
@@ -335,6 +348,7 @@ const Edge = ({skill_app_uid}) =>{
             {(skill_app && <path 
                 className="edge-curve"
                 markerEnd={markerEnd}
+                {...(!undef && !confirmed && {strokeDasharray:"30,3"})}
                 d={gen_curve_path(a, states, true)}
                 stroke={stroke_color}
                 strokeWidth={edge_stroke_width}
@@ -460,11 +474,6 @@ const Node = ({state_uid}) =>{
     let stroke_width = (hasFocus && 6) || 
                         3;
 
-    // if (state_uid == current_uid) {
-    //     shadow = "drop-shadow(2px 4px 2px rgb(15, 15, 35, 0.4))"
-    // }else{
-    //     shadow = "drop-shadow(1px 2px 1px rgb(30, 30, 70, 0.3))"
-    // }
     return (
         <g
         onMouseEnter={()=>{setHoverState({uid:state_uid});}}
@@ -477,19 +486,21 @@ const Node = ({state_uid}) =>{
                 d={gen_node_path(s)}
                 fill={'lightgrey'}
                 strokeWidth={stroke_width}
-                stroke={"grey"}
+                stroke={colors.default}
                 filter={shadow}
                 transform={`scale(${scale})`}
             />
             {hasStaged && 
-                <path 
-                    className="node-double-chevron"
-                    d={gen_double_chevron(s)}
-                    fill={'transparent'}
-                    strokeWidth={6}
-                    stroke={"gray"}
+                <image 
+                    className="node-next-icon"
+                    href={images.next}
+                    width={nodeWidth*.8}
+                    height={nodeWidth*.8}
+                    x={-nodeWidth*.4}
+                    y={-nodeWidth*.4}
+                    opacity={.3}
                     transform={`scale(${scale})`}
-                />
+                    />
             }
             <text 
                 className="node-text"
@@ -584,9 +595,9 @@ const Defs = (svg) =>{
     )
 }
 
-const GraphContent = ({contentRef}) =>{
-    let [update_time,[state_uids, actions_uids, actions_are_neg]] = useAuthorStoreChange([
-        '@graph_prev_update_time',
+const GraphContent = ({contentRef, stageRef, svgRef, anims, setGraphBounds}) =>{
+    let [update_time, is_start_mode, [state_uids, actions_uids, actions_are_neg]] = useAuthorStoreChange([
+        '@graph_prev_update_time', "@mode=='start_state'",
         [(s) => {
           let s_uids = Object.keys(s.graph_states).sort()
           let a_uids = Object.keys(s.graph_actions).sort()
@@ -602,41 +613,135 @@ const GraphContent = ({contentRef}) =>{
           return arraysEqual(o[0], n[0]) && arraysEqual(o[1], n[1]) && arraysEqual(o[2], n[2])
         }] 
     ])
-    let {graph_states:states, graph_actions:actions} = authorStore()
 
-    console.log("UPDATE_GRAPH", states, actions)
-    layoutNodesEdges(states, actions)
-    
-    let node_containers = []
-    for(let [state_uid, s_obj] of Object.entries(states)) {
-        console.log("<<", state_uid.slice(3,6), s_obj.is_connected)
-        if(s_obj?.is_connected != false){
-            node_containers.push(
-                <NodeGroup state_uid={state_uid}
-                    key={state_uid}
-                />
-            )    
+    console.log("GRAPH IS START", is_start_mode)
+    if(is_start_mode){
+        return (<g ref={contentRef} transform='translate(100,200) scale(1)'>
+                    <text stle={{userSelect: 'none'}}>
+                        {"Setting Start State"}
+                    </text>
+                </g>)
+    }else{
+        let {graph_states:states, graph_actions:actions} = authorStore()
+
+        console.log("UPDATE_GRAPH", states, actions)
+        let graphBounds = layoutNodesEdges(states, actions);
+        setGraphBounds(graphBounds)
+
+        let node_containers = []
+        for(let [state_uid, s_obj] of Object.entries(states)) {
+            console.log("<<", state_uid.slice(3,6), s_obj.is_connected)
+            if(s_obj?.is_connected != false){
+                node_containers.push(
+                    <NodeGroup state_uid={state_uid}
+                        key={state_uid}
+                    />
+                )    
+            }
         }
-        
+        return (<motion.g 
+            style={{
+                translateX: anims.x,
+                translateY: anims.y,
+                scale: anims.scale
+            }}
+            ref={contentRef}
+            >
+            {node_containers}
+            {/*<circle x={0} y={0} id="circle-indicator" r="10" fill="green"/>*/}
+            </motion.g>)
     }
-    return (<g ref={contentRef}>{node_containers}</g>)
 }
 
 // A class component that wraps the main GraphContent allowing d3 zoom() events to be used.
 export class Graph extends React.Component {
     constructor(){
         super();
+        this.stageRef = React.createRef();
         this.svgRef = React.createRef();
         this.svgGRef = React.createRef();
+        this.zoomOrigin = zoomIdentity.translate(40,260);
+        this.zoomTransform = this.zoomOrigin.scale(1);
+        this.scaleExtent = [.15, 1.4]
         this.didZoom = false
+        this.is_dragging = false
+        this.prev_drag_pos = [0,0]
+        
+        this.x_anim = new MotionValue(0)
+        this.y_anim = new MotionValue(0)
+        this.scale_anim = new MotionValue(1)
+        // const [scollX_anim, scrollY_anim] = [useMotionValue(0), useMotionValue(0)]
+
+        //
+        window.addEventListener('mouseup', (e)=>{
+            this.is_dragging=false
+            if(this.svgGRef.current){
+                this.svgRef.current.style.cursor = "auto"
+            }
+        })
+        window.addEventListener('mousemove', (e)=>{
+            // console.log(e)
+            if(!this.svgRef.current || !this.is_dragging) return;
+            
+            let [dx, dy] = [e.clientX-this.prev_drag_pos[0], e.clientY-this.prev_drag_pos[1]]
+
+            this.prev_drag_pos = [e.clientX, e.clientY]
+
+            this.zoomTransform.x += dx*1.7 // scroll fast
+            this.zoomTransform.y += dy*1.7 // scroll fast
+
+            this.applyZoomTransform()
+        })
+    }
+
+    applyZoomTransform = (duration=0) =>{
+        let svg_g = this.svgGRef.current
+        if(!svg_g) return;
+
+        // Ensure that the transform adheres to bounds
+        let {x, y, k} = this.zoomTransform        
+        const [viewWidth, viewHeight] = [350, 440]
+        let gb = this.graphBounds
+        let hang = 100 //Amount that graph shows when all the way off edge
+        let [mx,my] = [-gb.maxX*k+hang, -gb.maxY*k+hang]
+        let [Mx,My] = [viewWidth-gb.minX*k-hang, viewHeight-gb.minY*k-hang]
+        if(x < mx) x = mx; if(y < my) y = my;
+        if(x > Mx) x = Mx; if(y > My) y = My;        
+        this.zoomTransform.x = x
+        this.zoomTransform.y = y
+
+        if(duration == 0){
+            this.x_anim.set(this.zoomTransform.x)
+            this.y_anim.set(this.zoomTransform.y)
+            this.scale_anim.set(this.zoomTransform.k)    
+        }else{
+            let anim_config = {ease: "easeInOut", duration: duration}
+            animate(this.x_anim, [this.x_anim.get(), this.zoomTransform.x], anim_config)
+            animate(this.y_anim, [this.y_anim.get(), this.zoomTransform.y], anim_config)
+            animate(this.scale_anim, 
+                [this.scale_anim.get(), 
+                 this.zoomTransform.k-.08,  //Extra keyframe where zoom out a little
+                 this.zoomTransform.k], anim_config)    
+        }
     }
 
     handleMouseDown = (e) => {
+        console.log("MOUSE DOWN")
         this.didZoom = false
+        this.is_dragging = true
+        this.prev_drag_pos = [e.clientX, e.clientY]
+        if(this.svgRef.current){
+            this.svgRef.current.style.cursor = "move"    
+        }
+        
         // e.stopImmediatePropagation()
     }
-    handleClick = (e) => {
+    // handleMouseLeave = (e) =>{
+    //     this.is_dragging = false
+    // }
+    handleMouseUp = (e) => {
         console.log("MOUSE UP")
+        this.is_dragging = false
         // If the click target is not the background then ignore d3
         if(!this.didZoom && 
            !(e.target == this.svgRef.current || e.target == this.svgGRef.current)){
@@ -660,53 +765,108 @@ export class Graph extends React.Component {
 
 
             // Prevent any zoom events 
-            e.stopImmediatePropagation()
+            // e.stopImmediatePropagation()
         }
+        
 
     }
+    
+
+    
+    handleWheel = (e) => {
+        let dx,dy;
+        let gb = this.graphBounds
+        let [gWidth, gHeight] = [(gb.maxX-gb.minX), (gb.maxY-gb.minY)]
+
+        const [viewWidth, viewHeight] = [350, 440]
+        // Zoom Case
+        if(e.shiftKey){
+            let {k:o_k, x:o_x, y:o_y} = this.zoomTransform
+            let [kMin, kMax] = this.scaleExtent
+            kMin = (viewWidth-50)/Math.max(gWidth, gHeight)
+            let k = Math.max(kMin, Math.min(kMax, o_k * Math.pow(2, e.deltaY*.008)))
+
+            let [mx, my] = this.clientToGraphCoords([e.clientX, e.clientY])
+            
+            dx = mx*o_k-mx*k
+            dy = my*o_k-my*k
+
+            this.zoomTransform.k = k    
+        }else{
+            dx = -e.deltaX*.8
+            dy = -e.deltaY*.8
+        }
+        
+        this.zoomTransform.x += dx 
+        this.zoomTransform.y += dy
+
+        
+
+        this.applyZoomTransform()
+        
+        
+        
+    }
+    // handleMouseMove = (e) =>{
+        
+
+    //     // console.log(e)
+    //     // const xVal = e.pageX - stage_view_ref.current.offsetLeft;
+    //     // const diffX = (xVal - startX.current);
+    //     // stage_view_ref.current.scrollLeft = scrollLeft.current-diffX*2 //scroll-fast
+
+    //     // const yVal = e.pageY - stage_view_ref.current.offsetTop;
+    //     // const diffY = (yVal - startY.current); 
+    //     // stage_view_ref.current.scrollTop = scrollTop.current-diffY*2 //scroll-fast   
+    // }
 
     componentDidMount = () => {
-        this.zoomTransRef = React.createRef();
-        this.zoomTransRef.current = d3.zoomIdentity.translate(40, 200).scale(.7)
+        // this.zoomTransRef = React.createRef();
+        // this.zoomTransRef.current = d3.zoomIdentity.translate(40, 200).scale(.7)
 
-        let zoom = d3.zoom()
-            .scaleExtent([.15, 1.6])
-
-
-        let {x:zoom_x,y:zoom_y,k:zoom_scale} = this.zoomTransRef.current
-
-        // The group in the svg that is moved when change zoom    
-        let svg_g = d3.select(this.svgGRef.current)        
-        // The main svg
-        let svg = d3.select(this.svgRef.current)
-            .on("mousedown", this.handleMouseDown)
-            // Note: d3.zoom consumes mouseup so using click instead
-            .on("click", this.handleClick)
-            .call(zoom.transform, this.zoomTransRef.current)
-            .call(zoom.on("zoom", function(event) {
-                // console.log(event.transform)
-                svg_g.attr("transform", event.transform);
-            }))
+        // let zoom = d3.zoom()
+        //     .scaleExtent([.15, 1.6])
 
 
+        // let {x:zoom_x,y:zoom_y,k:zoom_scale} = this.zoomTransRef.current
+
+        // // The group in the svg that is moved when change zoom    
+        // let svg_g = d3.select(this.svgGRef.current)        
+        // // The main svg
+        // let svg = d3.select(this.svgRef.current)
+        //     .on("mousedown", this.handleMouseDown)
+        //     // Note: d3.zoom consumes mouseup so using click instead
+        //     .on("click", this.handleClick)
+        //     .call(zoom.transform, this.zoomTransRef.current)
+        //     .call(zoom.on("zoom", function(event) {
+        //         // console.log(event.transform)
+        //         let {mode} = authorStore()
+        //         if(mode != 'start_state'){
+        //             svg_g.attr("transform", event.transform);    
+        //         }
+        //     }))
+
+        // Set the graph in the zustand store
+        let {setGraph} = authorStore()
+        setGraph(this)        
+
+        // Gets point in graph's main container space
+        let svg = this.svgRef.current
+        let svg_g = this.svgGRef.current
         this.svg = svg
         this.svg_g = svg_g
-        this.zoom = zoom
-
-        let {setGraph} = authorStore()
-        setGraph(this)
-
-
-        // setTimeout(() =>{
-        //     this.zoom_to([[400, -200], [600, 400]])
-        // },100)
-
-        // setTimeout(() =>{
-        //     this.zoom_to('1')
-        // },500)
+        let pt = svg.createSVGPoint();
+        this.clientToGraphCoords = (p) => {
+            pt.x = p[0]; pt.y = p[1];
+            // Translate to svg space
+            pt = pt.matrixTransform(svg.getScreenCTM().inverse());
+            // Then translate into space of outer-most <g> container
+            return this.zoomTransform.invert([pt.x,pt.y])
+        }
+        this.applyZoomTransform()
     }
 
-    zoom_to = (dest, duration=600) => {
+    zoom_to = (dest, duration=.5) => {
         let bounds;
         if(typeof(dest) == "string"){
             let state_uid = dest
@@ -727,26 +887,38 @@ export class Graph extends React.Component {
         const [[x0, y0], [x1, y1]] = bounds
 
         let scale_div = Math.max((x1 - x0) / width, (y1 - y0) / height)
+        let k = Math.min(1.5, 0.55 / scale_div);
+        let transform = zoomIdentity
+            .translate(width / 2, height / 2) // center
+            .scale(k) // scale
+            .translate(-(x0 + x1) / 2, -(y0 + y1) / 2) // zoom to point
+            .translate(-80, 40) // tweak so more is showing
 
-        let transform = d3.zoomIdentity
-            .translate(width / 2, height / 2)
-            .scale(Math.min(8, 0.8 / scale_div))
-            .translate(-(x0 + x1) / 2, -(y0 + y1) / 2)
-
-        this.svg.transition()
-            .duration(duration)
-            .call(this.zoom.transform, transform)//d3.pointer(event, svg.node())
+        this.zoomTransform = transform
+        this.applyZoomTransform(duration)
+        console.log("ZOOM TO", this.zoomTransform)
     }
 
     render = () => {
         let {style} = this.props
-        return (<svg className={"root-svg"} ref = {this.svgRef}
-            style= {{...style,"border": "1px solid black"}}>
-            <Defs/>
-            <GraphContent contentRef={this.svgGRef}/>
-        </svg>)
+
+        console.log("STYLE", style)
+        return (
+            <svg 
+                style={{...style, "border": "1px solid black"}}
+                className={"root-svg"} ref = {this.svgRef}
+                onWheel={this.handleWheel}
+                onMouseDown={this.handleMouseDown}
+                onMouseUp={this.handleMouseUp}
+                onMouseMove={this.handleMouseMove}
+            >
+                <Defs/>
+                <GraphContent anims={{x:this.x_anim, y:this.y_anim, scale:this.scale_anim}}
+                    setGraphBounds={(bg)=>{this.graphBounds=bg}}
+                    contentRef={this.svgGRef} svgRef={this.svgRef} stageRef={this.svgRef}
+                />
+            </svg>
+        )
     }
 }
-
-    
 

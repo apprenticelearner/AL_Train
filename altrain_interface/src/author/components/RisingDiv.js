@@ -18,7 +18,6 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hov
   const scale_anim = useSpring(scale, springConfig);
   scale.set(default_scale)
   	
-
   //Control shadow
   const shadow_kind = props?.shadow_kind || 'box'
   const default_elevation = props?.elevation ?? props?.default_elevation ?? 2
@@ -28,14 +27,14 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hov
   const shadow = useMotionValue(default_shadow)
   shadow.set(default_shadow)
 
-  // console.log("RISING DIV", children)
+  // console.log("RERENDER RISING DIV", style)
 
   return (
     <motion.div 
       ref={innerRef}
-      onMouseEnter={() => {scale.set(hover_scale); shadow.set(hover_shadow); hoverCallback?.()}} 
-      onMouseLeave={() => {scale.set(default_scale); shadow.set(default_shadow); unhoverCallback?.()}}
-      whileHover={{ zIndex: 100,...hover_style}}
+      onMouseEnter={(e) => {scale.set(hover_scale); console.log("Hover", e, scale.current); shadow.set(hover_shadow); hoverCallback?.(e)}} 
+      onMouseLeave={(e) => {scale.set(default_scale); console.log("UnHover", e, scale.current); shadow.set(default_shadow); unhoverCallback?.(e)}}
+      //whileHover={{ zIndex: 100,...hover_style,  transition: { duration: 0 },}}
       style={{
           ...style,
           // willChange : 'filter, scale',

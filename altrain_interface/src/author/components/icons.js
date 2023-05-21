@@ -1,7 +1,7 @@
 import React, { Component, createRef, useState, useEffect, useRef, Profiler } from 'react'
 import {authorStore, useAuthorStore, useAuthorStoreChange} from "../author_store.js"
 import {shallowEqual} from "../../utils.js"
-
+import {colors, where_colors} from "../themes.js"
 
 const dodger_blue_filter = "invert(46%) sepia(41%) saturate(3631%) hue-rotate(191deg) brightness(100%) contrast(102%)"
 const crimson_filter = "invert(17%) sepia(40%) saturate(6641%) hue-rotate(336deg) brightness(103%) contrast(102%)"
@@ -18,8 +18,8 @@ export const Icon = ({size, kind}) => {
   let is_only = kind.includes('only') //&& key != 'only'
   let is_correct = !kind.includes('incorrect')
   let color = (is_demo && 'dodgerblue') ||
-              (kind.includes('incorrect') && 'red') ||
-              (kind.includes('correct') && 'limegreen') ||
+              (kind.includes('incorrect') && colors.incorrect) ||
+              (kind.includes('correct') && colors.correct) ||
               'black'
   let icon = (kind.includes('incorrect') && '✖') ||
               // (key=='only' && '⦿') ||
@@ -60,17 +60,32 @@ export const FeedbackCounter = ({style, kind, count, clickHandler, count_text_st
   style = {...styles.counter_container,...style}
   let icon_size = (style.fontSize || 10) 
   // let inner_size = (is_only && icon_size * .7) || icon_size * .8
+  let inner = [];
+  if(count <= 2){
+    for (let i=0; i < count; i++){
+      inner.push(<Icon 
+        key={`${kind}_icon_${i}`}
+        {...{size: icon_size, kind, count}} 
+      />,)
+    }
+  }else{
+    inner = [<Icon key={`${kind}_icon`}
+              {...{size: icon_size, kind, count}} />,
+             <a key={`${kind}_count`}
+              style={{fontSize: ".9em", ...styles.count_text_style, ...count_text_style}}>{`x${count}`}</a>
+            ]
+  }
+
   return (
     <div style={style}
         onClick={clickHandler}
       > 
-        <Icon {...{size: icon_size, kind, count}} />
-        <a style={{...styles.count_text_style, ...count_text_style}}>{count}</a>
+        {inner}
     </div>
   )
 }
 
-export const FeedbackCounters = ({sel, groupHasHover, style, counter_style, count_text_style}) => {
+export const FeedbackCounters = ({sel, style, counter_style, count_text_style}) => {
   let {getFeedbackCounts} = authorStore()
   let [counts,                                isExternalHasOnly] = useAuthorStoreChange(
       [[getFeedbackCounts(sel),shallowEqual] ,"@only_count!=0"]
@@ -97,7 +112,6 @@ export const FeedbackCounters = ({sel, groupHasHover, style, counter_style, coun
   <div style={{
     ...styles.feedback_counters,
     ...style
-    // ...(groupHasHover && {backgroundColor: 'rgba(120, 120, 120, .1)'})
     }}
     onClick={()=>{}}
   >  
@@ -124,8 +138,8 @@ const styles = {
     justifyItems:"center",
     height: 12,
     fontSize : 12,
-    backgroundColor:'rgba(235,235,235,1)',
-    border : 'solid 1px lightgray',
+    //backgroundColor:'rgba(235,235,235,1)',
+    //border : 'solid 1px lightgray',
     borderRadius: 10,
     paddingRight: 3,
     paddingLeft: 3,

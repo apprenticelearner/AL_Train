@@ -4,6 +4,7 @@ import { motion, useMotionValue, useSpring } from "framer-motion";
 // import * as Animatable from 'react-native-animatable';
 import autobind from "class-autobind";
 import RisingDiv from "./RisingDiv.js"
+import {colors, where_colors} from "../themes.js"
 
 const ONLY_HOLD_TIME = .2
 
@@ -121,12 +122,12 @@ export let SmallCorrectnessToggler = ({style, correct, incorrect, onPress, onOnl
                   7
 
 
-  let font_color = (!undef && is_hover && correct && colors.i_knob) ||
-                   (!undef && is_hover && incorrect && colors.c_knob) ||
+  let font_color = (!undef && is_hover && correct && colors.incorrect) ||
+                   (!undef && is_hover && incorrect && colors.correct) ||
                    'black' 
 
-  let bottom_color = (force_reward < 0 && colors.i_knob) || 'black'
-  let top_color = (force_reward > 0 && colors.c_knob) || 'black'
+  let bottom_color = (force_reward < 0 && colors.incorrect) || 'black'
+  let top_color = (force_reward > 0 && colors.correct) || 'black'
 
 	let text =  (((is_hover && incorrect) || (!is_hover && correct)) && "✔") || 
               (((is_hover && correct) || (!is_hover && incorrect)) && "✖") ||
@@ -144,8 +145,8 @@ export let SmallCorrectnessToggler = ({style, correct, incorrect, onPress, onOnl
 
 
 	let bg_color = (is_hover && 'rgb(220, 220, 220)') || 
-                 (correct && 'limegreen') || 
-	               (incorrect && 'red') ||
+                 (correct && colors.correct) || 
+	               (incorrect && colors.incorrect) ||
 	               'rgb(220, 220, 220)'
 
 	// console.log("<<", style)
@@ -153,7 +154,7 @@ export let SmallCorrectnessToggler = ({style, correct, incorrect, onPress, onOnl
 	return (
 		<div 
       onMouseLeave={()=>setIsHover(false)}
-      style = {{width:40, position:'absolute',  ...style}}>
+      style = {{width:30, position:'absolute',  ...style}}>
 			<CorrectnessTogglerKnob
           inner_text={text}
           text_color={font_color}
@@ -241,6 +242,7 @@ export class CorrectnessToggler extends Component {
     let bg_color = (correct && colors.c_knob_back) || 
                    (incorrect && colors.i_knob_back) ||
                    colors.u_knob_back
+
     return (
       <div style = {{...this.props.style,  width:30, position:'absolute'}}>
         <div style = {{...styles.toggler, backgroundColor: bg_color}}>
@@ -300,13 +302,13 @@ CorrectnessToggler.defaultProps = {
   button_scale_elevation : {
     grabbed_scale : 1.500,
     focused_scale : 1.400,
-    hover_scale : 1.200,
+    hover_scale : 1.1,
     default_scale : .8,
 
     grabbed_elevation : 10,
     focused_elevation : 8,
     hover_elevation : 6,
-    default_elevation : 1
+    default_elevation : 3
   },
   c_anim : {
     focused_pos : {x: -6, y: 0},
@@ -339,17 +341,17 @@ CorrectnessToggler.defaultProps = {
 }
 
 
-const colors = {
-  "c_bounds" : 'rgba(10,220,10,.6)',
-  "i_bounds" : 'rgba(255,0,0,.6)',
-  "u_bounds" : 'rgba(120,120,120,.5)',
-  "c_knob" : 'limegreen',
-  "i_knob" : 'red',
-  "u_knob" : 'lightgray',
-  "c_knob_back" : 'rgb(100,200,100)',
-  "i_knob_back" : 'rgb(200,100,100)',
-  "u_knob_back" : 'rgb(180,180,180)'
-}
+// const colors = {
+//   "c_bounds" : 'rgba(10,220,10,.6)',
+//   "i_bounds" : 'rgba(255,0,0,.6)',
+//   "u_bounds" : 'rgba(120,120,120,.5)',
+//   "c_knob" : 'limegreen',
+//   "i_knob" : 'red',
+//   "u_knob" : 'lightgray',
+//   "c_knob_back" : 'rgb(100,200,100)',
+//   "i_knob_back" : 'rgb(200,100,100)',
+//   "u_knob_back" : 'rgb(180,180,180)'
+// }
 
 const styles = {
 
@@ -389,13 +391,13 @@ const styles = {
     borderColor:'rgba(120,120,120,.2)',
     borderWidth: 1,
     borderRadius: 20,
-    backgroundColor: colors.u_knob_back,
+    backgroundColor: 'rgb(180,180,180)',
     // ...gen_shadow(5)
   },
 
   touch_area_top: {
-		width:32,
-    height:24,
+		width:28,
+    height:22,
     position:'absolute',
     alignItems:"center",
     top: -10,
@@ -403,12 +405,12 @@ const styles = {
     // backgroundColor: 'rgba(0,255,0,.2)',	
   },
   touch_area_bottom: {
-    width:32,
-    height:24,
+    width:28,
+    height:20,
     // right : 15,
     position: 'absolute',
     alignItems: "center",
-    top:  14,
+    top:  12,
     left: -2,
     // backgroundColor: 'rgba(0,0,255,.2)',  
   },

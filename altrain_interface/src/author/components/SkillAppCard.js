@@ -1,4 +1,4 @@
-import React, { Component, createRef, useState, useEffect, useRef, Profiler } from 'react'
+import React, { Component, createRef, useState, useEffect, useRef, Profiler, memo } from 'react'
 import { motion, useMotionValue, useSpring, useScroll } from "framer-motion";
 // import * as Animatable from 'react-native-animatable';
 // import autobind from "class-autobind";
@@ -8,12 +8,14 @@ import RisingDiv from "./RisingDiv.js"
 import {CorrectnessToggler, SmallCorrectnessToggler} from "./CorrectnessToggler.js"
 import {authorStore, useAuthorStore, useAuthorStoreChange} from "../author_store.js"
 import {FeedbackCounters} from "./icons.js"
+import {colors, where_colors} from "../themes.js"
 import {shallowEqual} from "../../utils.js"
 
 
 const images = {
   // double_chevron : require('../img/double_chevron_300x400.png'),
   double_chevron : require('../../img/double_chevron_300x400.svg'),
+  next : require('../../img/next.svg'),
   // pencil : require('../../img/pencil.png')
 };
 
@@ -147,12 +149,12 @@ const images = {
 export function SkillAppGroup({x, y, parentRef, sel, style,...props}) {
   let {setHover} = authorStore()
   let [hasFocus, hasHover, skill_app_uids,  focus_uid] = useAuthorStoreChange(
-      [`@focus_sel=='${sel}'`, `@hover_sel=='${sel}'`, `@sel_skill_app_uids.${sel}`, `focus_uid`]
+      [`@focus_sel=='${sel}'`,`@hover_sel==${sel}`, `@sel_skill_app_uids.${sel}`, `focus_uid`]
   )
 
   let first_uid = skill_app_uids?.[0] || ""
 
-  console.log("SkillAppGroup", sel, hasHover, hasFocus)
+  console.log("SkillAppGroup", sel, hasFocus)
   // const [is_hover, setIsHover] = useState(false)
 
   const ref = useRef(null);
@@ -185,8 +187,9 @@ export function SkillAppGroup({x, y, parentRef, sel, style,...props}) {
     let uid = skill_app_uids[j]
     skill_app_cards.push(
       <SkillAppCard 
+       sel={sel}
        uid={uid}
-       groupHasHover={hasHover}
+       //groupHasHover={hasHover}
        index={j}
        groupIsDragging={groupIsDragging}
        key={uid}
@@ -199,8 +202,8 @@ export function SkillAppGroup({x, y, parentRef, sel, style,...props}) {
   // (correct && "✔") || 
   //            (incorrect && "✖") ||
   //            "━"
-
-
+  console.log("RERENDER GROUP", sel, hasFocus,hasHover,groupIsDragging.current, ((hasFocus||hasHover||groupIsDragging.current) && 100) || 1)
+  
   return (
         <RisingDiv 
           innerRef={ref}
@@ -222,13 +225,16 @@ export function SkillAppGroup({x, y, parentRef, sel, style,...props}) {
             ...styles.skill_app_group,
             left: x, top: y,
             x : x_anim, y : y_anim,
-            zIndex : groupIsDragging.current && 100 || 1
+            zIndex : ((hasFocus||hasHover||groupIsDragging.current) && 100) || 1
           }}
           {...props}
-        >
+        > 
+
           {/* Transparent Box For Easier Hovering */}
           <div style={styles.skill_app_group_pointer_extension}/>
 
+          
+          
           <div style={{position: 'relative', display: 'flex', flexDirection:"row", alignItems:'center'}}>
             {/*<div style = {styles.handle}>
               <div> style={{transform: 'rotate(90deg)'}}>
@@ -237,7 +243,7 @@ export function SkillAppGroup({x, y, parentRef, sel, style,...props}) {
             </div>*/}
 
              
-            <FeedbackCounters sel={sel} groupHasHover={hasHover}/>
+            <FeedbackCounters sel={sel}/>
             <div style={{fontSize:10, padding:4, opacity:.6, paddingBottom:0}}>
               {"⠿"} 
             </div>
@@ -278,11 +284,11 @@ const gen_recolor = (color) =>{
 
 
 export function SkillAppCard({
-        uid, groupIsDragging, groupHasHover,
+        uid, groupIsDragging, sel,
         ...props}) {
   let {setFocus,   setHover, toggleReward, setStaged, undoStaged, setOnly, removeSkillApp} = authorStore()
-  let [skill_app, hasFocus, hasStaged, isExternalHasOnly] = useAuthorStoreChange(
-      [`@skill_apps.${uid}`, `@focus_uid==${uid}`, `@staged_uid==${uid}`, `@only_count!=0`])
+  let [skill_app, hasFocus, groupHasHover, hasStaged, isExternalHasOnly] = useAuthorStoreChange(
+      [`@skill_apps.${uid}`, `@focus_uid==${uid}`, `@hover_sel==${sel}`, `@staged_uid==${uid}`, `@only_count!=0`])
 
   let [buttonAreaHover, setButtonAreaHover] = useState(false)
   
@@ -294,17 +300,16 @@ export function SkillAppCard({
   let incorrect = reward < 0 || (reward == 0 && isExternalHasOnly)
   let isImplicit = isExternalHasOnly && reward == 0;
   let hasOnly = skill_app.only
-  let sel = skill_app.selection
 
   let minHeight = (hasFocus && 60) || 34
   let maxHeight = (!hasFocus && 40)
   let minWidth = 100//(hasFocus && 60) || 20
   let maxWidth = 160//(hasFocus && 140) || 40
 
-  let bounds_color =  (is_demo && 'dodgerblue') ||
-                        (correct && colors.c_bounds) || 
-                        (incorrect && colors.i_bounds) || 
-                        colors.u_bounds
+  let bounds_color =  (is_demo && colors.demo) ||
+                        (correct && colors.correct) || 
+                        (incorrect && colors.incorrect) || 
+                        colors.default
 
 
   let border_style = ((hasFocus && {
@@ -314,10 +319,11 @@ export function SkillAppCard({
                      }) ||{padding: 2, borderWidth:2}
                      )
 
-  let right_border_color = (is_demo && 'dodgerblue') ||
-                           (correct && colors.c_knob) || 
-                           (incorrect && colors.i_knob) || 
-                           colors.u_knob
+  let right_border_color = (is_demo && colors.demo) ||
+                           (correct && colors.correct) || 
+                           (incorrect && colors.incorrect) || 
+                           colors.default
+
   let right_border_style = (!hasFocus && {
                             borderStyle: "hidden solid hidden hidden",
                             borderRightColor:right_border_color,
@@ -339,18 +345,15 @@ export function SkillAppCard({
             ...border_style,
             ...right_border_style,
             // whiteSpace: "nowrap",
-            minWidth:minWidth,
-            maxWidth:maxWidth,
-            minHeight:minHeight,
-            maxHeight:maxHeight,
+            minWidth:minWidth, maxWidth:maxWidth,
+            minHeight:minHeight, maxHeight:maxHeight,
             }}
-            {...props}
+          {...props}
           >
           {/*Card Text*/}
           <div style={{
             ...styles.card_text,
-            minWidth:minWidth,
-            maxWidth:maxWidth,
+            minWidth:minWidth, maxWidth:maxWidth,
           }}>
             <div>
             {text}
@@ -391,7 +394,7 @@ export function SkillAppCard({
                   hasStaged ? undoStaged() : setStaged(skill_app)
                   }}
               >
-                <img style={{width:"100%", height:"100%"}} src={images.double_chevron}/>
+                <img style={{width:"100%", height:"100%"}} src={images.next}/>
                 {buttonAreaHover && 
                   <div style={styles.card_button_text}>{"next"}</div>
                 }
@@ -426,7 +429,7 @@ export function SkillAppCard({
               onPress={toggleReward}
             />) ||*/}
           {
-          ((hasFocus || groupHasHover) &&
+          (!is_demo && (hasFocus || groupHasHover) && 
             <div style={{
               position: "absolute",
               left: hasFocus ? -27 : -23,
@@ -535,17 +538,17 @@ SkillAppGroup.defaultProps = {
 
 
 
-const colors = {
-  "c_bounds" : 'rgba(10,220,10)',
-  "i_bounds" : 'rgba(255,0,0)',
-  "u_bounds" : 'rgba(120,120,120)',
-  "c_knob" : 'limegreen',
-  "i_knob" : 'red',
-  "u_knob" : 'lightgray',
-  "c_knob_back" : 'rgb(100,200,100)',
-  "i_knob_back" : 'rgb(200,100,100)',
-  "u_knob_back" : 'rgb(180,180,180)'
-}
+// const colors = {
+//   "correct" : 'rgba(10,220,10)',
+//   "incorrect" : 'rgba(255,0,0)',
+//   "default" : 'rgba(120,120,120)',
+//   "c_knob" : 'limegreen',
+//   "i_knob" : 'red',
+//   "u_knob" : 'lightgray',
+//   "c_knob_back" : 'rgb(100,200,100)',
+//   "i_knob_back" : 'rgb(200,100,100)',
+//   "u_knob_back" : 'rgb(180,180,180)'
+// }
 
 const styles = {
   
@@ -558,6 +561,7 @@ const styles = {
     backgroundColor: 'rgba(80,80,120,.1)',
     userSelect: "none",
     borderRadius : 5,
+    zIndex : 1,
   },
 
   skill_app_group_pointer_extension : {
@@ -590,6 +594,8 @@ const styles = {
     maxHeight:125,
     overflowY: "scroll",
     overflowX: "clip",
+    // backgroundColor : 'red',
+    // pointerEvents : "none",
 
     ///GOOD 
     // paddingLeft : 29, 
@@ -597,9 +603,9 @@ const styles = {
     // marginRight : -31,
     //
 
-    paddingLeft : 40, 
-    left : -36,
-    marginRight : -46
+    paddingLeft : 28, 
+    left : -24,
+    marginRight : -33
   },
 
   skill_app_card_area : {
@@ -772,8 +778,8 @@ const styles = {
   // },
 
   toggler_small: {
-    width: 26,
-    height:26,
+    width: 18,
+    height: 26,
     position:'relative',
     display:"flex",
     justifyContent : "center",
@@ -840,7 +846,7 @@ const styles = {
 
   
   staged_selected:{
-    backgroundColor: colors.c_bounds,//"limegreen",
+    backgroundColor: colors.correct,//"limegreen",
   },
 
   

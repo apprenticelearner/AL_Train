@@ -26,7 +26,9 @@ const images = {
   left_arrow: require('/src/img/arrow-left-bold.png'),
   crosshair: require('/src/img/crosshairs.png'),
   microphone: require('/src/img/microphone.png'),
-  pencil: require('/src/img/pencil.png'),
+  //pencil: require('/src/img/pencil.png'),
+  pencil : require('../img/pencil.svg'),
+  edit : require('../img/edit.svg'),
   bar: require('/src/img/bar.png'),
 };
 
@@ -152,7 +154,7 @@ function FxHintRow(){
 
   return (
       <div style={styles.value_group}>
-      <div style={styles.label}>{"ƒ Hint"}</div>
+      <div style={styles.label}>{"ƒ Help"}</div>
       <textarea className="scrollable" 
                 style={{...styles.editable_value,height: 40}}
                 onChange={(e)=>{setOperationalHint(skill_app, e.target.value)}}
@@ -168,7 +170,7 @@ function FxHintRow(){
           <div style={{...styles.circle_button_inner_message, 
                 ...(listening && {backgroundColor: 'purple', color:'white'})
                 }}>
-             {(listening && "Recording...") || "Record Hint"}
+             {(listening && "Recording...") || "Record Help"}
           </div>
         </RisingDiv> 
       </div>
@@ -203,7 +205,7 @@ const fxDropDownStyles = {
   // singleValue: (styles, { data }) => ({ ...styles}),
   indicatorSeparator: (styles) => ({display : 'none'}),
   dropdownIndicator: (styles) => ({...styles,padding : 4}),
-  valueContainer: (styles) => ({...styles,paddingRight : 0}),
+  valueContainer: (styles) => ({...styles,paddingRight : 0, paddingLeft : 4}),
   menu : (styles) => ({...styles,paddingRight : 0}),
 };
 
@@ -251,25 +253,50 @@ const FxOption = (props) =>{
   )
 }
 
-const FxContent = ({ label, data={},...rest}, {context}) => {
+const FxContent = ({ label, value, data={}, explicit,...rest}, {context}) => {
   // console.log("CONTENT ", label, data, rest)
 
-  let {skills} = authorStore()
+  let {skills, focus_uid, skill_apps} = authorStore()
+  let skill_app = skill_apps?.[focus_uid];
+  let {func, skill_uid, uid, matches=[]} = data;
+  let skill = skills?.[skill_uid||uid||skill_app?.skill_uid];
 
-  let {func, skill_uid, uid, matches=[]} = data
-  func = func || skills?.[skill_uid||uid]?.how?.func || {}
+  let selected_expl = skill_app?.explanation_selected
+  explicit = explicit || (selected_expl?.explicit && selected_expl?.value == value) || false
+
+  func = func || skill?.how?.func || {}
   let {minimal_str="??", vars=[]} = func  
 
   let is_const = (vars?.length == 0) ?? true
 
   let highlighted_eq = highlightVars(minimal_str, vars.map(({alias})=>alias))
+
+  let is_menu = context == "menu"
+  let is_value = context == "value"
   
+  let opacity = (!explicit && is_value && 0.7) || 1.0
+  let dot_width = (is_menu && 22) || 12
+  let dot_offset = (is_menu && 0) || -4
+
+
   return (
     <div style={styles.fx_option}>
-      <div style={{fontFamily : "Arial", color: "rbg(20,20,20)", fontSize: 20}}>
+
+      {/* Dot area */}
+      {(is_menu || is_value) &&       
+        <div style={{ display : "flex", alignSelf: "center", justifyContent: "center", color: "dodgerblue", fontSize : 20, width : dot_width}}>
+            <a style={{position:'relative', left: dot_offset, fontSize:".45em"}}>
+              {explicit ? "⬤" : "◯"}
+            </a>
+        </div>
+      }
+
+      {/* Equation */}
+      <div style={{fontFamily : "Arial", color: "rbg(20,20,20)", fontSize: 20, opacity: opacity}}>
         {highlighted_eq}
       </div>
       
+      {/* Constant */}
       <div style={{ marginLeft: "auto", color: "#ccc", fontSize : 12}}>
         {(is_const && 'constant') ||
           matches.join(", ")
@@ -293,6 +320,75 @@ const FxMenuList = (props) => {
     </div>
   );
 };
+
+// export const getStyleProps = (props, name, classNamesState) => {
+//   const { cx, getStyles, getClassNames, className } = props;
+//   return {
+//     css: getStyles(name, props),
+//     className: cx(classNamesState ?? {}, getClassNames(name, props), className),
+//   };
+// };
+
+let FxControl = (props) => {
+  let {children, isDisabled, isFocused, innerRef, innerProps, menuIsOpen, getStyles} = props;
+  let style = getStyles('control', props)
+
+  let {clearExplanation} = authorStore()
+  let [skill_app] = useAuthorStoreChange([getDemoSkillApp()])
+
+  let is_explicit = skill_app?.explanation_selected?.explicit
+
+  let n_s = skill_app?.explanation_options?.[0]?.options?.length ?? 0
+  let n_f = skill_app?.explanation_options?.[1]?.options?.length ?? 0
+
+  let {borderColor, borderStyle, borderWidth} = style
+  let count_style = {
+    position: 'absolute',
+    backgroundColor : 'white',
+    borderRadius : 8,
+    padding : 1,
+    paddingLeft : 6,
+    paddingRight : 6,
+    margin : 2,
+    color : 'grey',
+    userSelect : 'none',
+    zIndex : 2,
+    fontSize : 10,
+    textAlign : 'center',
+    ...{borderWidth,}
+  }
+  
+  let count_text = (!n_s && !n_f && `${n_s} S,  ${n_f} F`) ||
+                   (n_s && `${n_s} S`) ||
+                   (n_f && `${n_f} F`) ||
+                   "No Explanations"
+
+  let [clearHover, setClearHover] = useState(false)
+  console.log(clearHover)
+  return (
+    <div style={{position: 'relative'}}> 
+      {is_explicit &&
+        <div 
+          style={{...count_style, bottom:-9, left:20, width: 60, ...(clearHover && {color : 'black', fontWeight: "bold"})}}
+          onMouseDown={(e)=>{e.stopPropagation(); clearExplanation(skill_app); setClearHover(false)}}
+          onMouseEnter={(e)=>setClearHover(true)}
+          onMouseLeave={(e)=>setClearHover(false)}
+        >
+          {"clear select"}
+        </div>
+      }
+      <div style={{...count_style, bottom:-9, right:28}}>
+        {count_text}
+      </div>
+      <div style={style} ref={innerRef}
+        {...innerProps}
+      >
+        {children}
+      </div>
+      
+    </div> 
+  );
+}
 
 function FxRow(){
   let {beginSetArgFoci, confirmArgFoci, selectExplanation} = authorStore()
@@ -320,7 +416,7 @@ function FxRow(){
           readOnly={true}
           menuPlacement={'top'}
           //menuIsOpen={true}
-          components={{Option: FxOption, MenuList: FxMenuList}} 
+          components={{Option: FxOption, MenuList: FxMenuList, Control: FxControl}} 
         />
       </div>
       <div style={styles.right_space}/>
@@ -378,9 +474,9 @@ function AgentActionMenu({}){
   let [skill_app] = useAuthorStoreChange([getDemoSkillApp()])
 
   let reward = skill_app?.reward ?? 0
-  let border_color = (reward > 0 && colors.correct_color) ||
-                     (reward < 0 && colors.incorrect_color) ||
-                     colors.default_color
+  let border_color = (reward > 0 && colors.correct) ||
+                     (reward < 0 && colors.incorrect) ||
+                     colors.default
 
   let kind = 'undef'
   if((skill_app?.reward ?? 0) != 0){
@@ -464,6 +560,57 @@ function focusIsDemo(){
   ]
 }
 
+function QuestionSubMenuItem({id, selected, children, onClick, is_editing, show_buttons, style}){
+  let {removeQuestion, beginEditingQuestionMenu} = authorStore()
+  let [hasHover, setHover] = useState(false)
+  let ref = useRef(null)
+  // let [selected, setSelected] = useState(false)
+  let button_props = {
+    default_scale : 1,
+    default_elevation : 3,
+    hover_scale : 1.05,
+    hover_elevation : 6  
+  }
+  console.log("QSM", is_editing)
+  show_buttons = show_buttons != null ? show_buttons : selected
+
+  return (<div  style={{
+            ...styles.submenu_item,
+            ...(hasHover && styles.submenu_item_hover),
+            ...(selected && styles.submenu_item_selected),
+            ...style,
+            }}
+            onClick={(e)=>{onClick(e)}}
+            onMouseEnter={(e)=>setHover(true)}
+            onMouseLeave={(e)=>setHover(false)}
+            ref={ref}
+          >
+          <div style={{height : 20, width : 30}}/>
+          
+          {children}
+          {show_buttons && <div style={styles.submenu_item_buttons_area}>
+            <RisingDiv 
+              style={{...styles.submenu_item_button, ...(is_editing && {backgroundColor: colors.start_state})}}
+              
+              onClick={() => beginEditingQuestionMenu(!is_editing)}
+              {...button_props}
+            >
+              <img src={images.edit} style={{marginBottom:2, width:"70%",height:"70%"}}/>
+            </RisingDiv>
+            <RisingDiv style={{...styles.submenu_item_button
+              }}
+              onClick={(e)=>{e.stopPropagation(); removeQuestion(id);}}
+              {...button_props}
+            >
+              {"✕"}
+            </RisingDiv>
+          </div>
+          }
+          </div>)
+}
+
+
+
 function SubMenuItem({id, selected, children, onClick, is_editing, style}){
   let {removeQuestion} = authorStore()
   let [hasHover, setHover] = useState(false)
@@ -482,21 +629,24 @@ function SubMenuItem({id, selected, children, onClick, is_editing, style}){
             onMouseLeave={(e)=>setHover(false)}
             ref={ref}
           >
-          {(is_editing && 
-            <RisingDiv style={{...styles.menu_button,
-                height : 20, width : 20, marginLeft: 4, marginRight: 6, borderRadius: 0,
+          <div style={{height : 20, width : 30}}/>
+          
+          {children}
+          {(selected && 
+            <RisingDiv style={{...styles.menu_button, 
+                fontSize: 14, fontWeight:'bold', borderWidth: 1, borderColor: 'lightgrey',
+                height : 20, width : 20, marginLeft: 'auto', borderRadius: 20,
               }}
-              default_elevation={0}
-              hover_elevation={0}
+              default_elevation={4}
+              hover_elevation={6}
               onClick={(e)=>{
                 e.stopPropagation()
                 removeQuestion(id); 
               }}
-            ><img src={images.bar} style={{width:16,height:12}}/>
-            </RisingDiv>) ||
-            <div style={{height : 20, width : 30}}/>
+            >
+              {"✕"}
+            </RisingDiv>)
           }
-          <a>{children}</a>
           </div>)
 }
 
@@ -530,7 +680,7 @@ function ProblemMenu({}){
   let is_new = !is_editing && mode == "start_state"
 
   if(is_new){
-    question_items["__start_state__"] = {"name" : "Set Start State...", in_progress : true}
+    question_items["__start_state__"] = {"name" : "... setting start state ...", in_progress : true}
     curr_question = "__start_state__"
   }
   
@@ -542,7 +692,7 @@ function ProblemMenu({}){
     <div style={styles.problem_menu}>
 
       {/* Interface Menu */}
-      <div style={{... styles.submenu, maxHeight: "30%"}}>
+      <div style={{... styles.submenu, height: "30%"}}>
         <div style={styles.submenu_title_area}>
           <header style={styles.submenu_title}>Interface</header>
           <MenuButton>
@@ -555,28 +705,24 @@ function ProblemMenu({}){
               onClick={(e)=>setInterface(intr_name)}
               selected={intr_name===curr_interface}
               key={"question:"+intr_name}
-            >{intr_name}
+            >
+            <a style={{alignSelf: "center"}}>{intr_name}</a>
             </SubMenuItem>)
           )}
         </div>
       </div>
 
       {/* Question Menu */}
-      <div style={{... styles.submenu, maxHeight: "70%"}}> 
+      <div style={{... styles.submenu, height: "70%"}}> 
 
         {/* Question Menu - Title Area */}
         <div style={styles.submenu_title_area}>
-          <header style={styles.submenu_title}>Question</header>
+          <header style={styles.submenu_title}>{"Question"}</header>
           <div style={styles.menu_button_area}>
-            <MenuButton 
-              style={(is_editing && styles.plus_button_start_active)}
-              onClick={() => beginEditingQuestionMenu(!is_editing)}
-            >
-              <img src={images.pencil} style={{width:"60%",height:"60%"}}/>
-            </MenuButton>
+            
             <MenuButton 
               style={(is_new && styles.plus_button_start_active)}
-              onClick={(!is_new && beginSetStartState) || confirmStartState}
+              onClick={(e) => {is_new ? confirmStartState() : beginSetStartState()}}
             >
               <a style={{marginBottom:2}}>{'+'}</a>
             </MenuButton>
@@ -587,19 +733,22 @@ function ProblemMenu({}){
         {/* Question Menu - Options */}
         <div className='scrollable' style={styles.submenu_content}>
           {question_items && Object.entries(question_items).map(([x,{name, in_progress}])=>(
-            <SubMenuItem
+            <QuestionSubMenuItem
               onClick={(e)=>{
                 console.log(e.target)
                 setQuestion(x)
 
               }}
-              style={in_progress && {"backgroundColor" : 'teal'}}
+              style={{...(in_progress && {"backgroundColor" : colors.start_state})}}
               selected={x===curr_question}
               is_editing={is_editing}
               id={x}
               key={"question:"+x}
-            >{(name || x)}
-            </SubMenuItem>)
+              {...(in_progress && {show_buttons : false})}
+
+            >
+              <a style={{alignSelf: "center"}}>{(name || x)}</a>
+            </QuestionSubMenuItem>)
           )}
         </div>
       </div>
@@ -646,15 +795,15 @@ function ContinueButton() {
   console.log("input_focus", input_focus, )
   return (
     <RisingDiv 
-      style={styles.continue_button}
+      style={styles.start_confirm_button}
       {...{scale : 1, elevation : 4,
            ...button_defaults_props,
            ...(no_input_focus && {scale : 1.1, elevation : 10})
       }}
       onClick={(e)=>{confirmStartState()}}
     >
-      {"✔"}
-      <div style={styles.continue_button_inner_message}>
+      <a>{"Confirm"}</a><a>{"Start State"}</a>
+      <div style={styles.start_confirm_button_inner_message}>
         {"Press Enter"}
       </div>
     </RisingDiv>
@@ -703,7 +852,6 @@ function PopupLayer({children}) {
 //        </select>
 
 import Select, { StylesConfig } from 'react-select';
-
 
 const agentDropDownStyles = {
   control: (styles) => ({
@@ -785,10 +933,10 @@ function SkillArea(){
   console.log("SKILLS", skills)
 
   for (let [uid, skill] of Object.entries(skills)){
-    console.log(uid, skill)
+    // console.log(uid, skill)
     skill_items.push(
       <SubMenuItem
-        selected={0}
+        selected={false}
         key={uid}
       >
         <FxContent data={{skill_uid : uid}} /> 
@@ -922,7 +1070,13 @@ export default function AuthoringInterface({props}) {
           </div>
 
           <div style={styles.center_content}> 
-            <ScrollableStage ref={stage_ref}>
+            <ScrollableStage ref={stage_ref} 
+              stage_style={{
+                left:window.screen.width*.3,
+                top:window.screen.height*.3,
+                width:window.screen.width*.8,
+                height:window.screen.height*.8,
+              }}>
               <Suspense fallback={fallback_page}>        
                 <Tutor style={{...styles.tutor, width: sw*tv_pw, height:sh*tv_ph}}
                   ref={setTutor}
@@ -956,22 +1110,23 @@ const styles = {
     overflow : "hidden",
   },
   header :{
-    height : 80,
+    height : 46,
     backgroundColor : "rgb(50,50,50)"
   },
   main_content :{
     display:'flex',
     flexDirection: 'row',
     overflow : "hidden",
+    // alignItems : 'stretch'
   },
   multimenu :{
     boxShadow: "1px 1px 3px rgba(0,0,0,1)",
     backgroundColor: "white",//'rgba(80,80,120,.1)',
     borderRadius: 5,
-    left:0, top: "50%", height : "50%", width: "100%",
+    left:0,  height : "50%", width: "100%",
     userSelect: 'none',
 
-    // flex: "1 1 auto",
+    
     display : 'flex',
     flexDirection : 'column',
   },
@@ -992,28 +1147,30 @@ const styles = {
   problem_menu: {
     display : 'flex',
     flexDirection : 'column',
-    height:"100%",
+    height:"85%",
+    // flex: "1 1 auto",
     // minHeight: 0,
     // maxHeight: "100%",
   },
   submenu : {
     display : 'flex',
     flexDirection : 'column',
-    minHeight: 0,
-    maxHeight: "100%",
+    // minHeight: 0,
+    // maxHeight: "100%",
 
     border: '0px solid',
     borderBottomWidth: 1,
     borderColor: 'lightgrey',
-    paddingBottom: 10,
+    paddingBottom: 8,
     // backgroundColor: 'red',
   },
   submenu_content : {
     display : 'flex',
     flexDirection : 'column',
 
-    minHeight: 0,
-    maxHeight: "100%",
+    // minHeight: 0,
+    // maxHeight: "100%",
+    // height: "80%",
     width : "100%",
     overflowY : 'scroll',
     
@@ -1046,8 +1203,8 @@ const styles = {
     flexDirection : 'column',
     justifyContent : 'center',
     alignItems : 'center',
-    width : 24,
-    height : 24,
+    width : 25,
+    height : 25,
     fontSize : 26,
     marginLeft : 6,
     borderRadius : 100,
@@ -1058,12 +1215,13 @@ const styles = {
   //   // backgroundColor : highlight_color
   // },
   plus_button_start_active:{
-    backgroundColor:'teal',
+    backgroundColor: colors.start_state,
     color:'darkgrey',
     border : "1px solid",
     borderColor : 'rgb(100,200,200)'
   },
   submenu_item : {
+    position : 'relative',
     display : 'flex',
     flexDirection : 'row',
 
@@ -1080,7 +1238,32 @@ const styles = {
     // borderColor: 'dodgerblue',
   },
   submenu_item_selected : {
-    backgroundColor : colors.menu_highlight_color
+    backgroundColor : colors.menu_highlight
+  },
+
+  submenu_item_buttons_area : {
+    position: 'absolute',
+    display: 'flex',
+    flexDirection :'row',
+    right: 0,
+    top:0, 
+  },
+
+  submenu_item_button : {
+    display : 'flex',
+    flexDirection : 'column',
+    justifyContent : 'center',
+    alignItems : 'center',
+    width : 24,
+    height : 24,
+    fontSize : 26,
+    margin: 4,
+    borderRadius : 20,
+    backgroundColor : 'transparent',
+    borderWidth : 1,
+
+    fontSize: 14,
+    fontWeight:'bold',
   },
   // legacy_tab : {
   //   height: 20,
@@ -1102,6 +1285,7 @@ const styles = {
     border: '0px solid',
     borderBottomWidth: 1,
     borderColor: 'lightgrey',
+    flex : "0 1 auto",
   },
   // button_area: {
   //   height: "100%",
@@ -1171,6 +1355,16 @@ const styles = {
     width : "100%",
     height : "100%"
   },
+  tutor_stage : {
+    width: "100%",
+    height : "100%",
+    top : "30%",
+    left : "30%",
+    // marginTop : "30%",
+    // marginLeft : "30%",
+    marginRight : "60%",
+    marginBottom : "60%",
+  },
   overlay_layer : {
     position : "absolute",
     margin : 0,
@@ -1193,24 +1387,27 @@ const styles = {
     pointerEvents: "none"
   },
 
-  continue_button : {
+  start_confirm_button : {
     display : "flex",
     flexDirection: 'column',
     justifyContent : "center",
     alignItems : "center",
-    fontSize: 40,
-    width : 50,
-    height : 50,
+    textAlign : 'center',
+    fontWeight : 'bold',
+    color: 'rgb(20,20,20)',
+    fontSize: 18,
+    width : 140,
+    height : 54,
     border : "2px solid",
     borderRadius : 100,
-    backgroundColor : 'teal',
+    backgroundColor : colors.start_state,
     borderColor : 'rgb(100,200,200)',
     marginBottom : 60,
     pointerEvents: "auto",
     userSelect: 'none',
   },
 
-  continue_button_inner_message : {
+  start_confirm_button_inner_message : {
     position : "absolute",
     fontSize: 10,
     borderRadius : 10,
@@ -1234,7 +1431,7 @@ const styles = {
     marginBottom : 30,
     backgroundColor : 'white',
     border: '4px solid',
-    borderColor: 'dodgerblue',
+    borderColor: colors.demo,
     borderRadius: 10,
     pointerEvents: "auto",
     boxShadow : gen_shadow(14),
@@ -1285,7 +1482,7 @@ const styles = {
     marginBottom : 30,
     backgroundColor : 'white',
     border: '4px solid',
-    borderColor: colors.default_color,
+    borderColor: colors.default,
     borderRadius: 10,
     pointerEvents: "auto",
     boxShadow : gen_shadow(14),
@@ -1508,6 +1705,7 @@ const styles = {
   },
 
   confirm_button_area :{
+    position : 'relative',
     display: "flex",
     justifyContent:  "center",
     alignItems:  "center",
@@ -1515,6 +1713,7 @@ const styles = {
   },
 
   confirm_button :{
+    position : 'relative',
     display : "flex",
     flexDirection: 'column',
     justifyContent : "center",
@@ -1556,7 +1755,7 @@ const styles = {
     alignItems : 'end',
     
 
-    padding : 4,
+    padding : 3,
     userSelect : "none",
     maxWidth: '100%',
     overflow: 'hidden',

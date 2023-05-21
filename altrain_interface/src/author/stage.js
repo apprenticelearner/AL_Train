@@ -1,8 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {useAuthorStoreChange} from "./author_store.js"
+import { motion, useMotionValue, useSpring } from "framer-motion";
+
+/*
+<svg width="26" height="26" viewBox="-12,-12 24,24" xmlns="http://www.w3.org/2000/svg">
+
+  <!---<rect x="-12" y="-12" width="24" height="24" rx="1" 
+      fill="grey" />-->
+
+  <rect x="-2" y="-11" width="4" height="8" rx="2" 
+      stroke-width="1" stroke="white" fill="#ff884d" />
+
+  <rect x="-2" y="3" width="4" height="8" rx="2" 
+      stroke-width="1" stroke="white" fill="#feb201" />
+
+  <rect x="-11" y="-2" width="8" height="4" rx="2" 
+      stroke-width="1" stroke="white" fill="#e44161" />
+
+  <rect x="3" y="-2" width="9" height="4" rx="2" 
+      stroke-width="1" stroke="white" fill="#42bfcf" />
+
+  <!--<circle x="0" y="0" r="2" fill="black" /> -->
+</svg>
+*/
 
 
-const ScrollableStage = React.forwardRef(({children}, ref) => {
+
+const ScrollableStage = React.forwardRef(({children, style, stage_style}, ref) => {
   let [clickAway, setStageViewRef, setStageRef] = useAuthorStoreChange(['@clickAway', 'setStageViewRef', 'setStageRef'])
   let [stage_ref, stage_view_ref] = [ref || useRef(null), useRef(null)]
 
@@ -11,17 +35,7 @@ const ScrollableStage = React.forwardRef(({children}, ref) => {
     setStageViewRef(stage_view_ref)
   },[])
 
-  let sw = window.screen.width//-styles.side_tools.width;
-  let sh = window.screen.height*1.5;
-
-  let tv_marg = 0;
-  // Proportion of stage width, height tutor should get
-  let tv_pw = .5
-  let tv_ph = .7
-  let tutor_view = {width: sw+tv_marg,
-                    height : sh+tv_marg,
-                    left : sw*(1-tv_pw)+ tv_marg,
-                    top : sh*(1-tv_ph)+ tv_marg,}
+  
 
   const [startX, startY] = [useRef(0), useRef(0)]
   const [scrollLeft, scrollTop] = [useRef(0), useRef(0)]
@@ -70,14 +84,14 @@ const ScrollableStage = React.forwardRef(({children}, ref) => {
     stage_view_ref.current.scrollTop = scrollTop.current-diffY*2 //scroll-fast   
   } 
   return (
-    <div className="stage_scroll" style={{...styles.stage_view}}
+    <div className="stage_scroll" style={{...styles.stage_view,...style}}
          onMouseDown={handleMouseDown}
          onMouseUp={handleMouseUp}
          onMouseMove={handleMouseMove}
          onMouseLeave={handleMouseLeave}
          ref={stage_view_ref}
     >  
-      <div style={{...styles.stage, ...tutor_view}} ref={stage_ref}>  
+      <div style={{...styles.stage, ...stage_style}} ref={stage_ref}>  
         {children}
       </div>
     </div>
@@ -91,6 +105,7 @@ export default ScrollableStage
 const styles = {
   stage : {
     position: "relative"
+
   },
   stage_view : {
     overflow : "scroll",
