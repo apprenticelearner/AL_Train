@@ -455,7 +455,7 @@ const nodeHasStaged = (state_uid) => [
 
 
 const Node = ({state_uid}) =>{
-    let {graph_states:states, setHoverState} = authorStore()
+    let {graph_states:states, setHoverTutorState} = authorStore()
     let [hasFocus, hasHover, hasStaged] =  useAuthorStoreChange([
         `@curr_state_uid==${state_uid}`, `@hover_state_uid==${state_uid}`, nodeHasStaged(state_uid)
     ])
@@ -476,8 +476,8 @@ const Node = ({state_uid}) =>{
 
     return (
         <g
-        onMouseEnter={()=>{setHoverState({uid:state_uid});}}
-        onMouseLeave={()=>{setHoverState({uid:""});}}
+        onMouseEnter={()=>{setHoverTutorState({uid:state_uid});}}
+        onMouseLeave={()=>{setHoverTutorState({uid:""});}}
         className="node"
         state_uid={state_uid}
         >
@@ -614,7 +614,7 @@ const GraphContent = ({contentRef, stageRef, svgRef, anims, setGraphBounds}) =>{
         }] 
     ])
 
-    console.log("GRAPH IS START", is_start_mode)
+    // console.log("GRAPH IS START", is_start_mode)
     if(is_start_mode){
         return (<g ref={contentRef} transform='translate(100,200) scale(1)'>
                     <text stle={{userSelect: 'none'}}>
@@ -624,13 +624,13 @@ const GraphContent = ({contentRef, stageRef, svgRef, anims, setGraphBounds}) =>{
     }else{
         let {graph_states:states, graph_actions:actions} = authorStore()
 
-        console.log("UPDATE_GRAPH", states, actions)
+        // console.log("UPDATE_GRAPH", states, actions)
         let graphBounds = layoutNodesEdges(states, actions);
         setGraphBounds(graphBounds)
 
         let node_containers = []
         for(let [state_uid, s_obj] of Object.entries(states)) {
-            console.log("<<", state_uid.slice(3,6), s_obj.is_connected)
+            // console.log("<<", state_uid.slice(3,6), s_obj.is_connected)
             if(s_obj?.is_connected != false){
                 node_containers.push(
                     <NodeGroup state_uid={state_uid}
@@ -640,11 +640,7 @@ const GraphContent = ({contentRef, stageRef, svgRef, anims, setGraphBounds}) =>{
             }
         }
         return (<motion.g 
-            style={{
-                translateX: anims.x,
-                translateY: anims.y,
-                scale: anims.scale
-            }}
+            style={{translateX: anims.x, translateY: anims.y, scale: anims.scale}}
             ref={contentRef}
             >
             {node_containers}
@@ -756,7 +752,7 @@ export class Graph extends React.Component {
 
             // If the target is part of a node...
             let node_uid = getTargetNodeUID(e)
-            console.log("CLICK NODE", node_uid)
+            // console.log("CLICK NODE", node_uid)
             if(node_uid){
                 let {setTutorState} = authorStore()
                 setTutorState(node_uid)

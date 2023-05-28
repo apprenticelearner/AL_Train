@@ -22,7 +22,7 @@ import {LoadingPage, ErrorPage} from "./shared/info_pages";
 
 const default_config = {
   "agent" : {
-    "name": "Unamed Agent",
+    "name": "Unnamed Agent",
     "type": "CREAgent",
     "args": {
       "search_depth" : 2,
@@ -73,32 +73,35 @@ export default function ALTrain(){
     }, [])
 
     // console.log("ALTRAIN RENDER", is_batch_train, is_author, loaded, error)
+    let choose_content = () =>{
+      if(error){
+        return <ErrorPage/>
+      }else if(!loaded){
+        return <LoadingPage/>
+      }
 
-    if(error){
-      return (<ErrorPage/>)
-    }else if(!loaded){
-      return (<LoadingPage/>)
-    }
+      if(is_author){
+        if(tutor_class){
+          return <AuthoringInterface/>
+        }else{
+          return <ErrorPage/>
+        }
+      }
 
-    if(is_author){
-      if(tutor_class){
-        return (<AuthoringInterface/>)  
+      if(is_batch_train){
+        if(tutor_class){
+          return <BatchTrainer/>
+        }else{
+          return <ErrorPage/>
+        }
       }else{
-        return (<ErrorPage/>)
+        return <ErrorPage error="Configuration Missing 'author' or 'batch_train'."/>
       }
     }
 
-    if(is_batch_train){
-      if(tutor_class){
-        return (<BatchTrainer/>)  
-      }else{
-        return (<ErrorPage/>)
-      }
-    }else{
-      return (<ErrorPage error="Configuration Missing 'author' or 'batch_train'."/>)
-    }
-}
-
-const styles = {
-
+    return (
+      <React.StrictMode>
+        {choose_content()}
+      </React.StrictMode>
+    )
 }

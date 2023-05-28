@@ -86,7 +86,7 @@ let PopUpConfirmButton = memo(({sel, skill_app}) => {
 // console.log("foci_cand_bg_color", foci_cand_bg_color)
 
 function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacity=.4, ...props}){
-    let {setHover} = authorStore()
+    let {setHover, setHoverSel} = authorStore()
     let [[skill_app, hasStaged], groupHasFocus, hasHover, skill_app_uids,
           mode, isExternalHasOnly, elem_locked] = useAuthorStoreChange(
       [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@hover_sel==${sel}`, `@sel_skill_app_uids.${sel}`,
@@ -107,10 +107,9 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
     let is_foci = (foci_index!==-1) && (mode=="train" || foci_explicit)
     let is_incorrect = (skill_app?.reward ?? 0) < 0
 
-    let wrap_index = foci_index % where_colors.length
     let foci_color = null
-    if(wrap_index !== -1){
-      foci_color = where_colors[wrap_index]
+    if(foci_index !== -1){
+      foci_color = where_colors[foci_index % where_colors.length]
     }
 
     if(!foci_explicit || foci_hover){
@@ -121,7 +120,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
 
     let arg_hover = mode=='arg_foci' && hasHover
     // let actions_visible = !foci_mode || hasFocus
-    // console.log("OverlayBounds", sel, foci_mode, hasFociSelect)
+    console.log("OverlayBounds", sel, arg_hover)
     
 
 
@@ -164,12 +163,11 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
     // Adjust the draw rects so that centers of thick borders overlap original bounds.                
     //   Add a negative margin of same amount to keep content stationary on style change.
     let hbw =  borderWidth / 2
-    let rect = {width: elem.width+1, height: elem.height+1, x : elem.x-hbw-.5, y : elem.y-hbw-.5,
-                ...((bg_opacity==1) && {marginLeft : -hbw, marginTop : -hbw,})}
+    let rect = {width: elem.width, height: elem.height, x : elem.x-hbw, y : elem.y-hbw}
     let click_rect = {...rect, padding: 6}
 
     // console.log("::", sel, skill_app?.uid, color)
-    let corsor_kind = (foci_cand && 'crosshair') ||
+    let cursor_kind = (foci_cand && 'none') ||
                       (elem_locked && 'default') ||
                       'auto'
 
@@ -181,7 +179,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         borderWidth: borderWidth,
         borderColor: borderColor,
         backgroundColor : backgroundColor,
-        cursor:  corsor_kind,
+        cursor:  cursor_kind,
         ...style,
         // opacity : (foci_cand && .4) || 1
       }}
@@ -191,11 +189,11 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         // If toggling foci prevent default so elem doesn't take focus
         foci_cand ? (e) => {toggleFoci(sel); e.preventDefault(); console.log("click")} : props.onClick
       )}
-      onMouseEnter={()=>{setHover(first_uid)}}
-      onMouseLeave={()=>{setHover("")}}
+      onMouseEnter={()=>{mode=='arg_foci' ? setHoverSel(sel) : setHover(first_uid)  }}
+      onMouseLeave={()=>{mode=='arg_foci' ? setHoverSel("")  : setHover("")}}
       >
         {/* Transparent Background Div to make slightly larger */}
-        <div style={{...styles.stage_image, backgroundColor: "transparent", position: "absolute",...click_rect}}/>
+        <div style={{...styles.stage_image, backgroundColor: "transparent", pointerEvents:'auto', position: "absolute",...click_rect}}/>
 
         {/* Next Icon */}
         {(hasStaged) &&
@@ -203,7 +201,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         }
 
         {/* Variable Name Indictor */}
-        {(var_name) &&
+        {(is_foci && var_name) &&
           <div style={{...styles.var_indicator, backgroundColor : borderColor}}> 
             {var_name.toUpperCase()}
           </div>
@@ -325,20 +323,17 @@ function TextFieldOverlay({sel, elem}) {
 
   text = text || ""
   placeholder = (input) ||  ""   
+
   //Ensure only highlight color on focus
-  
-  
   let L = Math.min(text.length || 1, 8)
   let mindim = Math.min(elem.width, elem.height)
   let maxdim = Math.max(elem.width, elem.height)
   let fontSize = Math.min(mindim, maxdim/((L-1)/2 + 1)) *.9
 
-  let corsor_kind = (!elem.locked && 'text') || 'inherit'
+  let cursor_kind = (!elem.locked && 'text') || 'inherit'
 
+  console.log("RERENDER", "BLOOP")
 
-  // fontSize *= .9
-  // {...(elem.locked && {readonly:true})}
-  // console.log("<<", sel , color)
   return (
     <OverlayBounds {...{sel, elem, bg_opacity : 1, bg_foci_opacity : 1}}>
       <textarea 
@@ -351,7 +346,7 @@ function TextFieldOverlay({sel, elem}) {
            // width : elem.width + 200,
            // ...(elem.locked && {
            // })
-           cursor : corsor_kind,
+           cursor : cursor_kind,
          }}
         spellCheck="false"
         ref={ref}
@@ -394,7 +389,7 @@ function TextFieldOverlay({sel, elem}) {
           console.log("On CHANGE", mode, new_value)
           // did_change.current = ref.current.value !== ""
 
-          // In start_state mode remove when "" 
+          // In start_state mode remove when empty
           if(skill_app && mode=="start_state" && (!new_value || empty_focus)){
             removeSkillApp(skill_app)
             skill_app = null

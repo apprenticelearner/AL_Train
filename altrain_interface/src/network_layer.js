@@ -83,7 +83,7 @@ export default class NetworkLayer {
     
   }
 
-  createAgent(agent_config, rep=null) {
+  create_agent(agent_config, rep=null) {
     console.log("CREATE AGENT")
     let {name} = agent_config
     this.term_print("Creating Agent: " + name + (rep!=null ? ` (${rep})` : ""), "INFO");

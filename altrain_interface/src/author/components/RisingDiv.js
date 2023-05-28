@@ -6,7 +6,7 @@ import { gen_shadow } from "../../utils";
 
 
 
-let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hover_style, ...props}) =>{
+let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hover_style, shadow_kind='box', ...props}) =>{
   const springConfig = {
     stiffness: props?.stiffness ?? 2000,
     damping: props?.damping ?? 50 
@@ -19,7 +19,6 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hov
   scale.set(default_scale)
   	
   //Control shadow
-  const shadow_kind = props?.shadow_kind || 'box'
   const default_elevation = props?.elevation ?? props?.default_elevation ?? 2
   const hover_elevation = props?.elevation ?? props?.hover_elevation ?? 4
   const default_shadow = gen_shadow(default_elevation, shadow_kind)
@@ -27,7 +26,7 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hov
   const shadow = useMotionValue(default_shadow)
   shadow.set(default_shadow)
 
-  // console.log("RERENDER RISING DIV", style)
+  console.log("RERENDER RISING DIV", shadow_kind, props, children)
 
   return (
     <motion.div 
@@ -38,7 +37,7 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hov
       style={{
           ...style,
           // willChange : 'filter, scale',
-          ...(props?.shadow_kind=='drop' && {filter :shadow} || {boxShadow :shadow}),
+          ...(shadow_kind=='drop' && {filter :shadow} || {boxShadow :shadow}),
           scale : scale_anim,
       }}
         {...props}

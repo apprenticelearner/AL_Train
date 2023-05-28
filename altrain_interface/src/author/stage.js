@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import {useAuthorStoreChange} from "./author_store.js"
+import {useAuthorStoreChange, authorStore} from "./author_store.js"
 import { motion, useMotionValue, useSpring } from "framer-motion";
 
 /*
@@ -27,6 +27,7 @@ import { motion, useMotionValue, useSpring } from "framer-motion";
 
 
 const ScrollableStage = React.forwardRef(({children, style, stage_style}, ref) => {
+  let {stage_cursor_ref} = authorStore()
   let [clickAway, setStageViewRef, setStageRef] = useAuthorStoreChange(['@clickAway', 'setStageViewRef', 'setStageRef'])
   let [stage_ref, stage_view_ref] = [ref || useRef(null), useRef(null)]
 
@@ -34,7 +35,6 @@ const ScrollableStage = React.forwardRef(({children, style, stage_style}, ref) =
     setStageRef(stage_ref)
     setStageViewRef(stage_view_ref)
   },[])
-
   
 
   const [startX, startY] = [useRef(0), useRef(0)]
@@ -58,7 +58,9 @@ const ScrollableStage = React.forwardRef(({children, style, stage_style}, ref) =
       scrollLeft.current = stage_view_ref.current.scrollLeft;
       startY.current = e.pageY - stage_view_ref.current.offsetTop;
       scrollTop.current = stage_view_ref.current.scrollTop;
-      stage_view_ref.current.style.cursor = "move"
+      let {pushCursor} = authorStore()
+      pushCursor("move")
+      // stage_view_ref.current.style.cursor = "move"
       console.log()
     }
   }
@@ -67,12 +69,34 @@ const ScrollableStage = React.forwardRef(({children, style, stage_style}, ref) =
       clickAway()
     }
     is_dragging_stage.current = false
-    stage_view_ref.current.style.cursor = "auto"
+    let {popCursor} = authorStore()
+    popCursor('move')
+    // stage_view_ref.current.style.cursor = "auto"
   }
   const handleMouseLeave = () => {
     is_dragging_stage.current = false
+
+    // let cursor = stage_cursor_ref.current
+    // if(cursor){
+    //   cursor.hidden = true
+    // }
+  };
+  const handleMouseEnter = (e) => {
+    // let cursor = stage_cursor_ref.current
+    // if(cursor){
+    //   cursor.hidden = false
+    // }
   };
   const handleMouseMove = (e) => {
+    // console.log("MOVE", e.pageX, e.pageY)
+    // let cursor = stage_cursor_ref.current
+    // if(cursor){
+    //   cursor.style.left = `${e.pageX}px`
+    //   cursor.style.top =  `${e.pageY}px`  
+    // }
+
+    
+
     if(!stage_view_ref.current || !is_dragging_stage.current) return;
     // console.log(e)
     const xVal = e.pageX - stage_view_ref.current.offsetLeft;
@@ -89,6 +113,7 @@ const ScrollableStage = React.forwardRef(({children, style, stage_style}, ref) =
          onMouseUp={handleMouseUp}
          onMouseMove={handleMouseMove}
          onMouseLeave={handleMouseLeave}
+         onMouseEnter={handleMouseEnter}
          ref={stage_view_ref}
     >  
       <div style={{...styles.stage, ...stage_style}} ref={stage_ref}>  
@@ -108,6 +133,7 @@ const styles = {
 
   },
   stage_view : {
+    position : 'relative',
     overflow : "scroll",
     backgroundColor : 'rgb(230,230,230)',
     width : "100%",

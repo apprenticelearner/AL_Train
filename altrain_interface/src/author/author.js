@@ -29,6 +29,7 @@ const images = {
   //pencil: require('/src/img/pencil.png'),
   pencil : require('../img/pencil.svg'),
   edit : require('../img/edit.svg'),
+  next : require('../img/next.svg'),
   bar: require('/src/img/bar.png'),
 };
 
@@ -63,7 +64,7 @@ let button_defaults_props = {
 }
 
 
-function getDemoSkillApp(){
+function getFocusOrHover(){
   return [(s)=>{
     let skill_app = s.skill_apps[s.focus_uid] || s.skill_apps[s.hover_uid]
     return skill_app
@@ -83,7 +84,7 @@ function getDemoSkillApp(){
 function ArgsRow(){
   let {beginSetArgFoci, confirmArgFoci, extractArgFoci} = authorStore()
   let [skill_app, arg_foci_mode] = useAuthorStoreChange(
-      [getDemoSkillApp(), "@mode=='arg_foci'"],
+      [getFocusOrHover(), "@mode=='arg_foci'"],
   )
   let arg_items = []
   
@@ -141,31 +142,66 @@ function ArgsRow(){
   )
 }
 
-function FxHintRow(){
-  let {startSpeechRecognition, setOperationalHint} = authorStore()
+function FxHelpRow(){
+  let {startSpeechRecognition, setHowHelp, submitHowHelp} = authorStore()
   let [skill_app, arg_foci_mode, listening] = useAuthorStoreChange([
-        getDemoSkillApp(), "@mode=='arg_foci'", "@speech_recognition_listening"])
+        getFocusOrHover(), "@mode=='arg_foci'", "@speech_recognition_listening"])
 
 
-  const listening_props = {
-    default_scale : 1.25, default_elevation : 12,
-    hover_scale : 1.2, hover_elevation : 8,
+  const record_props = {
+    default_scale : 1, default_elevation : 6,
+    hover_scale : 1.05, hover_elevation : 10,
   }
+  const recording_props = {
+    default_scale : 1.25, default_elevation : 10,
+    hover_scale : 1.2, hover_elevation : 6,
+  }
+
+  let has_help = !!skill_app?.how_help
+
+  const [hasFocus, setHasFocus] = useState(false);
+  let text_ref = useRef(null)
 
   return (
       <div style={styles.value_group}>
       <div style={styles.label}>{"ƒ Help"}</div>
-      <textarea className="scrollable" 
-                style={{...styles.editable_value,height: 40}}
-                onChange={(e)=>{setOperationalHint(skill_app, e.target.value)}}
-                value={skill_app?.operational_hint ?? ""}/>
+      <textarea ref={text_ref}
+                className="scrollable" 
+                style={{
+                  ...styles.editable_value,
+                  height: 40,
+                  whiteSpace: "pre-wrap",
+                  ...(!has_help && !hasFocus && 
+                      {fontSize: 12, color: "rgb(200,200,200)", fontWeight:'bold'})
+                  }}
+                onChange={(e)=>{setHowHelp(skill_app, e.target.value)}}
+                onFocus={()=>{
+                  setHasFocus(true)
+                }}
+                onBlur={()=>{
+                  setHasFocus(false)
+                  submitHowHelp()
+                }}
+                value={
+                  skill_app?.how_help || 
+                  (!hasFocus && "\nDescribe ƒ(𝑥) using language and/or equations.") ||
+                  ""
+                }
+                onKeyDown={(e) => {
+                  if(e.keyCode == 13 && e.shiftKey == false) {
+                    e.preventDefault();
+                    text_ref.current.blur()
+                    // submitHowHelp();
+                  }
+                }}
+              />
       <div style={styles.right_space}>
         <RisingDiv 
           style={{...styles.circle_button, 
                   ...(listening && {backgroundColor: 'purple', zIndex: 2})}}
-          elevation={(listening && 12) || 6}
+          shadow_kind={'drop'}
           onClick={startSpeechRecognition}
-          {...(listening && listening_props) || button_defaults_props}> 
+          {...(listening && recording_props) || record_props}> 
           <img src={images.microphone} style={{width:"75%",height:"75%"}} />
           <div style={{...styles.circle_button_inner_message, 
                 ...(listening && {backgroundColor: 'purple', color:'white'})
@@ -211,7 +247,9 @@ const fxDropDownStyles = {
 
 const highlightVars = (text, vars) => {
   let var_groups = vars.join("|")
-  let regex = new RegExp(`\d*(?<![a-zA-z])(${var_groups})\\b`, 'g')
+  // let regex = new RegExp(`\d*(?<![a-zA-z])(${var_groups})\\b`, 'g')
+  let regex = new RegExp(`(\d*|\\b)(${var_groups})\\b`, 'g')
+  console.log('(\d*|\b)(${var_groups})\b')
 
   const textArray = text.split(regex);
   let output = []
@@ -334,7 +372,7 @@ let FxControl = (props) => {
   let style = getStyles('control', props)
 
   let {clearExplanation} = authorStore()
-  let [skill_app] = useAuthorStoreChange([getDemoSkillApp()])
+  let [skill_app] = useAuthorStoreChange([getFocusOrHover()])
 
   let is_explicit = skill_app?.explanation_selected?.explicit
 
@@ -364,7 +402,6 @@ let FxControl = (props) => {
                    "No Explanations"
 
   let [clearHover, setClearHover] = useState(false)
-  console.log(clearHover)
   return (
     <div style={{position: 'relative'}}> 
       {is_explicit &&
@@ -393,7 +430,7 @@ let FxControl = (props) => {
 function FxRow(){
   let {beginSetArgFoci, confirmArgFoci, selectExplanation} = authorStore()
   let [skill_app, arg_foci_mode] = useAuthorStoreChange(
-      [getDemoSkillApp(), "@mode=='arg_foci'"],
+      [getFocusOrHover(), "@mode=='arg_foci'"],
   )
   // console.log(skill_app?.explanation_options)
 
@@ -428,7 +465,7 @@ function FxRow(){
 function DemonstrateMenu({}){
   let {setMode, addSkillApp, removeSkillApp, setInputs} = authorStore()
   let [skill_app, arg_foci_mode] = useAuthorStoreChange([
-        getDemoSkillApp(), "@mode=='arg_foci'"])
+        getFocusOrHover(), "@mode=='arg_foci'"])
 
   let demo_text = skill_app?.inputs?.value ?? skill_app?.input ?? ""
   // console.log(demo_text)
@@ -456,22 +493,14 @@ function DemonstrateMenu({}){
         </div>
         <FxRow/>
         <ArgsRow/>
-        <FxHintRow/>
-        {/*
-        <div style={styles.value_group}>
-          <div style={styles.label}>{"Skill Label"}</div>
-          <textarea className="scrollable" style={styles.editable_value}
-                    value={"this is the value"}/>
-          <div style={styles.right_space}/>
-        </div>
-        */}
+        <FxHelpRow/>
       </div>
     </div>
   )
 }
 
 function AgentActionMenu({}){
-  let [skill_app] = useAuthorStoreChange([getDemoSkillApp()])
+  let [skill_app] = useAuthorStoreChange([getFocusOrHover()])
 
   let reward = skill_app?.reward ?? 0
   let border_color = (reward > 0 && colors.correct) ||
@@ -488,8 +517,7 @@ function AgentActionMenu({}){
   <div style={{...styles.agent_action_menu, borderColor: border_color}}>
       <div style={styles.agent_action_menu_fields}>
         <div style={styles.agent_action_menu_title}>
-          <Icon size={styles.agent_action_menu_title.fontSize} kind={kind}
-                />
+          <Icon size={styles.agent_action_menu_title.fontSize} kind={kind}/>
           <a style={{marginLeft: 12, fontWeight: "bold"}}>{"Agent Action"}</a>
         </div>
         <div style={styles.value_group}>
@@ -504,30 +532,6 @@ function AgentActionMenu({}){
   )
 }
 
-
-
-
-// function LegacyTab({name}){
-//   let [selected, setCurrentTab] = useAuthorStoreChange(
-//       [`@current_tab==${name}`, "setCurrentTab"]
-//   )
-//   console.log(name, selected)
-//   let [hasHover, setHover] = useState(false)
-//   return (
-//     <RisingDiv style={{
-//       ...styles.tab, 
-//       // ...(hasHover && {opacity : .7}),
-//       ...((selected  && styles.tab_selected) || (hasHover && styles.tab_hover))
-//       }}
-//       scale={(hasHover && 1.05) || 1}
-//       elevation={(hasHover && 6) || 4}
-//       onClick={(e)=>{setCurrentTab(name); e.stopPropagation();}}
-//       onMouseEnter={(e)=>setHover(true)}
-//       onMouseLeave={(e)=>setHover(false)}
-//     >
-//       {name.charAt(0).toUpperCase() + name.slice(1)}
-//     </RisingDiv>)
-// }
 
 function Tab({name}){
   let [selected, setCurrentTab] = useAuthorStoreChange(
@@ -551,8 +555,30 @@ function Tab({name}){
 
 function focusIsDemo(){
   return [(s)=>{
-    let skill_app = s.skill_apps?.[s.focus_uid]
+    let skill_app = s.skill_apps?.[s.focus_uid];
     return skill_app?.is_demo ?? false
+  },
+  (o,n) =>{
+    return o == n
+  }
+  ]
+}
+
+function focusIsConfirmed(){
+  return [(s)=>{
+    let skill_app = s.skill_apps?.[s.focus_uid];
+    return skill_app?.is_confirmed ?? false
+  },
+  (o,n) =>{
+    return o == n
+  }
+  ]
+}
+
+function focusExplanationExplicit(){
+  return [(s)=>{
+    let skill_app = s.skill_apps?.[s.focus_uid];
+    return skill_app?.explanation_selected?.explicit ?? false
   },
   (o,n) =>{
     return o == n
@@ -571,7 +597,7 @@ function QuestionSubMenuItem({id, selected, children, onClick, is_editing, show_
     hover_scale : 1.05,
     hover_elevation : 6  
   }
-  console.log("QSM", is_editing)
+  // console.log("QSM", is_editing)
   show_buttons = show_buttons != null ? show_buttons : selected
 
   return (<div  style={{
@@ -623,7 +649,7 @@ function SubMenuItem({id, selected, children, onClick, is_editing, style}){
             ...style,
             }}
             onClick={(e)=>{
-              onClick(e)
+              if(onClick){onClick(e)}
             }}
             onMouseEnter={(e)=>setHover(true)}
             onMouseLeave={(e)=>setHover(false)}
@@ -810,6 +836,126 @@ function ContinueButton() {
   )
 }
 
+function ArgFociPointer({style, use_text=false}){
+  return(
+    <div style={style}>
+      <svg viewBox="-13,-13 26,26">
+        <rect x="-3" y="-12" width="6" height="10" rx="2" 
+            strokeWidth="1" stroke="white" fill="white"/>
+
+        <rect x="-3" y="2" width="6" height="10" rx="2" 
+            strokeWidth="1" stroke="white" fill="white"/>
+
+        <rect x="-12" y="-3" width="10" height="6" rx="2" 
+            strokeWidth="1" stroke="white" fill="white"/>
+
+        <rect x="2" y="-3" width="10" height="6" rx="2" 
+            strokeWidth="1" stroke="white" fill="white"/>
+
+        <rect x="-2" y="-11" width="4" height="8" rx="1" 
+            strokeWidth="1" stroke="#333" fill="#ff884d" />
+
+        <rect x="-2" y="3" width="4" height="8" rx="1" 
+            strokeWidth="1" stroke="#333" fill="#feb201" />
+
+        <rect x="-11" y="-2" width="8" height="4" rx="1" 
+            strokeWidth="1" stroke="#333" fill="#e44161" />
+
+        <rect x="3" y="-2" width="8" height="4" rx="1" 
+            strokeWidth="1" stroke="#333" fill="#42bfcf" />
+
+      </svg>
+      {use_text && 
+        <a style={{position: 'absolute', top:18,left:20, fontSize:8, width: 40}}>{"select args"}</a>
+      }
+    </div>
+  )
+
+}
+
+function Prompt(){
+  let {focus_uid} = authorStore()
+  let [skill_app, is_demo, is_confirmed, fx_explicit, 
+       any_focus, no_skill_apps, mode] = useAuthorStoreChange([
+      `@skill_apps[${focus_uid}]`, focusIsDemo(), focusIsConfirmed(), focusExplanationExplicit(), 
+      "@focus_uid!=''", "@skill_apps.length==0", "@mode"
+  ])
+  console.log("FX SEL", is_demo, is_confirmed, fx_explicit)
+  let prompt = null
+  if(mode == "start_state"){
+    prompt = (
+      <div style={{...styles.prompt}}>
+        <a>{"Fill in a start state for this problem."}</a>
+      </div>
+    )  
+  }else if(mode == "arg_foci"){
+    prompt = (
+      <div style={{...styles.prompt}}>
+        <ArgFociPointer style={{width: 24, height: 24, marginRight: 10}}/>
+        <a>{"Click interface elements to select any arguments you used to compute this value."}</a>
+      </div>
+    )
+  }else if(no_skill_apps){
+    prompt = (
+      <div style={{...styles.prompt}}>
+        <Icon style={{fontSize: 24, marginRight: 8, filter: "drop-shadow(0px 0px 2px rgb(200,200,200))" }} kind={"demo"}/>
+        <a>{"Demonstrate the next step for this question."}</a>
+      </div>
+    )
+  }else if(is_demo && !is_confirmed && !fx_explicit){
+    prompt = (
+      <div style={{...styles.prompt}}>
+        <Icon style={{fontSize:24,marginRight: 8, filter: "drop-shadow(0px 0px 2px rgb(200,200,200))"}} kind={"demo"}/>
+        <div style={{whiteSpace: "pre-wrap", textAlign : "center"}}>
+           {"Double-check"}
+           {<a style={{fontSize: 16, marginLeft: 6}}>{"ƒ(𝑥)"}</a>}
+           {". Select the correct ƒ explanation or describe ƒ(𝑥) in 'ƒ Help' to reduce the options.\n"}
+           {<a>{"Then Confirm "}</a>}
+           {<img style={{top:4, width: 18, height:18, transform: "translateY(20%)", filter: "invert(1)"}} src={images.next}/>}
+           {<a>{" to begin the next step."}</a>}
+        </div>
+      </div>
+    )
+  }else if(is_demo && fx_explicit){
+    prompt = (
+      <div style={{...styles.prompt}}>
+        <Icon style={{fontSize:24,marginRight: 8, filter: "drop-shadow(0px 0px 2px rgb(200,200,200))"}} kind={"demo"}/>
+        <div style={{whiteSpace: "pre-wrap", textAlign : "center"}}>
+           {<a>{"Confirm "}</a>}
+           {<img style={{top:4, width: 18, height:18, transform: "translateY(20%)", filter: "invert(1)"}} src={images.next}/>}
+           {<a>{" to begin the next step."}</a>}
+        </div>
+      </div>
+    )
+  }
+
+  return prompt
+}
+
+function Cursor() {
+  let {setStageCursorElem} = authorStore()
+  let [cursor] = useAuthorStoreChange(['@stage_cursor'])
+
+  // let cursor_ref = useRef(null)
+
+  // useEffect(()=>{
+  //   setStageCursorRef(cursor_ref)
+  // },[])
+
+  let ptr;
+  let prompt;
+  if(cursor == 'arg_foci'){
+    ptr = <ArgFociPointer use_text={false} style={{
+      width : 24, height :24, transform: 'translate(-50%, -50%)', pointerEvents: "none"}}/>
+  }
+  console.log("RENDER CURSOR", cursor, ptr)
+  return (<div style={{position:'absolute', pointerEvents: "none", zIndex:100}} 
+            ref={setStageCursorElem}>
+            {ptr}
+            {prompt}
+          </div>)
+}
+
 function PopupLayer({children}) {
   let {focus_uid} = authorStore()
   let [is_demo, any_focus, mode] = useAuthorStoreChange([focusIsDemo(), "@focus_uid!=''", "@mode"])
@@ -817,16 +963,19 @@ function PopupLayer({children}) {
   console.log("any_focus", any_focus, focus_uid)
   return (
     <div style={{...styles.popup_layer}}>
+
       {(mode==="start_state" &&
         <ContinueButton/>) ||
        // (mode==="arg_foci" &&
        //  <ContinueButton/>) ||
+        
         (is_demo &&
           <DemonstrateMenu/>) ||
         (any_focus && 
           <AgentActionMenu/>
         )
       }
+      <Prompt/> 
     </div>
   )
 }
@@ -975,10 +1124,12 @@ function ConfirmButton() {
       onClick={confirmFeedback}
     >
       {"Confirm"}
+      {false && 
       <div style={styles.confirm_button_inner_message}
         >
         {"Press Enter"}
       </div>
+      }
     </RisingDiv>
   )
 }
@@ -1020,16 +1171,22 @@ export default function AuthoringInterface({props}) {
   let [training_config, training_file, tutor_class, network_layer] = useALTrainStoreChange(
     ['@training_config','@training_file', '@tutor_class', 'network_layer'])
   let [transaction_count] = useAuthorStoreChange(["@transaction_count"])
-  let {addSkillApp, removeSkillApp,  setSkillApps, setStaged, onKeyDown,
-      incTransactionCount, setConfig, createAgent, setTutor} = authorStore ()
+  let {addSkillApp, removeSkillApp,  setSkillApps, setStaged, onKeyDown, setCenterContentRef,
+      incTransactionCount, setConfig, setTutor} = authorStore()
 
   let Tutor = tutor_class
 
   console.log("RENDER AUTHOR", transaction_count, tutor_class, network_layer)
-  
+    
+  const stage_ref = useRef(null)
+  const center_content_ref = useRef(null)
+
   // OnMount
+  let cursor;
   useEffect(() =>{
+    setCenterContentRef(center_content_ref)
     document.addEventListener('keydown', onKeyDown);
+    ({stage_cursor_elem: cursor} = authorStore())
     return function cleanup() {
       document.removeEventListener('keydown', onKeyDown);
     }
@@ -1039,7 +1196,7 @@ export default function AuthoringInterface({props}) {
 
   let fallback_page = (<div style={styles.tutor}>Loading...</div>)
 
-  const stage_ref = useRef(null)
+  
   // const ref = useRef(null)
 
   let sw = window.screen.width
@@ -1069,7 +1226,23 @@ export default function AuthoringInterface({props}) {
             <MultiMenu/>
           </div>
 
-          <div style={styles.center_content}> 
+          <div 
+            style={styles.center_content}
+            ref={center_content_ref}
+            onMouseMove={(e)=>{
+              
+              let cs = cursor?.style
+              if(cs){cs.left = `${e.pageX}px`; cs.top =  `${e.pageY}px`}
+            }}
+            onMouseLeave={(e) => {
+              // let {stage_cursor_elem: cursor} = authorStore()
+              if(cursor) cursor.hidden = true;
+            }}
+            onMouseEnter={(e) => {
+              // let {stage_cursor_elem: cursor} = authorStore()
+              if(cursor) cursor.hidden = false;
+            }}
+          > 
             <ScrollableStage ref={stage_ref} 
               stage_style={{
                 left:window.screen.width*.3,
@@ -1095,7 +1268,8 @@ export default function AuthoringInterface({props}) {
             <SkillArea/>
             <StagedFeedbackArea/>
           </div>          
-        </div>  
+        </div>
+        <Cursor/>  
       </div>
   );
 }
@@ -1104,29 +1278,29 @@ export default function AuthoringInterface({props}) {
 
 
 const styles = {
+  header :{
+    height : 50,
+    backgroundColor : "rgb(50,50,50)"
+  },
   authoring: {
     display:'flex',
     flexDirection: 'column',
     overflow : "hidden",
+    height : "100%"
   },
-  header :{
-    height : 46,
-    backgroundColor : "rgb(50,50,50)"
-  },
+  
   main_content :{
     display:'flex',
     flexDirection: 'row',
     overflow : "hidden",
-    // alignItems : 'stretch'
+    height : "100%"
   },
   multimenu :{
     boxShadow: "1px 1px 3px rgba(0,0,0,1)",
     backgroundColor: "white",//'rgba(80,80,120,.1)',
-    borderRadius: 5,
-    left:0,  height : "50%", width: "100%",
+    borderRadius: 5, left:0,
+    height : "50%", width: "100%",
     userSelect: 'none',
-
-    
     display : 'flex',
     flexDirection : 'column',
   },
@@ -1371,6 +1545,22 @@ const styles = {
     left: 0,
     top: 0,
   },
+  prompt : {
+    display : "flex",
+    flexDirection: 'row',
+    justifyContent : "start",
+    alignItems : "center",
+    position: "absolute",
+    padding : 10,
+    paddingRight : 14,
+    paddingLeft : 14,
+    fontSize : 14,
+    color : 'white',
+    backgroundColor : 'rgb(110,110,116)',
+    border : 'solid 3px darkgrey',
+    borderRadius : 20,
+    top : 68
+  },
 
   popup_layer:{
     display : "flex",
@@ -1543,7 +1733,7 @@ const styles = {
 
   label : {
     fontSize : 20,
-    fontFamily : "Arial",
+    // fontFamily : "Arial",
     padding : 4,
     // margin : 4,
     marginLeft : 14,

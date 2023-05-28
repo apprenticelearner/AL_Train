@@ -12,8 +12,7 @@ const images = {
 };
 
 
-
-export const Icon = ({size, kind}) => {
+export const Icon = ({style, size, kind}) => {
   let is_demo = kind.includes('demo') 
   let is_only = kind.includes('only') //&& key != 'only'
   let is_correct = !kind.includes('incorrect')
@@ -27,7 +26,7 @@ export const Icon = ({size, kind}) => {
               "•"
             
               //'━'
-
+  size = size || style.fontSize || 12
   let inner_size = (is_only && size * .7) || size * .8
   let icon_size = size
   if(icon == "•"){
@@ -41,6 +40,7 @@ export const Icon = ({size, kind}) => {
         justifyContent : 'center',
         alignItems : 'center',
         ...(is_only && {border : `1px solid ${color}`, borderRadius : 50}),
+        ...style
       }}
     > 
       {(is_demo && 
@@ -65,12 +65,14 @@ export const FeedbackCounter = ({style, kind, count, clickHandler, count_text_st
     for (let i=0; i < count; i++){
       inner.push(<Icon 
         key={`${kind}_icon_${i}`}
-        {...{size: icon_size, kind, count}} 
+        style={{fontSize:icon_size}}
+        {...{kind, count}} 
       />,)
     }
   }else{
     inner = [<Icon key={`${kind}_icon`}
-              {...{size: icon_size, kind, count}} />,
+                  style={{fontSize:icon_size}}
+              {...{kind, count}} />,
              <a key={`${kind}_count`}
               style={{fontSize: ".9em", ...styles.count_text_style, ...count_text_style}}>{`x${count}`}</a>
             ]
