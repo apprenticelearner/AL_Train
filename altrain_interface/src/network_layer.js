@@ -139,6 +139,12 @@ export default class NetworkLayer {
     return send_post(this.agent_url + "/explain_demo/", data)
   }
 
+  get_state_uid(agent_uid, state, rest={}) {
+    let data = {agent_uid, state, ...rest}
+    console.log("GET STATE UID", data)
+    return send_post(this.agent_url + "/get_state_uid/", data)
+  }
+
   predict_next_state(agent_uid, state, sai, rest={}) {
     let data = {agent_uid, state, ...sai, ...rest}
     console.log("PREDICT NEXT STATE DATA", data)

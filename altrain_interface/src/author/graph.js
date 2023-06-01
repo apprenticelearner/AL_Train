@@ -95,7 +95,7 @@ function gen_curve_path(a, states, relative=false) {
     let n_in = d?.in_skill_app_uids?.length || 0 
     let in_height_total = nodeHeight//Math.min(nodeHeight, n_in * (nodeHeight/6))
     let in_end_spacing = in_height_total/n_in
-    let in_offsetY = (a.in_index * in_end_spacing) - in_height_total / 2 + in_end_spacing / 2
+    let in_offsetY = ((a?.in_index || 0) * in_end_spacing) - in_height_total / 2 + in_end_spacing / 2
     let d_x = d.x
     let d_y = d.y + in_offsetY
     // console.log("S", s.uid, ":", a.out_index, out_angle * (180/Math.PI))
@@ -521,10 +521,10 @@ const NodeGroup = ({state_uid}) =>{
     let s = states[state_uid]
     // console.log("S", s, state_uid)
     let out_actions = (s?.out_skill_app_uids??[]).map((uid)=>actions[uid])
-                
+    
     let out_edges = []
     for(let action of out_actions){
-        // console.log("action", action)
+        console.log("action", action)
         out_edges.push(<Edge
             skill_app_uid={action.uid}
             key={action.uid}

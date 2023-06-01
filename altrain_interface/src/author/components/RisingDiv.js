@@ -26,7 +26,7 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hov
   const shadow = useMotionValue(default_shadow)
   shadow.set(default_shadow)
 
-  console.log("RERENDER RISING DIV", shadow_kind, props, children)
+  // console.log("RERENDER RISING DIV", shadow_kind, props, children)
 
   return (
     <motion.div 

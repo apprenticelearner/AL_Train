@@ -120,7 +120,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
 
     let arg_hover = mode=='arg_foci' && hasHover
     // let actions_visible = !foci_mode || hasFocus
-    console.log("OverlayBounds", sel, arg_hover)
+    // console.log("OverlayBounds", sel, arg_hover)
     
 
 
@@ -332,8 +332,6 @@ function TextFieldOverlay({sel, elem}) {
 
   let cursor_kind = (!elem.locked && 'text') || 'inherit'
 
-  console.log("RERENDER", "BLOOP")
-
   return (
     <OverlayBounds {...{sel, elem, bg_opacity : 1, bg_foci_opacity : 1}}>
       <textarea 
@@ -353,7 +351,7 @@ function TextFieldOverlay({sel, elem}) {
         value={text}
         {...(mode=="start_state" && {placeholder:placeholder})}
         onFocus={(e) => {
-          console.log("ON focus")
+          // console.log("ON focus")
           setInputFocus(sel)
           if(!groupHasFocus || mode=="start_state"){
             setEmptyFocus(true)  
@@ -361,7 +359,7 @@ function TextFieldOverlay({sel, elem}) {
         }}
         readOnly={mode!="start_state" && elem.locked}
         onBlur={(e) => {
-          console.log("BLUR", skill_app?.uid, e)
+          // console.log("BLUR", skill_app?.uid, e)
           let target = e?.relatedTarget || null
           
           //   console.log("Target is clickable thing", target)
@@ -386,7 +384,7 @@ function TextFieldOverlay({sel, elem}) {
         }}
         onChange={(e)=>{
           let new_value = e.target.value
-          console.log("On CHANGE", mode, new_value)
+          // console.log("On CHANGE", mode, new_value)
           // did_change.current = ref.current.value !== ""
 
           // In start_state mode remove when empty
@@ -451,7 +449,7 @@ function ButtonOverlay({
   )
   let {addSkillApp, removeSkillApp, setFocus} = authorStore()
 
-  console.log("skill_app", skill_app)
+  // console.log("skill_app", skill_app)
   let {correct, incorrect, isDemo, color, input} = skillAppExtractProps(skill_app, isExternalHasOnly)
 
   color = (groupHasFocus && color) ||
@@ -462,7 +460,7 @@ function ButtonOverlay({
     <OverlayBounds {...{sel, elem, color}}
       style={{cursor : skill_app ? 'auto' : 'pointer'}}
       onClick={(e)=>{
-        console.log("BUTTON")
+        // console.log("BUTTON")
         if(!skill_app){
           let new_skill_app = newDemo(sel, "PressButton", -1)
           addSkillApp(new_skill_app)  

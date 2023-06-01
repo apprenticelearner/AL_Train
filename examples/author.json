@@ -4,10 +4,20 @@
 	  "type": "CREAgent",
 	  "args": {
 	    "search_depth" : 2,
-	    "how": "nlp_set_chaining",
-	    "when": "decisiontree",
+	    // "how": "nlp_set_chaining",
+	    "how": "set_chaining",
+
+	    // DECISION TREE Config
+	    // "when": "decisiontree",
+
+	    // STAND Config
+	    "when_learner": "stand",
+        "which_learner": "when_prediction",
+        "action_chooser" : "max_which_utility",
+        "suggest_uncert_neg" : true,
+
 	    "where": "most_specific",
-	    // "function_set" : ["OnesDigit","TensDigit","Add","Add3"],
+	    "function_set" : ["OnesDigit","TensDigit","Add","Add3"],
 	    "feature_set" : ["Equals"],
       },
       "stay_active" : true,

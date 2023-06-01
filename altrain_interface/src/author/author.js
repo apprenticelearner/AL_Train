@@ -245,13 +245,20 @@ const fxDropDownStyles = {
   menu : (styles) => ({...styles,paddingRight : 0}),
 };
 
-const highlightVars = (text, vars) => {
+const makeHighlightedEquation = (func, values=null, use_values=false) => {
+  let {minimal_str="??", vars=[]} = func  
+  vars = vars.map(({alias})=>alias)
+
   let var_groups = vars.join("|")
   // let regex = new RegExp(`\d*(?<![a-zA-z])(${var_groups})\\b`, 'g')
   let regex = new RegExp(`(\d*|\\b)(${var_groups})\\b`, 'g')
-  console.log('(\d*|\b)(${var_groups})\b')
 
-  const textArray = text.split(regex);
+  let vals_or_vars = (use_values && values) ||
+                      vars.map((x)=>x.toUpperCase())
+  console.log(func, values)
+
+
+  const textArray = minimal_str.split(regex);
   let output = []
   let i = 0;
   for (let str of textArray){
@@ -262,7 +269,7 @@ const highlightVars = (text, vars) => {
           <span 
             key={`${str}_${i}`}
             style={{color:  where_colors[index], fontWeight: 'bold'}}
-          >{str.toUpperCase()}</span>)
+          >{vals_or_vars[index]}</span>)
       }else{
         output.push(str)
       }
@@ -296,18 +303,17 @@ const FxContent = ({ label, value, data={}, explicit,...rest}, {context}) => {
 
   let {skills, focus_uid, skill_apps} = authorStore()
   let skill_app = skill_apps?.[focus_uid];
-  let {func, skill_uid, uid, matches=[]} = data;
+  let {func, skill_uid, uid, head_vals=null, matches=[]} = data;
   let skill = skills?.[skill_uid||uid||skill_app?.skill_uid];
 
   let selected_expl = skill_app?.explanation_selected
   explicit = explicit || (selected_expl?.explicit && selected_expl?.value == value) || false
 
   func = func || skill?.how?.func || {}
-  let {minimal_str="??", vars=[]} = func  
 
-  let is_const = (vars?.length == 0) ?? true
+  let is_const = (func?.vars?.length == 0) ?? true
 
-  let highlighted_eq = highlightVars(minimal_str, vars.map(({alias})=>alias))
+  let highlighted_eq = makeHighlightedEquation(func, head_vals, true)
 
   let is_menu = context == "menu"
   let is_value = context == "value"
@@ -960,7 +966,7 @@ function PopupLayer({children}) {
   let {focus_uid} = authorStore()
   let [is_demo, any_focus, mode] = useAuthorStoreChange([focusIsDemo(), "@focus_uid!=''", "@mode"])
   
-  console.log("any_focus", any_focus, focus_uid)
+  // console.log("any_focus", any_focus, focus_uid)
   return (
     <div style={{...styles.popup_layer}}>
 

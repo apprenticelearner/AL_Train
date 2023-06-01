@@ -288,7 +288,7 @@ const useAuthorStore = create((set,get) => ({
     set({tutorPromise})
 
     
-      // store.updateAgentNextActions()
+      // store.updateAgentRollout()
     // })
     // console.log("AFTERR")
     // let store = get()
@@ -487,7 +487,7 @@ const useAuthorStore = create((set,get) => ({
 
     let store = get()
     let {questions, curr_interface, tutor, editing_question_menu, setFocus,
-        updateAgentNextActions, setSkillApps} = store;
+        updateAgentRollout, setSkillApps} = store;
     ({mode} = store);
     
     let question_items = questions[curr_interface] || {}
@@ -515,13 +515,12 @@ const useAuthorStore = create((set,get) => ({
         }
       }
       tutor_state = tutor.getState()  
-      set({tutor_state})  
+      set({tutor_state, start_state: tutor_state})  
     }
 
     // If in train mode query the agent on this problem
-    if(mode == "train"){
-      console.log("DO UPDATE")
-      updateAgentNextActions(false)
+    if(mode == "train"){      
+      updateAgentRollout(false)
     }
   },
 
@@ -546,9 +545,23 @@ const useAuthorStore = create((set,get) => ({
     }
   },
 
+  modifyQuestion : (intr, q_id, changes)=>{
+    let {curr_interface, questions} = get();
+    intr = intr || curr_interface;
+    let question_items = questions[intr] || {}
+    let curr_q = question_items[q_id] || {}
+    questions = {...questions,
+      [intr]: {...question_items,
+        [q_id] : {...curr_q, ...changes}
+      }
+    }
+    set({questions})
+  },
+
   confirmStartState: (force=false, return_to_train=true) =>{
     let store = get()
-    let {questions, curr_interface, skill_apps, editing_question_menu, setSkillApps, clearInterface} = store
+    let {questions, curr_interface, skill_apps, editing_question_menu,
+        setSkillApps, clearInterface, modifyQuestion} = store
     let question_items = questions[curr_interface] || {}
 
     console.log(skill_apps)
@@ -565,12 +578,15 @@ const useAuthorStore = create((set,get) => ({
     //Edit Case
     if(editing_question_menu){
       let {curr_question} = store
-      questions = {...questions,
-        [curr_interface]: {...question_items,
-          [curr_question] : {...question_items[curr_question], skill_apps}
-        }
-      }
+      // questions = {...questions,
+      //   [curr_interface]: {...question_items,
+      //     [curr_question] : {...question_items[curr_question], skill_apps, start_state_uid: null}
+      //   }
+      // }
       q_id = curr_question
+      modifyQuestion(curr_interface, q_id, {skill_apps, start_state_uid: null})
+
+      
       
     // New Question Case
     }else{
@@ -581,14 +597,17 @@ const useAuthorStore = create((set,get) => ({
       N++;
       let new_name = q_id = `Question ${N}`
 
-      questions = {...questions,
-        [curr_interface]: {...question_items,
-          [new_name] : {name: new_name, n:N, skill_apps}
-        }
-      }
+      modifyQuestion(curr_interface, q_id, {name: q_id, n:N, skill_apps, start_state_uid: null})
+
+      // questions = {...questions,
+      //   [curr_interface]: {...question_items,
+      //     [new_name] : {name: q_id, n:N, skill_apps}
+      //   }
+      // }
     }
+    console.log("BLOOP")
     // Insert the new/edited question
-    set({questions})
+    // set({questions})
     store.saveProject()
 
     if(return_to_train){
@@ -962,12 +981,17 @@ const useAuthorStore = create((set,get) => ({
   },
 
   setTutorState : async (state) => {
-    let {graph_states, tutor, showStateSkillApps, focusFirst} = get()
+    let {graph_states, tutor, showStateSkillApps, focusFirst, confirmFeedback} = get()
+
+    // If state is actually state_uid then grab the states
     let state_uid;
     if(typeof(state) == 'string'){
       state_uid = state
       state = graph_states?.[state_uid]?.state ?? {}
     }
+
+    await confirmFeedback(false)
+
     console.log("setTutorState", state)
     tutor.setTutorState(state)
     let tutor_state = tutor.getState()
@@ -982,7 +1006,7 @@ const useAuthorStore = create((set,get) => ({
     showStateSkillApps(state_uid)
 
     focusFirst()
-    // await updateAgentNextActions(true)
+    // await updateAgentRollout(true)
   },
 
   beginSetStartState : async () => {
@@ -1058,7 +1082,7 @@ const useAuthorStore = create((set,get) => ({
 
   },
 
-  mergeGraphChanges : (new_states, new_actions, update_time, curr_state_uid) =>{
+  mergeGraphChanges : (new_states, new_actions, update_time) =>{
     let {graph_actions, graph_states, graph} = get()
 
     let new_graph_actions = {}
@@ -1092,7 +1116,7 @@ const useAuthorStore = create((set,get) => ({
   },
 
   recalcGraphConnections : (states, actions) =>{
-
+    console.log("HERE0")
     // Reset the in/out skills_app_uids
     for (let [uid, s_obj] of Object.entries(states)){
       s_obj.in_skill_app_uids = []
@@ -1106,7 +1130,7 @@ const useAuthorStore = create((set,get) => ({
       let ns_obj = states[a?.next_state_uid];
       ns_obj.in_skill_app_uids.push(uid)
     }
-
+    console.log("HERE2")
     // Prune any states that have no upstream actions (plus those states' out actions)
     let states_by_depth = organizeByDepth(states)
     for(let [depth, s_lst] of states_by_depth){
@@ -1125,35 +1149,56 @@ const useAuthorStore = create((set,get) => ({
         }
       }
     }
+    console.log("HERE3", states, actions)
     return [states, actions]
   },
 
-  updateAgentNextActions : async (merge=false) => {
+  updateAgentRollout : async (merge=false) => {
     console.log("Fetch Next Actions")
     //Make sure the agent exists before we query it for actions 
-    let {agentPromise, mergeGraphChanges, recalcGraphConnections, showStateSkillApps} = get()
+    let {agentPromise, mergeGraphChanges, recalcGraphConnections, showStateSkillApps,
+        questions, curr_interface, curr_question, start_state, network_layer, agent_uid} = get()
     await agentPromise
 
-    let {network_layer, tutor_state, agent_uid, setSkillApps, graph_states, curr_state_uid : _curr_state_uid} = get()
+    // Ensure that we know the state_uid of the start state
+    let start_state_uid = questions?.[curr_interface]?.[curr_question]?.start_state_uid
+    if(!start_state_uid){
+        let {modifyQuestion} = get()
+        let start_state_uid = await network_layer.get_state_uid(agent_uid, start_state);  
+        modifyQuestion(curr_interface, curr_question, {start_state_uid})
+    }
+    set({start_state_uid})
+
+    let {tutor_state, setSkillApps, graph_states} = get()
 
     //NOTE: Should really be stashed until return to mode==train
     setSkillApps({})
 
-    let base_depth = graph_states[_curr_state_uid]?.depth ?? 0;
-    let rollout = await network_layer.act_rollout(agent_uid, tutor_state, {base_depth})
+    // let base_depth = graph_states[_curr_state_uid]?.depth ?? 0;
+    // let rollout = await network_layer.act_rollout(agent_uid, tutor_state, {base_depth})
+
+    let curr_state_uid = await network_layer.get_state_uid(agent_uid, tutor_state);  
+
+    set({curr_state_uid, awaiting_rollout: true})
+
+    let rollout = await network_layer.act_rollout(agent_uid, start_state)
+
     console.log("ROLLOUT RETURN", rollout);
-    let {states, actions, curr_state_uid} = rollout
+    let {states, actions} = rollout
     let update_time = `${Date.now()}-${window.performance.now()}`
 
-    if(merge){
-      console.log("MERGE");
-      ([states, actions] = mergeGraphChanges(states, actions, curr_state_uid))
-    }
-    ([states, actions] = recalcGraphConnections(states, actions))
+    // if(merge){
+    //   console.log("MERGE");
+    //   ([states, actions] = mergeGraphChanges(states, actions, update_time))
+    // }
+    ;([states, actions] = recalcGraphConnections(states, actions));
 
+    console.log("START SET", states, actions);
     set({graph_states: states, graph_actions: actions,
-        graph_prev_update_time : update_time, curr_state_uid})
+        graph_prev_update_time : update_time, awaiting_rollout: false})
     
+    console.log("Connected", states, actions);
+
     let graph
     ({graph, graph_states: states, graph_actions:actions} = get())
     if(graph && curr_state_uid){
@@ -1182,9 +1227,9 @@ const useAuthorStore = create((set,get) => ({
     return new_skill_apps
   },
 
-  confirmFeedback : async () => {
+  confirmFeedback : async (goto_staged=true) => {
     let {network_layer, mode, skill_apps, curr_state_uid, tutor_state, agent_uid, staged_uid, tutor,
-        confirmArgFoci, updateAgentNextActions, updateSkills, saveProject, 
+        confirmArgFoci, updateAgentRollout, updateSkills, saveProject, 
         graph_states, graph_actions, beginSetStartState, modifySkillApp} = get()
     if(mode == 'arg_foci'){
       confirmArgFoci()
@@ -1202,22 +1247,25 @@ const useAuthorStore = create((set,get) => ({
     saveProject()
 
     // Apply the staged action
-    if(staged_uid){
-      let skill_app = skill_apps[staged_uid]
-      await tutor.stageSAI(skill_app)    
+    if(goto_staged){
+      if(staged_uid){
+        let skill_app = skill_apps[staged_uid]
+        await tutor.stageSAI(skill_app)    
 
-      console.log("IS DONE", tutor.isDone(), skill_app)
-      if(!(tutor.isDone() && (skill_app?.reward ?? 0) > 0) ){
-        let next_state_uid = graph_actions?.[staged_uid]?.next_state_uid
-        if(next_state_uid){
-          set({curr_state_uid : next_state_uid})    
+        console.log("IS DONE", tutor.isDone(), skill_app)
+        if(!(tutor.isDone() && (skill_app?.reward ?? 0) > 0) ){
+          let next_state_uid = graph_actions?.[staged_uid]?.next_state_uid
+          if(next_state_uid){
+            set({curr_state_uid : next_state_uid})    
+          }
+        }else{
+          beginSetStartState()
+          return
         }
-      }else{
-        beginSetStartState()
-        return
-      }
-      
+        
+      }  
     }
+    
 
     set({focus_uid : "", hover_uid : "", staged_uid : "", 
          focus_sel: "", hover_sel: "", staged_sel: ""})
@@ -1230,7 +1278,7 @@ const useAuthorStore = create((set,get) => ({
       modifySkillApp(ti.uid, {"confirmed" : true})
     }
     await updateSkills()
-    await updateAgentNextActions(true)    
+    await updateAgentRollout(true)    
 
   },
 
