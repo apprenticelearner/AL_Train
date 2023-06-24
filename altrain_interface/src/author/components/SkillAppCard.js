@@ -16,6 +16,7 @@ const images = {
   // double_chevron : require('../img/double_chevron_300x400.png'),
   double_chevron : require('../../img/double_chevron_300x400.svg'),
   next : require('../../img/next.svg'),
+  tap : require('../../img/gesture-tap.svg'),
   // pencil : require('../../img/pencil.png')
 };
 
@@ -293,6 +294,13 @@ export function SkillAppCard({
   let [buttonAreaHover, setButtonAreaHover] = useState(false)
   
   let text = skill_app?.input ?? skill_app?.inputs?.value ?? ""
+
+  // TODO: HARD-CODED find better way
+  if(skill_app.action_type.toLowerCase().includes("button")){
+    text = <img style={{width: 30, height : 30}} src={images.tap}/>
+  }
+
+
   // console.log("RERENDER CARD", text)
   let reward = (skill_app?.reward ?? 0)
   let is_demo = skill_app.is_demo || false

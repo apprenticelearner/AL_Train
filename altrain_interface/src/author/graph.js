@@ -10,9 +10,14 @@ import { gen_shadow, arraysEqual } from "../utils";
 import { colors, where_colors } from "./themes.js"
 import ScrollableStage from "./stage.js"
 import {Transform, identity as zoomIdentity} from "./zoom.js"
+import {Oval} from "react-loader-spinner";
+// import {LoadSpinner} from "./spinner.js"
 
 const images = {
-  next : require('../img/next.svg')
+  next : require('../img/next.svg'),
+  tap : require('../img/gesture-tap.svg'),
+  scroll : require('../img/scroll.svg'),
+  scroll2d : require('../img/scroll2d.svg'),
 };
 
 // const colors = {
@@ -135,7 +140,7 @@ export function organizeByDepth(states){
     return ascending_depth
 }
 
-function layoutNodesEdges(states, actions){    
+function layoutNodesEdges(states, actions, tutor){    
     let objs_by_depth = organizeByDepth(states)
 
     // Establish the general layout of nodes and edges
@@ -149,8 +154,8 @@ function layoutNodesEdges(states, actions){
             let avg_in_y = 0
             let n = 0
 
-            // Also mark each state's is_connected to true iff it has 
-            //  am input action that is connected with non-negative reward
+            // Also mark each state as is_connected iff it has a connected
+            //  input action with non-negative reward
             let has_non_negative = (depth == 0)
             for(let in_uid of s_obj?.in_skill_app_uids ?? []){
                 let a_obj = actions[in_uid]
@@ -173,9 +178,27 @@ function layoutNodesEdges(states, actions){
 
             let edge_index = 0
             let out_skill_app_uids = s_obj?.out_skill_app_uids ?? []
-            let a_obj;
             
+            // Sort actions by the position of the interface element 
+            //  they act on (i.e. top-down, left-right).
+            let sorted_actions = []
             for(let out_uid of out_skill_app_uids){
+                let a_obj = actions?.[out_uid];
+                if(!a_obj) continue;
+
+                let sel = a_obj?.skill_app?.selection
+                if(sel){
+                    let elm = tutor.getElement(sel) 
+                    let rect = elm.getBoundingClientRect()   
+                    sorted_actions.push([rect, out_uid])
+                }else{
+                    sorted_actions.push([[0,0], out_uid])
+                }
+            }
+            sorted_actions = sorted_actions.sort(([ra, a], [rb, b])=>(ra.y-rb.y)+.05*(ra.x-rb.x))
+            
+            let a_obj;
+            for(let [pos, out_uid] of sorted_actions){
                 a_obj = actions?.[out_uid];
                 if(!a_obj) continue;
 
@@ -290,10 +313,6 @@ const Edge = ({skill_app_uid}) =>{
     // Let x, y be relative to the node group for this edge
     let [x,y] = [a.x-s.x, a.y-s.y]
 
-    
-
-    let text = skill_app?.input ?? skill_app?.inputs?.value ?? ""
-
     let reward = (skill_app?.reward ?? 0)
     let is_demo = skill_app.is_demo || false
     let confirmed = skill_app?.confirmed ?? false
@@ -332,6 +351,27 @@ const Edge = ({skill_app_uid}) =>{
     let markerEnd = (hasStaged && "url(#double_arrow)") ||
                     (incorrect && "url(#x)") ||
                     "url(#arrow)"
+
+    let action_content;
+
+    if(skill_app.action_type.toLowerCase().includes("button")){
+      action_content = <image style={{x: 2, y:-14, width: 24, height : 24}} href={images.tap}/>
+    }else{
+        let text = skill_app?.input ?? skill_app?.inputs?.value ?? ""
+        action_content =(
+            <text
+                className='edge-text'
+                x={6}
+                fontSize={24}
+                alignmentBaseline={"central"}
+            >
+            {text}
+            </text>
+        )
+    }
+    
+
+    
 
     // console.log("RERENDER EDGE", text, isExternalHasOnly, incorrect)
 
@@ -377,15 +417,8 @@ const Edge = ({skill_app_uid}) =>{
                     stroke={stroke_color}
                 />
 
-                {/* Text in action card */}
-                <text
-                    className='edge-text'
-                    x={6}
-                    fontSize={24}
-                    alignmentBaseline={"central"}
-                >
-                    {text}
-                </text>
+                {/* Text/Image in action card */}
+                {action_content}
             </g>
         </g>)
 }
@@ -622,10 +655,10 @@ const GraphContent = ({contentRef, stageRef, svgRef, anims, setGraphBounds}) =>{
                     </text>
                 </g>)
     }else{
-        let {graph_states:states, graph_actions:actions} = authorStore()
+        let {graph_states:states, graph_actions:actions, tutor} = authorStore()
 
         // console.log("UPDATE_GRAPH", states, actions)
-        let graphBounds = layoutNodesEdges(states, actions);
+        let graphBounds = layoutNodesEdges(states, actions, tutor);
         setGraphBounds(graphBounds)
 
         let node_containers = []
@@ -647,6 +680,17 @@ const GraphContent = ({contentRef, stageRef, svgRef, anims, setGraphBounds}) =>{
             {/*<circle x={0} y={0} id="circle-indicator" r="10" fill="green"/>*/}
             </motion.g>)
     }
+}
+
+function GraphLoadSpinner({...prop}){
+  let [awaiting] = useAuthorStoreChange(["@awaiting_rollout"])
+  return (
+    <div style={styles.load_spinner_container}>
+      {awaiting && 
+        <Oval {...styles.load_spinner_props}/>
+      }
+    </div>
+  )
 }
 
 // A class component that wraps the main GraphContent allowing d3 zoom() events to be used.
@@ -696,7 +740,7 @@ export class Graph extends React.Component {
 
         // Ensure that the transform adheres to bounds
         let {x, y, k} = this.zoomTransform        
-        const [viewWidth, viewHeight] = [350, 440]
+        const [viewWidth, viewHeight] = [450, 440]
         let gb = this.graphBounds
         let hang = 100 //Amount that graph shows when all the way off edge
         let [mx,my] = [-gb.maxX*k+hang, -gb.maxY*k+hang]
@@ -717,7 +761,7 @@ export class Graph extends React.Component {
             animate(this.scale_anim, 
                 [this.scale_anim.get(), 
                  this.zoomTransform.k-.08,  //Extra keyframe where zoom out a little
-                 this.zoomTransform.k], anim_config)    
+                 this.zoomTransform.k], anim_config)
         }
     }
 
@@ -747,7 +791,7 @@ export class Graph extends React.Component {
             let edge_uid = getTargetEdgeUID(e)
             if(edge_uid){
                 let {setFocus} = authorStore()
-                setFocus(edge_uid)
+                setFocus(edge_uid, true)
             }
 
             // If the target is part of a node...
@@ -755,7 +799,7 @@ export class Graph extends React.Component {
             // console.log("CLICK NODE", node_uid)
             if(node_uid){
                 let {setTutorState} = authorStore()
-                setTutorState(node_uid)
+                setTutorState(node_uid, true)
             }
             // ...
 
@@ -774,13 +818,13 @@ export class Graph extends React.Component {
         let gb = this.graphBounds
         let [gWidth, gHeight] = [(gb.maxX-gb.minX), (gb.maxY-gb.minY)]
 
-        const [viewWidth, viewHeight] = [350, 440]
+        const [viewWidth, viewHeight] = [450, 440]
         // Zoom Case
         if(e.shiftKey){
             let {k:o_k, x:o_x, y:o_y} = this.zoomTransform
             let [kMin, kMax] = this.scaleExtent
-            kMin = (viewWidth-50)/Math.max(gWidth, gHeight)
-            let k = Math.max(kMin, Math.min(kMax, o_k * Math.pow(2, e.deltaY*.008)))
+            kMin = (viewWidth-50)/Math.max(Math.max(viewWidth*1.5,gWidth), Math.max(viewHeight*1.5, gHeight))
+            let k = Math.max(kMin, Math.min(kMax, o_k * Math.pow(2, -e.deltaY*.008)))
 
             let [mx, my] = this.clientToGraphCoords([e.clientX, e.clientY])
             
@@ -796,12 +840,7 @@ export class Graph extends React.Component {
         this.zoomTransform.x += dx 
         this.zoomTransform.y += dy
 
-        
-
         this.applyZoomTransform()
-        
-        
-        
     }
     // handleMouseMove = (e) =>{
         
@@ -878,9 +917,10 @@ export class Graph extends React.Component {
         }
         this.didZoom = true
 
-        const width = 350;
+        const width = 450;
         const height = 450;
         const [[x0, y0], [x1, y1]] = bounds
+        console.log("Coords:", `${x0} ${x1}, ${y0} ${y1}`)
 
         let scale_div = Math.max((x1 - x0) / width, (y1 - y0) / height)
         let k = Math.min(1.5, 0.55 / scale_div);
@@ -900,21 +940,83 @@ export class Graph extends React.Component {
 
         console.log("STYLE", style)
         return (
-            <svg 
-                style={{...style, "border": "1px solid black"}}
-                className={"root-svg"} ref = {this.svgRef}
-                onWheel={this.handleWheel}
-                onMouseDown={this.handleMouseDown}
-                onMouseUp={this.handleMouseUp}
-                onMouseMove={this.handleMouseMove}
-            >
-                <Defs/>
-                <GraphContent anims={{x:this.x_anim, y:this.y_anim, scale:this.scale_anim}}
-                    setGraphBounds={(bg)=>{this.graphBounds=bg}}
-                    contentRef={this.svgGRef} svgRef={this.svgRef} stageRef={this.svgRef}
-                />
-            </svg>
+            <div style={{...styles.graph_container,
+                         ...style, "border": "1px solid black"}}>
+                <svg 
+                    style={{width: "100%", height: "100%", }}
+                    className={"root-svg"} ref = {this.svgRef}
+                    onWheel={this.handleWheel}
+                    onMouseDown={this.handleMouseDown}
+                    onMouseUp={this.handleMouseUp}
+                    onMouseMove={this.handleMouseMove}
+                >
+                    <Defs/>
+                    <GraphContent anims={{x:this.x_anim, y:this.y_anim, scale:this.scale_anim}}
+                        setGraphBounds={(bg)=>{this.graphBounds=bg}}
+                        contentRef={this.svgGRef} svgRef={this.svgRef} stageRef={this.svgRef}
+                    />
+                </svg>
+                <div style={styles.instr_container}>
+                    <div style={styles.instr_row}>
+                        <img src={images.scroll2d} 
+                            style={{width:16,height:20, marginRight:2,
+                                    filter : "invert(.4)"
+                        }}/> 
+                        <div>{"Pan : Scroll/Drag"}</div> 
+                    </div>
+                    <div style={styles.instr_row}>
+                        <img src={images.scroll} style={{
+                            width:16,height:20, marginRight:2,
+                            filter : "invert(.4)"
+                        }} /> 
+                        <div>{"Zoom : Shift+Scroll "}</div> 
+                    </div>  
+                </div>
+                <GraphLoadSpinner/>
+            </div>
         )
     }
 }
 
+
+const styles = {
+    graph_container : {
+        position: "relative"
+    },
+    instr_container : {
+        position : "absolute",
+        display: "flex",
+        flexDirection: "column",
+        bottom : 0,
+        left : 0,
+        margin: 2,
+        userSelect : "none",
+        pointerEvents : "none",
+    },
+    instr_row : {
+        color : "grey",
+        fontSize : 10,
+        display: "flex",
+        flexDirection: "row",
+        marginBottom: 2,
+        alignItems: "center",
+    },
+    // Note spinner styles are props not css styles
+    load_spinner_container : {
+        position : "absolute",
+        display: "flex",
+        bottom : 0,
+        right : 0,
+        width: 30,
+        height: 30,
+        margin : 5,
+    },
+    load_spinner_props : {
+        height : 20,
+        width : 20, 
+        color : "#4fa94d",
+        secondaryColor : "#4fa94d",
+        strokeWidth : 5,
+        strokeWidthSecondary : 5
+    }
+}

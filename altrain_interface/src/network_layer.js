@@ -164,6 +164,18 @@ export default class NetworkLayer {
     return send_post(this.agent_url + "/get_skills/", data)
   }
 
+  gen_completeness_profile(agent_uid, start_states, output_file, rest={}) {
+    var data = {agent_uid, start_states, output_file, ...rest}
+    console.log("Gen Completeness", data);
+    return send_post(this.agent_url + "/gen_completeness_profile/", data)
+  }
+
+  eval_completeness(agent_uid, profile, rest={}) {
+    var data = {agent_uid, profile, ...rest}
+    console.log("Eval Completeness", data);
+    return send_post(this.agent_url + "/eval_completeness/", data)
+  }
+
   term_print(message, type = "default") {
     var data = { message: message, type: type };
     return fetch_retry(this.host_url, {

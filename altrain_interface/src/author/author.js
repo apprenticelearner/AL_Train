@@ -15,11 +15,12 @@ import ScrollableStage from "./stage.js"
 import Color from "color"
 
 import {useALTrainStoreChange} from '../altrain_store';
-import {authorStore, useAuthorStore, useAuthorStoreChange, test_state, test_skill_applications} from "./author_store.js"
+import {authorStore, setAuthorStore, useAuthorStore, useAuthorStoreChange, test_state, test_skill_applications} from "./author_store.js"
 // import MyZustandTest from "./change_store_test.js"
 import {shallowEqual, baseFile, gen_shadow, arg_symbols} from "../utils.js"
 import CTATTutorWrapper from "../tutorwrappers/ctat"
 import {colors, where_colors} from "./themes.js"
+import {Oval} from "react-loader-spinner";
 
 
 const images = {
@@ -101,24 +102,59 @@ function ArgsRow(){
 
     arg_items.push(
       <div style={{...styles.arg_item, borderColor: color}} key={`arg${i}`}>
-        <a style={{fontWeight:"bold", color: color, fontSize:"1.6em", marginLeft:3, marginRight:5}}>
+        <a style={{fontWeight:"bold", color: color, fontSize:"1.5em", marginLeft:3, marginRight:5}}>
           {arg_symbols[i]}
         </a>
         <a style={{color:'grey'}}> {`  ${foci}`}</a> 
       </div>)
   }
 
+  let prompt = (arg_foci_mode && "Select arguments in interface. Click away to Exit." ) ||
+                "Click here to begin selecting arguments."
+
+  let border_width = (arg_foci_mode && 3) || 1
+
+  let font_size = (arg_foci_mode && 14) || 10
+  let icon_size = (arg_foci_mode && 18) || 10
+
+
   const foci_mode_props = {
-    default_scale : 1.25, default_elevation : 12,
-    hover_scale : 1.2, hover_elevation : 8,
+    default_scale : 1.08, default_elevation : 16,
+    hover_scale : 1.02, hover_elevation : 8,
   }
 
   return (
-    <div style={styles.value_group}>
+    <div style={{...styles.value_group}}>
       <div style={styles.label}>{"Args"}</div>
-      <div style={styles.arg_container}>
+
+      <RisingDiv 
+        style={{
+            ...styles.arg_area, 
+            ...(arg_foci_mode && styles.arg_area_selected),
+            borderWidth: border_width,
+          }}
+        onMouseDown={(e)=>{
+          let callback = (arg_foci_mode ? confirmArgFoci : beginSetArgFoci); 
+          callback()
+          }}
+        {...(arg_foci_mode && foci_mode_props)}
+        >
+        <div style={{...styles.arg_prompt, fontSize: font_size}}>
+          <ArgFociPointer style={{
+            width: icon_size, height: icon_size, 
+            marginLeft: 2, marginRight: 4,
+            ...(arg_foci_mode && {transform: "translate(0px,-2px)"})  
+            }}/>
+          <a>{prompt}</a>
+        </div> 
+        <div style={{
+          ...styles.arg_container,
+          ...(arg_foci_mode && {transform: "translate(0px,-3px)"})
+          }}>
         {arg_items}
-      </div>  
+        </div>  
+      </RisingDiv>  
+      {/*
       <div style={styles.right_space}>
         <RisingDiv style={{
           ...styles.circle_button,
@@ -138,6 +174,7 @@ function ArgsRow(){
           </div>
         </RisingDiv>
       </div>
+      */}
     </div>
   )
 }
@@ -255,7 +292,7 @@ const makeHighlightedEquation = (func, values=null, use_values=false) => {
 
   let vals_or_vars = (use_values && values) ||
                       vars.map((x)=>x.toUpperCase())
-  console.log(func, values)
+  // console.log(func, values)
 
 
   const textArray = minimal_str.split(regex);
@@ -380,6 +417,7 @@ let FxControl = (props) => {
   let {clearExplanation} = authorStore()
   let [skill_app] = useAuthorStoreChange([getFocusOrHover()])
 
+  let awaiting_expl = skill_app?.awaiting_explanation
   let is_explicit = skill_app?.explanation_selected?.explicit
 
   let n_s = skill_app?.explanation_options?.[0]?.options?.length ?? 0
@@ -410,6 +448,7 @@ let FxControl = (props) => {
   let [clearHover, setClearHover] = useState(false)
   return (
     <div style={{position: 'relative'}}> 
+      {/* Clear Select Button*/}
       {is_explicit &&
         <div 
           style={{...count_style, bottom:-9, left:20, width: 60, ...(clearHover && {color : 'black', fontWeight: "bold"})}}
@@ -420,14 +459,24 @@ let FxControl = (props) => {
           {"clear select"}
         </div>
       }
+      {/* Counters */}
       <div style={{...count_style, bottom:-9, right:28}}>
         {count_text}
       </div>
-      <div style={style} ref={innerRef}
+
+      {/* Content */}
+      <div style={{...style, ...(awaiting_expl && {opacity: .6})}} ref={innerRef}
         {...innerProps}
       >
         {children}
       </div>
+
+      {/* Load Spinner */}
+      {awaiting_expl && 
+        <div style={styles.expl_load_spinner}>
+        <Oval {...styles.load_spinner_props}/>
+        </div>
+      }
       
     </div> 
   );
@@ -467,6 +516,103 @@ function FxRow(){
   )
 }
 
+// -----------------------------------
+// : Action / Demonstration Popups
+
+function KeyIcon({style, key_style, side_style, text, children, shadow=0,...rest}){
+  let borderRadius = style.borderRadius || 10
+  let inner_content = (children ||
+      <a style={{textAlign:"center", userSelect: 'none'}}>{text}</a>
+  )
+  return (<div style={{position:'relative', userSelect: 'none', ...style}} {...rest}>
+    <div style={{position:'absolute', top: "12%", width: "100%", height:"88%",
+                  borderRadius: borderRadius, backgroundColor:'lightgrey', borderWidth:2,
+                  borderStyle: 'solid', borderColor: colors.default, 
+                  ...(shadow && {boxShadow: gen_shadow(shadow)}),
+                   ...side_style}}/>
+    <div style={{position:'absolute', width: "100%", height:"88%",
+                  display:'flex', alignItems: 'center', justifyContent:"center",
+                  borderStyle: 'solid', borderColor: colors.default, 
+                  borderRadius: borderRadius, backgroundColor:'white', borderWidth:2,
+                    ...key_style}}>
+      {inner_content}
+    </div>
+  </div>
+  )
+}
+
+
+function NavigationKeys({show_yes=false, show_apply=true}){
+  let [next_down, prev_down, apply_down] = useAuthorStoreChange(["@next_down", "@prev_down", "@apply_down"])
+  let {focusPrev, focusNext, confirmFeedback} = authorStore()
+
+  let next_bg = (next_down && 'lightgrey') || "white" 
+  let prev_bg = (prev_down && 'lightgrey') || "white" 
+  let apply_bg = (apply_down && 'lightgrey') || "white" 
+
+  let apply_prompt = (show_yes && <div style={{marginRight: 2}}>
+                        <a style={{fontSize: "1.4em"}}>{"✔ "}</a>
+                        <a style={{fontWeight: "bold"}}>{"Yes "}</a>
+                      </div>) ||
+                      <a style={{fontWeight: "bold"}}>{"Apply "}</a>
+  return (
+    <div style={{position : 'absolute', width: "100%", height: "100%", pointerEvents: "none"}}>
+        {show_apply && 
+          <RisingDiv style={{display:"flex", justifyContent:"center", userSelect: 'none',
+                position: 'absolute', bottom: -26, width:"100%", color: '#445',
+                pointerEvents:'auto'}}
+              hover_scale={1.05}
+              onMouseDown={()=>{setAuthorStore({apply_down:true}); confirmFeedback()}}
+              onMouseUp={()=>{setAuthorStore({apply_down:false})}}
+          >
+            <KeyIcon 
+                style={{marginTop:'auto', marginBottom: 4, alignSelf: 'center',
+                        color: '#445', width: 180, height: 34, fontSize:14}}
+                shadow={10}
+                key_style={{backgroundColor: apply_bg}}
+                children={<div style={{margin: 4, display: "flex", flexDirection: "row", alignItems:"center"}}>
+                  {apply_prompt}
+                  <img style={{width: 18, height:18, margin:4, filter: "invert(.3)"}} src={images.next}/>
+                  <a>{" (Space Bar)"}</a>
+                  </div>
+                }
+              />
+          </RisingDiv>
+        }
+        <RisingDiv style={{position: 'absolute', bottom:60, left : -60, color: '#445', pointerEvents:'auto'}}
+            hover_scale={1.1}
+            onMouseDown={()=>{setAuthorStore({prev_down:true}); focusPrev()}}
+            onMouseUp={()=>{setAuthorStore({prev_down:false})}}
+          >
+          <KeyIcon 
+            style={{width: 42, height: 42, fontSize: 14}}
+            shadow={10}
+            key_style={{borderStyle: 'solid', borderColor: colors.default, backgroundColor: prev_bg}}
+            children={<div style={{dispaly:'flex', flexDirection:'column', alignItems:'center'}}>
+              <div><a style={{fontSize:"1.2em"}}>{"⬅"}</a><a>{"/A"}</a></div>
+              <div style={{fontSize:10, textAlign:'center'}}>{"prev"}</div>
+            </div>}
+          />
+        </RisingDiv>
+        <RisingDiv style={{position: 'absolute', bottom:60, right : -54, color: '#445', pointerEvents:'auto'}}
+            hover_scale={1.1}
+            onMouseDown={()=>{setAuthorStore({next_down:true}); focusNext()}}
+            onMouseUp={()=>{setAuthorStore({next_down:false})}}
+          >
+          <KeyIcon 
+            style={{width: 42, height: 42}}
+            shadow={10}
+            key_style={{borderStyle: 'solid', borderColor: colors.default, backgroundColor: next_bg}}
+            children={<div style={{dispaly:'flex', flexDirection:'column', alignItems:'center'}}>
+                <div><a>{"D/"}</a><a style={{fontSize:"1.2em"}}>{"➡"}</a></div>
+                <div style={{fontSize:10, textAlign:'center'}}>{"next"}</div>
+            </div>}
+          />
+        </RisingDiv>
+      </div>
+  )
+}
+
 
 function DemonstrateMenu({}){
   let {setMode, addSkillApp, removeSkillApp, setInputs} = authorStore()
@@ -501,8 +647,54 @@ function DemonstrateMenu({}){
         <ArgsRow/>
         <FxHelpRow/>
       </div>
+      <NavigationKeys/>
     </div>
   )
+}
+
+function RewardKeys({skill_app}){
+    let [pos_rew_down, neg_rew_down] = useAuthorStoreChange(["@pos_rew_down", "@neg_rew_down"])
+    
+    let corr = (skill_app?.reward ?? 0) > 0
+    let incorr = (skill_app?.reward ?? 0) < 0
+
+    let pos_bg = (pos_rew_down && 'lightgrey') || "white"
+    let neg_bg = (neg_rew_down && 'lightgrey') || "white" 
+
+    let pos_bord_c = (corr && colors.correct) || colors.default
+    let neg_bord_c = (incorr && colors.incorrect) || colors.default
+
+    let pos_bord_w = (corr && 3) || 2
+    let neg_bord_w = (incorr && 3) || 2
+
+    return (
+      <div style={{display: 'flex', flexDirection : "column", margin: 10, alignItems: "end"}}>
+        <div style={{position: 'relative', margin: 6, color: '#445'}}>
+          <KeyIcon 
+            style={{width: 42, height: 42, fontSize: 14}}
+            shadow={10}
+            key_style={{backgroundColor: pos_bg, borderColor: pos_bord_c, borderWidth: pos_bord_w}}
+            children={(<div style={{dispaly:'flex', flexDirection:'column', alignItems:'center'}}>
+              <div><a style={{fontSize:"1.2em"}}>{"⬆"}</a><a>{"/W"}</a></div>
+              <div style={{marginTop: -2, fontSize: "1.1em", textAlign:'center',
+                color: colors.correct}}>{'✔'}</div>
+            </div>)}
+          />
+        </div>
+        <div style={{position: 'relative', margin: 6, color: '#445'}}>
+          <KeyIcon 
+            style={{width: 42, height: 42}}
+            shadow={10}
+            key_style={{backgroundColor: neg_bg, borderColor: neg_bord_c, borderWidth: neg_bord_w}}
+            children={(<div style={{dispaly:'flex', flexDirection:'column', alignItems:'center'}}>
+                <div><a style={{fontSize:"1.2em"}}>{"⬇"}</a><a>{"/D"}</a></div>
+                <div style={{marginTop: -2, fontSize: "1.1em", textAlign:'center',
+                  color: colors.incorrect}}>{'✖'}</div>
+            </div>)}
+          />
+        </div>
+      </div>
+    ) 
 }
 
 function AgentActionMenu({}){
@@ -520,7 +712,7 @@ function AgentActionMenu({}){
 
 
   return (
-  <div style={{...styles.agent_action_menu, borderColor: border_color}}>
+    <div style={{...styles.agent_action_menu, borderColor: border_color}}>
       <div style={styles.agent_action_menu_fields}>
         <div style={styles.agent_action_menu_title}>
           <Icon size={styles.agent_action_menu_title.fontSize} kind={kind}/>
@@ -533,7 +725,11 @@ function AgentActionMenu({}){
           />
           <div style={styles.right_space}/>
         </div>
+        <RewardKeys skill_app={skill_app}/>
       </div>
+      <NavigationKeys 
+        show_yes={kind == 'undef'}
+        show_apply={kind != "incorrect"}/>
     </div>
   )
 }
@@ -1049,8 +1245,8 @@ const agentFormatOptionLabel = ({ value, label, uid }, {context}) => (
 );
 
 function AgentArea(){
-  let [agents] = useAuthorStoreChange(
-      [[(s)=>s.agents, (o,n) => shallowEqual(o, n)]]
+  let [agents, awaiting_agent] = useAuthorStoreChange(
+      [[(s)=>s.agents, (o,n) => shallowEqual(o, n)], "@awaiting_agent"]
   )
   console.log("AGENT AREA", JSON.stringify(agents))
 
@@ -1066,6 +1262,11 @@ function AgentArea(){
     <div style={{...styles.submenu, ...styles.agent_area}}>
       <div style={styles.submenu_title_area}>
           <header style={styles.submenu_title}>Agent</header>
+          <div style={styles.agent_load_spinner}>
+            {awaiting_agent && 
+              <Oval {...{...styles.load_spinner_props, width: 16, height: 16}}/>
+            }
+          </div>
       </div>
       <div style={{...styles.submenu_content, overflow : "visible"}}>
           <Select 
@@ -1127,7 +1328,7 @@ function ConfirmButton() {
       style={styles.confirm_button}
       {...{default_scale : 1, default_elevation : 8}}
       {...{hover_scale : 1.05, hover_elevation : 12}}
-      onClick={confirmFeedback}
+      onClick={() => confirmFeedback(false,true)}
     >
       {"Confirm"}
       {false && 
@@ -1140,11 +1341,39 @@ function ConfirmButton() {
   )
 }
 
+function GenCompletenessButton() {
+  let {genCompletenessProfile} = authorStore()
+  return (
+    <RisingDiv 
+      style={{...styles.gen_completeness_button,left:10}}
+      {...{default_scale : 1, default_elevation : 8}}
+      {...{hover_scale : 1.05, hover_elevation : 12}}
+      onClick={genCompletenessProfile}
+    >
+      {"Gen Completeness"}
+    </RisingDiv>
+  )
+}
+
+function EvalCompletenessButton() {
+  let {evalCompleteness} = authorStore()
+  return (
+    <RisingDiv 
+      style={{...styles.gen_completeness_button,right:10}}
+      {...{default_scale : 1, default_elevation : 8}}
+      {...{hover_scale : 1.05, hover_elevation : 12}}
+      onClick={()=>evalCompleteness('ground_truth.txt')}
+    >
+      {"Eval Completeness"}
+    </RisingDiv>
+  )
+}
+
 function StagedFeedbackArea(){
   return(
   <div style={{...styles.submenu, ...styles.stage_feedback_area}}>
       <div style={styles.submenu_title_area}>
-          <header style={styles.submenu_title}>Confirm Feedback</header>
+          <header style={styles.submenu_title}>{"Total Feedback"}</header>
       </div>
       <div style={{
           ...styles.submenu_content, 
@@ -1167,6 +1396,8 @@ function StagedFeedbackArea(){
         </div>
         <div style={styles.confirm_button_area}>
           <ConfirmButton/>         
+          <GenCompletenessButton/>
+          <EvalCompletenessButton/>
         </div>
       </div>
     </div>
@@ -1177,7 +1408,7 @@ export default function AuthoringInterface({props}) {
   let [training_config, training_file, tutor_class, network_layer] = useALTrainStoreChange(
     ['@training_config','@training_file', '@tutor_class', 'network_layer'])
   let [transaction_count] = useAuthorStoreChange(["@transaction_count"])
-  let {addSkillApp, removeSkillApp,  setSkillApps, setStaged, onKeyDown, setCenterContentRef,
+  let {addSkillApp, removeSkillApp,  setSkillApps, setStaged, onKeyDown, onKeyUp, setCenterContentRef,
       incTransactionCount, setConfig, setTutor} = authorStore()
 
   let Tutor = tutor_class
@@ -1192,9 +1423,11 @@ export default function AuthoringInterface({props}) {
   useEffect(() =>{
     setCenterContentRef(center_content_ref)
     document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onKeyUp);
     ({stage_cursor_elem: cursor} = authorStore())
     return function cleanup() {
       document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('keyup', onKeyUp);
     }
   }, [])
 
@@ -1356,6 +1589,7 @@ const styles = {
     
   },
   submenu_title_area : {
+    position: 'relative',
     display : 'flex',
     flexDirection : 'row',
     justifyContent : 'space-between',
@@ -1482,8 +1716,8 @@ const styles = {
 
   left_tools: {
     // Fixed Width
-    flex: "0 0 350px",
     display:'flex',
+    flex: "1 0 450px",
     flexDirection: 'column',
 
     // flex : 0,
@@ -1516,7 +1750,7 @@ const styles = {
 
   
   graph: {
-    width:350,
+    width: 450,
     height:"50%"
   },
 
@@ -1560,7 +1794,7 @@ const styles = {
     padding : 10,
     paddingRight : 14,
     paddingLeft : 14,
-    fontSize : 14,
+    fontSize : 18,
     color : 'white',
     backgroundColor : 'rgb(110,110,116)',
     border : 'solid 3px darkgrey',
@@ -1616,6 +1850,7 @@ const styles = {
   },
 
   demo_menu :{
+    position : 'relative',
     display : 'flex',
     flexDirection : 'row',
     minWidth: "42%",
@@ -1668,11 +1903,13 @@ const styles = {
   },
 
   agent_action_menu :{
+    position : 'relative',
     display : 'flex',
     flexDirection : 'row',
     minWidth: "40%",
     maxWidth: "90%",
-    height: "20%",
+    height:"24%",
+    // maxHeight:"30%",
     alignItems: 'center', 
     
     marginBottom : 30,
@@ -1726,7 +1963,7 @@ const styles = {
     alignItems : 'stretch',
     // padding : 2,
     margin : 8,
-    width : "100%",
+    // width : "100%",
     // flexWrap: "wrap",
     // backgroundColor : 'red',
   },
@@ -1772,7 +2009,7 @@ const styles = {
   },
 
   right_space : {
-    width : 70,
+    width : 50,
     // minWidth : 64,
     // maxWidth : 70,
     height : 34,
@@ -1780,23 +2017,58 @@ const styles = {
     // backgroundColor :'yellow',
   },
 
-  arg_container : {
-    flex : "1 1 auto",
+  arg_area : {
+    flex : 1,
+    display : 'flex',
+    flexDirection : 'column',
+    padding : 2,
+    height : 36,
+    borderStyle : 'solid',
+    borderWidth : 1,
+    borderColor : 'lightgrey',
+    marginRight : 8,
+    paddingBottom: 8,
+
+    
+    // maxWidth : "80%",
+    // minWidth : "40%",
+    // backgroundColor : 'red',
+    borderRadius : 5,
+  },
+
+  arg_area_selected : {
+    borderColor : "#668",
+    marginRight : 14,
+    // borderColor : where_colors[0],
+    // borderRightColor : where_colors[1],
+    // borderBottomColor : where_colors[2],
+    // borderLeftColor : where_colors[3],
+  },
+
+  arg_prompt : {
+    flex : 1,
     display : 'flex',
     flexDirection : 'row',
-    flexWrap: 'wrap',
-    maxWidth : "90%",
-    minWidth : "40%",
-    // backgroundColor : 'red',
+    fontSize : 10,
+    color : "grey",
+    userSelect : 'none',
+  },
+
+  arg_container : {
+    flex : 1,
+    display : 'flex',
+    flexDirection : 'row',
   },
 
   arg_item : {
     display : "flex",
     alignItems : "center",
     margin: 2,
-    padding: 2,
+    padding: 0,
+    paddingLeft: 1,
     paddingRight: 4,
     fontSize: 12,
+
 
     // backgroundColor : '#EEE',
     // backgroundColor : 'grey',
@@ -1927,6 +2199,27 @@ const styles = {
     marginTop : 30
   },
 
+  gen_completeness_button :{
+    position : 'absolute',
+    display : "flex",
+    flexDirection: 'column',
+    justifyContent : "center",
+    alignItems : "center",
+    textAlign : "center",
+    fontSize: 10,
+    width : 80,
+    height : 30,
+    bottom : 2,
+    // border : "2px solid",
+    borderRadius : 20,
+    backgroundColor : 'lightgrey',
+    // borderColor : 'lightgrey',
+    // marginBottom : 2,
+    pointerEvents: "auto",
+    userSelect: 'none',
+    // marginTop : 30
+  },
+
   confirm_button_inner_message : {
     position : "absolute",
     fontSize: 14,
@@ -1958,6 +2251,25 @@ const styles = {
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
+
+  agent_load_spinner: {
+    position:'absolute', 
+    left: 70, 
+    top:6
+  },
+  expl_load_spinner: {
+    position:'absolute', 
+    left: -30, 
+    top:6
+  },
+  load_spinner_props : {
+    height : 22,
+    width : 22, 
+    color : "#4fa94d",
+    secondaryColor : "#4fa94d",
+    strokeWidth : 5,
+    strokeWidthSecondary : 5
+  }
 
 
 

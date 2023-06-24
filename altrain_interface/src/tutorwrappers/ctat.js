@@ -335,14 +335,14 @@ let BaseMixin = (superclass) => class extends superclass {
   };
 
   getState = ({
-    encode_relative = true,
+    encode_neighbors = false,
     strip_offsets = false,
     use_bounds = true,
     use_class = false,
     use_id = true,
-    append_ele = false,
     numeric_values = false,
     clear_editable_values = true,
+    ignore_untyped = true,
   } = {}) => {
     let relative_pos_cache = this.relative_pos_cache;
     let HTML_path = this.HTML_path;
@@ -418,17 +418,21 @@ let BaseMixin = (superclass) => class extends superclass {
 
           obj['visible'] = getComputedStyle(element).visibility != "hidden"//!((element.firstElementChild?.disabled ?? element.firstElementChild?.visible) ?? false)
 
-          if(!obj['type']){obj['type'] = "Component"}
-          let name = (append_ele ? "?ele-" : "") + element.id;
+          if(!obj['type']){
+            obj['type'] = "Component"
+            if(ignore_untyped){
+              continue
+            }
+          }
           // console.log(name,append_ele)
-          state_json[name] = obj;
+          state_json[element.id] = obj;
           count++;
         }
       }
     }
 
     // Gets lists of elements that are to the left, right and above the current element
-    if (encode_relative) {
+    if (encode_neighbors) {
       const elm_list = Object.entries(state_json);
       // console.log(elm_list);
 

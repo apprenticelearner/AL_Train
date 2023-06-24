@@ -136,15 +136,19 @@ const EXPLAIN_DEMO_REFRESH_DELAY = 0
 
 
 var authorStore;
+var setAuthorStore;
 const useAuthorStore = create((set,get) => ({
   get : authorStore=get,
+  set : setAuthorStore=set,
 
-  // List of descriptor objects for each of the user's current agents
+  // Objects for each of the user's current agents
   agents : {},
   // The unique id of the currently selected agent.
   agent_uid : null,
   // A promise that resolves when a selected / newly created agent is loaded
   agentPromise : null,
+  // Promises for calls to explain_demo
+  explainPromises : [],
 
   // The current Interface and Question
   curr_interface : "",
@@ -211,6 +215,18 @@ const useAuthorStore = create((set,get) => ({
   stage_cursor_stack : [],
   stage_cursor : null,
   stage_cursor_ref : null,
+
+  // Short-lived bools associated with keydowns / clicks
+  next_down : false,
+  prev_down : false,
+  apply_down : false,
+  pos_rew_down : false,
+  neg_rew_down : false,
+
+  // Awaiting Network
+  awaiting_agent : false,
+  awaiting_rollout : false,
+  awaiting_train : false,
 
   /*** Project ***/
   loadProject(prob_configs){
@@ -364,21 +380,45 @@ const useAuthorStore = create((set,get) => ({
 
     console.log("BEGIN CREATE AGENT")
 
+    let agent_obj = {uid: null, awaiting: true, config: agent_config}
+    set({agents : {...agents, temp : agent_obj}, awaiting_agent : true})
+
     let agentPromise = new Promise( async (resolve, reject) =>{
-      let resp = await network_layer.create_agent(agent_config)
-      let {agent_uid} = resp
-      agents[agent_uid] = agent_config
-      set({agents})  
-      resolve(agent_uid)
+      network_layer.create_agent(agent_config)
+      .then((resp) =>{
+        let {agent_uid} = resp
+        let {agents, agent_uid: curr_agent_uid} = get()
+
+        delete agents['temp']
+        agent_obj['awaiting'] = false
+        agent_obj['uid'] = agent_uid
+        
+        if(agent_uid == curr_agent_uid){
+          set({awaiting_agent : false})
+        }
+
+        set({agents : {...agents, [agent_uid] : agent_obj}})  
+        resolve(agent_uid)
+      })
+      .catch((e) =>{
+        console.warn("AGENT ERROR", e)
+        agent_obj['error'] = e
+      })
     })
-    set({agentPromise})
+    agent_obj['promise'] = agentPromise
+
+    // set({agentPromise})
     return agentPromise
   },
 
   setAgent: (agent_uid) => {
-    let {updateSkills} = get()
+    let {updateSkills, agents} = get()
     console.log("SET AGENT", agent_uid)
-    set({agent_uid})
+    let agent_object = agents[agent_uid]
+    set({agent_uid, 
+         agentPromise: agent_object['promise'],
+         awaiting_agent : agent_object?.awaiting
+    })
     updateSkills()
   },
 
@@ -515,6 +555,7 @@ const useAuthorStore = create((set,get) => ({
         }
       }
       tutor_state = tutor.getState()  
+      console.log(tutor_state)
       set({tutor_state, start_state: tutor_state})  
     }
 
@@ -718,64 +759,77 @@ const useAuthorStore = create((set,get) => ({
     console.log("agentPromise", agentPromise)
     let {skill_apps, agentPromise, tutor_state} = get()
     let skill_app_uid = skill_app.uid
+
+
+
     let agent_uid = await agentPromise
 
     // Re-get since could have updated while waiting for agent to load
     skill_app = skill_apps[skill_app_uid]
-    console.log(skill_app)
+    // console.log(skill_app)
     let {selection, action_type, inputs, ...rest} = skill_app
     let sai = {selection, action_type, inputs}
 
+    // Reject any pending promises for this skill_app
+    let {explainPromises} = get()
+    let pending_promise_obj = explainPromises?.[skill_app_uid]?.reject?.();
 
-    // Make sure that the next state in the graph is defined for the demo
-    // await updateGraphConnections(skill_app)
-    
+    // Begin calling explain_demo in in a promise and make it the pending promise 
+    let new_promise_obj = {};
+    let explain_promise = new Promise( async (resolve, reject) => {
+      new_promise_obj['reject'] = reject
+      let {skill_explanations, func_explanations} = 
+        await network_layer.explain_demo(agent_uid, tutor_state, sai, rest);
+      resolve({skill_explanations, func_explanations})
+    })
+    new_promise_obj['promise'] = explain_promise
+    explainPromises = {...explainPromises, [skill_app_uid] : new_promise_obj}
+    set({explainPromises})
 
-    // Have agent explain the demo's sai
-    let {skill_explanations, func_explanations} = 
-      await network_layer.explain_demo(agent_uid, tutor_state, sai, rest);
-
-    // Format the explanations so that 'react-select' can use them
-    let skill_options = [];
-    let defaultOption = null
-    for(let sa of (skill_explanations ?? [])){
-      let option = {
-        label: sa?.how_part?.minimal_str,
-        value : `Skill Explanations, ${sa.uid}`,
-        kind : "skill_app",
-        data : sa,
+    // When/if it resolves make the UI changes 
+    explain_promise.then(({skill_explanations, func_explanations}) => {
+      // Format the explanations so that 'react-select' can use them
+      let skill_options = [];
+      let defaultOption = null
+      for(let sa of (skill_explanations ?? [])){
+        let option = {
+          label: sa?.how_part?.minimal_str,
+          value : `Skill Explanations, ${sa.uid}`,
+          kind : "skill_app",
+          data : sa,
+        }
+        defaultOption = defaultOption || option
+        skill_options.push(option);
       }
-      defaultOption = defaultOption || option
-      skill_options.push(option);
-    }
-    let func_options = [];
-    let i = 0;
-    for(let expl of (func_explanations ?? [])){
-      let option = {
-        label: expl?.func?.minimal_str,
-        value : `Function Explanations, ${i}`,
-        kind : "func",
-        data : expl,
+      let func_options = [];
+      let i = 0;
+      for(let expl of (func_explanations ?? [])){
+        let option = {
+          label: expl?.func?.minimal_str,
+          value : `Function Explanations, ${i}`,
+          kind : "func",
+          data : expl,
+        }
+        defaultOption = defaultOption || option
+        func_options.push(option);
+        i++;
       }
-      defaultOption = defaultOption || option
-      func_options.push(option);
-      i++;
-    }
-    let n_s = skill_explanations?.length ?? 0
-    let n_f = func_explanations?.length ?? 0
-    let explanation_options = [
-      {'label' : `${n_s} Skill Explanations`, value: "Skill Explanations", options: skill_options},
-      {'label' : `${n_f} Function Explanations`, value: "Function Explanations", options: func_options},
-    ]
+      let n_s = skill_explanations?.length ?? 0
+      let n_f = func_explanations?.length ?? 0
+      let explanation_options = [
+        {'label' : `${n_s} Skill Explanations`, value: "Skill Explanations", options: skill_options},
+        {'label' : `${n_f} Function Explanations`, value: "Function Explanations", options: func_options},
+      ]
 
-    let explanation_time = Date.now()
-    console.log("Explanations", explanation_options, explanation_time)
+      let explanation_time = Date.now()
+      console.log("Explanations", explanation_options, explanation_time)
 
-    let explanation_selected = {...defaultOption, explicit : false}
+      let explanation_selected = {...defaultOption, explicit : false}
 
-    modifySkillApp(skill_app, {
-      explanation_options, explanation_time,
-      explanation_selected, awaiting_explanation : false
+      modifySkillApp(skill_app, {
+        explanation_options, explanation_time,
+        explanation_selected, awaiting_explanation : false
+      })
     })
 
   },
@@ -795,7 +849,7 @@ const useAuthorStore = create((set,get) => ({
     modifySkillApp(skill_app, {explanation_selected: {...explanation, explicit : true}})
   },
 
-  setFocus: (skill_app_uid) => { 
+  setFocus: (skill_app_uid, do_confirm=false) => { 
     let {graph_actions, setTutorState, curr_state_uid} = get()
     let action = graph_actions?.[skill_app_uid] ?? {}
     console.log(action)
@@ -803,7 +857,7 @@ const useAuthorStore = create((set,get) => ({
 
     set({focus_sel : skill_app?.selection ?? "", focus_uid : skill_app_uid ?? ""})
     if(state_uid && curr_state_uid != state_uid){
-      setTutorState(state_uid)  
+      setTutorState(state_uid, do_confirm)  
     }
   },
 
@@ -980,8 +1034,8 @@ const useAuthorStore = create((set,get) => ({
     setFocus(first_uid)
   },
 
-  setTutorState : async (state) => {
-    let {graph_states, tutor, showStateSkillApps, focusFirst, confirmFeedback} = get()
+  setTutorState : async (state, do_confirm=false) => {
+    let {graph, graph_states, tutor, showStateSkillApps, focusFirst, confirmFeedback} = get()
 
     // If state is actually state_uid then grab the states
     let state_uid;
@@ -990,23 +1044,24 @@ const useAuthorStore = create((set,get) => ({
       state = graph_states?.[state_uid]?.state ?? {}
     }
 
-    await confirmFeedback(false)
-
-    console.log("setTutorState", state)
+    if(do_confirm){
+      await confirmFeedback(false, false)  
+    }
+    
     tutor.setTutorState(state)
     let tutor_state = tutor.getState()
-    console.log(tutor_state, state)
-    for(let sel of Object.keys(state)){
-      console.log(tutor_state[sel], state[sel], 
-        arraysEqual(Object.entries(tutor_state[sel]),  Object.entries(state[sel]) )
-      )
-    }
-    console.log(state, tutor_state)
+
     set({curr_state_uid :state_uid, tutor_state: tutor_state})
     showStateSkillApps(state_uid)
 
+    if(graph && state_uid){
+      setTimeout(()=>{
+        console.log("zoom_to", state_uid)
+        graph.zoom_to(state_uid)
+      },0)  
+    }
+
     focusFirst()
-    // await updateAgentRollout(true)
   },
 
   beginSetStartState : async () => {
@@ -1046,7 +1101,7 @@ const useAuthorStore = create((set,get) => ({
   },
 
   setFociSelect : (sel, hasFociSelect) => { 
-    let {skill_apps, focus_uid} = get()
+    let {skill_apps, focus_uid, explainDemo} = get()
     if(focus_uid == "") return
 
     let focus_app = {...skill_apps?.[focus_uid]}
@@ -1065,20 +1120,22 @@ const useAuthorStore = create((set,get) => ({
       return
     }
     set({'skill_apps' : {...skill_apps, [focus_uid] :  focus_app}})
-    let prev_focus_uid = focus_uid
-    setTimeout(async ()=>{
+
+    explainDemo(focus_app)
+
+    // let prev_focus_uid = focus_uid
+    // setTimeout(async ()=>{
       
-      // If the arg foci haven't changed in 200ms then poll for new set of explanations
-      let {skill_apps, focus_uid, explainDemo} = get()
-      let focus_app = skill_apps?.[focus_uid]
+    //   // If the arg foci haven't changed in 200ms then poll for new set of explanations
+      
 
-      console.log("TIMEOUT TRIGGER", prev_focus_uid, focus_uid, arg_foci,  focus_app?.arg_foci ?? [])
+    //   console.log("TIMEOUT TRIGGER", prev_focus_uid, focus_uid, arg_foci,  focus_app?.arg_foci ?? [])
 
-      if(prev_focus_uid == focus_uid && arraysEqual(arg_foci,  focus_app?.arg_foci ?? [])){
-        console.log("EQUAL")
-        await explainDemo(focus_app)
-      }
-    }, EXPLAIN_DEMO_REFRESH_DELAY)
+    //   if(prev_focus_uid == focus_uid && arraysEqual(arg_foci,  focus_app?.arg_foci ?? [])){
+    //     console.log("EQUAL")
+        
+    //   }
+    // }, EXPLAIN_DEMO_REFRESH_DELAY)
 
   },
 
@@ -1158,6 +1215,9 @@ const useAuthorStore = create((set,get) => ({
     //Make sure the agent exists before we query it for actions 
     let {agentPromise, mergeGraphChanges, recalcGraphConnections, showStateSkillApps,
         questions, curr_interface, curr_question, start_state, network_layer, agent_uid} = get()
+
+
+    set({awaiting_rollout: true})
     await agentPromise
 
     // Ensure that we know the state_uid of the start state
@@ -1179,7 +1239,7 @@ const useAuthorStore = create((set,get) => ({
 
     let curr_state_uid = await network_layer.get_state_uid(agent_uid, tutor_state);  
 
-    set({curr_state_uid, awaiting_rollout: true})
+    set({curr_state_uid})
 
     let rollout = await network_layer.act_rollout(agent_uid, start_state)
 
@@ -1203,8 +1263,9 @@ const useAuthorStore = create((set,get) => ({
     ({graph, graph_states: states, graph_actions:actions} = get())
     if(graph && curr_state_uid){
       setTimeout(()=>{
+      console.log("zoom_to", curr_state_uid)
       graph.zoom_to(curr_state_uid)
-    },100)  
+    },0)  
     }
     
 
@@ -1227,12 +1288,20 @@ const useAuthorStore = create((set,get) => ({
     return new_skill_apps
   },
 
-  confirmFeedback : async (goto_staged=true) => {
-    let {network_layer, mode, skill_apps, curr_state_uid, tutor_state, agent_uid, staged_uid, tutor,
-        confirmArgFoci, updateAgentRollout, updateSkills, saveProject, 
-        graph_states, graph_actions, beginSetStartState, modifySkillApp} = get()
+  confirmFeedback : async (apply_focus=true, apply_staged=true, yes_focus=false) => {
+    let {network_layer, mode, skill_apps, curr_state_uid, tutor_state, agent_uid,  tutor,
+        confirmArgFoci, updateAgentRollout, updateSkills, saveProject, focus_uid, staged_uid,
+        graph_states, graph_actions, beginSetStartState, modifySkillApp, setReward} = get()
     if(mode == 'arg_foci'){
       confirmArgFoci()
+    }
+
+    if(yes_focus){
+      let skill_app = skill_apps[focus_uid]
+      if(skill_app && (skill_app?.reward ?? 0) == 0){
+        setReward(skill_app, 1);
+        ({skill_apps} = get());
+      }
     }
 
     let training_set = [] 
@@ -1243,43 +1312,53 @@ const useAuthorStore = create((set,get) => ({
       }
     }
     let train_promise = network_layer.train_all(agent_uid, training_set, states)
+    train_promise.then(() =>{
+      for (let ti of training_set){
+        modifySkillApp(ti.uid, {"confirmed" : true})
+      }
+    })
 
     saveProject()
 
     // Apply the staged action
-    if(goto_staged){
-      if(staged_uid){
-        let skill_app = skill_apps[staged_uid]
-        await tutor.stageSAI(skill_app)    
+    if(apply_focus || apply_staged){
+      let apply_uid = (apply_focus && focus_uid) || staged_uid
+      let skill_app = skill_apps[apply_uid]
+      
+      if(apply_uid == focus_uid && (skill_app?.reward ?? 0) <= 0){
+        skill_app = skill_apps[staged_uid]
+      }
 
-        console.log("IS DONE", tutor.isDone(), skill_app)
-        if(!(tutor.isDone() && (skill_app?.reward ?? 0) > 0) ){
-          let next_state_uid = graph_actions?.[staged_uid]?.next_state_uid
-          if(next_state_uid){
-            set({curr_state_uid : next_state_uid})    
-          }
-        }else{
-          beginSetStartState()
-          return
+      if(!skill_app){
+        return
+      } 
+
+      console.log("IS DONE", tutor.isDone(), skill_app)
+      if(!(tutor.isDone()) ){
+        // NOTE: This is probably worth keeping instead of replacing with
+        //  setTutorState since only skill_app is applied instead of whole state.
+        await tutor.stageSAI(skill_app)
+        let next_state_uid = graph_actions?.[staged_uid]?.next_state_uid
+        if(next_state_uid){
+          set({curr_state_uid : next_state_uid})
         }
-        
-      }  
+      }else{
+        beginSetStartState()
+        return
+      }        
     }
-    
 
     set({focus_uid : "", hover_uid : "", staged_uid : "", 
-         focus_sel: "", hover_sel: "", staged_sel: ""})
-
-    tutor_state = tutor.getState()
-    set({tutor_state})
+         focus_sel: "", hover_sel: "", staged_sel: ""})    
 
     await train_promise
-    for (let ti of training_set){
-      modifySkillApp(ti.uid, {"confirmed" : true})
-    }
     await updateSkills()
-    await updateAgentRollout(true)    
 
+    if(apply_focus || apply_staged){
+      tutor_state = tutor.getState()
+      set({tutor_state})  
+      await updateAgentRollout(true)
+    }
   },
 
   updateSkills : async () => {
@@ -1305,13 +1384,14 @@ const useAuthorStore = create((set,get) => ({
 
     console.log("CLICK AWAY")
     if(mode == "start_state"){
-      let {questions, curr_interface} = get()
-      let question_items = questions[curr_interface] || {}
+      // // PASS 
+      // let {questions, curr_interface} = get()
+      // let question_items = questions[curr_interface] || {}
 
-      // Force user to confirm without click-away if no questions
-      if(Object.keys(question_items).length != 0){
-        confirmStartState()  
-      }      
+      // // Force user to confirm without click-away if no questions
+      // if(Object.keys(question_items).length != 0){
+      //   confirmStartState()  
+      // }      
     }else{
       // console.log("Set Focus Null")
       if(mode == "arg_foci"){
@@ -1332,8 +1412,18 @@ const useAuthorStore = create((set,get) => ({
   },
 
 
+
   onKeyDown : (e) => {
-    console.log("OUTER KEY", e.key, e)
+    console.log("OUTER KEY DOWN", e.key, e)
+    let {focus_uid, focusNext, focusPrev, graph_actions, setReward, setOnly} = get()
+
+    if(e.code == "Space"){
+      let {setStaged, confirmFeedback} = get()
+      confirmFeedback(true, true, true)
+      set({"apply_down" : true})
+      e.preventDefault() // Never jump-scroll on 'space'
+    }
+
     if(e.target == document.body){
       if(e.key == "Enter"){
         let {input_focus, mode, confirmStartState, confirmArgFoci} = get()
@@ -1341,13 +1431,11 @@ const useAuthorStore = create((set,get) => ({
           confirmStartState(true)
         }else if(mode==="arg_foci"){
           confirmArgFoci()
-        } 
+        }
       }
-      
     }
     let cls = e.target.className
     if(e.target == document.body || cls == "SkillAppGroup"){
-      let {focus_uid, focusNext, focusPrev, graph_actions, setReward, setOnly} = get()
       if(focus_uid){
         if(e.code == "KeyW" || e.key == "ArrowUp"){
           let skill_app = graph_actions?.[focus_uid]?.skill_app
@@ -1356,17 +1444,41 @@ const useAuthorStore = create((set,get) => ({
           }
           setReward(skill_app, 1)
           e.preventDefault()
+          set({"pos_rew_down" : true})
         }else if(e.code == "KeyS" || e.key == "ArrowDown"){
           setReward(graph_actions?.[focus_uid]?.skill_app, -1)
           e.preventDefault()
+          set({"neg_rew_down" : true})
         }else if(e.code == "KeyA" || e.key == "ArrowLeft"){
           focusPrev()
           e.preventDefault()
+          set({"prev_down" : true})
         }else if(e.code == "KeyD" || e.key == "ArrowRight"){
           focusNext()
           e.preventDefault()
+          set({"next_down" : true})
         }
       }
+    }
+  },
+
+  onKeyUp : (e) => {
+    console.log("OUTER KEY UP", e.key, e)
+    if(e.code == "Space"){
+      set({"apply_down" : false})
+      e.preventDefault()
+    }else if(e.code == "KeyW" || e.key == "ArrowUp"){
+      set({"pos_rew_down" : false})
+      e.preventDefault()
+    }else if(e.code == "KeyS" || e.key == "ArrowDown"){
+      set({"neg_rew_down" : false})
+      e.preventDefault()
+    }else if(e.code == "KeyA" || e.key == "ArrowLeft"){
+      set({"prev_down" : false})
+      e.preventDefault()
+    }else if(e.code == "KeyD" || e.key == "ArrowRight"){
+      set({"next_down" : false})
+      e.preventDefault()
     }
   },
 
@@ -1696,8 +1808,31 @@ const useAuthorStore = create((set,get) => ({
     return skill_app 
   },
 
+  genCompletenessProfile : async () => {
+    let {questions, curr_interface, curr_question, setQuestion, network_layer, agent_uid} = get();
+    
+    let states = []
+    let question_items = questions[curr_interface] || {}
+    for(let q_id of Object.keys(question_items)){
+        setQuestion(q_id)
+        let {start_state} = get()
+        states.push(start_state)
+        console.log(":::", start_state)
+    }
+    setQuestion(curr_question)
+    let d = new Date()
+    let time_str = d.toISOString().slice(0,10) + `_${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`
+    let file = "cp_" + agent_uid.slice(3,8) + time_str + ".txt"
+    network_layer.gen_completeness_profile(agent_uid, states, file)
+  },
+
+  evalCompleteness : async (profile) => {
+    let {network_layer, agent_uid} = get();
+    network_layer.eval_completeness(agent_uid, profile)
+  }
+
 }));
 
 const useAuthorStoreChange = makeChangeStore(useAuthorStore)
 
-export {authorStore, useAuthorStore, useAuthorStoreChange, test_state, test_skill_applications};
+export {authorStore, setAuthorStore, useAuthorStore, useAuthorStoreChange, test_state, test_skill_applications};

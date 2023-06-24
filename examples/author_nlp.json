@@ -4,35 +4,33 @@
 	  "type": "CREAgent",
 	  "args": {
 	    "search_depth" : 2,
-	    // "how": "nlp_set_chaining",
-	    "how": "set_chaining",
-
-	    // "where": "most_specific",
-	    "where": "antiunify",
+	    "how": "nlp_set_chaining",
+	    // "how": "set_chaining",
 
 	    // DECISION TREE Config
 	    // "when": "decisiontree",
+
 	    // STAND Config
 	    "when_learner": "stand",
         "which_learner": "when_prediction",
         "action_chooser" : "max_which_utility",
         "suggest_uncert_neg" : true,
 
-	    
-	    "function_set" : ["OnesDigit","TensDigit","Add","Add3"],
-	    // "feature_set" : ["Equals"],
-	    "feature_set" : [],
-	    "extra_features" : ["SkillCandidates","Match"],
-	    "find_neighbors" : true, 
-	    "when_args": {"encode_relative" : true},
+	    "where": "most_specific",
+	    // "function_set" : ["OnesDigit","TensDigit","Add","Add3"],
+	    "feature_set" : ["Equals"],
+	    "find_neighbors" : true,
       },
       "stay_active" : true,
   },
   "author" : {
   	"interfaces" : [
+  		{"HTML": "OtherTutors/HTML/TriangleArea.html"},
+  		{"HTML": "OtherTutors/HTML/Percents.html"},
+  		{"HTML": "OtherTutors/HTML/ExpandPolynomial.html"},
+  		{"HTML": "OtherTutors/HTML/ArcArea.html"},
   		{"HTML": "MultiColumnArithmetic/HTML/MultiColumnArithmetic.html"},
   		{"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},
-  		{"HTML": "OtherTutors/HTML/TriangleArea.html"},
   		//{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html"}
   	]	
   },

@@ -61,6 +61,7 @@ export const useALTrainStore = create((set,get) => ({
       if(typeof training_config == "string"){
         filepath = training_config
         set({training_file: filepath})
+        console.log("BEEP", filepath)
         training_config = await load_training_file(filepath).catch((e)=>{
           let error = "Error Loading Training File:\n" + e
           console.error(error)

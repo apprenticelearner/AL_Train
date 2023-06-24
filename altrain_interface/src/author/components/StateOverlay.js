@@ -52,7 +52,7 @@ let PopUpConfirmButton = memo(({sel, skill_app}) => {
   return (<RisingDiv
       hoverCallback={(e)=>{setHover(true)}}
       unhoverCallback={(e)=>{setHover(false)}}
-      onClick={()=>{if(is_undef){setReward(skill_app, 1)}; setStaged(skill_app); confirmFeedback()}}
+      onClick={()=>{if(is_undef){setReward(skill_app, 1)}; setStaged(skill_app); confirmFeedback(false,true)}}
       scale={(hasHover && 1.1) || 1}
       elevation={(hasHover && 10) || 6}
       //onMouseEnter={(e)=>{console.log("OVER:", e)}}
@@ -69,7 +69,7 @@ let PopUpConfirmButton = memo(({sel, skill_app}) => {
       <a style={{margin: 1, pointerEvents:'none', fontSize : '1.1em',
                 }}>{"✔"}</a>
     }
-    <a style={{margin: 1, pointerEvents:'none'}}>{(is_undef && "Yes") || "Confirm"}</a>
+    <a style={{margin: 1, pointerEvents:'none'}}>{(is_undef && "Yes") || "Apply"}</a>
     <img style={{width:12, height:12, margin: 1, marginLeft:2, pointerEvents:'none'}} 
          src={images.next}
 
@@ -93,6 +93,11 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
        "@mode", "@only_count!=0", `@tutor_state.${sel}.locked`],
     )
     // console.log("OVERLAY BOUNDS", sel, skill_app)
+
+    // TODO: HARD-CODED, more extensible way to ignore certain interface elements
+    if(sel == 'hint'){
+      return
+    }
 
     let [[foci_index, foci_explicit, foci_hover],
          hasSkillAppFocus, foci_mode, toggleFoci] = useAuthorStoreChange(
@@ -153,17 +158,21 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
 
 
 
-    let borderWidth = ((is_foci || groupHasFocus) && 5) ||
+    let borderWidth = (arg_hover && foci_color && 4) ||
+                      ((is_foci || groupHasFocus) && 5) ||
+                      (arg_hover && 4) ||
                       ((hasHover) && 4) ||
-                      (arg_hover && 3) ||
+                      
                       (foci_cand && 3) ||
                       (elem_locked && 3) || 
                       3
 
     // Adjust the draw rects so that centers of thick borders overlap original bounds.                
     //   Add a negative margin of same amount to keep content stationary on style change.
+    let bw =  borderWidth-1
     let hbw =  borderWidth / 2
-    let rect = {width: elem.width, height: elem.height, x : elem.x-hbw, y : elem.y-hbw}
+    let rect = {width: elem.width-bw, height: elem.height-bw, x : elem.x-hbw, y : elem.y-hbw}
+                //transform: `translate(-${hbw},-${hbw})`}
     let click_rect = {...rect, padding: 6}
 
     // console.log("::", sel, skill_app?.uid, color)
@@ -211,7 +220,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         {children}
 
         {/* Pop-up Confirm Button */}
-        {(mode == "train" && skill_app && !is_incorrect) && 
+        {(mode != "start_state" && skill_app && !is_incorrect) && 
           <PopUpConfirmButton sel={sel} skill_app={skill_app}/>
         }
       </motion.div>
@@ -328,7 +337,7 @@ function TextFieldOverlay({sel, elem}) {
   let L = Math.min(text.length || 1, 8)
   let mindim = Math.min(elem.width, elem.height)
   let maxdim = Math.max(elem.width, elem.height)
-  let fontSize = Math.min(mindim, maxdim/((L-1)/2 + 1)) *.9
+  let fontSize = Math.min(mindim, maxdim/((L-1)/2 + 1)) *.85
 
   let cursor_kind = (!elem.locked && 'text') || 'inherit'
 
@@ -353,7 +362,7 @@ function TextFieldOverlay({sel, elem}) {
         onFocus={(e) => {
           // console.log("ON focus")
           setInputFocus(sel)
-          if(!groupHasFocus || mode=="start_state"){
+          if(!groupHasFocus || mode=="start_state" || !skill_app?.is_demo){
             setEmptyFocus(true)  
           }
         }}
@@ -587,7 +596,7 @@ const styles = {
     alignItems : 'center',
     position : 'absolute',
     borderStyle: "solid",//(!isDemo && color) || 'dodgerblue',//(hasFocus && "rgba(143,40,180, .7)") || "gray",
-    borderRadius: 10,
+    borderRadius: 8,
     // overflowWrap: 'break-word',
     // backgroundColor : 'grey'
   },

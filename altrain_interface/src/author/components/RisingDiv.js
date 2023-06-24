@@ -13,7 +13,7 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hov
   };
   //Control scale
   const default_scale = props?.scale ?? props?.default_scale ?? 1
-  const hover_scale = props?.scale ?? props?.hover_scale ?? 1.2
+  const hover_scale = props?.scale ?? props?.hover_scale ?? 1.05
   const scale = useMotionValue(default_scale);  
   const scale_anim = useSpring(scale, springConfig);
   scale.set(default_scale)
