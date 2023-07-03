@@ -644,6 +644,7 @@ def do_GET(path):
     # os.path.dirname()
     # os.path.basename()
     if(FETCH_ABOVE_ROOT):
+        # print(os.path.join(os.getcwd(),os.path.dirname(path)), os.path.basename(path))
         return send_from_directory(os.path.join(os.getcwd(),os.path.dirname(path))
                                 ,os.path.basename(path))
     else:

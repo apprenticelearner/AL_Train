@@ -80,7 +80,6 @@ export default class NetworkLayer {
 
   listAgents() {
     return send_get(self.agent_url + "/list_agents/", "")
-    
   }
 
   create_agent(agent_config, rep=null) {
@@ -92,6 +91,17 @@ export default class NetworkLayer {
 
     this.request_history = [];
     return send_post(this.agent_url + "/create/", data, 6, 1000)
+  }
+
+  get_active_agent(agent_config, rep=null) {
+    console.log("GET ACTIVE AGENT")
+    // let {name} = agent_config
+    // this.term_print("Creating Agent: " + name + (rep!=null ? ` (${rep})` : ""), "INFO");
+    // var data = {...agent_config, project_id : -1}
+    // console.log(this.agent_url + "/create/", name, agent_config);
+
+    // this.request_history = [];
+    return send_post(this.agent_url + "/get_active_agent/", {}, 6, 1000)
   }
 
   act(agent_uid, state, rest={}) {

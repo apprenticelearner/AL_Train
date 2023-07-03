@@ -153,7 +153,7 @@ export const useTrainStore = create((set,get) => ({
     trainAgent: async (agent_config, agent_params, problem_set, rep_count=null) =>  {
       let store = get()
       let {name, type, message} = agent_config
-      let agent_uid = (await store.network_layer.createAgent(agent_config, rep_count))['agent_uid']
+      let agent_uid = (await store.network_layer.create_agent(agent_config, rep_count))['agent_uid']
       set({mode: "Training", 
            agent_desc:`${type}(name='${name}, uid=${agent_uid})` + (rep_count!=null ? ` (${rep_count})` : ""),
            agent_uid, problem_set, message}

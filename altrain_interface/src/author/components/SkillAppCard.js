@@ -635,7 +635,7 @@ const styles = {
     flex : 1,
     flexDirection: "column",
     marginTop:3,
-    backgroundColor: "#fff",
+    backgroundColor: "rgba(255,255,255,0.7)",
     borderRadius : 3,
   },
 

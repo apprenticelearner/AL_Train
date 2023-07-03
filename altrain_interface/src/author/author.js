@@ -1075,61 +1075,133 @@ function ArgFociPointer({style, use_text=false}){
 
 }
 
+function SmallKeyIcon({text}){
+  return <KeyIcon 
+            style={{display: "inline-block", color: "#333", width: 18, height: 18, fontSize: 12, marginLeft: 2, marginRight: 7, 
+                    transform : "translate(0,-2px)"}}
+            shadow={10}
+            key_style={{backgroundColor: "white", borderColor: "grey", borderWidth: 2, borderRadius:4}}
+            side_style={{borderRadius:4}}
+            children={<div style={{fontWeight : "bold"}}>{text}</div>}
+          />
+}
+
+function SmallSpaceBar(){
+  return <KeyIcon 
+            style={{display: "inline-block", color: "#333", width: 40, height: 18, fontSize: 12, marginLeft: 5, marginRight: 7, 
+                    transform : "translate(0,-2px)"}}
+            shadow={10}
+            key_style={{backgroundColor: "white", borderColor: "grey", borderWidth: 2, borderRadius:4}}
+            side_style={{borderRadius:4}}
+            children={<div style={{fontWeight : "bold"}}>{"space"}</div>}
+          />
+}
+
+function ControlsLine(){
+  return (<div style={styles.prompt_line}>          
+          <a>{"Navigate actions with "}</a>
+          <SmallKeyIcon text={"A"}/>
+          <a>{" / "}</a>
+          <SmallKeyIcon text={"⬅"}/>
+          <a>{" + "}</a>
+          <SmallKeyIcon text={"D"}/>
+          <a>{" / "}</a>
+          <SmallKeyIcon text={"➡"}/>
+          <a>{"and apply "}</a>
+          {<img style={{top:4, width: 18, height:18, transform: "translateY(20%)", filter: "invert(1)"}} src={images.next}/>}
+          <a>{" with "}</a>
+          <SmallSpaceBar/>
+          <a>{"."}</a>
+        </div>
+      )
+}
+
 function Prompt(){
   let {focus_uid} = authorStore()
   let [skill_app, is_demo, is_confirmed, fx_explicit, 
-       any_focus, no_skill_apps, mode] = useAuthorStoreChange([
+       any_focus, skill_apps, mode] = useAuthorStoreChange([
       `@skill_apps[${focus_uid}]`, focusIsDemo(), focusIsConfirmed(), focusExplanationExplicit(), 
-      "@focus_uid!=''", "@skill_apps.length==0", "@mode"
+      "@focus_uid!=''", "@skill_apps", "@mode"
   ])
-  console.log("FX SEL", is_demo, is_confirmed, fx_explicit)
+  let no_skill_apps = Object.keys(skill_apps).length == 0
+  console.log("FX SEL", is_demo, is_confirmed, fx_explicit, skill_apps, no_skill_apps)
+  let correct = (skill_app?.reward ?? 0) > 0
+  let incorrect = (skill_app?.reward ?? 0) < 0
+  let undef = (skill_app?.reward ?? 0) == 0
+
   let prompt = null
   if(mode == "start_state"){
     prompt = (
       <div style={{...styles.prompt}}>
-        <a>{"Fill in a start state for this problem."}</a>
+        <div style={styles.prompt_line}>
+          <a>{"Fill in a start state for this problem."}</a>
+        </div>
       </div>
     )  
   }else if(mode == "arg_foci"){
     prompt = (
       <div style={{...styles.prompt}}>
-        <ArgFociPointer style={{width: 24, height: 24, marginRight: 10}}/>
-        <a>{"Click interface elements to select any arguments you used to compute this value."}</a>
+        <div style={styles.prompt_line}>
+          <ArgFociPointer style={{width: 24, height: 24, marginRight: 10}}/>
+          <a>{"Click interface elements to select any arguments you used to compute this value."}</a>
+        </div>
       </div>
     )
   }else if(no_skill_apps){
     prompt = (
       <div style={{...styles.prompt}}>
-        <Icon style={{fontSize: 24, marginRight: 8, filter: "drop-shadow(0px 0px 2px rgb(200,200,200))" }} kind={"demo"}/>
-        <a>{"Demonstrate the next step for this question."}</a>
+        <div style={styles.prompt_line}>
+          <Icon style={{fontSize: 24, marginRight: 8, filter: "drop-shadow(0px 0px 2px rgb(200,200,200))" }} kind={"demo"}/>
+          <a>{"Demonstrate the next step for this question."}</a>
+        </div>
       </div>
     )
   }else if(is_demo && !is_confirmed && !fx_explicit){
     prompt = (
       <div style={{...styles.prompt}}>
-        <Icon style={{fontSize:24,marginRight: 8, filter: "drop-shadow(0px 0px 2px rgb(200,200,200))"}} kind={"demo"}/>
-        <div style={{whiteSpace: "pre-wrap", textAlign : "center"}}>
-           {"Double-check"}
-           {<a style={{fontSize: 16, marginLeft: 6}}>{"ƒ(𝑥)"}</a>}
-           {". Select the correct ƒ explanation or describe ƒ(𝑥) in 'ƒ Help' to reduce the options.\n"}
-           {<a>{"Then Confirm "}</a>}
-           {<img style={{top:4, width: 18, height:18, transform: "translateY(20%)", filter: "invert(1)"}} src={images.next}/>}
-           {<a>{" to begin the next step."}</a>}
+        <div style={styles.prompt_line}>
+           <Icon style={{display: "inline-block", fontSize:24,marginRight: 8, filter: "drop-shadow(0px 0px 2px rgb(200,200,200))"}} kind={"demo"}/>
+           <a>{"Double-check ƒ(𝑥). Select the correct ƒ explanation or describe ƒ(𝑥) in 'ƒ Help' to reduce the options."}</a>
         </div>
+        <ControlsLine/>
       </div>
     )
   }else if(is_demo && fx_explicit){
     prompt = (
       <div style={{...styles.prompt}}>
-        <Icon style={{fontSize:24,marginRight: 8, filter: "drop-shadow(0px 0px 2px rgb(200,200,200))"}} kind={"demo"}/>
-        <div style={{whiteSpace: "pre-wrap", textAlign : "center"}}>
-           {<a>{"Confirm "}</a>}
+        <div style={styles.prompt_line}>
+           <Icon style={{fontSize:24,marginRight: 8, filter: "drop-shadow(0px 0px 2px rgb(200,200,200))"}} kind={"demo"}/>
+           {<a>{"Apply "}</a>}
            {<img style={{top:4, width: 18, height:18, transform: "translateY(20%)", filter: "invert(1)"}} src={images.next}/>}
            {<a>{" to begin the next step."}</a>}
         </div>
       </div>
     )
+  }else if(!is_demo && undef){
+    prompt = (
+      <div style={{...styles.prompt}}>
+        <div style={styles.prompt_line}>          
+          <a>{"Mark "}</a>
+          <Icon style={{fontSize:24, filter: "drop-shadow(0px 0px 2px rgb(200,200,200))"}} kind={"undef"}/>
+          <a>{" proposed actions as "}</a>
+          <Icon style={{fontSize:24, filter: "drop-shadow(0px 0px 2px rgb(200,200,200))"}} kind={"correct"}/>
+          <a>{"correct "}</a>
+          <SmallKeyIcon text={"W"}/>
+          <a>{" / "}</a>
+          <SmallKeyIcon text={"⬆"}/>
+          <a>{" or "}</a>
+          <Icon style={{fontSize:24, filter: "drop-shadow(0px 0px 2px rgb(200,200,200))"}} kind={"incorrect"}/>
+          <a>{" incorrect "}</a>        
+          <SmallKeyIcon text={"S"}/>
+          <a>{" / "}</a>
+          <SmallKeyIcon text={"⬇"}/>
+          <a>{"."}</a>
+        </div>
+        <ControlsLine/>
+      </div>
+    )
   }
+
 
   return prompt
 }
@@ -1787,7 +1859,7 @@ const styles = {
   },
   prompt : {
     display : "flex",
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent : "start",
     alignItems : "center",
     position: "absolute",
@@ -1800,6 +1872,15 @@ const styles = {
     border : 'solid 3px darkgrey',
     borderRadius : 20,
     top : 68
+  },
+  prompt_line : {
+    display: "flex",
+    // flexDirection : "row",
+    flex: 1,
+    whiteSpace: "pre-wrap",
+    textAlign : "center",
+    marginTop : 2,
+    marginBottom : 1,
   },
 
   popup_layer:{

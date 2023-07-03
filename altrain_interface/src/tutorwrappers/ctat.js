@@ -1207,6 +1207,7 @@ let InteractiveMixin = (superclass) => class extends superclass {
     //   sai?.inputs?.value ?? sai.input)
     comp.executeSAI(sai_obj);
     this.lockElement(sai.selection);
+    console.log(":::::", sai)
     if(sai.selection == "done"){
       this.is_done = true
     }

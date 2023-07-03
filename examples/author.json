@@ -7,8 +7,8 @@
 	    // "how": "nlp_set_chaining",
 	    "how": "set_chaining",
 
-	    // "where": "most_specific",
-	    "where": "antiunify",
+	    "where": "most_specific",
+	    // "where": "antiunify",
 
 	    // DECISION TREE Config
 	    // "when": "decisiontree",
@@ -20,6 +20,7 @@
 
 	    
 	    "function_set" : ["OnesDigit","TensDigit","Add","Add3"],
+	    // "function_set" : ["OnesDigit","TensDigit","Add","Add3", "Multiply"],
 	    // "feature_set" : ["Equals"],
 	    "feature_set" : [],
 	    "extra_features" : ["SkillCandidates","Match"],

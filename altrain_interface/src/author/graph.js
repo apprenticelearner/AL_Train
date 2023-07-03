@@ -557,7 +557,7 @@ const NodeGroup = ({state_uid}) =>{
     
     let out_edges = []
     for(let action of out_actions){
-        console.log("action", action)
+        // console.log("action", action)
         out_edges.push(<Edge
             skill_app_uid={action.uid}
             key={action.uid}

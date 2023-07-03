@@ -285,6 +285,7 @@ const newSkillApp = (sel, action_type, input, props) =>{
     selection: sel,
     action_type : action_type,
     inputs : {value :input},
+    has_changed : true,
     ...props
   } 
   return skill_app
