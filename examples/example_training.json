@@ -17,7 +17,7 @@
       "problem_set" : [
         // A problem definition: "HTML" interface + "question_file".
         {"HTML": "IntegerArithmetic/HTML/IntegerArithmetic.html",
-         "question_file" : "IntegerArithmetic/FinalBRDs/1+1.brd",
+         "question_file" : "IntegerArithmetic/brds/1+1.brd",
         },
 
         // Can set "HTML" parameter to use in all items below.
@@ -26,17 +26,17 @@
         },
 
         // Now we can define problems just by setting "question_file".
-        {"question_file" : "IntegerArithmetic/FinalBRDs/2+1.brd"},
-        {"question_file" : "IntegerArithmetic/FinalBRDs/2+2.brd"},
-        {"question_file" : "IntegerArithmetic/FinalBRDs/3+4.brd"},
-        {"question_file" : "IntegerArithmetic/FinalBRDs/3+5.brd"},
-        {"question_file" : "IntegerArithmetic/FinalBRDs/4+3.brd"},
-        {"question_file" : "IntegerArithmetic/FinalBRDs/6+9.brd"},
-        {"question_file" : "IntegerArithmetic/FinalBRDs/8+7.brd"},
+        {"question_file" : "IntegerArithmetic/brds/2+1.brd"},
+        {"question_file" : "IntegerArithmetic/brds/2+2.brd"},
+        {"question_file" : "IntegerArithmetic/brds/3+4.brd"},
+        {"question_file" : "IntegerArithmetic/brds/3+5.brd"},
+        {"question_file" : "IntegerArithmetic/brds/4+3.brd"},
+        {"question_file" : "IntegerArithmetic/brds/6+9.brd"},
+        {"question_file" : "IntegerArithmetic/brds/8+7.brd"},
 
         // To repeat problems set 'repetitions'.
         {"set_params" : {"message" : "Repeating '9+2' 7 times."}},
-        {"question_file" : "IntegerArithmetic/FinalBRDs/9+2.brd",
+        {"question_file" : "IntegerArithmetic/brds/9+2.brd",
          "repetitions":7
         },
 

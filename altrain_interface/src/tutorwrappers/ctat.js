@@ -760,6 +760,11 @@ let BaseMixin = (superclass) => class extends superclass {
   applySAI = (sai) => {
     let promise = new Promise((resolve,reject) => {
       let sel_elm = this.getElement(sai.selection);
+      if(!sel_elm){
+        console.log("Missing", sai.selection)
+        resolve(-1)
+        return
+      }
 
       // Add listener for CTAT feedback events
       let {CTAT_CORRECT, CTAT_INCORRECT} = this
