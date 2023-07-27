@@ -200,7 +200,12 @@ let BaseMixin = (superclass) => class extends superclass {
     let HTML_name = baseName(HTML).replace(/\.[^/.]+$/, "")
     let domain_name = prob_config["domain_name"] || HTML_name;
     let problem_name = baseName(question_file).replace(/\.[^/.]+$/, "")
-    let {agent_name, session_id} = context
+    let {agent_name, agent_uid, user_guid, session_id, agent_rep_count} = context
+
+    console.log("CC", context)
+
+    let u_guid = agent_uid ||
+                ((user_guid || agent_name) + ` (${agent_rep_count})`)
 
     let logging_params = {
       problem_name: problem_name,
@@ -209,7 +214,7 @@ let BaseMixin = (superclass) => class extends superclass {
       SessionLog: "true",
       Logging: "ClientToLogServer",
       log_service_url: window.location.origin,
-      user_guid: agent_name,
+      user_guid: u_guid,
       session_id: session_id
     };
     if ("problem_context" in prob_config) {

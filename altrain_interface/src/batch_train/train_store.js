@@ -156,7 +156,7 @@ export const useTrainStore = create((set,get) => ({
       let agent_uid = (await store.network_layer.create_agent(agent_config, rep_count))['agent_uid']
       set({mode: "Training", 
            agent_desc:`${type}(name='${name}, uid=${agent_uid})` + (rep_count!=null ? ` (${rep_count})` : ""),
-           agent_uid, problem_set, message}
+           agent_uid, problem_set, message, session_id: CTATGuid.guid()}
       )
       while(problem_set.length > 0){
         // Ensure using most up-to-date store

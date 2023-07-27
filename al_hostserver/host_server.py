@@ -226,9 +226,9 @@ def _print_and_resp(message=None,m_type="default",outmode=sys.stdout):
         elif m_type == 'info' or m_type == 'attempt':
             print(Back.WHITE + Fore.BLACK + message)
         elif m_type == 'warning':
-            print(Back.BLACK + Fore.YELLOW + message)#, file=outmode)
+            print(Back.BLACK + Fore.YELLOW + str(message))#, file=outmode)
         elif m_type == 'error':
-            print(Back.BLACK + Fore.RED + message)#, file=outmode)
+            print(Back.BLACK + Fore.RED + str(message))#, file=outmode)
         else:
             print(message)#, file=outmode)
     # handler.send_response(200)
