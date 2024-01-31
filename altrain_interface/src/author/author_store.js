@@ -213,7 +213,7 @@ const useAuthorStore = create((set,get) => ({
   stage_view_ref : null,
 
   stage_cursor_stack : [],
-  stage_cursor : null,
+  stage_cursor : 'auto',
   stage_cursor_ref : null,
 
   // Short-lived bools associated with keydowns / clicks
@@ -281,17 +281,18 @@ const useAuthorStore = create((set,get) => ({
     let {loadProject} = get()
     let {set_params, author} = training_config
     let prob_configs = author?.interfaces || [set_params]
-    console.log("INIT AUTHORING", prob_configs)
+    console.log("INIT AUTHORING", training_config, prob_configs);
 
     loadProject(prob_configs)
     let {agent_uid, setInterface, setAgent, createAgent, interfaces,
-          saveProject , initializeSpeechRecognition} = get()
+          saveProject , initializeSpeechRecognition, resizeWindow} = get()
     
-    
+    // trigger on init just to ensure that window_size is set
+    resizeWindow()
 
     initializeSpeechRecognition()
 
-    console.log("BEEFOR", agent_uid)
+    console.log("BEEFOR", agent_uid);
     if(!agent_uid){
       createAgent(training_config.agent).then((agent_uid) =>{
         setAgent(agent_uid)
@@ -301,7 +302,10 @@ const useAuthorStore = create((set,get) => ({
       setAgent(agent_uid)
     }
 
-    set({mode: 'train', prob_configs})
+    set({mode: 'train',
+        completeness_profile: author?.completeness_profile,
+        prob_configs,
+    })
 
     let tutorPromise = new Promise((resolveTutorPromise) =>{
       set({resolveTutorPromise})
@@ -311,6 +315,7 @@ const useAuthorStore = create((set,get) => ({
       setInterface(first_intr)  
     })
     set({tutorPromise})
+
 
     
       // store.updateAgentRollout()
@@ -527,7 +532,7 @@ const useAuthorStore = create((set,get) => ({
     let {mode, curr_question, confirmStartState,  clearInterface, setTutorState} = get()
     console.log("SET QUESTION", curr_question, q_id, interal)
     if(q_id != curr_question && !interal && mode == "start_state"){
-      confirmStartState(false,true)
+      confirmStartState(false,true, false)
     }    
 
     let store = get()
@@ -610,7 +615,7 @@ const useAuthorStore = create((set,get) => ({
     set({questions})
   },
 
-  confirmStartState: (force=false, return_to_train=true) =>{
+  confirmStartState: (force=false, return_to_train=true, set_question=true) =>{
     let {questions, curr_interface, skill_apps, editing_question_menu,
         setSkillApps, clearInterface, modifyQuestion, setQuestion, saveProject} = get()
     let question_items = questions[curr_interface] || {}
@@ -618,10 +623,12 @@ const useAuthorStore = create((set,get) => ({
     console.log(skill_apps)
 
     // If the new problem is empty don't save it.
-    if(!force && Object.entries(skill_apps).length==0){
+    if(!force && Object.entries(skill_apps).length==0 && return_to_train){
       console.log("EMPTY PROBLEM" ,question_items)
       set({mode: 'train', editing_question_menu:false})
-      setQuestion(Object.keys(question_items)?.[0], true)
+      if(set_question){
+        setQuestion(Object.keys(question_items)?.[0], true)  
+      }
       return
     }
     
@@ -663,7 +670,9 @@ const useAuthorStore = create((set,get) => ({
 
     if(return_to_train){
       set({mode : 'train', editing_question_menu:false})
-      setQuestion(q_id, true)
+      if(set_question){
+        setQuestion(q_id, true)
+      }
     }
   },
 
@@ -851,7 +860,12 @@ const useAuthorStore = create((set,get) => ({
         updateExplanations({skill_app, skill_explanations, func_explanations})
       }).catch((e)=>{
         console.error(e)
-      })      
+      }).finally((e) => {
+        // When resolved or failed remove the promise reference
+        ({pending_explains} = get());
+        delete pending_explains[skill_app_uid]
+        set({pending_explains: {...pending_explains}})        
+      })
     }
   },
   clearExplanation: (skill_app) =>{
@@ -871,10 +885,19 @@ const useAuthorStore = create((set,get) => ({
   },
 
   setFocus: (skill_app_uid, do_confirm=false) => { 
-    let {graph_actions, setTutorState, curr_state_uid} = get()
-    let action = graph_actions?.[skill_app_uid] ?? {}
-    console.log(action)
-    let {skill_app={}, state_uid=""} = action;
+    let {graph_actions, setTutorState, curr_state_uid, mode, skill_apps} = get()
+
+    let skill_app, state_uid;
+    if(mode == "start_state"){
+      skill_app = skill_apps?.[skill_app_uid] ?? {}  
+    }else{
+      let action = graph_actions?.[skill_app_uid] ?? {};
+      // console.log(action);
+      ({skill_app={}, state_uid=""} = action);
+    }
+    
+    console.log("Set Focus", skill_app)
+    
 
     set({focus_sel : skill_app?.selection ?? "", focus_uid : skill_app_uid ?? ""})
     if(state_uid && curr_state_uid != state_uid){
@@ -923,7 +946,7 @@ const useAuthorStore = create((set,get) => ({
   // },
 
   _assignCursor: (cursor) =>{
-    console.log("ASSIGN", cursor)
+    // console.log("ASSIGN", cursor)
     let {center_content_ref:ccref, onCursorMove} = get()
     cursor = cursor || 'auto'
     if(cursor == "arg_foci"){
@@ -962,7 +985,7 @@ const useAuthorStore = create((set,get) => ({
       set({stage_cursor_stack})
     }
     
-    console.log("POP", cursor)
+    // console.log("POP", cursor)
     _assignCursor(stage_cursor_stack?.[stage_cursor_stack.length-1])
   },
 
@@ -1049,20 +1072,26 @@ const useAuthorStore = create((set,get) => ({
     set({'mode' : mode})
   },
 
-  focusFirst : () => {
-    let {graph_states, setFocus, curr_state_uid} = get()
-    let first_uid = graph_states[curr_state_uid]?.out_skill_app_uids?.[0];
-    setFocus(first_uid)
+  focusFirstIfFocusMissing : () => {
+    let {graph_states, setFocus, curr_state_uid, focus_uid} = get()
+    let out_sa_uids = graph_states[curr_state_uid]?.out_skill_app_uids || []
+    if(!out_sa_uids.includes(focus_uid)){
+      let first_uid = out_sa_uids?.[0];
+      setFocus(first_uid)  
+    }
   },
 
   setTutorState : async (state, do_confirm=false) => {
-    let {graph, graph_states, tutor, showStateSkillApps, focusFirst, confirmFeedback} = get()
+    let {graph, graph_states, tutor, showStateSkillApps, focusFirstIfFocusMissing,
+        confirmFeedback} = get()
 
     // If state is actually state_uid then grab the states
     let state_uid;
+    let state_obj;
     if(typeof(state) == 'string'){
       state_uid = state
-      state = graph_states?.[state_uid]?.state ?? {}
+      state_obj = graph_states?.[state_uid]
+      state = state_obj?.state ?? {}
     }
 
     if(do_confirm){
@@ -1072,7 +1101,9 @@ const useAuthorStore = create((set,get) => ({
     tutor.setTutorState(state)
     let tutor_state = tutor.getState()
 
-    set({curr_state_uid :state_uid, tutor_state: tutor_state})
+    let in_done_state = state_obj?.is_done == true
+    set({curr_state_uid :state_uid, tutor_state: tutor_state, 
+         done_popup_open: in_done_state, in_done_state})
     showStateSkillApps(state_uid)
 
     if(graph && state_uid){
@@ -1082,17 +1113,27 @@ const useAuthorStore = create((set,get) => ({
       },0)  
     }
 
-    focusFirst()
+    focusFirstIfFocusMissing()
+  },
+
+  closeDoneStatePopup: () =>{
+    set({"done_popup_open": false})
   },
 
   beginSetStartState : async () => {
-    let {tutor, curr_interface, n_tutor_loads, setSkillApps, clearInterface, problemLoadedPromise} = get()
-
+    let {clearInterface} = get()
+    console.log("", get())
     clearInterface()
+    console.log("BEGIN SET START STATE", get())
 
+    let {tutor, problemLoadedPromise} = get()
     await problemLoadedPromise
     let tutor_state = tutor.getState()
-    set({mode : 'start_state', tutor_state, curr_question: "[setting start]", editing_question_menu : false})
+    console.log("BEGIN SET START STATE", tutor_state)
+    set({mode : 'start_state', 
+      tutor_state,
+      curr_question: "[setting start]",
+      editing_question_menu : false})
   },
 
 
@@ -1373,38 +1414,45 @@ const useAuthorStore = create((set,get) => ({
 
       console.log("SKILL AAAAAP", skill_app)
 
-      // TODO: Hard-Coded, need way of encoding in state that is_done
-      if(skill_app.selection != "done"){
-        let next_state_uid = graph_actions?.[apply_uid]?.next_state_uid
-        if(next_state_uid){
-          setTutorState(next_state_uid)
-        }
-      }else{
-        beginSetStartState()
-        return
-      }        
+
+      set({focus_uid : "", hover_uid : "", staged_uid : "", 
+           focus_sel: "", hover_sel: "", staged_sel: "",
+      })    
+
+
+      // Immediately try to enter the tutor state
+      let next_state_uid = graph_actions?.[apply_uid]?.next_state_uid
+      if(next_state_uid){
+        // console.log("NEXT STATE", graph_states[next_state_uid])
+        setTutorState(next_state_uid)
+      }
     }
 
-    set({focus_uid : "", hover_uid : "", staged_uid : "", 
-         focus_sel: "", hover_sel: "", staged_sel: ""})    
 
+    // If applying this action would train the agent
+    //  then wait for the agent to update and then 
+    //  set the tutor state again to make apply any updates.
+    //  This may remove the focused skill app, and reassign focus. 
     if(do_train){
-      await train_promise
-      await updateSkills()  
+      await train_promise;
+      await updateSkills();
+      await updateAgentRollout(false);
+
+      ({curr_state_uid} = get());
+      setTutorState(curr_state_uid)
     }
     
 
-    if(apply_focus || apply_staged){
-      tutor_state = tutor.getState()
-      set({tutor_state})  
-    }
+    // if(apply_focus || apply_staged){
+    //   tutor_state = tutor.getState()
+    //   set({tutor_state})  
+    // }
     
-    if(do_train){
-      await updateAgentRollout(false)  
-    }
+    // if(do_train){
+      
+    // }
 
-    ({curr_state_uid} = get())
-    setTutorState(curr_state_uid)
+    
     
   },
 
@@ -1458,7 +1506,21 @@ const useAuthorStore = create((set,get) => ({
     store.setFociSelect(sel, !selected)
   },
 
-
+  resizeWindow : (e) => {
+    let w = window.innerWidth
+    let h = window.innerHeight
+    if(w >= 1200){
+      set({"window_size" : "large"})
+      console.log("WINDOW RESIZE", w, h, "large")
+    }else if(w >= 800){
+      set({"window_size" : "medium"})
+      console.log("WINDOW RESIZE", w, h, "medium")
+    }else{
+      set({"window_size" : "small"})
+      console.log("WINDOW RESIZE", w, h, "small")
+    }
+    
+  },
 
   onKeyDown : (e) => {
     console.log("OUTER KEY DOWN", e.key, e)
@@ -1688,7 +1750,7 @@ const useAuthorStore = create((set,get) => ({
   removeSkillApp: (skill_app) => {
     if(!skill_app) return;
     let {skill_apps, sel_skill_app_uids, only_count, focus_uid, hover_uid, staged_uid,
-        graph_states, graph_actions} = get()
+        graph_states, graph_actions, setFocus} = get()
     let sel = skill_app.selection
     
     // Remove From SkillApps
@@ -1731,9 +1793,18 @@ const useAuthorStore = create((set,get) => ({
 
       set({graph_states, graph_actions})
     }
+
+    // After removal focus on a different skill app 
+    console.log("REMOVE", focus_uid, skill_app.uid, focus_uid == skill_app.uid)
+    if(focus_uid == skill_app.uid){
+      ({skill_apps, sel_skill_app_uids} = get())
+      let nxt_apps = sel_skill_app_uids?.[sel] || Object.keys(skill_apps)
+      setFocus(nxt_apps?.[0] ?? null)  
+    }
   },
 
   clearInterface : (clear_tutor=true) => {
+
     let {setSkillApps, tutor} = get()
     if(tutor && clear_tutor){tutor.clear()}
     set({focus_uid : "", hover_uid : "", staged_uid : "", 
@@ -1744,7 +1815,10 @@ const useAuthorStore = create((set,get) => ({
          only_count : 0,
          stage_undo_stack: [],
          tutor_state : {},
+         start_state : {}
        })
+
+    console.log("CLEAR INTERFACE", get())
     //setSkillApps({})
   },
 

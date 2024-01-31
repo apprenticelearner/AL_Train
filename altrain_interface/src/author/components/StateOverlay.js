@@ -6,7 +6,8 @@ import RisingDiv from "./RisingDiv.js"
 import {authorStore, useAuthorStoreChange} from "../author_store.js"
 import {colors, where_colors} from "../themes.js"
 import Color from 'color'
-import {randomUID, shallowEqual, arraysEqual,  arg_symbols} from "../../utils.js";
+import {randomUID, shallowEqual, arraysEqual,  arg_symbols, gen_shadow} from "../../utils.js";
+import {SmallCorrectnessToggler} from "./CorrectnessToggler.js"
 
 const images = {
   tap: require('../img/gesture-tap.png'),
@@ -58,7 +59,7 @@ let PopUpConfirmButton = memo(({sel, skill_app}) => {
       //onMouseEnter={(e)=>{console.log("OVER:", e)}}
       //onMouseLeave={(e)=>{console.log("LEAVE:", e)}}
       style={{position: "absolute", display: "flex", flexDirection:'row', alignItems:'center', 
-               bottom: -12, left: -10, padding: 6, paddingBottom:1, paddingTop:1, borderRadius: 5,  
+               bottom: -12, left: -7, padding: 6, paddingBottom:1, paddingTop:1, borderRadius: 5,  
                backgroundColor: 'rgb(230,230,230)',
                color: (is_undef && hasHover && colors.correct) || 'black',
                fontWeight:'bold',
@@ -78,6 +79,39 @@ let PopUpConfirmButton = memo(({sel, skill_app}) => {
   )
 })
 
+let RemoveButton = memo(({skill_app}) => {
+  let {removeSkillApp} = authorStore();
+  let rd_props = {
+    hover_scale : 1.1,
+    default_scale : 1,
+    hover_elevation : 10,
+    default_elevation : 6
+  }
+  let [hasHover, setHover] = useState(false)
+
+  return (<RisingDiv
+      hoverCallback={(e)=>{setHover(true)}}
+      unhoverCallback={(e)=>{setHover(false)}}
+      scale={(hasHover && 1.1) || 1}
+      elevation={(hasHover && 10) || 6}
+      //onMouseEnter={(e)=>{console.log("OVER:", e)}}
+      //onMouseLeave={(e)=>{console.log("LEAVE:", e)}}
+      style={styles.remove_button}
+      //{...rd_props}
+      onMouseDown={(e)=>{
+          e.stopPropagation()
+          removeSkillApp?.(skill_app);
+          }}
+        >{"✕"}
+
+      {hasHover && 
+        <div style={styles.popup_button_text}>remove</div>
+      }
+      </RisingDiv>    
+  )
+})
+
+
 
 // const foci_bg_color = Color('darkorchid').alpha(.4).hexa()
 // const foci_cand_bg_color = Color('grey').alpha(.4).hexa()
@@ -86,7 +120,7 @@ let PopUpConfirmButton = memo(({sel, skill_app}) => {
 // console.log("foci_cand_bg_color", foci_cand_bg_color)
 
 function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacity=.4, ...props}){
-    let {setHover, setHoverSel} = authorStore()
+    let {setHover, setHoverSel, setFocus, toggleReward} = authorStore()
     let [[skill_app, hasStaged], groupHasFocus, hasHover, skill_app_uids,
           mode, isExternalHasOnly, elem_locked] = useAuthorStoreChange(
       [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@hover_sel==${sel}`, `@sel_skill_app_uids.${sel}`,
@@ -110,7 +144,10 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
 
     let foci_cand = foci_mode && !hasSkillAppFocus
     let is_foci = (foci_index!==-1) && (mode=="train" || foci_explicit)
-    let is_incorrect = (skill_app?.reward ?? 0) < 0
+    let correct = (skill_app?.reward ?? 0) > 0
+    let incorrect = (skill_app?.reward ?? 0) < 0
+    let isImplicit = isExternalHasOnly && reward == 0;
+    let is_demo = skill_app?.is_demo || false
 
     let foci_color = null
     if(foci_index !== -1){
@@ -169,18 +206,39 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
 
     // Adjust the draw rects so that centers of thick borders overlap original bounds.                
     //   Add a negative margin of same amount to keep content stationary on style change.
+    let pw = (skill_app && 2) || 0
     let bw =  borderWidth-1
     let hbw =  borderWidth / 2
-    let rect = {width: elem.width-bw, height: elem.height-bw, x : elem.x-hbw, y : elem.y-hbw}
+    let rect = {width: elem.width-bw+pw, height: elem.height-bw+pw, x : elem.x-hbw, y : elem.y-hbw-pw}
                 //transform: `translate(-${hbw},-${hbw})`}
-    let click_rect = {...rect, padding: 6}
+
+    let click_rect = {...rect, borderRadius: 13, padding:8} //backgroundColor: 'red', opacity: 0.5} //borderStyle: 'solid', 
+                      //borderColor: (skill_app && '#214') || 'transparent', 
+                      //padding: ((hasHover || groupHasFocus) && 5 )  || 4,
+                      //opacity : ((hasHover || groupHasFocus) && 0.05 ) || 0.3,
+                      //borderWidth: 4,
+                      //boxShadow: "10px 5px 5px red"}
 
     // console.log("::", sel, skill_app?.uid, color)
     let cursor_kind = (foci_cand && 'none') ||
                       (elem_locked && 'default') ||
+                      (skill_app && !groupHasFocus && 'pointer') || 
                       'auto'
+    let transp_ptr_evts = (mode == "start_state"  && 'none') ||
+                          (groupHasFocus && 'none') ||
+                          (!skill_app && 'none') ||
+                          'auto'
 
+    
+    // let shadow_colors = {red:0, green: 10, blue: 30}
+
+    // let shadow =  //gen_shadow(16,'box', shadow_colors)
+    // console.log("SHADOW",shadow)
+    //"3px 6px 4px #025"
     // console.log("__>", sel, borderColor, foci_color, foci_index, foci_explicit, foci_hover)
+    // console.log("OC", props.onClick, mode)
+    // let mouse_down = 
+
     return (      
       <motion.div  style= {{
         ...styles.overlay_bounds,
@@ -189,20 +247,43 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         borderColor: borderColor,
         backgroundColor : backgroundColor,
         cursor:  cursor_kind,
+        ...(skill_app && {boxShadow: "4px 6px 4px rgba(0,20,60,0.6)"}),
         ...style,
         // opacity : (foci_cand && .4) || 1
       }}
 
+
       {...props}
       onMouseDown={(
         // If toggling foci prevent default so elem doesn't take focus
-        foci_cand ? (e) => {toggleFoci(sel); e.preventDefault(); console.log("click")} : props.onClick
+        (foci_cand && ((e) => {
+          toggleFoci(sel); 
+          e.preventDefault(); //Prevents highlighting
+        })) ||
+        (skill_app && !groupHasFocus && mode != 'start_state' && 
+          ((e) => {
+          
+          setFocus(skill_app?.uid); 
+          e.preventDefault(); //Prevents highlighting
+        })) ||
+        props.onClick
       )}
       onMouseEnter={()=>{mode=='arg_foci' ? setHoverSel(sel) : setHover(first_uid)  }}
       onMouseLeave={()=>{mode=='arg_foci' ? setHoverSel("")  : setHover("")}}
       >
         {/* Transparent Background Div to make slightly larger */}
-        <div style={{...styles.stage_image, backgroundColor: "transparent", pointerEvents:'auto', position: "absolute",...click_rect}}/>
+        <div style={{position: "absolute", backgroundColor: "transparent", 
+                      pointerEvents : transp_ptr_evts,
+                       ...click_rect}}/>
+
+        {/* Multiple Action Indicator like (1/2) */}
+        {skill_app_uids?.length > 1 && 
+        <div style={{position: "absolute", backgroundColor: "white", pointerEvents:'auto',
+            fontSize: 7, fontFamily: 'Monospace', color: "grey",
+            userSelect: "none", top: -4-(groupHasFocus && 1),
+            left: -8-hbw, paddingBottom: 2, paddingTop: 2, paddingLeft: -2, paddingRight: 4}}>
+          {`(${skill_app_uids.indexOf(skill_app.uid)+1}/${skill_app_uids.length})`}
+        </div>}
 
         {/* Next Icon */}
         {(hasStaged) &&
@@ -220,9 +301,23 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         {children}
 
         {/* Pop-up Confirm Button */}
-        {(mode != "start_state" && skill_app && !is_incorrect) && 
+        {(mode != "start_state" && groupHasFocus && !incorrect) && 
           <PopUpConfirmButton sel={sel} skill_app={skill_app}/>
         }
+
+        {/*Remove Button*/}
+        {(mode != "start_state" && groupHasFocus && 
+          ( (is_demo && <RemoveButton skill_app={skill_app}/>) ||
+            <SmallCorrectnessToggler 
+              style={{...styles.toggler_small}}
+              text_color={(isImplicit && 'white') || 'black'}
+              correct={correct}
+              incorrect={incorrect}
+              onPress={(force_reward) => toggleReward(skill_app, force_reward)}
+            />
+          )
+        )}
+
       </motion.div>
   )
 }
@@ -335,13 +430,21 @@ function TextFieldOverlay({sel, elem}) {
   placeholder = (input) ||  ""   
 
   //Ensure only highlight color on focus
-  let L = Math.min(text.length || 1, 8)
+  let L = Math.min(text.length || 1, 12)
   let mindim = Math.min(elem.width, elem.height)
   let maxdim = Math.max(elem.width, elem.height)
-  let fontSize = Math.min(mindim, maxdim/((L-1)/2 + 1)) *.85
-
-  let cursor_kind = (!elem.locked && 'text') || 'inherit'
-
+  let pred_n_lines = Math.floor((L-1)/2+1)
+  let fontSize = Math.min(mindim, maxdim/pred_n_lines) *.75
+  let pad_top = pred_n_lines == 1 && Math.floor(Math.max(0,elem.height-(fontSize*pred_n_lines)-1))
+  // console.log("P!", pred_n_lines, fontSize, pad_top)
+  
+  //(!groupHasFocus) ||
+  let focus_locked = (mode != "start_state" && elem.locked)
+  let cursor_kind = (!groupHasFocus  && "inherit") ||
+                    (focus_locked  && "inherit") ||
+                    'text'
+  // console.log("focus_locked", focus_locked)   
+  // console.log("cursor_kind", cursor_kind)
   return (
     <OverlayBounds {...{sel, elem, bg_opacity : 1, bg_foci_opacity : 1}}>
       <textarea 
@@ -351,6 +454,7 @@ function TextFieldOverlay({sel, elem}) {
            ...styles.textfield,
            fontSize : fontSize,
            color : fontColor,
+           paddingTop: pad_top,
            // width : elem.width + 200,
            // ...(elem.locked && {
            // })
@@ -361,13 +465,14 @@ function TextFieldOverlay({sel, elem}) {
         value={text}
         {...(mode=="start_state" && {placeholder:placeholder})}
         onFocus={(e) => {
-          // console.log("ON focus")
+          console.log("ON focus", e)
           setInputFocus(sel)
           if(!groupHasFocus || mode=="start_state" || !skill_app?.is_demo){
+            console.log("INNER")
             setEmptyFocus(true)  
           }
         }}
-        readOnly={mode!="start_state" && elem.locked}
+        readOnly={focus_locked}
         onBlur={(e) => {
           // console.log("BLUR", skill_app?.uid, e)
           let target = e?.relatedTarget || null
@@ -636,6 +741,57 @@ const styles = {
     pointerEvents : "none",
     userSelect: "none",
   },
+
+  remove_button: {
+    display : "flex",
+    alignItems : 'center',
+    justifyContent : 'center',
+    position : 'absolute',
+    right:-14,
+    top:-12,
+    padding : "2px 2px 2px 2px",
+    margin : 2,
+    // opacity : .2,
+    // border : "solid 1px rgb(230,230,230)",
+    // border : "solid 1px black",
+    // backgroundColor : 'rgb(240,256,240)',
+    color : "black",
+    backgroundColor : 'rgb(230,230,230)',
+    width: 12,
+    height: 12,
+    fontSize : 14,
+    fontWeight : 'bold',
+    borderRadius: 20,
+    textAlign:'center',
+  },
+
+  popup_button_text: {
+    display : "flex",
+    position:'absolute',
+    backgroundColor : "white",
+    border : "solid 1px lightgray",
+    color : "black",
+    padding : 1,
+    paddingRight : 2,
+    paddingLeft : 2,
+    borderRadius : 6,
+    top: 0,
+    right: 16,
+    fontSize: 9,
+  },
+
+  toggler_small: {
+    width: 18,
+    height: 26,
+    right: -12,
+    top: -12,
+    position:'absolute',
+    display:"flex",
+    justifyContent : "center",
+    alignItems : "center",
+  },
+
+
 
   // var_indicator_text : {
     

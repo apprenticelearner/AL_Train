@@ -6,7 +6,7 @@
 	    "search_depth" : 2,
 	    // "how": "nlp_set_chaining",
 	    "how": "set_chaining",
-	    "error_on_bottom_out": false,
+	    "error_on_bottom_out" : false,
 
 	    "where": "most_specific",
 	    // "where": "antiunify",
@@ -19,23 +19,22 @@
         "action_chooser" : "max_which_utility",
         "suggest_uncert_neg" : true,
 
-	    
-	    "function_set" : ["OnesDigit","TensDigit","Add","Add3"],
-	    // "function_set" : ["OnesDigit","TensDigit","Add","Add3", "Multiply"],
-	    // "feature_set" : ["Equals"],
-	    "feature_set" : [],
-	    "extra_features" : ["SkillCandidates","Match"],
+        "function_set" : ["Add","Multiply"],
+	    "feature_set" : ["Equals"],
+
+
+	    "extra_features" : ["Match"],
 	    "find_neighbors" : true, 
 	    "when_args": {"encode_relative" : true, "one_hot" : true, "check_sanity" : false},
       },
       "stay_active" : true,
   },
   "author" : {
-  	"completeness_profile" : "exp_z_ground_truth.txt",
   	"interfaces" : [
-  		{"HTML": "MultiColumnArithmetic/HTML/MultiColumnArithmetic.html"},
-  		{"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},
-  		{"HTML": "OtherTutors/HTML/TriangleArea.html"},
+  		{"HTML": "Algebra/HTML/algebra.html"},
+  		// {"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},
+  		// {"HTML": "MultiColumnArithmetic/HTML/MultiColumnArithmetic.html"},
+  		// {"HTML": "OtherTutors/HTML/TriangleArea.html"},
   		//{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html"}
   	]	
   },

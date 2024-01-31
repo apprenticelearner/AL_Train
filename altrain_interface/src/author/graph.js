@@ -11,6 +11,7 @@ import { colors, where_colors } from "./themes.js"
 import ScrollableStage from "./stage.js"
 import {Transform, identity as zoomIdentity} from "./zoom.js"
 import {Oval} from "react-loader-spinner";
+import RisingDiv from "./components/RisingDiv.js"
 // import {LoadSpinner} from "./spinner.js"
 
 const images = {
@@ -693,6 +694,37 @@ function GraphLoadSpinner({...prop}){
   )
 }
 
+function DoneStatePopup({...prop}){
+  let [is_open] = useAuthorStoreChange(["@done_popup_open"])
+  let {beginSetStartState, closeDoneStatePopup} = authorStore()
+  return (is_open && 
+    <div style={{width: 200, height: 80, position: "absolute", bottom: 10, right: 10,
+                borderRadius: 10,  display: "flex", fontFamily: 'Arial',
+                flexDirection: "column", alignItems : "center", justifyContent: "space-between",
+                padding: 6, textAlign: 'center', userSelect: "none", paddingTop: 16,
+                backgroundColor: 'rgba(200, 200, 200, 0.3)',}}>
+        <div style={{fontSize: 14}}>
+            {"You have entered the done state for this problem. " +
+             "Begin authoring a new problem?"}
+        </div>
+        <RisingDiv style={{borderRadius: 20, fontSize: 16, padding : 4,
+                            width: 160, height: 20, backgroundColor: 'teal'}}
+            onClick={()=>{closeDoneStatePopup(); beginSetStartState();}}
+            >
+            {"Author new problem"}
+        </RisingDiv>
+        <RisingDiv style={{position: 'absolute', top: 4, right: 4, borderRadius: 20,
+                            backgroundColor: 'rgba(200, 200, 200, 0.0)', fontSize: 14,
+                            width: 16, height: 16,}}
+            onClick={()=>{closeDoneStatePopup()}}
+            >
+            {"✕"}
+
+        </RisingDiv>
+    </div>
+  )
+}
+
 // A class component that wraps the main GraphContent allowing d3 zoom() events to be used.
 export class Graph extends React.Component {
     constructor(){
@@ -706,6 +738,8 @@ export class Graph extends React.Component {
         this.didZoom = false
         this.is_dragging = false
         this.prev_drag_pos = [0,0]
+        this.viewWidth = 650
+        this.viewHeight = 440
         
         this.x_anim = new MotionValue(0)
         this.y_anim = new MotionValue(0)
@@ -740,7 +774,7 @@ export class Graph extends React.Component {
 
         // Ensure that the transform adheres to bounds
         let {x, y, k} = this.zoomTransform        
-        const [viewWidth, viewHeight] = [450, 440]
+        const [viewWidth, viewHeight] = [this.viewWidth, this.viewHeight]
         let gb = this.graphBounds
         let hang = 100 //Amount that graph shows when all the way off edge
         let [mx,my] = [-gb.maxX*k+hang, -gb.maxY*k+hang]
@@ -755,18 +789,21 @@ export class Graph extends React.Component {
             this.y_anim.set(this.zoomTransform.y)
             this.scale_anim.set(this.zoomTransform.k)    
         }else{
-            let anim_config = {ease: "easeInOut", duration: duration}
+            let dx = Math.abs(this.x_anim.get() - this.zoomTransform.x)
+            let anim_config = {ease: "easeInOut", duration: dx > 10 ? duration : duration / 2}
+
             animate(this.x_anim, [this.x_anim.get(), this.zoomTransform.x], anim_config)
             animate(this.y_anim, [this.y_anim.get(), this.zoomTransform.y], anim_config)
-            animate(this.scale_anim, 
-                [this.scale_anim.get(), 
-                 this.zoomTransform.k-.08,  //Extra keyframe where zoom out a little
-                 this.zoomTransform.k], anim_config)
+            
+            let scale_frames = [this.scale_anim.get(), 
+                 this.zoomTransform.k-(dx > 10 ? .08 : .0),  //Extra keyframe where zoom out a little
+                 this.zoomTransform.k]
+            animate(this.scale_anim, scale_frames, anim_config)
         }
     }
 
     handleMouseDown = (e) => {
-        console.log("MOUSE DOWN")
+        console.log("MOUSE DOWN", e)
         this.didZoom = false
         this.is_dragging = true
         this.prev_drag_pos = [e.clientX, e.clientY]
@@ -774,7 +811,8 @@ export class Graph extends React.Component {
             this.svgRef.current.style.cursor = "move"    
         }
         
-        // e.stopImmediatePropagation()
+        // e.stopPropagation()
+        e.preventDefault()
     }
     // handleMouseLeave = (e) =>{
     //     this.is_dragging = false
@@ -818,7 +856,7 @@ export class Graph extends React.Component {
         let gb = this.graphBounds
         let [gWidth, gHeight] = [(gb.maxX-gb.minX), (gb.maxY-gb.minY)]
 
-        const [viewWidth, viewHeight] = [450, 440]
+        const [viewWidth, viewHeight] = [this.viewWidth, this.viewHeight]
         // Zoom Case
         if(e.shiftKey){
             let {k:o_k, x:o_x, y:o_y} = this.zoomTransform
@@ -917,13 +955,13 @@ export class Graph extends React.Component {
         }
         this.didZoom = true
 
-        const width = 450;
-        const height = 450;
+        const width = this.viewWidth;
+        const height = this.viewHeight;
         const [[x0, y0], [x1, y1]] = bounds
         console.log("Coords:", `${x0} ${x1}, ${y0} ${y1}`)
 
         let scale_div = Math.max((x1 - x0) / width, (y1 - y0) / height)
-        let k = Math.min(1.5, 0.55 / scale_div);
+        let k = Math.min(1.5, 0.5 / scale_div);
         let transform = zoomIdentity
             .translate(width / 2, height / 2) // center
             .scale(k) // scale
@@ -937,6 +975,10 @@ export class Graph extends React.Component {
 
     render = () => {
         let {style} = this.props
+
+        this.viewWidth = style.width || 450
+
+        
 
         console.log("STYLE", style)
         return (
@@ -973,6 +1015,7 @@ export class Graph extends React.Component {
                     </div>  
                 </div>
                 <GraphLoadSpinner/>
+                <DoneStatePopup/>
             </div>
         )
     }

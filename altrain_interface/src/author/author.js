@@ -111,6 +111,7 @@ function ArgsRow(){
 
   let prompt = (arg_foci_mode && "Select arguments in interface. Click away to Exit." ) ||
                 "Click here to begin selecting arguments."
+  let prompt_weight = (arg_foci_mode && "bold") ||  "normal";
 
   let border_width = (arg_foci_mode && 3) || 1
 
@@ -139,7 +140,9 @@ function ArgsRow(){
           }}
         {...(arg_foci_mode && foci_mode_props)}
         >
-        <div style={{...styles.arg_prompt, fontSize: font_size}}>
+        <div style={{...styles.arg_prompt,
+            fontWeight: prompt_weight,
+            fontSize: font_size}}>
           <ArgFociPointer style={{
             width: icon_size, height: icon_size, 
             marginLeft: 2, marginRight: 4,
@@ -653,7 +656,8 @@ function DemonstrateMenu({}){
 }
 
 function RewardKeys({skill_app}){
-    let [pos_rew_down, neg_rew_down] = useAuthorStoreChange(["@pos_rew_down", "@neg_rew_down"])
+    let [pos_rew_down, neg_rew_down, setReward] = 
+      useAuthorStoreChange(["@pos_rew_down", "@neg_rew_down", "setReward"])
     
     let corr = (skill_app?.reward ?? 0) > 0
     let incorr = (skill_app?.reward ?? 0) < 0
@@ -669,7 +673,13 @@ function RewardKeys({skill_app}){
 
     return (
       <div style={{display: 'flex', flexDirection : "column", margin: 10, alignItems: "end"}}>
-        <div style={{position: 'relative', margin: 6, color: '#445'}}>
+        <RisingDiv style={{position: 'relative', margin: 6, color: '#445'}}
+          hover_scale={1.1}
+          onMouseDown={()=>{setAuthorStore({pos_rew_down:true});}}
+          onMouseUp={()=>{setAuthorStore({pos_rew_down:false}); 
+                          setReward(skill_app, corr ? 0 : 1)}
+                    }
+          >
           <KeyIcon 
             style={{width: 42, height: 42, fontSize: 14}}
             shadow={10}
@@ -680,8 +690,14 @@ function RewardKeys({skill_app}){
                 color: colors.correct}}>{'✔'}</div>
             </div>)}
           />
-        </div>
-        <div style={{position: 'relative', margin: 6, color: '#445'}}>
+        </RisingDiv>
+        <RisingDiv style={{position: 'relative', margin: 6, color: '#445'}}
+          hover_scale={1.1}
+          onMouseDown={()=>{setAuthorStore({neg_rew_down:true})}}
+          onMouseUp={()=>{setAuthorStore({neg_rew_down:false}); 
+                          setReward(skill_app, incorr ? 0 : -1)}
+                    }
+          >
           <KeyIcon 
             style={{width: 42, height: 42}}
             shadow={10}
@@ -692,7 +708,7 @@ function RewardKeys({skill_app}){
                   color: colors.incorrect}}>{'✖'}</div>
             </div>)}
           />
-        </div>
+        </RisingDiv>
       </div>
     ) 
 }
@@ -1428,13 +1444,13 @@ function GenCompletenessButton() {
 }
 
 function EvalCompletenessButton() {
-  let {evalCompleteness} = authorStore()
+  let {evalCompleteness, completeness_profile='ground_truth.txt'} = authorStore()
   return (
     <RisingDiv 
       style={{...styles.gen_completeness_button,right:10}}
       {...{default_scale : 1, default_elevation : 8}}
       {...{hover_scale : 1.05, hover_elevation : 12}}
-      onClick={()=>evalCompleteness('ground_truth.txt')}
+      onClick={()=>evalCompleteness(completeness_profile)}
     >
       {"Eval Completeness"}
     </RisingDiv>
@@ -1479,9 +1495,9 @@ function StagedFeedbackArea(){
 export default function AuthoringInterface({props}) {
   let [training_config, training_file, tutor_class, network_layer] = useALTrainStoreChange(
     ['@training_config','@training_file', '@tutor_class', 'network_layer'])
-  let [transaction_count] = useAuthorStoreChange(["@transaction_count"])
+  let [transaction_count, large_window] = useAuthorStoreChange(["@transaction_count", "@window_size=='large'"])
   let {addSkillApp, removeSkillApp,  setSkillApps, setStaged, onKeyDown, onKeyUp, setCenterContentRef,
-      incTransactionCount, setConfig, setTutor} = authorStore()
+      incTransactionCount, setConfig, setTutor, resizeWindow} = authorStore()
 
   let Tutor = tutor_class
 
@@ -1496,10 +1512,12 @@ export default function AuthoringInterface({props}) {
     setCenterContentRef(center_content_ref)
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
+    window.addEventListener("resize", resizeWindow);
     ({stage_cursor_elem: cursor} = authorStore())
     return function cleanup() {
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener("resize", resizeWindow);
     }
   }, [])
 
@@ -1513,10 +1531,13 @@ export default function AuthoringInterface({props}) {
   let sw = window.screen.width
   let sh = window.screen.height*1.5;
 
+  console.log("SCREEN", window)
+
   // Proportion of stage width, height tutor should get
   let tv_pw = .5
   let tv_ph = .7
 
+  let graph_style = {width: large_window ? 650 : 450 , height : "50%"}
   return (
       <div style={styles.authoring}
         //onKeyDown={(e)=>{console.log(e.target);;}}
@@ -1532,7 +1553,7 @@ export default function AuthoringInterface({props}) {
             <Profiler id="Graph" onRender={(id,phase,actualDuration)=>{
               console.log("actualDuration", actualDuration)
             }}>
-              <Graph style={styles.graph}/>
+              <Graph style={graph_style}/>
             </Profiler>
             <MultiMenu/>
           </div>
@@ -1541,8 +1562,13 @@ export default function AuthoringInterface({props}) {
             style={styles.center_content}
             ref={center_content_ref}
             onMouseMove={(e)=>{
-              
               let cs = cursor?.style
+              if(!cs){
+                //NOTE: This presumably fixes a hard to reproduce issue
+                //  where the select args cursor doesn't follow the mouse.
+                ({stage_cursor_elem: cursor} = authorStore())  
+                cs = cursor?.style
+              }
               if(cs){cs.left = `${e.pageX}px`; cs.top =  `${e.pageY}px`}
             }}
             onMouseLeave={(e) => {
@@ -1568,8 +1594,8 @@ export default function AuthoringInterface({props}) {
               </Suspense>
               <StateOverlayLayer parentRef={stage_ref} 
                style={{...styles.overlay_layer,   zIndex: 1}}/>
-              <SkillAppCardLayer parentRef={stage_ref} 
-                style={{...styles.overlay_layer,   zIndex: 2, "backgroundColor": 'pink'}}/>
+              {/*<SkillAppCardLayer parentRef={stage_ref} 
+                style={{...styles.overlay_layer,   zIndex: 2, "backgroundColor": 'pink'}}/>*/}
             </ScrollableStage>
             <PopupLayer style={styles.popup_layer}/>
           </div>
@@ -1822,7 +1848,9 @@ const styles = {
 
   
   graph: {
-    width: 450,
+    large_width: 650,
+    medium_width: 450,
+    small_width: 350,
     height:"50%"
   },
 
