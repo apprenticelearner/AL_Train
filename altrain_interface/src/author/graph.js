@@ -696,7 +696,7 @@ function GraphLoadSpinner({...prop}){
 
 function DoneStatePopup({...prop}){
   let [is_open] = useAuthorStoreChange(["@done_popup_open"])
-  let {beginSetStartState, closeDoneStatePopup} = authorStore()
+  let {beginSetStartState, closeDoneStatePopup, goToStartState} = authorStore()
   return (is_open && 
     <div style={{width: 200, height: 80, position: "absolute", bottom: 10, right: 10,
                 borderRadius: 10,  display: "flex", fontFamily: 'Arial',
@@ -704,14 +704,21 @@ function DoneStatePopup({...prop}){
                 padding: 6, textAlign: 'center', userSelect: "none", paddingTop: 16,
                 backgroundColor: 'rgba(200, 200, 200, 0.3)',}}>
         <div style={{fontSize: 14}}>
-            {"You have entered the done state for this problem. " +
-             "Begin authoring a new problem?"}
+            {"You've entered the done state." //+
+             //"Begin authoring a new problem?"}
+            }
         </div>
         <RisingDiv style={{borderRadius: 20, fontSize: 16, padding : 4,
-                            width: 160, height: 20, backgroundColor: 'teal'}}
+                            width: 160, height: 18, backgroundColor: 'teal'}}
             onClick={()=>{closeDoneStatePopup(); beginSetStartState();}}
             >
             {"Author new problem"}
+        </RisingDiv>
+        <RisingDiv style={{borderRadius: 20, fontSize: 16, padding : 4,
+                            width: 160, height: 18, backgroundColor: 'rgb(150, 150, 160)'}}
+            onClick={()=>{closeDoneStatePopup(); goToStartState();}}
+            >
+            {"⬅ Back to the start"}
         </RisingDiv>
         <RisingDiv style={{position: 'absolute', top: 4, right: 4, borderRadius: 20,
                             backgroundColor: 'rgba(200, 200, 200, 0.0)', fontSize: 14,
@@ -790,7 +797,7 @@ export class Graph extends React.Component {
             this.scale_anim.set(this.zoomTransform.k)    
         }else{
             let dx = Math.abs(this.x_anim.get() - this.zoomTransform.x)
-            let anim_config = {ease: "easeInOut", duration: dx > 10 ? duration : duration / 2}
+            let anim_config = {ease: "easeInOut", bounce: .2, duration: dx > 10 ? duration : duration / 2}
 
             animate(this.x_anim, [this.x_anim.get(), this.zoomTransform.x], anim_config)
             animate(this.y_anim, [this.y_anim.get(), this.zoomTransform.y], anim_config)
@@ -939,7 +946,7 @@ export class Graph extends React.Component {
         this.applyZoomTransform()
     }
 
-    zoom_to = (dest, duration=.5) => {
+    zoom_to = (dest, duration=.45) => {
         let bounds;
         if(typeof(dest) == "string"){
             let state_uid = dest
@@ -961,12 +968,13 @@ export class Graph extends React.Component {
         console.log("Coords:", `${x0} ${x1}, ${y0} ${y1}`)
 
         let scale_div = Math.max((x1 - x0) / width, (y1 - y0) / height)
-        let k = Math.min(1.5, 0.5 / scale_div);
+        let k = Math.min(1.5, 0.4 / scale_div);
+        console.log("ZOOM K", k)
         let transform = zoomIdentity
             .translate(width / 2, height / 2) // center
             .scale(k) // scale
             .translate(-(x0 + x1) / 2, -(y0 + y1) / 2) // zoom to point
-            .translate(-80, 40) // tweak so more is showing
+            .translate(-80, 30) // tweak so more is showing
 
         this.zoomTransform = transform
         this.applyZoomTransform(duration)

@@ -1092,6 +1092,7 @@ const useAuthorStore = create((set,get) => ({
       state_uid = state
       state_obj = graph_states?.[state_uid]
       state = state_obj?.state ?? {}
+      console.log("SET STATE", state_uid)
     }
 
     if(do_confirm){
@@ -1114,6 +1115,11 @@ const useAuthorStore = create((set,get) => ({
     }
 
     focusFirstIfFocusMissing()
+  },
+
+  goToStartState : async () =>{
+    let {start_state_uid, setTutorState} = get()
+    await setTutorState(start_state_uid)
   },
 
   closeDoneStatePopup: () =>{
@@ -1292,17 +1298,19 @@ const useAuthorStore = create((set,get) => ({
     console.log("SS UID", start_state_uid)
     set({start_state_uid})
 
-    let {tutor_state, setSkillApps, graph_states} = get()
+    let {tutor_state, setSkillApps, graph_states, in_done_state} = get()
 
     //NOTE: Should really be stashed until return to mode==train
     setSkillApps({})
 
     // let base_depth = graph_states[_curr_state_uid]?.depth ?? 0;
     // let rollout = await network_layer.act_rollout(agent_uid, tutor_state, {base_depth})
-
-    let curr_state_uid = await network_layer.get_state_uid(agent_uid, tutor_state);  
-    set({curr_state_uid})
-    console.log("curr_state_uid", curr_state_uid);    
+    // NOTE: May be obselete w/ rollout
+    // if(!in_done_state){
+    //   let curr_state_uid = await network_layer.get_state_uid(agent_uid, tutor_state);  
+    //   set({curr_state_uid})  
+    //   console.log("CURR STATE UID COMPUTED:", curr_state_uid);    
+    // }
 
     let rollout = await network_layer.act_rollout(agent_uid, start_state)
 
@@ -1412,7 +1420,7 @@ const useAuthorStore = create((set,get) => ({
         return
       } 
 
-      console.log("SKILL AAAAAP", skill_app)
+      // console.log("SKILL AAAAAP", skill_app)
 
 
       set({focus_uid : "", hover_uid : "", staged_uid : "", 
@@ -1423,8 +1431,9 @@ const useAuthorStore = create((set,get) => ({
       // Immediately try to enter the tutor state
       let next_state_uid = graph_actions?.[apply_uid]?.next_state_uid
       if(next_state_uid){
-        // console.log("NEXT STATE", graph_states[next_state_uid])
-        setTutorState(next_state_uid)
+        // console.log("NEXT STATE", next_state_uid)
+        await setTutorState(next_state_uid, false)
+        // console.log("AFTER")
       }
     }
 
@@ -1439,7 +1448,8 @@ const useAuthorStore = create((set,get) => ({
       await updateAgentRollout(false);
 
       ({curr_state_uid} = get());
-      setTutorState(curr_state_uid)
+      // console.log("CURR STATE", curr_state_uid)
+      setTutorState(curr_state_uid, false)
     }
     
 
@@ -1815,7 +1825,9 @@ const useAuthorStore = create((set,get) => ({
          only_count : 0,
          stage_undo_stack: [],
          tutor_state : {},
-         start_state : {}
+         start_state : {},
+         done_popup_open : false,
+         in_done_state : false
        })
 
     console.log("CLEAR INTERFACE", get())

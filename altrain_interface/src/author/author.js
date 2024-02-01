@@ -1135,9 +1135,9 @@ function ControlsLine(){
 function Prompt(){
   let {focus_uid} = authorStore()
   let [skill_app, is_demo, is_confirmed, fx_explicit, 
-       any_focus, skill_apps, mode] = useAuthorStoreChange([
+       any_focus, skill_apps, mode, in_done_state] = useAuthorStoreChange([
       `@skill_apps[${focus_uid}]`, focusIsDemo(), focusIsConfirmed(), focusExplanationExplicit(), 
-      "@focus_uid!=''", "@skill_apps", "@mode"
+      "@focus_uid!=''", "@skill_apps", "@mode", "@in_done_state"
   ])
   let no_skill_apps = Object.keys(skill_apps).length == 0
   console.log("FX SEL", is_demo, is_confirmed, fx_explicit, skill_apps, no_skill_apps)
@@ -1146,7 +1146,15 @@ function Prompt(){
   let undef = (skill_app?.reward ?? 0) == 0
 
   let prompt = null
-  if(mode == "start_state"){
+  if(in_done_state){
+    prompt = (
+      <div style={{...styles.prompt}}>
+        <div style={styles.prompt_line}>
+          <a>{"You have entered the done state."}</a>
+        </div>
+      </div>
+    )  
+  }else if(mode == "start_state"){
     prompt = (
       <div style={{...styles.prompt}}>
         <div style={styles.prompt_line}>

@@ -122,9 +122,9 @@ let RemoveButton = memo(({skill_app}) => {
 function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacity=.4, ...props}){
     let {setHover, setHoverSel, setFocus, toggleReward} = authorStore()
     let [[skill_app, hasStaged], groupHasFocus, hasHover, skill_app_uids,
-          mode, isExternalHasOnly, elem_locked] = useAuthorStoreChange(
+          mode, isExternalHasOnly, elem_locked, in_done_state] = useAuthorStoreChange(
       [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@hover_sel==${sel}`, `@sel_skill_app_uids.${sel}`,
-       "@mode", "@only_count!=0", `@tutor_state.${sel}.locked`],
+       "@mode", "@only_count!=0", `@tutor_state.${sel}.locked`, '@in_done_state'],
     )
     // console.log("OVERLAY BOUNDS", sel, skill_app)
 
@@ -172,9 +172,15 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
     if(mode == "start_state"){
       color = 'teal'
       elem_locked = false
-    }else if(skill_app && !hasSkillAppFocus && !hasHover){
-      color = Color(color).lighten(.25).hexa()
-    }
+    }else{
+      if(in_done_state){
+        elem_locked = true
+      }
+      if(skill_app && !hasSkillAppFocus && !hasHover){
+        color = Color(color).lighten(.25).hexa()
+      }
+    }    
+
 
     let clear_bg_color  = Color("white").alpha(bg_opacity).hexa()
     let foci_cand_bg_color = Color('rgb(127,127,127)').alpha(bg_foci_opacity).hexa()
@@ -401,8 +407,8 @@ function TextFieldOverlay({sel, elem}) {
   // True if has focus and empty
   const [empty_focus, setEmptyFocus] = useState(false);
 
-  let [[skill_app, hasStaged], groupHasFocus, isExternalHasOnly, mode, has_focus] = useAuthorStoreChange(
-    [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@only_count!=0`, "@mode", `@input_focus==${sel}`],
+  let [[skill_app, hasStaged], groupHasFocus, isExternalHasOnly, mode, has_focus, in_done_state] = useAuthorStoreChange(
+    [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@only_count!=0`, "@mode", `@input_focus==${sel}`, '@in_done_state'],
   )
   let {setInputFocus, addSkillApp, removeSkillApp, setInputs, setFocus, beginSetArgFoci, confirmArgFoci} = authorStore()
   // let empty_focus = (!skill_app?.input && has_focus)
@@ -439,7 +445,7 @@ function TextFieldOverlay({sel, elem}) {
   // console.log("P!", pred_n_lines, fontSize, pad_top)
   
   //(!groupHasFocus) ||
-  let focus_locked = (mode != "start_state" && elem.locked)
+  let focus_locked = (mode != "start_state" && elem.locked || in_done_state)
   let cursor_kind = (!groupHasFocus  && "inherit") ||
                     (focus_locked  && "inherit") ||
                     'text'
@@ -559,8 +565,8 @@ function ButtonOverlay({
     sel, elem,
   }) {
 
-  let [[skill_app,hasStaged], groupHasFocus,  isExternalHasOnly] = useAuthorStoreChange( 
-    [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@only_count!=0`]
+  let [[skill_app,hasStaged], groupHasFocus,  isExternalHasOnly, in_done_state] = useAuthorStoreChange( 
+    [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@only_count!=0`, '@in_done_state']
   )
   let {addSkillApp, removeSkillApp, setFocus} = authorStore()
 
@@ -571,12 +577,14 @@ function ButtonOverlay({
           (elem.locked && colors.locked) || 
           colors.default
 
+  let click_locked = skill_app || in_done_state;
+
   return (
     <OverlayBounds {...{sel, elem, color}}
-      style={{cursor : skill_app ? 'auto' : 'pointer'}}
+      style={{cursor : click_locked  ? 'auto' : 'pointer'}}
       onClick={(e)=>{
         // console.log("BUTTON")
-        if(!skill_app){
+        if(!click_locked){
           let new_skill_app = newDemo(sel, "PressButton", -1)
           addSkillApp(new_skill_app)  
           setFocus(new_skill_app.uid)
