@@ -436,13 +436,18 @@ function TextFieldOverlay({sel, elem}) {
   placeholder = (input) ||  ""   
 
   //Ensure only highlight color on focus
-  let L = Math.min(text.length || 1, 12)
+  let L = text.length || 1//Math.min(text.length || 1, 12)
+  let fL = Math.max(L || 1, 2)//Math.min(text.length || 1, 12)
   let mindim = Math.min(elem.width, elem.height)
   let maxdim = Math.max(elem.width, elem.height)
-  let pred_n_lines = Math.floor((L-1)/2+1)
-  let fontSize = Math.min(mindim, maxdim/pred_n_lines) *.75
-  let pad_top = pred_n_lines == 1 && Math.floor(Math.max(0,elem.height-(fontSize*pred_n_lines)-1))
-  // console.log("P!", pred_n_lines, fontSize, pad_top)
+
+  let fontSize = Math.floor(Math.max( (mindim+3) / (fL+(L-fL)*.6) ,16)) // Min font 
+  // let 
+  // let pred_n_lines = Math.floor(L/2+1)
+  let pred_n_lines = Math.ceil(L / ((elem.width+3) / fontSize) )
+  // let fontSize = Math.min(mindim, maxdim/pred_n_lines) *.75
+  let pad_top = pred_n_lines == 1 && Math.floor(Math.max(0,(elem.height-fontSize)))
+  console.log("P!", pred_n_lines, L / (elem.width / fontSize) , fontSize, pad_top, (elem.height*1.1-fontSize))
   
   //(!groupHasFocus) ||
   let focus_locked = (mode != "start_state" && elem.locked || in_done_state)

@@ -6,7 +6,7 @@
 	    "search_depth" : 2,
 	    // "how": "nlp_set_chaining",
 	    "how": "set_chaining",
-	    "error_on_bottom_out" : false,
+
 
 	    "where": "most_specific",
 	    // "where": "antiunify",
@@ -22,6 +22,8 @@
         "function_set" : ["Add","Multiply"],
 	    "feature_set" : ["Equals"],
 
+	    "error_on_bottom_out" : false,
+	    "one_skill_per_match" : true,
 
 	    "extra_features" : ["Match"],
 	    "find_neighbors" : true, 
