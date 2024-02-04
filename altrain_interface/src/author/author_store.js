@@ -4,7 +4,7 @@ import {makeChangeStore} from "change-store";
 
 
 import {graph_data} from "./graph_test_data1.js"
-import {organizeByDepth} from "./graph.js"
+import {organizeByDepth, layoutGraphNodesEdges} from "./graph.js"
 let {states:debug_graph_states, actions:debug_graph_actions} = graph_data
 const GRAPH_DEBUG_MODE = false
 
@@ -172,8 +172,7 @@ const useAuthorStore = create((set,get) => ({
   graph : null,
   graph_states : (GRAPH_DEBUG_MODE && debug_graph_states) || {},
   graph_actions : (GRAPH_DEBUG_MODE && debug_graph_actions) || {},
-  graph_prev_update_time : null,
-  graph_demo_count : 0, // Simply used as rerender trigger  
+  graph_prev_update_time : null, // Simply used as rerender trigger  
 
   /* Tutor  */
   // A reference to the tutor wrapper instance.
@@ -493,9 +492,9 @@ const useAuthorStore = create((set,get) => ({
     set({graph: graph})
   },  
 
-  setGraphBounds: (graph_bounds) => {
-    set({graph_bounds: graph_bounds})
-  },  
+  // setGraphBounds: (graph_bounds) => {
+  //   set({graph_bounds: graph_bounds})
+  // },  
 
   setCenterContentRef : (center_content_ref) => set({center_content_ref}),
   setStageViewRef : (stage_view_ref) => set({stage_view_ref}),
@@ -704,7 +703,7 @@ const useAuthorStore = create((set,get) => ({
 
   updateGraphConnections : async (skill_app) =>{
     // Add demo skill_app to the graph  
-    let {graph_states, graph_actions, network_layer, agentPromise, tutor_state} = get()
+    let {graph_states, graph_actions, network_layer, agentPromise, tutor, tutor_state} = get()
     
     let skill_app_uid = skill_app.uid
     let prev_next_state_uid = graph_actions?.[skill_app_uid]?.next_state_uid
@@ -764,7 +763,8 @@ const useAuthorStore = create((set,get) => ({
           delete graph_states[prev_next_state_uid]
         }
       }
-      set({graph_states, graph_actions, curr_state_uid})
+      let graph_bounds = layoutGraphNodesEdges(graph_states, graph_actions, tutor)
+      set({graph_states, graph_actions, curr_state_uid, graph_bounds})
     }
     // }
   },
@@ -905,26 +905,56 @@ const useAuthorStore = create((set,get) => ({
     }
   },
 
+  getUIDIndex: (uid) => {
+    let {graph_actions, skill_apps} = get()
+    if(graph_actions){
+      let a_obj = graph_actions?.[uid];
+      console.log("N/PREV", a_obj)
+      if(a_obj?.edge_index != null){
+        return a_obj?.edge_index
+      }
+      
+    }
+    let uid_lst = Object.keys(skill_apps)
+    return uid_lst.indexOf(uid)
+  },
+
+  getIndexUID: (index) => {
+    let {graph_actions, graph_states, curr_state_uid, skill_apps} = get()
+    if(graph_actions){
+      let out_sa_uids = graph_states[curr_state_uid]?.out_skill_app_uids || []
+      for (let uid of out_sa_uids) {
+        let a_obj = graph_actions[uid]
+        if(a_obj?.edge_index == index){
+          return uid
+        }
+      }
+    }
+    let uid_lst = Object.keys(skill_apps)
+    return uid_lst[index]
+  },
+
 
   focusPrev: () =>{
     console.log("PREV")
-    let {skill_apps, focus_uid, setFocus} = get()
+    let {getUIDIndex, getIndexUID, skill_apps, focus_uid, setFocus} = get()
     if(focus_uid){
-      let uid_lst = Object.keys(skill_apps)
-      let index = uid_lst.indexOf(focus_uid)-1
+      let uid_lst = Object.keys(skill_apps);
+      let index = getUIDIndex(focus_uid)-1;
       if(index < 0) index = uid_lst.length+index
-      setFocus(uid_lst[index])
+      let uid = getIndexUID(index);
+      setFocus(uid);
     }
   },
 
   focusNext: () =>{
     console.log("NEXT")
-    let {skill_apps, focus_uid, setFocus} = get()
+    let {getUIDIndex, getIndexUID, skill_apps, focus_uid, setFocus} = get()
     if(focus_uid){
-      let uid_lst = Object.keys(skill_apps)
-      let index = uid_lst.indexOf(focus_uid)+1
-      index = index%uid_lst.length
-      setFocus(uid_lst[index])
+      let index = getUIDIndex(focus_uid)+1;
+      index = index%Object.keys(skill_apps).length;
+      let uid = getIndexUID(index);
+      setFocus(uid)
     }
   },
 
@@ -1280,11 +1310,11 @@ const useAuthorStore = create((set,get) => ({
 
   updateAgentRollout : async (merge=false) => {
     console.log("Fetch Next Actions")
-    //Make sure the agent exists before we query it for actions 
+    
     let {agentPromise, mergeGraphChanges, recalcGraphConnections, showStateSkillApps,
         questions, curr_interface, curr_question, start_state, network_layer, agent_uid} = get()
 
-
+    //Make sure the agent exists before we query it for actions 
     set({awaiting_rollout: true})
     await agentPromise
 
@@ -1322,10 +1352,12 @@ const useAuthorStore = create((set,get) => ({
     //   console.log("MERGE");
     //   ([states, actions] = mergeGraphChanges(states, actions, update_time))
     // }
+    let {tutor} = get()
     ;([states, actions] = recalcGraphConnections(states, actions));
+    let graph_bounds = layoutGraphNodesEdges(states, actions, tutor)
 
     console.log("START SET", states, actions);
-    set({graph_states: states, graph_actions: actions,
+    set({graph_states: states, graph_actions: actions, graph_bounds,
         graph_prev_update_time : update_time, awaiting_rollout: false})
     
     // console.log("Connected", states, actions);
@@ -1609,7 +1641,7 @@ const useAuthorStore = create((set,get) => ({
     let skill_app_uids_subset = sel ? sel_skill_app_uids?.[sel] ?? [] : Object.keys(skill_apps)
 
     let counts = {'undef' : 0, 'demo_correct_only' : 0, 'demo_correct' :0, 'demo_incorrect':0,
-                  'correct_only' : 0, 'correct' :0, 'incorrect':0,
+                  'correct_only' : 0, 'correct' :0, 'incorrect':0, 'total' : 0
                  }
     for(let uid of skill_app_uids_subset){
       let {reward=0, is_demo, only} = skill_apps[uid]
@@ -1636,7 +1668,9 @@ const useAuthorStore = create((set,get) => ({
             counts.incorrect++
           }
       }
+      counts.total++
     }
+    
     return counts
   },
 

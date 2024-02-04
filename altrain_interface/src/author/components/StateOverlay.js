@@ -441,10 +441,10 @@ function TextFieldOverlay({sel, elem}) {
   let mindim = Math.min(elem.width, elem.height)
   let maxdim = Math.max(elem.width, elem.height)
 
-  let fontSize = Math.floor(Math.max( (mindim+3) / (fL+(L-fL)*.6) ,16)) // Min font 
+  let fontSize = Math.floor(Math.max( (mindim+2) / (fL+(L-fL)*.6) ,16)) // Min font 
   // let 
   // let pred_n_lines = Math.floor(L/2+1)
-  let pred_n_lines = Math.ceil(L / ((elem.width+3) / fontSize) )
+  let pred_n_lines = Math.ceil(L / ((elem.width+2) / fontSize) )
   // let fontSize = Math.min(mindim, maxdim/pred_n_lines) *.75
   let pad_top = pred_n_lines == 1 && Math.floor(Math.max(0,(elem.height-fontSize)))
   console.log("P!", pred_n_lines, L / (elem.width / fontSize) , fontSize, pad_top, (elem.height*1.1-fontSize))

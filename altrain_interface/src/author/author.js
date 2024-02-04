@@ -617,6 +617,30 @@ function NavigationKeys({show_yes=false, show_apply=true}){
 }
 
 
+function ActionNumberIndicator({style}){
+  let {getUIDIndex} = authorStore()
+  let [focus_uid, skill_apps] = useAuthorStoreChange(
+      ["@focus_uid", "@skill_apps"]
+  )
+  let index = getUIDIndex(focus_uid)+1
+  let L = Object.keys(skill_apps).length
+
+  return (
+    <div style={{fontSize: 12, fontFamily: 'monospace',
+                 color : "eef",// "#445",
+                fontWeight : 'bold',
+                 backgroundColor : 'rgba(200,200,220,.4)',
+                 borderRadius : 5,
+                 padding: 3,
+                 paddingRight: 6,
+                 paddingLeft: 6,
+                 // filter: gen_shadow(6, 'drop', {red:255, green: 255, blue: 255, alpha:1.0}),
+                 ...style}}>
+      {`Action #(${index}/${L})`}
+    </div>
+  )
+}
+
 function DemonstrateMenu({}){
   let {setMode, addSkillApp, removeSkillApp, setInputs} = authorStore()
   let [skill_app, arg_foci_mode] = useAuthorStoreChange([
@@ -629,6 +653,7 @@ function DemonstrateMenu({}){
 
   return (
     <div style={styles.demo_menu}>
+      <ActionNumberIndicator style={{position:'absolute', top: -26, right:0}}/>
       <div style={styles.demo_menu_fields}>
         
         <div style={styles.demo_menu_title}>
@@ -729,6 +754,7 @@ function AgentActionMenu({}){
 
   return (
     <div style={{...styles.agent_action_menu, borderColor: border_color}}>
+      <ActionNumberIndicator style={{position:'absolute', top: -26, right:0}}/>
       <div style={styles.agent_action_menu_fields}>
         <div style={styles.agent_action_menu_title}>
           <Icon size={styles.agent_action_menu_title.fontSize} kind={kind}/>
@@ -829,6 +855,7 @@ function QuestionSubMenuItem({id, selected, children, onClick, is_editing, show_
             onMouseLeave={(e)=>setHover(false)}
             ref={ref}
           >
+          {/*left margin*/}
           <div style={{height : 20, width : 30}}/>
           
           {children}
@@ -839,6 +866,7 @@ function QuestionSubMenuItem({id, selected, children, onClick, is_editing, show_
               onClick={() => beginEditingQuestionMenu(!is_editing)}
               {...button_props}
             >
+              <a >{"edit"}</a>
               <img src={images.edit} style={{marginBottom:2, width:"70%",height:"70%"}}/>
             </RisingDiv>
             <RisingDiv style={{...styles.submenu_item_button
@@ -846,7 +874,8 @@ function QuestionSubMenuItem({id, selected, children, onClick, is_editing, show_
               onClick={(e)=>{e.stopPropagation(); removeQuestion(id);}}
               {...button_props}
             >
-              {"✕"}
+              <a >{"remove"}</a>
+              <a style={{fontSize:14}}>{"✕"}</a>
             </RisingDiv>
           </div>
           }
@@ -1029,6 +1058,7 @@ function MultiMenu({style}){
         <Tab name={"problem"}/>
       </div>
       {menu}
+      <div style={styles.stopper} /> 
     </div>
   )
 }
@@ -1441,7 +1471,7 @@ function GenCompletenessButton() {
   let {genCompletenessProfile} = authorStore()
   return (
     <RisingDiv 
-      style={{...styles.gen_completeness_button,left:10}}
+      style={{...styles.eval_completeness_button,left:10}}
       {...{default_scale : 1, default_elevation : 8}}
       {...{hover_scale : 1.05, hover_elevation : 12}}
       onClick={genCompletenessProfile}
@@ -1455,7 +1485,7 @@ function EvalCompletenessButton() {
   let {evalCompleteness, completeness_profile='ground_truth.txt'} = authorStore()
   return (
     <RisingDiv 
-      style={{...styles.gen_completeness_button,right:10}}
+      style={{...styles.eval_completeness_button,right:10}}
       {...{default_scale : 1, default_elevation : 8}}
       {...{hover_scale : 1.05, hover_elevation : 12}}
       onClick={()=>evalCompleteness(completeness_profile)}
@@ -1490,11 +1520,12 @@ function StagedFeedbackArea(){
             count_text_style={{minWidth: 16}}
           />
         </div>
-        <div style={styles.confirm_button_area}>
-          <ConfirmButton/>         
-          <GenCompletenessButton/>
+        
+      </div>
+      <div style={styles.bottom_buttons_area}>
+          {/*<ConfirmButton/>   
+          <GenCompletenessButton/>*/}
           <EvalCompletenessButton/>
-        </div>
       </div>
     </div>
   )
@@ -1545,7 +1576,7 @@ export default function AuthoringInterface({props}) {
   let tv_pw = .5
   let tv_ph = .7
 
-  let graph_style = {width: large_window ? 650 : 450 , height : "50%"}
+  let graph_style = {width: large_window ? 650 : 450 , flex : 50}
   return (
       <div style={styles.authoring}
         //onKeyDown={(e)=>{console.log(e.target);;}}
@@ -1557,6 +1588,8 @@ export default function AuthoringInterface({props}) {
         </div>
 
         <div style={styles.main_content}>
+
+          {/* Left Tools */}
           <div style={styles.left_tools}>
             <Profiler id="Graph" onRender={(id,phase,actualDuration)=>{
               console.log("actualDuration", actualDuration)
@@ -1564,8 +1597,10 @@ export default function AuthoringInterface({props}) {
               <Graph style={graph_style}/>
             </Profiler>
             <MultiMenu/>
+            
           </div>
 
+          {/* Center Stage */}
           <div 
             style={styles.center_content}
             ref={center_content_ref}
@@ -1608,11 +1643,13 @@ export default function AuthoringInterface({props}) {
             <PopupLayer style={styles.popup_layer}/>
           </div>
 
+          {/* Right Side Tools */}
           <div style={styles.right_tools}> 
             <AgentArea/>
             <SkillArea/>
             <StagedFeedbackArea/>
-          </div>          
+            <div style={styles.stopper}/>
+          </div>
         </div>
         <Cursor/>  
       </div>
@@ -1628,17 +1665,18 @@ const styles = {
     backgroundColor : "rgb(50,50,50)"
   },
   authoring: {
+    height : "100%",
     display:'flex',
     flexDirection: 'column',
     overflow : "hidden",
-    height : "100%"
   },
   
   main_content :{
     display:'flex',
+    flex: 1,
     flexDirection: 'row',
     overflow : "hidden",
-    height : "100%"
+    // height : "100%"
   },
   multimenu :{
     boxShadow: "1px 1px 3px rgba(0,0,0,1)",
@@ -1646,6 +1684,7 @@ const styles = {
     borderRadius: 5, left:0,
     height : "50%", width: "100%",
     userSelect: 'none',
+    flex: 50,
     display : 'flex',
     flexDirection : 'column',
   },
@@ -1666,11 +1705,16 @@ const styles = {
   problem_menu: {
     display : 'flex',
     flexDirection : 'column',
-    height:"85%",
-    // flex: "1 1 auto",
+    //height:"85%",
+    flex: "1 1 auto",
+    // marginBottom : 5,
     // minHeight: 0,
     // maxHeight: "100%",
   },
+  stopper : {
+    height : 10,
+  },
+
   submenu : {
     display : 'flex',
     flexDirection : 'column',
@@ -1762,11 +1806,15 @@ const styles = {
   },
 
   submenu_item_buttons_area : {
-    position: 'absolute',
+    // position: 'absolute',
     display: 'flex',
     flexDirection :'row',
+    alignItems : 'center',
+    justifyContent : 'end',
+    marginLeft : 'auto',
     right: 0,
-    top:0, 
+    // top:-4, 
+    // zIndex:5,
   },
 
   submenu_item_button : {
@@ -1774,15 +1822,21 @@ const styles = {
     flexDirection : 'column',
     justifyContent : 'center',
     alignItems : 'center',
-    width : 24,
+
+    fontSize: 10,
+    // width : 24,
     height : 24,
-    fontSize : 26,
-    margin: 4,
-    borderRadius : 20,
+    margin: -4,
+    marginRight: 6,
+    marginLeft: 6,
+    borderRadius : 5,
     backgroundColor : 'transparent',
     borderWidth : 1,
+    padding: 4,
+    paddingBottom: 2,
+    paddingTop: 2,
 
-    fontSize: 14,
+    
     fontWeight:'bold',
   },
   // legacy_tab : {
@@ -1823,13 +1877,13 @@ const styles = {
   left_tools: {
     // Fixed Width
     display:'flex',
-    flex: "1 0 450px",
+    // flex: "1 0 450px",
     flexDirection: 'column',
-
+    // marginBottom: 4,
     // flex : 0,
     // backgroundColor : '#eeeedc',
     // width:350,
-    height:"100%",
+    // height:"100%",
     zIndex: 4,
   },
 
@@ -1850,17 +1904,17 @@ const styles = {
     // backgroundColor : '#eeeedc',
     // width:350,
     userSelect: 'none',
-    height:"100%",
+    // height:"100%",
     zIndex: 4,
   },
 
   
-  graph: {
-    large_width: 650,
-    medium_width: 450,
-    small_width: 350,
-    height:"50%"
-  },
+  // graph: {
+  //   large_width: 650,
+  //   medium_width: 450,
+  //   small_width: 350,
+  //   height:"50%"
+  // },
 
   // stage_view : {
   //   overflow : "scroll",
@@ -2258,7 +2312,7 @@ const styles = {
   /** Staged Feedback Area **/
 
   stage_feedback_area : {
-    height : "25%",
+    height : "20%",
     marginTop : "auto",
     borderColor : "auto",
     // border: '0px solid',
@@ -2267,6 +2321,7 @@ const styles = {
   },
 
   staged_feedback_submenu : {
+    height : "20%",
     width : "100%",
     overflow : 'hidden',
     alignItems : "stretch",
@@ -2289,16 +2344,17 @@ const styles = {
     padding : 3,
   },
 
-  confirm_button_area :{
-    position : 'relative',
+  bottom_buttons_area :{
+    // position : 'relative',
     display: "flex",
-    justifyContent:  "center",
-    alignItems:  "center",
+    flexDirection : 'column',
+    justifyContent:  "end",
+    alignItems:  "end",
     flex : 1,
   },
 
   confirm_button :{
-    position : 'relative',
+    // position : 'relative',
     display : "flex",
     flexDirection: 'column',
     justifyContent : "center",
@@ -2316,8 +2372,8 @@ const styles = {
     marginTop : 30
   },
 
-  gen_completeness_button :{
-    position : 'absolute',
+  eval_completeness_button :{
+    // position : 'absolute',
     display : "flex",
     flexDirection: 'column',
     justifyContent : "center",

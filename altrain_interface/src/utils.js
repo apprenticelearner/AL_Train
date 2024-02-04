@@ -126,8 +126,11 @@ export function sampleArray(array, n) {
 
 /* Style Functions */
 export const gen_shadow = (x,kind='box',rest={}) => {
-  let {red=0,green=0,blue=0} = rest
-  let shadow_props = `0px ${(x*.4).toFixed(2)}px ${(x* .20).toFixed(2)}px rgba(${red},${green},${blue},${0.10 + x * 0.015})`
+  let {red=0,green=0,blue=0,alpha} = rest
+  if(!alpha){
+    alpha = 0.10 + x * 0.015
+  }
+  let shadow_props = `0px ${(x*.4).toFixed(2)}px ${(x* .20).toFixed(2)}px rgba(${red},${green},${blue},${alpha})`
   if(kind == 'drop'){
     return `drop-shadow(${shadow_props})`
   }else{

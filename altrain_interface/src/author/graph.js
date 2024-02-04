@@ -141,7 +141,7 @@ export function organizeByDepth(states){
     return ascending_depth
 }
 
-function layoutNodesEdges(states, actions, tutor){    
+export function layoutGraphNodesEdges(states, actions, tutor){    
     let objs_by_depth = organizeByDepth(states)
 
     // Establish the general layout of nodes and edges
@@ -370,6 +370,7 @@ const Edge = ({skill_app_uid}) =>{
             </text>
         )
     }
+
     
 
     
@@ -420,6 +421,19 @@ const Edge = ({skill_app_uid}) =>{
 
                 {/* Text/Image in action card */}
                 {action_content}
+
+                {/* Action Certainty Prediction */}
+                {!skill_app?.reward && skill_app?.when_pred &&
+                    <text
+                        className='edge-text'
+                        x={6}
+                        y={-actionHeight/2-7}
+                        fontSize={12}
+                        alignmentBaseline={"central"}
+                    >
+                    {`${Math.floor(Number.parseFloat(skill_app?.when_pred*100))}%`}
+                    </text>
+                }
             </g>
         </g>)
 }
@@ -656,11 +670,14 @@ const GraphContent = ({contentRef, stageRef, svgRef, anims, setGraphBounds}) =>{
                     </text>
                 </g>)
     }else{
-        let {graph_states:states, graph_actions:actions, tutor} = authorStore()
+        let {graph_states:states, graph_actions:actions, tutor, graph_bounds} = authorStore()
 
-        // console.log("UPDATE_GRAPH", states, actions)
-        let graphBounds = layoutNodesEdges(states, actions, tutor);
-        setGraphBounds(graphBounds)
+        console.log("UPDATE_GRAPH", states, actions, graph_bounds)
+        if(graph_bounds == null){
+            graph_bounds = {minX:0, minY:0, maxX:0, maxY:0}
+        }
+        // graph_bounds = layoutGraphNodesEdges(states, actions, tutor);
+        setGraphBounds(graph_bounds)
 
         let node_containers = []
         for(let [state_uid, s_obj] of Object.entries(states)) {
@@ -967,9 +984,12 @@ export class Graph extends React.Component {
         const [[x0, y0], [x1, y1]] = bounds
         console.log("Coords:", `${x0} ${x1}, ${y0} ${y1}`)
 
+        // Zoom out if too far in but don't zoom in
+        let curr_k = this.scale_anim.get()
         let scale_div = Math.max((x1 - x0) / width, (y1 - y0) / height)
-        let k = Math.min(1.5, 0.4 / scale_div);
-        console.log("ZOOM K", k)
+        let k_min = Math.min(1.5, 0.4 / scale_div);
+        let k = Math.min(curr_k, k_min); 
+        console.log("ZOOM K", curr_k, k)
         let transform = zoomIdentity
             .translate(width / 2, height / 2) // center
             .scale(k) // scale
