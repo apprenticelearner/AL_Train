@@ -35,7 +35,6 @@
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
     "@mui/material": "^5.11.16",
-    "authoring-interface": "file:../authoring_interface",
     "change-store": "file:../change_store",
     "class-autobind": "^0.1.4",
     "color": "^4.2.3",
