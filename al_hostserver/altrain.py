@@ -253,8 +253,10 @@ def parse_args(argv):
     parser.add_argument('--no-al-server', action='store_true',
                         dest="no_al_server", help="Do not start an AL server.")
 
-    parser.add_argument('-b', '--broswer', default=None, dest="browser",     metavar="<browser>",
+    parser.add_argument('-b', '--browser', default=None, dest="browser",     metavar="<browser>",
                         help="The browser executable to run CTAT on.")
+    # parser.add_argument('-nb', '--no-browser', default=False, dest="browser",     metavar="<no-browser>",
+    #                     help="The browser executable to run CTAT on.")
     parser.add_argument('--broswer-args', default='', dest="browser_args",     metavar="<browser_args>",
                         help="Shell arguements to pass to the browser."
                         )
@@ -318,7 +320,7 @@ def parse_args(argv):
             raise Exception(
                 "Cannot find AL_CORE. Try 'pip install apprentice'.")
 
-    print(args.browser_args)
+    # print(args.browser_args)
     if(isinstance(args.browser_args, str)):
         args.browser_args = [args.browser_args]
 
@@ -449,16 +451,16 @@ def main(args):
             driver.get(ctat_url)
         else:
             raise ValueError("Browser %r not supported" % args.browser)
-    elif(args.browser != None):
+    elif(args.browser != None and args.browser != "none"):
         browser_process = subprocess.Popen(
             [args.browser, ctat_url] + args.browser_args)
-    else:
+    elif(args.browser != "none"):
         # use defualt browser
         import webbrowser
         webbrowser.get().open(ctat_url)
 
     # al_process.wait()
-    # print("AL PROCESS")
+    print("Hosting Front End at:", ctat_url)
     while True:
         if((not args.no_al_server and al_process.poll() != None) or tutor_process.poll() != None):
             break
