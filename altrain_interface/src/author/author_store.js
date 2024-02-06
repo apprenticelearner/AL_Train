@@ -312,6 +312,7 @@ const useAuthorStore = create((set,get) => ({
       }
       setAgent(agent_uid)
       saveProject()
+      console.log("RESOLVE AGENT PROMISE", agent_uid)
       resolve(agent_uid)
     })
 
@@ -322,11 +323,11 @@ const useAuthorStore = create((set,get) => ({
 
     let tutorPromise = new Promise((resolveTutorPromise) =>{
       set({resolveTutorPromise})
-    })//.then(()=>{
+    }).then(()=>{
       // After the tutor mounts go to the first interface
-    //   let first_intr = Object.keys(interfaces)[0]
-    //   setInterface(first_intr)  
-    // })
+      let first_intr = Object.keys(interfaces)[0]
+      setInterface(first_intr)  
+    })
     set({tutorPromise})
 
 
