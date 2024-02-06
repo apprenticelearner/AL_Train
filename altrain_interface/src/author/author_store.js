@@ -255,12 +255,12 @@ const useAuthorStore = create((set,get) => ({
 
     let {network_layer} = get()
     // If project has no question_files then 
-    let agentPromise = new Promise(async (resolve)=>{
-      let agent_uid = await network_layer.get_active_agent()
-      console.log("ACTIVE AGENT IS", agent_uid)
-      resolve(agent_uid)
-    })
-    set({...project, agentPromise})
+    // let agentPromise = new Promise(async (resolve)=>{
+    //   let agent_uid = await network_layer.get_active_agent()
+    //   console.log("ACTIVE AGENT IS", agent_uid)
+    //   resolve(agent_uid)
+    // })
+    set({...project})
   },
 
   saveProject(){
@@ -293,40 +293,40 @@ const useAuthorStore = create((set,get) => ({
 
     console.log("Existing Agent", agent_uid);
 
-    let agent_okay = false;
-    if(agent_uid){
-      verifyAgent(agent_uid).then((resp) =>{
-        if(resp?.status == "okay"){
+    
+    let agentPromise = new Promise(async (resolve)=>{
+      if(agent_uid){
+        let agent_okay = await verifyAgent(agent_uid)
+        if(agent_okay){
           // Case: There was an agent and it was verified
-          setAgent(agent_uid)  
+          console.log("Agent OKAY ", agent_uid)
         }else{
           // Case: There was an agent but it cannot be verified
-          createAgent(training_config.agent).then((agent_uid) =>{
-            setAgent(agent_uid)
-            saveProject()
-          })    
+          console.log("Agent NOT OKAY, MAKE NEW", agent_uid)
+          agent_uid = await createAgent(training_config.agent)
+          console.log("Agent Created (after fail) ", agent_uid)          
         }
-      })
-    }else{
-      // Case: There has never been an agent
-      createAgent(training_config.agent).then((agent_uid) =>{
-        setAgent(agent_uid)
-        saveProject()
-      }) 
-    }
+      }else{
+        agent_uid = await createAgent(training_config.agent)
+        console.log("Agent Created ", agent_uid)
+      }
+      setAgent(agent_uid)
+      saveProject()
+      resolve(agent_uid)
+    })
 
-    set({mode: 'train',
+    set({mode: 'train', agentPromise,
         completeness_profile: author?.completeness_profile,
         prob_configs,
     })
 
     let tutorPromise = new Promise((resolveTutorPromise) =>{
       set({resolveTutorPromise})
-    }).then(()=>{
+    })//.then(()=>{
       // After the tutor mounts go to the first interface
-      let first_intr = Object.keys(interfaces)[0]
-      setInterface(first_intr)  
-    })
+    //   let first_intr = Object.keys(interfaces)[0]
+    //   setInterface(first_intr)  
+    // })
     set({tutorPromise})
 
 
@@ -402,8 +402,21 @@ const useAuthorStore = create((set,get) => ({
     explainDemo(focus_app)
   },
 
-  verifyAgent: (agent_uid) =>  {
-    return network_layer.verify_agent(agent_uid)
+  verifyAgent: async (agent_uid) =>  {
+    let {network_layer} = get();
+
+    let resp = await network_layer.verify_agent(agent_uid)
+    // let agentPromise = new Promise( async (resolve, reject) =>{
+    //   network_layer.verify_agent(agent_uid).then((resp)=>{
+    //     if(resp?.status == "okay"){
+    //       resolve(agent_uid)  
+    //     }else{
+    //       reject()
+    //     }
+    //   })
+    // })
+    // set({agentPromise})
+    return resp.status == "okay"
   },
 
   createAgent: (agent_config) =>  {
@@ -414,7 +427,7 @@ const useAuthorStore = create((set,get) => ({
     let agent_obj = {uid: null, awaiting: true, config: agent_config}
     set({awaiting_agent : true})
 
-    let agentPromise = new Promise( async (resolve, reject) =>{
+    let uid_promise = new Promise( async (resolve, reject) =>{
       network_layer.create_agent(agent_config)
       .then((resp) =>{
         let {agent_uid} = resp
@@ -432,10 +445,11 @@ const useAuthorStore = create((set,get) => ({
         agent_obj['error'] = e
       })
     })
-    agent_obj['promise'] = agentPromise
+    agent_obj['promise'] = uid_promise
 
-    set({agentPromise})
-    return agentPromise
+    return uid_promise
+    // set({agentPromise})
+    // return agentPromise
   },
 
   setAgent: (agent_uid) => {
@@ -491,8 +505,13 @@ const useAuthorStore = create((set,get) => ({
 
   setTutor: (tutor) => {
     // Triggered by tutor render. Initializes the tutor. 
-    let {resolveTutorPromise} = get()
+    let {interfaces, setInterface, curr_interface, resolveTutorPromise} = get();
     set({tutor: tutor})
+    if(!curr_interface){
+      let first_intr = Object.keys(interfaces)[0]
+      setInterface(first_intr)  
+    }
+    
     resolveTutorPromise()
 
     // Note: If run with altrain prob_config should be set by now.
