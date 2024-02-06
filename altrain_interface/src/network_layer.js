@@ -83,7 +83,7 @@ export default class NetworkLayer {
   }
 
   create_agent(agent_config, rep=null) {
-    console.log("CREATE AGENT")
+    console.log("CREATE AGENT", this.agent_url)
     let {name} = agent_config
     this.term_print("Creating Agent: " + name + (rep!=null ? ` (${rep})` : ""), "INFO");
     var data = {...agent_config, project_id : -1}
@@ -91,6 +91,15 @@ export default class NetworkLayer {
 
     this.request_history = [];
     return send_post(this.agent_url + "/create/", data, 6, 1000)
+  }
+  
+  verify_agent(agent_uid){
+    this.term_print("Verifying Agent: " + name + (rep!=null ? ` (${rep})` : ""), "INFO");
+    var data = {...agent_config, project_id : -1}
+    // console.log(this.agent_url + "/create/", name, agent_config);
+
+    this.request_history = [];
+    return send_post(this.agent_url + "/verify/", data, 6, 1000)
   }
 
   get_active_agent(agent_config, rep=null) {

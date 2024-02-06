@@ -283,7 +283,7 @@ const useAuthorStore = create((set,get) => ({
     console.log("INIT AUTHORING", training_config, prob_configs);
 
     loadProject(prob_configs)
-    let {agent_uid, setInterface, setAgent, createAgent, interfaces,
+    let {agent_uid, setInterface, setAgent, verifyAgent, createAgent, interfaces, 
           saveProject , initializeSpeechRecognition, resizeWindow} = get()
     
     // trigger on init just to ensure that window_size is set
@@ -291,14 +291,28 @@ const useAuthorStore = create((set,get) => ({
 
     initializeSpeechRecognition()
 
-    console.log("BEEFOR", agent_uid);
-    if(!agent_uid){
+    console.log("Existing Agent", agent_uid);
+
+    let agent_okay = false;
+    if(agent_uid){
+      verifyAgent(agent_uid).then((resp) =>{
+        if(resp?.status == "okay"){
+          // Case: There was an agent and it was verified
+          setAgent(agent_uid)  
+        }else{
+          // Case: There was an agent but it cannot be verified
+          createAgent(training_config.agent).then((agent_uid) =>{
+            setAgent(agent_uid)
+            saveProject()
+          })    
+        }
+      })
+    }else{
+      // Case: There has never been an agent
       createAgent(training_config.agent).then((agent_uid) =>{
         setAgent(agent_uid)
-      })
-      saveProject()
-    }else{
-      setAgent(agent_uid)
+        saveProject()
+      }) 
     }
 
     set({mode: 'train',
@@ -386,6 +400,10 @@ const useAuthorStore = create((set,get) => ({
     let {skill_apps, focus_uid, explainDemo} = get();
     let focus_app = skill_apps?.[focus_uid];
     explainDemo(focus_app)
+  },
+
+  verifyAgent: (agent_uid) =>  {
+    return network_layer.verify_agent(agent_uid)
   },
 
   createAgent: (agent_config) =>  {
