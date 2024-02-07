@@ -1,4 +1,4 @@
-import React, { Component, createRef, useState } from 'react'
+import React, { Component, createRef, useState, useEffect } from 'react'
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { gen_shadow } from "../../utils";
 // import * as Animatable from 'react-native-animatable';
@@ -16,7 +16,7 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hov
   const hover_scale = props?.scale ?? props?.hover_scale ?? 1.05
   const scale = useMotionValue(default_scale);  
   const scale_anim = useSpring(scale, springConfig);
-  scale.set(default_scale)
+  
   	
   //Control shadow
   const default_elevation = props?.elevation ?? props?.default_elevation ?? 2
@@ -24,15 +24,22 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hov
   const default_shadow = gen_shadow(default_elevation, shadow_kind)
   const hover_shadow = gen_shadow(hover_elevation, shadow_kind)
   const shadow = useMotionValue(default_shadow)
-  shadow.set(default_shadow)
+  
 
-  // console.log("RERENDER RISING DIV", shadow_kind, props, children)
+  useEffect(() => {
+    shadow.set(default_shadow)
+    scale.set(default_scale)
+  }, []);
+
+  console.log("RERENDER RISING DIV", shadow_kind, props, children)
 
   return (
     <motion.div 
       ref={innerRef}
-      onMouseEnter={(e) => {scale.set(hover_scale); console.log("Hover", e, scale.current); shadow.set(hover_shadow); hoverCallback?.(e)}} 
-      onMouseLeave={(e) => {scale.set(default_scale); console.log("UnHover", e, scale.current); shadow.set(default_shadow); unhoverCallback?.(e)}}
+      onMouseEnter={(e) => {scale.set(hover_scale); shadow.set(hover_shadow); hoverCallback?.(e);
+                           console.log("Hover", e, scale.current); }}
+      onMouseLeave={(e) => {scale.set(default_scale);shadow.set(default_shadow); unhoverCallback?.(e);
+                            console.log("UnHover", e, scale.current); }}
       //whileHover={{ zIndex: 100,...hover_style,  transition: { duration: 0 },}}
       style={{
           ...style,

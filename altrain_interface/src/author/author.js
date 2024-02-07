@@ -82,6 +82,22 @@ function getFocusOrHover(){
   ]
 }
 
+function ArgBox({symbol, name, color}){
+  let { setHoverSel} = authorStore()
+  return (
+    <div style={{...styles.arg_item, borderColor: color, userSelect : 'none',}} key={`arg_${symbol}`}
+            onMouseEnter={(e)=>{console.log("ENTER");setHoverSel(name);e.stopPropagation()}}
+            onMouseLeave={(e)=>{setHoverSel("");e.stopPropagation()}}
+      >
+      <a style={{fontWeight:"bold", color: color, 
+                 fontSize:"1.5em", marginLeft:3, marginRight:5}}>
+        {symbol}
+      </a>
+      <a style={{color:'grey'}}> {`  ${name}`}</a> 
+    </div>
+  )
+}
+
 function ArgsRow(){
   let {beginSetArgFoci, confirmArgFoci, extractArgFoci} = authorStore()
   let [skill_app, arg_foci_mode] = useAuthorStoreChange(
@@ -100,13 +116,8 @@ function ArgsRow(){
       color = Color(color).lighten(.25).hexa()
     }
 
-    arg_items.push(
-      <div style={{...styles.arg_item, borderColor: color}} key={`arg${i}`}>
-        <a style={{fontWeight:"bold", color: color, fontSize:"1.5em", marginLeft:3, marginRight:5}}>
-          {arg_symbols[i]}
-        </a>
-        <a style={{color:'grey'}}> {`  ${foci}`}</a> 
-      </div>)
+    arg_items.push(<ArgBox symbol={arg_symbols[i]} name={foci} color={color}/>
+      )
   }
 
   let prompt = (arg_foci_mode && "Select arguments in interface. Click away to Exit." ) ||
@@ -135,7 +146,8 @@ function ArgsRow(){
             borderWidth: border_width,
           }}
         onMouseDown={(e)=>{
-          let callback = (arg_foci_mode ? confirmArgFoci : beginSetArgFoci); 
+          let {mode} = authorStore()
+          let callback = (mode=="arg_foci" ? confirmArgFoci : beginSetArgFoci); 
           callback()
           }}
         {...(arg_foci_mode && foci_mode_props)}
@@ -592,7 +604,7 @@ function NavigationKeys({show_yes=false, show_apply=true}){
             shadow={10}
             key_style={{borderStyle: 'solid', borderColor: colors.default, backgroundColor: prev_bg}}
             children={<div style={{dispaly:'flex', flexDirection:'column', alignItems:'center'}}>
-              <div><a style={{fontSize:"1.2em"}}>{"⬅"}</a><a>{"/A"}</a></div>
+              <div><a style={{fontSize:"1.2em"}}>{"⬅"}</a><a style={{margin: 4}}>{"A"}</a></div>
               <div style={{fontSize:10, textAlign:'center'}}>{"prev"}</div>
             </div>}
           />
@@ -607,7 +619,7 @@ function NavigationKeys({show_yes=false, show_apply=true}){
             shadow={10}
             key_style={{borderStyle: 'solid', borderColor: colors.default, backgroundColor: next_bg}}
             children={<div style={{dispaly:'flex', flexDirection:'column', alignItems:'center'}}>
-                <div><a>{"D/"}</a><a style={{fontSize:"1.2em"}}>{"➡"}</a></div>
+                <div><a style={{margin: 4}}>{"D"}</a><a style={{fontSize:"1.2em"}}>{"➡"}</a></div>
                 <div style={{fontSize:10, textAlign:'center'}}>{"next"}</div>
             </div>}
           />
@@ -710,7 +722,7 @@ function RewardKeys({skill_app}){
             shadow={10}
             key_style={{backgroundColor: pos_bg, borderColor: pos_bord_c, borderWidth: pos_bord_w}}
             children={(<div style={{dispaly:'flex', flexDirection:'column', alignItems:'center'}}>
-              <div><a style={{fontSize:"1.2em"}}>{"⬆"}</a><a>{"/W"}</a></div>
+              <div><a style={{fontSize:"1.2em", margin: 2}}>{"⬆"}</a><a style={{margin: 4}}>{"W"}</a></div>
               <div style={{marginTop: -2, fontSize: "1.1em", textAlign:'center',
                 color: colors.correct}}>{'✔'}</div>
             </div>)}
@@ -728,8 +740,8 @@ function RewardKeys({skill_app}){
             shadow={10}
             key_style={{backgroundColor: neg_bg, borderColor: neg_bord_c, borderWidth: neg_bord_w}}
             children={(<div style={{dispaly:'flex', flexDirection:'column', alignItems:'center'}}>
-                <div><a style={{fontSize:"1.2em"}}>{"⬇"}</a><a>{"/D"}</a></div>
-                <div style={{marginTop: -2, fontSize: "1.1em", textAlign:'center',
+                <div><a style={{fontSize:"1.2em", margin: 2}}>{"⬇"}</a><a style={{margin: 4}}>{"S"}</a></div>
+                <div style={{marginRight: 2, marginTop: -2, fontSize: "1.1em", textAlign:'center',
                   color: colors.incorrect}}>{'✖'}</div>
             </div>)}
           />

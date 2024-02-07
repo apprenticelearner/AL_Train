@@ -947,7 +947,6 @@ const useAuthorStore = create((set,get) => ({
     let {graph_actions, skill_apps} = get()
     if(graph_actions){
       let a_obj = graph_actions?.[uid];
-      console.log("N/PREV", a_obj)
       if(a_obj?.edge_index != null){
         return a_obj?.edge_index
       }
@@ -1215,11 +1214,12 @@ const useAuthorStore = create((set,get) => ({
   beginSetArgFoci : () => {
     let {pushCursor} = get()
 
+    set({mode : "arg_foci"})
     pushCursor('arg_foci')
     // console.log("CURSOR", stage_view_ref.current)
     // stage_view_ref.current.cursor = 'none'
     // document.
-    set({mode : "arg_foci"})
+    
   },
 
   confirmArgFoci : () => {
@@ -1436,6 +1436,11 @@ const useAuthorStore = create((set,get) => ({
         confirmArgFoci, updateAgentRollout, updateSkills, saveProject, focus_uid, staged_uid,
         graph_states, graph_actions, beginSetStartState, modifySkillApp, setReward, 
         setTutorState} = get()
+
+    // Should not be able to confirm feedback in start_state mode
+    if(mode == "start_state"){
+      return
+    }
     if(mode == 'arg_foci'){
       confirmArgFoci()
     }
@@ -1604,12 +1609,19 @@ const useAuthorStore = create((set,get) => ({
 
   onKeyDown : (e) => {
     console.log("OUTER KEY DOWN", e.key, e)
-    let {focus_uid, focusNext, focusPrev, graph_actions, setReward, setOnly} = get()
+    let {mode, focus_uid, focusNext, focusPrev, graph_actions, setReward, setOnly} = get()
 
     if(e.code == "Space" && !(e.target?.type?.includes("text") ?? false) ){
       let {setStaged, confirmFeedback} = get()
-      confirmFeedback(true, true, true)
-      set({"apply_down" : true})
+      if(mode == "start_state" && !input_focus){
+        if(!focus_uid){
+          confirmStartState(true)
+        }
+      }else{
+        confirmFeedback(true, true, true)
+        set({"apply_down" : true})
+      }
+      
       e.preventDefault() // Never jump-scroll on 'space'
     }
 
