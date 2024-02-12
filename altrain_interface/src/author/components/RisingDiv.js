@@ -31,7 +31,7 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hov
     scale.set(default_scale)
   }, []);
 
-  console.log("RERENDER RISING DIV", shadow_kind, props, children)
+  // console.log("RERENDER RISING DIV", shadow_kind, props, children)
 
   return (
     <motion.div 

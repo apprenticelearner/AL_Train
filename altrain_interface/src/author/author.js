@@ -21,6 +21,7 @@ import {shallowEqual, baseFile, gen_shadow, arg_symbols} from "../utils.js"
 import CTATTutorWrapper from "../tutorwrappers/ctat"
 import {colors, where_colors} from "./themes.js"
 import {Oval} from "react-loader-spinner";
+import Select, { StylesConfig } from 'react-select';
 
 
 const images = {
@@ -83,17 +84,33 @@ function getFocusOrHover(){
 }
 
 function ArgBox({symbol, name, color}){
-  let { setHoverSel} = authorStore()
+  let { setHoverArgFoci, toggleFoci} = authorStore()
+  let [hover] = useAuthorStoreChange(
+      [`@hover_arg_foci=='${name}'`],
+  )
+
   return (
     <div style={{...styles.arg_item, borderColor: color, userSelect : 'none',}} key={`arg_${symbol}`}
-            onMouseEnter={(e)=>{console.log("ENTER");setHoverSel(name);e.stopPropagation()}}
-            onMouseLeave={(e)=>{setHoverSel("");e.stopPropagation()}}
+            onMouseEnter={(e)=>{console.log("ENTER");setHoverArgFoci(name);e.stopPropagation()}}
+            onMouseLeave={(e)=>{setHoverArgFoci("");e.stopPropagation()}}
+            onMouseDown={(e)=>{toggleFoci(name); setHoverArgFoci(""); e.stopPropagation()}}
       >
       <a style={{fontWeight:"bold", color: color, 
                  fontSize:"1.5em", marginLeft:3, marginRight:5}}>
         {symbol}
       </a>
       <a style={{color:'grey'}}> {`  ${name}`}</a> 
+      {hover && 
+        <div style={{position: 'absolute', width: "100%", height: "100%",
+                     display: "flex", justifyContent :"center", alignItems : "center"}}> 
+          <div style={{width: 20, height: 20, borderRadius: 14,
+                      top: -7, right: -6, backgroundColor: "rgba(100,100,120,.2)", color: "black",
+                      fontSize:16, textAlign:"center", margin : 'auto'}}
+          >
+          {"✕"}
+          </div>
+        </div>
+      }
     </div>
   )
 }
@@ -116,7 +133,8 @@ function ArgsRow(){
       color = Color(color).lighten(.25).hexa()
     }
 
-    arg_items.push(<ArgBox symbol={arg_symbols[i]} name={foci} color={color}/>
+    arg_items.push(<ArgBox key={`arg_${i}`}
+        symbol={arg_symbols[i]} name={foci} color={color}/>
       )
   }
 
@@ -662,6 +680,11 @@ function DemonstrateMenu({}){
   // console.log(demo_text)
   let kind = "demo" + ((skill_app.reward > 0) ? "_correct" : "_incorrect") + (skill_app?.only ? "_only" : "")
   // console.log("KIND", kind)
+  let button_action = skill_app.action_type.includes("Button");
+  let allow_edit = !button_action
+  if(button_action){
+    demo_text = "press"
+  }
 
   return (
     <div style={styles.demo_menu}>
@@ -676,16 +699,21 @@ function DemonstrateMenu({}){
         <div style={styles.value_group}>
           <div style={styles.label}>{"Value"}</div>
           <textarea 
-            className="scrollable" style={{...styles.editable_value, ...styles.value_input}}
+            className="scrollable" style={{
+              ...styles.editable_value, ...styles.value_input,
+              ...(!allow_edit && {color: "rgba(100,100,100,.2)", userSelect : "none"})
+              }}
             value={demo_text}
             onChange={(e)=>{setInputs(skill_app, {value : e.target.value})}}
+            readOnly={!allow_edit}
+
           />
           <div style={styles.right_space}/>
 
         </div>
-        <FxRow/>
-        <ArgsRow/>
-        <FxHelpRow/>
+        {!button_action && <FxRow/>}
+        {!button_action && <ArgsRow/>}
+        {!button_action && <FxHelpRow/>}
       </div>
       <NavigationKeys/>
     </div>
@@ -1006,10 +1034,16 @@ function ProblemMenu({}){
           <div style={styles.menu_button_area}>
             
             <MenuButton 
-              style={(is_new && styles.plus_button_start_active)}
+              style={{flex: 1,
+                flexDirection : "row",
+                width : 'auto',
+                height : 'auto',
+                ...(is_new && styles.plus_button_start_active)
+                }}
               onClick={(e) => {is_new ? confirmStartState() : beginSetStartState()}}
             >
-              <a style={{marginBottom:2}}>{'+'}</a>
+              <a style={{margin:4, width: 40, textAlign: "center", fontWeight : 'bold', fontSize: 10}}>{'New Question'}</a>
+              <a style={{margin:2}}>{'+'}</a>
             </MenuButton>
             
           </div>
@@ -1096,35 +1130,66 @@ function ContinueButton() {
   )
 }
 
-function ArgFociPointer({style, use_text=false}){
+function ArgFociPointer({style, use_text=false, use_indicator=false}){
+  let {getFociIndexInfo} = authorStore();
+  // let [skill_app] = useAuthorStoreChange(["@skill_app"])
+
+  let indicator;
+  if(use_indicator){
+    let [[foci_index, foci_explicit, foci_hover],
+       focus_uid, foci_mode, skill_apps, 
+       any_hover, any_sym_hover] = useAuthorStoreChange(
+      [getFociIndexInfo(),
+       `@focus_uid`,  "@mode=='arg_foci'", "@skill_apps", 
+       "@hover_sel!=''", "@hover_arg_foci!=''",]
+    )
+    // let skill_app = skill_apps?.[focus_uid]
+    // console.log("foci_index", foci_index, skill_app)
+    // if(foci_index == -1){
+    //   foci_index = skill_app?.arg_foci.length
+    // }
+    // let var_name = arg_symbols?.[foci_index];
+    // let foci_color = where_colors[foci_index % where_colors.length]
+
+    // indicator = (
+    //   <div style={{position: 'absolute', top:16, left:16,
+    //                borderRadius : 8, padding: 2, fontSize: 12,
+    //                fontWeight : "bold",
+    //                backgroundColor: foci_color, color: "white"}}>
+    //     {`+${var_name}`}
+    //   </div>
+    // )
+    indicator = (!(any_sym_hover || any_hover) && 
+      <div style={{position: 'absolute', top:14, left:14,
+                   borderRadius : 8, padding: 2, fontSize: 14,
+                   fontWeight : "bold", color: "rgba(50,50,70,.2)"}}>
+        {`⟲`}
+      </div>
+    )
+
+  }
+  
   return(
     <div style={style}>
       <svg viewBox="-13,-13 26,26">
         <rect x="-3" y="-12" width="6" height="10" rx="2" 
             strokeWidth="1" stroke="white" fill="white"/>
-
         <rect x="-3" y="2" width="6" height="10" rx="2" 
             strokeWidth="1" stroke="white" fill="white"/>
-
         <rect x="-12" y="-3" width="10" height="6" rx="2" 
             strokeWidth="1" stroke="white" fill="white"/>
-
         <rect x="2" y="-3" width="10" height="6" rx="2" 
             strokeWidth="1" stroke="white" fill="white"/>
-
         <rect x="-2" y="-11" width="4" height="8" rx="1" 
             strokeWidth="1" stroke="#333" fill="#ff884d" />
-
         <rect x="-2" y="3" width="4" height="8" rx="1" 
             strokeWidth="1" stroke="#333" fill="#feb201" />
-
         <rect x="-11" y="-2" width="8" height="4" rx="1" 
             strokeWidth="1" stroke="#333" fill="#e44161" />
-
         <rect x="3" y="-2" width="8" height="4" rx="1" 
             strokeWidth="1" stroke="#333" fill="#42bfcf" />
-
       </svg>
+      {indicator}
       {use_text && 
         <a style={{position: 'absolute', top:18,left:20, fontSize:8, width: 40}}>{"select args"}</a>
       }
@@ -1285,7 +1350,7 @@ function Cursor() {
   let ptr;
   let prompt;
   if(cursor == 'arg_foci'){
-    ptr = <ArgFociPointer use_text={false} style={{
+    ptr = <ArgFociPointer use_text={false} use_indicator={true} style={{
       width : 24, height :24, transform: 'translate(-50%, -50%)', pointerEvents: "none"}}/>
   }
   console.log("RENDER CURSOR", cursor, ptr)
@@ -1340,7 +1405,7 @@ function PopupLayer({children}) {
 //          <option value="Agent C">{"Agent C"}</option>
 //        </select>
 
-import Select, { StylesConfig } from 'react-select';
+
 
 const agentDropDownStyles = {
   control: (styles) => ({
@@ -1796,6 +1861,7 @@ const styles = {
     border : "1px solid",
     borderColor : 'rgb(100,200,200)'
   },
+
   submenu_item : {
     position : 'relative',
     display : 'flex',
@@ -2245,6 +2311,7 @@ const styles = {
 
   arg_item : {
     display : "flex",
+    position : 'relative',
     alignItems : "center",
     margin: 2,
     padding: 0,

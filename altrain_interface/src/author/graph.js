@@ -749,6 +749,40 @@ function DoneStatePopup({...prop}){
   )
 }
 
+function ZoomSlider({...prop}){
+
+    return (
+        <div style={{position: 'relative', width: 140, height: 18, bottom: 30, left: 140, margin : 2,
+                borderRadius: 10, //display:"flex", alignItems: 'center',
+                backgroundColor: 'rgba(200, 200, 200, .5)',}}>
+            
+            <svg style={{width:"100%", height : "100%"}}  xmlns="http://www.w3.org/2000/svg">
+                {/*<line x1="10" y1="11" x2="110" y2="11" stroke="grey" />*/}
+                <line x1="20" y1="3" x2="20" y2="16" stroke="grey" />
+                <line x1="120" y1="3" x2="120" y2="16" stroke="grey" />
+                {/*<line x1="60" y1="6" x2="60" y2="16" stroke="grey" />*/}
+            </svg>
+            
+            <motion.div
+              style={{position: 'absolute', borderRadius: 5, top: 2, 
+                     width:20, height:"100%", backgroundColor: 'rgb(50,50,70,0.0)'}}
+              drag="x"
+              dragConstraints={{ left: 25, right: 115 }}
+              dragTransition={{ timeConstant: 60, power: 1}}
+              dragElastic={0}
+              onDrag={(e,inf)=>{
+                console.log("X", e.clientX-e.target.parentElement.clientX)
+                console.log(e, inf, (e.x-25)/(115-25))}
+                }
+            >
+                <div style={{borderRadius: 5,width:12, height:16,
+                     backgroundColor: 'rgb(100,100,120)', transform: "translateX(-50%)",
+                     boxShadow: gen_shadow(4)}} />
+            </motion.div>
+        </div>
+    )
+}
+
 // A class component that wraps the main GraphContent allowing d3 zoom() events to be used.
 export class Graph extends React.Component {
     constructor(){
@@ -820,7 +854,7 @@ export class Graph extends React.Component {
             animate(this.y_anim, [this.y_anim.get(), this.zoomTransform.y], anim_config)
             
             let scale_frames = [this.scale_anim.get(), 
-                 this.zoomTransform.k-(dx > 10 ? .08 : .0),  //Extra keyframe where zoom out a little
+                 this.zoomTransform.k-(dx > 10 ? .06 : .0),  //Extra keyframe where zoom out a little
                  this.zoomTransform.k]
             animate(this.scale_anim, scale_frames, anim_config)
         }
@@ -963,7 +997,7 @@ export class Graph extends React.Component {
         this.applyZoomTransform()
     }
 
-    zoom_to = (dest, duration=.45) => {
+    zoom_to = (dest, duration=.3) => {
         let bounds;
         if(typeof(dest) == "string"){
             let state_uid = dest
@@ -984,11 +1018,16 @@ export class Graph extends React.Component {
         const [[x0, y0], [x1, y1]] = bounds
         console.log("Coords:", `${x0} ${x1}, ${y0} ${y1}`)
 
-        // Zoom out if too far in but don't zoom in
+        // Zoom out if too close but don't zoom in
         let curr_k = this.scale_anim.get()
         let scale_div = Math.max((x1 - x0) / width, (y1 - y0) / height)
-        let k_min = Math.min(1.5, 0.4 / scale_div);
-        let k = Math.min(curr_k, k_min); 
+
+        let [kMin, kMax] = this.scaleExtent
+        let k_min = 0.4 / scale_div
+        k_min = Math.min(kMin, k_min)
+
+        let k = Math.min(Math.max(curr_k, k_min),kMax)
+
         console.log("ZOOM K", curr_k, k)
         let transform = zoomIdentity
             .translate(width / 2, height / 2) // center
@@ -1041,9 +1080,12 @@ export class Graph extends React.Component {
                         }} /> 
                         <div>{"Zoom : Shift+Scroll "}</div> 
                     </div>  
+                    
                 </div>
                 <GraphLoadSpinner/>
                 <DoneStatePopup/>
+                <ZoomSlider/>
+
             </div>
         )
     }

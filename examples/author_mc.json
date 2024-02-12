@@ -31,7 +31,7 @@
       "stay_active" : true,
   },
   "author" : {
-  	"completeness_profile" : "exp_z_ground_truth.txt",
+  	"completeness_profile" : "gt_mc_CZ_3.txt",
   	"interfaces" : [
   		{"HTML": "MultiColumnArithmetic/HTML/MultiColumnArithmetic.html"},
   		{"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},

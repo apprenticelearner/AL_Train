@@ -193,6 +193,7 @@ const useAuthorStore = create((set,get) => ({
   focus_sel : "",
   hover_uid : "",
   hover_sel : "",
+  hover_arg_foci : "",
   staged_uid : "",
   staged_sel : "",
 
@@ -226,6 +227,9 @@ const useAuthorStore = create((set,get) => ({
   awaiting_agent : false,
   awaiting_rollout : false,
   awaiting_train : false,
+
+  //Settings
+  show_all_apps : false,
 
   /*** Project ***/
   loadProject(prob_configs){
@@ -1068,6 +1072,11 @@ const useAuthorStore = create((set,get) => ({
     set({hover_sel : sel})
   },
 
+  setHoverArgFoci: (arg) => { 
+    console.log("setHoverArgFoci", arg)
+    set({hover_arg_foci : arg})
+  },
+
   // Assigned to the focus of 
   setInputFocus: (sel) => set({input_focus:sel}),
 
@@ -1590,6 +1599,31 @@ const useAuthorStore = create((set,get) => ({
     let selected = store.skill_apps?.[store.focus_uid]?.arg_foci?.includes(sel) ?? false
     store.setFociSelect(sel, !selected)
   },
+
+  getFociIndexInfo : (elem_id) => [
+    (s) => {
+      let skill_app = s.skill_apps?.[s.focus_uid];
+      let hover = false
+      if(!skill_app){
+        skill_app = s.skill_apps?.[s.hover_uid];   
+        hover = !!skill_app
+      }
+      let {arg_foci, foci_explicit} = s.extractArgFoci(skill_app)
+
+      if(!elem_id){
+        elem_id = s?.hover_arg_foci
+      }
+      
+      if(arg_foci && elem_id){
+        let index = arg_foci.indexOf(elem_id)
+        return [index, foci_explicit, hover && (index != -1)]
+      }
+      return [-1, true, false]
+    },
+    (o, n) => {
+      return o[0] === n[0] && o[1] === n[1] && o[2] === n[2]
+    }
+  ],
 
   resizeWindow : (e) => {
     let w = window.innerWidth

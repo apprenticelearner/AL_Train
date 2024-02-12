@@ -17,26 +17,8 @@ const images = {
   next : require('../../img/next.svg')
 };
 
-const getFociIndexInfo = (elem_id) => [
-  (s) => {
-    let skill_app = s.skill_apps?.[s.focus_uid];
-    let hover = false
-    if(!skill_app){
-      skill_app = s.skill_apps?.[s.hover_uid];   
-      hover = !!skill_app
-    }
-    let {arg_foci, foci_explicit} = s.extractArgFoci(skill_app)
-    
-    if(arg_foci){
-      let index = arg_foci.indexOf(elem_id)
-      return [index, foci_explicit, hover && (index != -1)]
-    }
-    return [-1, true, false]
-  },
-  (o, n) => {
-    return o[0] === n[0] && o[1] === n[1] && o[2] === n[2]
-  }
-]
+
+
 
 let PopUpConfirmButton = memo(({sel, skill_app}) => {
   let {setStaged, setReward, confirmFeedback} = authorStore();
@@ -120,7 +102,7 @@ let RemoveButton = memo(({skill_app}) => {
 // console.log("foci_cand_bg_color", foci_cand_bg_color)
 
 function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacity=.4, ...props}){
-    let {setHover, setHoverSel, setFocus, toggleReward} = authorStore()
+    let {setHover, setHoverSel, setFocus, toggleReward, toggleFoci, getFociIndexInfo} = authorStore()
     let [[skill_app, hasStaged], groupHasFocus, hasHover, skill_app_uids,
           mode, isExternalHasOnly, elem_locked, in_done_state] = useAuthorStoreChange(
       [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@hover_sel==${sel}`, `@sel_skill_app_uids.${sel}`,
@@ -134,13 +116,16 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
     }
 
     let [[foci_index, foci_explicit, foci_hover],
-         hasSkillAppFocus, foci_mode, toggleFoci] = useAuthorStoreChange(
+         hasSkillAppFocus, foci_mode, show_all_apps] = useAuthorStoreChange(
         [getFociIndexInfo(sel),
-         `@focus_uid==${skill_app?.uid}`,  "@mode=='arg_foci'", 'toggleFoci']
+         `@focus_uid==${skill_app?.uid}`,  "@mode=='arg_foci'", '@show_all_apps']
     )
 
+    let show_app = skill_app && 
+                  (hasHover || groupHasFocus || show_all_apps || mode=="start_state")
+
     let first_uid = skill_app_uids?.[0] || ""
-    let var_name = arg_symbols?.[foci_index];
+    
 
     let foci_cand = foci_mode && !hasSkillAppFocus
     let is_foci = (foci_index!==-1) && (mode=="train" || foci_explicit)
@@ -150,6 +135,11 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
     let is_demo = skill_app?.is_demo || false
 
     let foci_color = null
+    // console.log("BLOOP", foci_index, skill_app?.arg_foci.length)
+    if(foci_index == -1){
+      let {focus_uid, skill_apps} = authorStore()
+      foci_index = skill_apps[focus_uid]?.arg_foci?.length ?? -1;
+    }
     if(foci_index !== -1){
       foci_color = where_colors[foci_index % where_colors.length]
     }
@@ -159,14 +149,25 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
     }
 
     // console.log("UPDATE OVERLAY", sel, "|", hasSkillAppFocus, ":", foci_index, arg_hover)
-
-    let arg_hover = mode=='arg_foci' && hasHover
+    let var_name = arg_symbols?.[foci_index];
+    let arg_hover = mode=='arg_foci' && hasHover && !groupHasFocus
+    if(is_foci && arg_hover){
+      var_name = "𝘅"
+    }
     // let actions_visible = !foci_mode || hasFocus
     // console.log("OverlayBounds", sel, arg_hover)
+    // let hover_indicator;
+    // if(arg_hover){
+    //   hover_indicator = (
+        
+    //   )
+    // }
     
 
-
-    let {color} = skillAppExtractProps(skill_app, isExternalHasOnly)
+    let color = colors.default
+    if(show_app){
+      ({color} = skillAppExtractProps(skill_app, isExternalHasOnly));
+    }
     
 
     if(mode == "start_state"){
@@ -176,7 +177,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
       if(in_done_state){
         elem_locked = true
       }
-      if(skill_app && !hasSkillAppFocus && !hasHover){
+      if(show_app && !hasSkillAppFocus && !hasHover){
         color = Color(color).lighten(.25).hexa()
       }
     }    
@@ -212,7 +213,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
 
     // Adjust the draw rects so that centers of thick borders overlap original bounds.                
     //   Add a negative margin of same amount to keep content stationary on style change.
-    let pw = (skill_app && 2) || 0
+    let pw = (show_app && 2) || 0
     let bw =  borderWidth-1
     let hbw =  borderWidth / 2
     let rect = {width: elem.width-bw+pw, height: elem.height-bw+pw, x : elem.x-hbw, y : elem.y-hbw-pw}
@@ -253,7 +254,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         borderColor: borderColor,
         backgroundColor : backgroundColor,
         cursor:  cursor_kind,
-        ...(skill_app && {boxShadow: "4px 6px 4px rgba(0,20,60,0.6)"}),
+        ...(show_app && {boxShadow: "4px 6px 4px rgba(0,20,60,0.6)"}),
         ...style,
         // opacity : (foci_cand && .4) || 1
       }}
@@ -264,6 +265,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         // If toggling foci prevent default so elem doesn't take focus
         (foci_cand && ((e) => {
           toggleFoci(sel); 
+          setHover("")
           e.preventDefault(); //Prevents highlighting
         })) ||
         (skill_app && !groupHasFocus && mode != 'start_state' && 
@@ -283,12 +285,13 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
                        ...click_rect}}/>
 
         {/* Multiple Action Indicator like (1/2) */}
-        {skill_app_uids?.length > 1 && 
+        {mode != 'start_state' &&
+         skill_app_uids?.length > (show_all_apps ? 1 : 0) && 
         <div style={{position: "absolute", backgroundColor: "white", pointerEvents:'auto',
-            fontSize: 7, fontFamily: 'Monospace', color: "grey",
+            fontSize: 7, fontFamily: 'Monospace', color: "grey", borderRadius:5, boxShadow: gen_shadow(4),
             userSelect: "none", top: -4-(groupHasFocus && 1),
-            left: -8-hbw, paddingBottom: 2, paddingTop: 2, paddingLeft: -2, paddingRight: 4}}>
-          {`(${skill_app_uids.indexOf(skill_app.uid)+1}/${skill_app_uids.length})`}
+            left: -8-hbw, padding:2}}>
+          {`(${(show_app && skill_app_uids.indexOf(skill_app.uid)+1) || "-"}/${skill_app_uids.length})`}
         </div>}
 
         {/* Next Icon */}
@@ -297,11 +300,28 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         }
 
         {/* Variable Name Indictor */}
-        {(is_foci && var_name) &&
+        {((is_foci || arg_hover) && var_name) &&
           <div style={{...styles.var_indicator, backgroundColor : borderColor}}> 
             {var_name.toUpperCase()}
           </div>
         }
+        {/* Hover Indictor */}
+        {/*}
+        {(arg_hover && 
+          (!is_foci && <div style={{position: 'absolute', top:"50%", left:"50%",
+                     borderRadius : 8, padding: 4, fontSize: 16,
+                     fontWeight : "bold",
+                     backgroundColor: foci_color, color: "black"}}>
+                        {`+${var_name}`} 
+                     </div>) ||
+          (<div style={{position: 'absolute', top:"50%", left:"50%",
+                     borderRadius : 8, padding: 4, fontSize: 16,
+                     fontWeight : "bold",
+                     backgroundColor: "rgba(100,100,120,.2)", color: "black"}}>
+                        {"✕"}
+          </div>))
+        }
+        */}
 
         {/* Internals e.g. textarea, button, etc. */}
         {children}
@@ -349,7 +369,7 @@ const getOverlaySkillApp = (sel) =>{
       let skill_app;
       if(s?.focus_sel===sel){
         skill_app = s?.skill_apps[s.focus_uid]
-      }else if(s?.staged_sel===sel){
+      }if(s?.staged_sel===sel){
         skill_app = s?.skill_apps[s.staged_uid]
       }
 
@@ -407,12 +427,16 @@ function TextFieldOverlay({sel, elem}) {
   // True if has focus and empty
   const [empty_focus, setEmptyFocus] = useState(false);
 
-  let [[skill_app, hasStaged], groupHasFocus, isExternalHasOnly, mode, has_focus, in_done_state] = useAuthorStoreChange(
-    [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@only_count!=0`, "@mode", `@input_focus==${sel}`, '@in_done_state'],
+  let [[skill_app, hasStaged], groupHasFocus, isExternalHasOnly,
+    mode, has_focus, in_done_state, show_all_apps, hasHover] = useAuthorStoreChange(
+    [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@only_count!=0`, "@mode",
+    `@input_focus==${sel}`, '@in_done_state', '@show_all_apps', `@hover_sel==${sel}`,],
   )
   let {setInputFocus, addSkillApp, removeSkillApp, setInputs, setFocus, beginSetArgFoci, confirmArgFoci} = authorStore()
   // let empty_focus = (!skill_app?.input && has_focus)
   // console.log(not_empty.current, skill_app)
+
+  let show_app = skill_app && (hasHover || groupHasFocus || show_all_apps)
 
 
   // let {color} = skillAppExtractProps(skill_app, isExternalHasOnly)
@@ -426,7 +450,7 @@ function TextFieldOverlay({sel, elem}) {
     fontColor = ((groupHasFocus || !input) && 'black') || 'grey'
   }
 
-  if(!empty_focus && skill_app){
+  if(show_app && !empty_focus && skill_app){
     text = input
   }else if(mode != "start_state"){
     text = elem.value
@@ -570,8 +594,8 @@ function ButtonOverlay({
     sel, elem,
   }) {
 
-  let [[skill_app,hasStaged], groupHasFocus,  isExternalHasOnly, in_done_state] = useAuthorStoreChange( 
-    [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@only_count!=0`, '@in_done_state']
+  let [[skill_app,hasStaged], groupHasFocus,  isExternalHasOnly, in_done_state, hasHover, show_all_apps] = useAuthorStoreChange( 
+    [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@only_count!=0`, '@in_done_state', `@hover_sel==${sel}`, '@show_all_apps']
   )
   let {addSkillApp, removeSkillApp, setFocus} = authorStore()
 
@@ -583,6 +607,8 @@ function ButtonOverlay({
           colors.default
 
   let click_locked = skill_app || in_done_state;
+
+  let show_app = skill_app && (hasHover || groupHasFocus || show_all_apps)
 
   return (
     <OverlayBounds {...{sel, elem, color}}
@@ -596,7 +622,7 @@ function ButtonOverlay({
         }
       }}
     >
-    {skill_app &&
+    {show_app &&
       <div style={{
         borderRadius:100, overflow: 'clip',
         ...(groupHasFocus && {backgroundColor: color})
