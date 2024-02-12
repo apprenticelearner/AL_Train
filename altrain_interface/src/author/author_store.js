@@ -173,6 +173,7 @@ const useAuthorStore = create((set,get) => ({
   graph_states : (GRAPH_DEBUG_MODE && debug_graph_states) || {},
   graph_actions : (GRAPH_DEBUG_MODE && debug_graph_actions) || {},
   graph_prev_update_time : null, // Simply used as rerender trigger  
+  graph_zoom : 25,
 
   /* Tutor  */
   // A reference to the tutor wrapper instance.
@@ -476,6 +477,7 @@ const useAuthorStore = create((set,get) => ({
 
       let {stage_ref, stage_view_ref} = get()
       let [stage,stage_view] = [stage_ref.current, stage_view_ref.current]
+
       // The difference between the midpoint of the tutor on the stage
       //  and the middle of the stage viewport 
       let diffX = (midX-stage_view.offsetWidth*.5)
@@ -484,9 +486,8 @@ const useAuthorStore = create((set,get) => ({
       // Set top,left corner to so that it aligns with top of stage
       // then add diffX, diffY to center the tutor content
       stage_view.scroll(
-        //350 is width of left graph+menu
-        stage.offsetLeft-350+diffX,
-        stage.offsetTop+diffY,
+        stage.offsetLeft+diffX+100, //tweaks to center tutor 
+        stage.offsetTop+diffY+120,
       ) 
       // console.log(stage_view.offsetWidth, stage_view.offsetHeight)
       // console.log(stage_view, stage_view.scrollLeft, stage_view.scrollTop)
@@ -532,6 +533,22 @@ const useAuthorStore = create((set,get) => ({
 
   setGraph: (graph) => {
     set({graph: graph})
+  },  
+
+  setGraphZoom: (graph_zoom, from_slider=false) => {
+    let {graph} = get()
+    if(graph && from_slider){
+      // console.log(graph)
+      let [kMin, kMax] = [graph.kMin, graph.kMax]
+      let k = kMin+(graph_zoom/100)*(kMax-kMin)
+      graph.zoomTransform.k = k
+      graph.scale_anim.set(k)
+      console.log(graph_zoom,k)
+    }else{
+      console.log("SET GZ", graph_zoom)
+    }
+
+    set({graph_zoom})
   },  
 
   // setGraphBounds: (graph_bounds) => {

@@ -12,6 +12,9 @@ import ScrollableStage from "./stage.js"
 import {Transform, identity as zoomIdentity} from "./zoom.js"
 import {Oval} from "react-loader-spinner";
 import RisingDiv from "./components/RisingDiv.js"
+import Slider, { createSliderWithTooltip } from 'rc-slider';
+import ReactSlider from 'react-slider';
+
 // import {LoadSpinner} from "./spinner.js"
 
 const images = {
@@ -19,6 +22,8 @@ const images = {
   tap : require('../img/gesture-tap.svg'),
   scroll : require('../img/scroll.svg'),
   scroll2d : require('../img/scroll2d.svg'),
+  zoom_in : require('../img/zoom_in.svg'),
+  zoom_out : require('../img/zoom_out.svg'),
 };
 
 // const colors = {
@@ -749,20 +754,98 @@ function DoneStatePopup({...prop}){
   )
 }
 
-function ZoomSlider({...prop}){
+import styled from "styled-components";
+
+class CustomSlider extends ReactSlider {
+    // Monkey Patch ReactSlider to not add keydown listeners on start
+    start(i, position) {
+        const { zIndices } = this.state;
+        // remove wherever the element is
+        zIndices.splice(zIndices.indexOf(i), 1);
+        // add to end
+        zIndices.push(i);
+        this.setState(prevState => ({
+            startValue: prevState.value[i],
+            startPosition: position !== undefined ? position : prevState.startPosition,
+            index: i,
+            zIndices,
+        }));
+    }
+}
+
+const StyledSlider = styled(CustomSlider)`
+  width: 100%;
+  height: 10px;
+`;
+
+const StyledThumb = styled.div`
+  height: 18px;
+  line-height: 25px;
+  width: 18px;
+  //text-align: center;
+  //display: flex;
+  //align-items : center;
+  //justify-content : center;
+  background-color: white;
+  border-color: rgb(173,216,230);
+  border-style: solid;
+  border-width: 1;
+  color: rgba(0,0,0,0.0);
+  font-size: 10px;
+  border-radius: 50%;
+  cursor: grab;
+  transform : translateY(-25%);
+`;
+
+const StyledTrack = styled.div`
+  top: 0;
+  bottom: 0;
+  background: ${props =>
+    props.index === 0 ? "rgb(173,216,230)" : "#ddd"};
+  border-radius: 999px;
+`;
+
+const Thumb = (props, state) => (
+  <StyledThumb {...props}>{state.valueNow}
+    <img src={images.zoom_in} 
+                    style={{position: 'absolute',left:-1, top: -1, width:24,height:24, 
+                            filter : "invert(.6)"
+                }}/> 
+  </StyledThumb>
+);
+
+const Track = (props, state) => <StyledTrack {...props} index={state.index} />;
+
+function ZoomSlider({scaleExtent, ...prop}){
+    let {setGraphZoom} = authorStore()
+    let [graph_zoom] = useAuthorStoreChange(['@graph_zoom'])
+    console.log("RENDER ZOOM", graph_zoom)
+    //setGraphZoom(100*(this.zoomTransform.k-kMin/(kMax-kMin)))
 
     return (
-        <div style={{position: 'relative', width: 140, height: 18, bottom: 30, left: 140, margin : 2,
-                borderRadius: 10, //display:"flex", alignItems: 'center',
-                backgroundColor: 'rgba(200, 200, 200, .5)',}}>
+        <div style={{position: "relative",
+                width: 140, height: 18, bottom: 26, left: 120, margin : 2,
+        }}>
+             <StyledSlider
+                value={graph_zoom}
+                //defaultValue={[50, 75]}
+                renderTrack={Track}
+                renderThumb={Thumb}
+                onChange={(val, ind)=>{console.log("Change", val); setGraphZoom(val, true)}}
+                //onSliderClick={(e)=>{console.log("slider click")}}
+                //onSliderMouseDown={(e)=>{console.log("slider down")}}
+                //onFocus={(e)=>{console.log("slider focus")}}
+                //snapDragDisabled={true}
+                tabIndex={-1}
+              />
+              {/*<img src={images.zoom_out} 
+                    style={{position: 'absolute', top : -8, left: -10, width:20,height:20, 
+                            filter : "invert(.4)"
+                }}/> 
+              */}
+              
             
-            <svg style={{width:"100%", height : "100%"}}  xmlns="http://www.w3.org/2000/svg">
-                {/*<line x1="10" y1="11" x2="110" y2="11" stroke="grey" />*/}
-                <line x1="20" y1="3" x2="20" y2="16" stroke="grey" />
-                <line x1="120" y1="3" x2="120" y2="16" stroke="grey" />
-                {/*<line x1="60" y1="6" x2="60" y2="16" stroke="grey" />*/}
-            </svg>
-            
+            {/*
             <motion.div
               style={{position: 'absolute', borderRadius: 5, top: 2, 
                      width:20, height:"100%", backgroundColor: 'rgb(50,50,70,0.0)'}}
@@ -779,6 +862,7 @@ function ZoomSlider({...prop}){
                      backgroundColor: 'rgb(100,100,120)', transform: "translateX(-50%)",
                      boxShadow: gen_shadow(4)}} />
             </motion.div>
+            */}
         </div>
     )
 }
@@ -793,6 +877,8 @@ export class Graph extends React.Component {
         this.zoomOrigin = zoomIdentity.translate(40,260);
         this.zoomTransform = this.zoomOrigin.scale(1);
         this.scaleExtent = [.15, 1.4]
+        this.kMin = this.scaleExtent[0]
+        this.kMax = this.scaleExtent[1]
         this.didZoom = false
         this.is_dragging = false
         this.prev_drag_pos = [0,0]
@@ -858,6 +944,8 @@ export class Graph extends React.Component {
                  this.zoomTransform.k]
             animate(this.scale_anim, scale_frames, anim_config)
         }
+        let {setGraphZoom} = authorStore()
+        setGraphZoom(100*((this.zoomTransform.k-this.kMin)/(this.kMax-this.kMin)), false)
     }
 
     handleMouseDown = (e) => {
@@ -912,15 +1000,15 @@ export class Graph extends React.Component {
     handleWheel = (e) => {
         let dx,dy;
         let gb = this.graphBounds
-        let [gWidth, gHeight] = [(gb.maxX-gb.minX), (gb.maxY-gb.minY)]
+        
 
-        const [viewWidth, viewHeight] = [this.viewWidth, this.viewHeight]
+
         // Zoom Case
         if(e.shiftKey){
             let {k:o_k, x:o_x, y:o_y} = this.zoomTransform
-            let [kMin, kMax] = this.scaleExtent
-            kMin = (viewWidth-50)/Math.max(Math.max(viewWidth*1.5,gWidth), Math.max(viewHeight*1.5, gHeight))
-            let k = Math.max(kMin, Math.min(kMax, o_k * Math.pow(2, -e.deltaY*.008)))
+            // let [kMin, kMax] = this.scaleExtent
+            
+            let k = Math.max(this.kMin, Math.min(this.kMax, o_k * Math.pow(2, -e.deltaY*.008)))
 
             let [mx, my] = this.clientToGraphCoords([e.clientX, e.clientY])
             
@@ -1022,11 +1110,10 @@ export class Graph extends React.Component {
         let curr_k = this.scale_anim.get()
         let scale_div = Math.max((x1 - x0) / width, (y1 - y0) / height)
 
-        let [kMin, kMax] = this.scaleExtent
         let k_min = 0.4 / scale_div
-        k_min = Math.min(kMin, k_min)
+        k_min = Math.min(this.kMin, k_min)
 
-        let k = Math.min(Math.max(curr_k, k_min),kMax)
+        let k = Math.min(Math.max(curr_k, k_min),this.kMax)
 
         console.log("ZOOM K", curr_k, k)
         let transform = zoomIdentity
@@ -1061,7 +1148,13 @@ export class Graph extends React.Component {
                 >
                     <Defs/>
                     <GraphContent anims={{x:this.x_anim, y:this.y_anim, scale:this.scale_anim}}
-                        setGraphBounds={(bg)=>{this.graphBounds=bg}}
+                        setGraphBounds={(gb)=>{
+                            this.graphBounds=gb
+                            // Adjust the minimum zoom
+                            let [gWidth, gHeight] = [(gb.maxX-gb.minX), (gb.maxY-gb.minY)]
+                            const [viewWidth, viewHeight] = [this.viewWidth, this.viewHeight]
+                            this.kMin = (viewWidth-50)/Math.max(Math.max(viewWidth*1.5,gWidth), Math.max(viewHeight*1.5, gHeight))
+                        }}
                         contentRef={this.svgGRef} svgRef={this.svgRef} stageRef={this.svgRef}
                     />
                 </svg>
@@ -1084,7 +1177,7 @@ export class Graph extends React.Component {
                 </div>
                 <GraphLoadSpinner/>
                 <DoneStatePopup/>
-                <ZoomSlider/>
+                <ZoomSlider />
 
             </div>
         )

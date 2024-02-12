@@ -61,7 +61,7 @@ const ScrollableStage = React.forwardRef(({children, style, stage_style}, ref) =
       let {pushCursor} = authorStore()
       pushCursor("move")
       // stage_view_ref.current.style.cursor = "move"
-      console.log()
+      // console.log()
     }
   }
   const handleMouseUp = (e) => {
@@ -87,16 +87,7 @@ const ScrollableStage = React.forwardRef(({children, style, stage_style}, ref) =
     //   cursor.hidden = false
     // }
   };
-  const handleMouseMove = (e) => {
-    // console.log("MOVE", e.pageX, e.pageY)
-    // let cursor = stage_cursor_ref.current
-    // if(cursor){
-    //   cursor.style.left = `${e.pageX}px`
-    //   cursor.style.top =  `${e.pageY}px`  
-    // }
-
-    
-
+  const handleMouseMove = (e) => {    
     if(!stage_view_ref.current || !is_dragging_stage.current) return;
     // console.log(e)
     const xVal = e.pageX - stage_view_ref.current.offsetLeft;
