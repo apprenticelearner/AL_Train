@@ -1669,7 +1669,7 @@ export default function AuthoringInterface({props}) {
         <div style={styles.header}>
           
           <RisingDiv style={styles.header_button} path='/privacy-policy' onClick={() => {
-              window.location.href = 'https://ai2t.site/build/index.html?training=/author_mc.json&agent_url=http://ai2t.site:8001';
+              window.location.href = 'http://ai2t.site/build/index.html?training=/author_mc.json&agent_url=http://ai2t.site:8001';
               return null;
           }}>
           1
