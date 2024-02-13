@@ -1675,7 +1675,7 @@ export default function AuthoringInterface({props}) {
                   ...(study_index==1 && styles.header_button_selected)}}
                   path='/privacy-policy' onClick={() => {
                   clearProject()
-                  location.replace('http://ai2t.site/build/index.html?training=/author_mc.json&agent_url=http://ai2t.site:8001')
+                  location.replace('http://ai2t.site/build/index.html?training=/author_mc.json&agent_url=http://ai2t.site/agent')
                   return null;
               }}>
               1
@@ -1685,7 +1685,7 @@ export default function AuthoringInterface({props}) {
                   ...(study_index==2 && styles.header_button_selected)}}
                   path='/privacy-policy' onClick={() => {
                   clearProject()
-                  location.replace('http://ai2t.site/build/index.html?training=/author_fractions.json&agent_url=http://ai2t.site:8001')
+                  location.replace('http://ai2t.site/build/index.html?training=/author_fractions.json&agent_url=http://ai2t.site/agent')
                   return null;
               }}>
               2
@@ -1695,7 +1695,7 @@ export default function AuthoringInterface({props}) {
                   ...(study_index==3 && styles.header_button_selected)}}
                   path='/privacy-policy' onClick={() => {
                   clearProject()
-                  location.replace('http://ai2t.site/build/index.html?training=/author_algebra.json&agent_url=http://ai2t.site:8001')
+                  location.replace('http://ai2t.site/build/index.html?training=/author_algebra.json&agent_url=http://ai2t.site/agent')
                   return null;
               }}>
               3

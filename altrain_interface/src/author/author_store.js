@@ -304,7 +304,7 @@ const useAuthorStore = create((set,get) => ({
 
     
     let agentPromise = new Promise(async (resolve)=>{
-      if(agent_uid){
+      if(agent_uid && agent_uid.length > 0){
         let agent_okay = await verifyAgent(agent_uid)
         if(agent_okay){
           // Case: There was an agent and it was verified
