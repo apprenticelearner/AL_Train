@@ -1,4 +1,5 @@
 import React, { Component, createRef, useState, useEffect, useRef, Profiler, Suspense, memo } from 'react'
+import {useNavigate, Route, Routes, Link} from 'react-router-dom';
 import { motion, useMotionValue, useSpring, useScroll } from "framer-motion";
 // import * as Animatable from 'react-native-animatable';
 import autobind from "class-autobind";
@@ -1654,6 +1655,10 @@ export default function AuthoringInterface({props}) {
   let tv_ph = .7
 
   let graph_style = {width: large_window ? 650 : 450 , flex : 50}
+
+  // const navigate = useNavigate();
+  // const handleOnClick = () => 
+
   return (
       <div style={styles.authoring}
         //onKeyDown={(e)=>{console.log(e.target);;}}
@@ -1662,6 +1667,18 @@ export default function AuthoringInterface({props}) {
         //ref={ref}
       >
         <div style={styles.header}>
+          
+          <RisingDiv style={styles.header_button} path='/privacy-policy' onClick={() => {
+              window.location.href = 'https://ai2t.site/build/index.html?training=/author_mc.json&agent_url=http://ai2t.site:8001';
+              return null;
+          }}>
+          1
+          </RisingDiv>
+
+          {/*<a target='_blank' style={styles.header_button}
+            rel='noopener noreferrer' href="https://ai2t.site/build/index.html?training=/author_mc.json&agent_url=http://ai2t.site:8001">1</a>
+          }*/}
+          
         </div>
 
         <div style={styles.main_content}>
@@ -1741,6 +1758,19 @@ const styles = {
     height : 50,
     backgroundColor : "rgb(50,50,50)"
   },
+
+  header_button :{
+    display: "flex",
+    justifyContent : "center",
+    alignItems : "center",
+    margin : 10, 
+    width : 30,
+    height : 30,
+    borderRadius : 20,
+    userSelect : "none",
+    backgroundColor : "rgb(150,150,150)"
+  },
+
   authoring: {
     height : "100%",
     display:'flex',
