@@ -277,6 +277,10 @@ const useAuthorStore = create((set,get) => ({
     window.localStorage.setItem("project", JSON.stringify(project))
   },
 
+  clearProject(){
+    window.localStorage.setItem("project", "")
+  },
+
   /*** Initialize ***/
   // The entry point for authoring 
   initializeAuthoring: (training_config, network_layer) => { 

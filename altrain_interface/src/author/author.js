@@ -1615,7 +1615,7 @@ export default function AuthoringInterface({props}) {
     ['@training_config','@training_file', '@tutor_class', 'network_layer'])
   let [transaction_count, large_window, study_index] = useAuthorStoreChange(["@transaction_count", "@window_size=='large'", "@study_index"])
   let {addSkillApp, removeSkillApp,  setSkillApps, setStaged, onKeyDown, onKeyUp, setCenterContentRef,
-      incTransactionCount, setConfig, setTutor, resizeWindow, clearAgents, saveProject} = authorStore()
+      incTransactionCount, setConfig, setTutor, resizeWindow, clearProject} = authorStore()
 
   let Tutor = tutor_class
 
@@ -1674,8 +1674,7 @@ export default function AuthoringInterface({props}) {
               <RisingDiv style={{...styles.header_button,
                   ...(study_index==1 && styles.header_button_selected)}}
                   path='/privacy-policy' onClick={() => {
-                  clearAgents()
-                  saveProject()
+                  clearProject()
                   location.replace('http://ai2t.site/build/index.html?training=/author_mc.json&agent_url=http://ai2t.site:8001')
                   return null;
               }}>
@@ -1685,8 +1684,7 @@ export default function AuthoringInterface({props}) {
               <RisingDiv style={{...styles.header_button,
                   ...(study_index==2 && styles.header_button_selected)}}
                   path='/privacy-policy' onClick={() => {
-                  clearAgents()
-                  saveProject()
+                  clearProject()
                   location.replace('http://ai2t.site/build/index.html?training=/author_fractions.json&agent_url=http://ai2t.site:8001')
                   return null;
               }}>
@@ -1696,8 +1694,7 @@ export default function AuthoringInterface({props}) {
               <RisingDiv style={{...styles.header_button,
                   ...(study_index==3 && styles.header_button_selected)}}
                   path='/privacy-policy' onClick={() => {
-                  clearAgents()
-                  saveProject()
+                  clearProject()
                   location.replace('http://ai2t.site/build/index.html?training=/author_algebra.json&agent_url=http://ai2t.site:8001')
                   return null;
               }}>
