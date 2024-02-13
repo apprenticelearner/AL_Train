@@ -30,6 +30,7 @@
       "stay_active" : true,
   },
   "author" : {
+  	"study_index" : 3,
   	"interfaces" : [
   		{"HTML": "Algebra/HTML/algebra.html"},
   		// {"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},

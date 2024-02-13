@@ -323,6 +323,7 @@ const useAuthorStore = create((set,get) => ({
 
     set({mode: 'train', agentPromise,
         completeness_profile: author?.completeness_profile,
+        study_index : author?.study_index ?? 0,
         prob_configs,
     })
 

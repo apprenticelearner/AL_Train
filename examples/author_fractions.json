@@ -32,11 +32,11 @@
       "stay_active" : true,
   },
   "author" : {
+  	"study_index" : 2,
   	"interfaces" : [
-  		
   		{"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},
-  		{"HTML": "MultiColumnArithmetic/HTML/MultiColumnArithmetic.html"},
-  		{"HTML": "OtherTutors/HTML/TriangleArea.html"},
+  		//{"HTML": "MultiColumnArithmetic/HTML/MultiColumnArithmetic.html"},
+  		//{"HTML": "OtherTutors/HTML/TriangleArea.html"},
   		//{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html"}
   	]	
   },

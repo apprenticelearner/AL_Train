@@ -1610,9 +1610,10 @@ function StagedFeedbackArea(){
 }
 
 export default function AuthoringInterface({props}) {
+
   let [training_config, training_file, tutor_class, network_layer] = useALTrainStoreChange(
     ['@training_config','@training_file', '@tutor_class', 'network_layer'])
-  let [transaction_count, large_window] = useAuthorStoreChange(["@transaction_count", "@window_size=='large'"])
+  let [transaction_count, large_window, study_index] = useAuthorStoreChange(["@transaction_count", "@window_size=='large'", "@study_index"])
   let {addSkillApp, removeSkillApp,  setSkillApps, setStaged, onKeyDown, onKeyUp, setCenterContentRef,
       incTransactionCount, setConfig, setTutor, resizeWindow} = authorStore()
 
@@ -1667,18 +1668,41 @@ export default function AuthoringInterface({props}) {
         //ref={ref}
       >
         <div style={styles.header}>
-          
-          <RisingDiv style={styles.header_button} path='/privacy-policy' onClick={() => {
-              window.location.href = 'http://ai2t.site/build/index.html?training=/author_mc.json&agent_url=http://ai2t.site:8001';
-              return null;
-          }}>
-          1
-          </RisingDiv>
+          <div style={{display : "flex" , flexDirection: "column"}}>
+            <div style={{color: "white", fontSize: 10, margin : 4}}>{"Do not click these until directed"}</div>
+            <div style={{display : "flex" , flexDirection: "row"}}>
+              <RisingDiv style={{...styles.header_button,
+                  ...(study_index==1 && styles.header_button_selected)}}
+                  path='/privacy-policy' onClick={() => {
+                  window.location.href = 'http://ai2t.site/build/index.html?training=/author_mc.json&agent_url=http://ai2t.site:8001';
+                  return null;
+              }}>
+              1
+              </RisingDiv>
+
+              <RisingDiv style={{...styles.header_button,
+                  ...(study_index==2 && styles.header_button_selected)}}
+                  path='/privacy-policy' onClick={() => {
+                  window.location.href = 'http://ai2t.site/build/index.html?training=/author_fractions.json&agent_url=http://ai2t.site:8001';
+                  return null;
+              }}>
+              2
+              </RisingDiv>
+
+              <RisingDiv style={{...styles.header_button,
+                  ...(study_index==3 && styles.header_button_selected)}}
+                  path='/privacy-policy' onClick={() => {
+                  window.location.href = 'http://ai2t.site/build/index.html?training=/author_algebra.json&agent_url=http://ai2t.site:8001';
+                  return null;
+              }}>
+              3
+              </RisingDiv>
 
           {/*<a target='_blank' style={styles.header_button}
             rel='noopener noreferrer' href="https://ai2t.site/build/index.html?training=/author_mc.json&agent_url=http://ai2t.site:8001">1</a>
           }*/}
-          
+            </div>
+          </div>  
         </div>
 
         <div style={styles.main_content}>
@@ -1755,17 +1779,23 @@ export default function AuthoringInterface({props}) {
 
 const styles = {
   header :{
+    display: "flex",
+    flexDirection : "row",
     height : 50,
     backgroundColor : "rgb(50,50,50)"
   },
 
+  header_button_selected :{
+    backgroundColor : "rgb(200,200,240)"
+  },
   header_button :{
     display: "flex",
     justifyContent : "center",
     alignItems : "center",
     margin : 10, 
-    width : 30,
-    height : 30,
+    marginTop : 2, 
+    width : 26,
+    height : 26,
     borderRadius : 20,
     userSelect : "none",
     backgroundColor : "rgb(150,150,150)"

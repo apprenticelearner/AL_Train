@@ -31,11 +31,12 @@
       "stay_active" : true,
   },
   "author" : {
+  	"study_index" : 1,
   	"completeness_profile" : "gt_mc_CZ_3.txt",
   	"interfaces" : [
   		{"HTML": "MultiColumnArithmetic/HTML/MultiColumnArithmetic.html"},
-  		{"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},
-  		{"HTML": "OtherTutors/HTML/TriangleArea.html"},
+  		//{"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},
+  		//{"HTML": "OtherTutors/HTML/TriangleArea.html"},
   		//{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html"}
   	]	
   },
