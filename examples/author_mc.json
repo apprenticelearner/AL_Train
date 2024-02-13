@@ -32,7 +32,7 @@
   },
   "author" : {
   	"study_index" : 1,
-  	"completeness_profile" : "gt_mc_CZ_3.txt",
+  	"completeness_profile" : "gt-carryZ-3.txt",
   	"interfaces" : [
   		{"HTML": "MultiColumnArithmetic/HTML/MultiColumnArithmetic.html"},
   		//{"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},

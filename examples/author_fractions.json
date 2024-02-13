@@ -33,6 +33,7 @@
   },
   "author" : {
   	"study_index" : 2,
+  	"completeness_profile" : "gt-frac.txt",
   	"interfaces" : [
   		{"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},
   		//{"HTML": "MultiColumnArithmetic/HTML/MultiColumnArithmetic.html"},

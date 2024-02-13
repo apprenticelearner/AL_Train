@@ -1735,14 +1735,14 @@ export default function AuthoringInterface({props}) {
               }
               if(cs){cs.left = `${e.pageX}px`; cs.top =  `${e.pageY}px`}
             }}
-            onMouseLeave={(e) => {
+            //onMouseLeave={(e) => {
               // let {stage_cursor_elem: cursor} = authorStore()
-              if(cursor) cursor.hidden = true;
-            }}
-            onMouseEnter={(e) => {
-              // let {stage_cursor_elem: cursor} = authorStore()
-              if(cursor) cursor.hidden = false;
-            }}
+            //  if(cursor) cursor.hidden = true;
+            //}}
+            //onMouseEnter={(e) => {
+            //  // let {stage_cursor_elem: cursor} = authorStore()
+            //  if(cursor) cursor.hidden = false;
+            //}}
           > 
             <ScrollableStage ref={stage_ref} 
               stage_style={{
