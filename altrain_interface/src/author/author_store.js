@@ -354,6 +354,10 @@ const useAuthorStore = create((set,get) => ({
     // store.loadProblem(prob_config)
   },
 
+  clearAgents: () =>{
+    set({agents:  []})
+  },
+
   startSpeechRecognition : () =>{
     let {speech_recognition} = get()
     if(speech_recognition){
