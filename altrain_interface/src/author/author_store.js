@@ -278,7 +278,7 @@ const useAuthorStore = create((set,get) => ({
   },
 
   clearProject(){
-    window.localStorage.setItem("project", "")
+    window.localStorage.removeItem("project", "")
   },
 
   /*** Initialize ***/
