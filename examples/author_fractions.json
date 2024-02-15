@@ -27,7 +27,10 @@
 
 	    "extra_features" : ["Match"],
 	    "find_neighbors" : true, 
-	    "when_args": {"encode_relative" : true, "one_hot" : true, "check_sanity" : false},
+	    //Note: encode_relative=true works fine but doesn't agree  
+	    //    with the gt-frac.txt completeness profile for some reason
+	    "when_args": {"encode_relative" : false,
+	    	"one_hot" : true, "check_sanity" : false},
       },
       "stay_active" : true,
   },
@@ -35,7 +38,7 @@
   	"study_index" : 2,
   	"completeness_profile" : "gt-frac.txt",
   	"interfaces" : [
-  		{"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},
+  		{"HTML": "FractionArithmetic/HTML/FractionArithmetic_std.html"},
   		//{"HTML": "MultiColumnArithmetic/HTML/MultiColumnArithmetic.html"},
   		//{"HTML": "OtherTutors/HTML/TriangleArea.html"},
   		//{"HTML": "FractionArithmetic/HTML/fraction_arithmetic.html"}

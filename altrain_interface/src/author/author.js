@@ -577,7 +577,8 @@ function KeyIcon({style, key_style, side_style, text, children, shadow=0,...rest
 
 
 function NavigationKeys({show_yes=false, show_apply=true}){
-  let [next_down, prev_down, apply_down] = useAuthorStoreChange(["@next_down", "@prev_down", "@apply_down"])
+  let [next_down, prev_down, apply_down, n_skill_apps] = 
+    useAuthorStoreChange(["@next_down", "@prev_down", "@apply_down", "@skill_apps.length"])
   let {focusPrev, focusNext, confirmFeedback} = authorStore()
 
   let next_bg = (next_down && 'lightgrey') || "white" 
@@ -613,6 +614,7 @@ function NavigationKeys({show_yes=false, show_apply=true}){
               />
           </RisingDiv>
         }
+        {n_skill_apps > 1 && 
         <RisingDiv style={{position: 'absolute', bottom:60, left : -60, color: '#445', pointerEvents:'auto'}}
             hover_scale={1.1}
             onMouseDown={()=>{setAuthorStore({prev_down:true}); focusPrev()}}
@@ -628,6 +630,8 @@ function NavigationKeys({show_yes=false, show_apply=true}){
             </div>}
           />
         </RisingDiv>
+        }
+        {n_skill_apps > 1 && 
         <RisingDiv style={{position: 'absolute', bottom:60, right : -54, color: '#445', pointerEvents:'auto'}}
             hover_scale={1.1}
             onMouseDown={()=>{setAuthorStore({next_down:true}); focusNext()}}
@@ -643,31 +647,98 @@ function NavigationKeys({show_yes=false, show_apply=true}){
             </div>}
           />
         </RisingDiv>
+        }
       </div>
   )
 }
 
 
-function ActionNumberIndicator({style}){
-  let {getUIDIndex} = authorStore()
-  let [focus_uid, skill_apps] = useAuthorStoreChange(
-      ["@focus_uid", "@skill_apps"]
+function ActionDialog({style}){
+  let {getUIDIndex, applyActionDialogFeedback, setFocus, confirmFeedback} = authorStore()
+  let [focus_uid, skill_apps, proposal_order] = useAuthorStoreChange(
+      ["@focus_uid", "@skill_apps", "@proposal_order"]
   )
+  let skill_app = skill_apps[focus_uid];
   let index = getUIDIndex(focus_uid)+1
   let L = Object.keys(skill_apps).length
 
+  // let open_style = {top : -64, 
+  //                height : 64,
+  //                width: "102%", 
+  //                left : "-1%",
+  // }
+  // let close_style = {top : -20, 
+  //                    height : 20,
+  //                    left : "-1%",
+  // }
+
+  let is_proposal = proposal_order.includes(focus_uid)
+  let are_proposals = proposal_order.length > 0
+  let are_correct_next = Object.values(skill_apps).filter((sa)=>(sa?.reward ?? 0) > 0).length > 0
+  let is_correct = (skill_app?.reward ?? 0) > 0
+
+  let pre_text = (!skill_app?.confirmed && skill_app?.is_demo && 
+                  "Ensure f(x) explanation is correct. ") ||
+                 (!skill_app?.confirmed && 
+                  "Feedback looks good. ") ||
+                  ""
+  let context = (is_correct && "Apply this action ") || 
+                ("Apply one of the correct actions ") 
+
   return (
-    <div style={{fontSize: 12, fontFamily: 'monospace',
-                 color : "eef",// "#445",
-                fontWeight : 'bold',
-                 backgroundColor : 'rgba(200,200,220,.4)',
-                 borderRadius : 5,
-                 padding: 3,
-                 paddingRight: 6,
-                 paddingLeft: 6,
-                 // filter: gen_shadow(6, 'drop', {red:255, green: 255, blue: 255, alpha:1.0}),
-                 ...style}}>
-      {`Action #(${index}/${L})`}
+    
+    <div style={{...styles.action_dialog,
+                  ...style}}>
+      <div style={styles.action_counter}>
+        {`Action #(${index}/${L})`}
+      </div>
+      {/* Proposal Yes / No case */}
+      {(is_proposal && 
+      <div style={styles.action_dialog_inner}>
+        <div style={styles.action_dialog_back}/>
+        <a>{"Is this action correct?"}</a>      
+        <div style={{display: "flex", flexDirection : "row"}}>
+          <RisingDiv style={{...styles.action_dialog_button, 
+              marginRight:2, backgroundColor : colors.correct}} 
+            onClick={()=>{applyActionDialogFeedback(1)}} >
+            {"Yes"}
+          </RisingDiv>
+          <RisingDiv style={{...styles.action_dialog_button, 
+              marginLeft:2, backgroundColor : colors.incorrect}} 
+            onClick={()=>{applyActionDialogFeedback(-1)}}>
+            {"No"}
+          </RisingDiv>
+        </div>
+      </div>) || 
+      /* Not a Proposal. "Show Me" case. */
+      (proposal_order?.length && 
+      <div style={styles.action_dialog_inner}>
+        <div style={styles.action_dialog_back}/>
+        <a>{"Some proposed actions need feedback."}</a>      
+          <RisingDiv style={{...styles.action_dialog_button, 
+                      backgroundColor : colors.demo}} 
+            onClick={()=>{setFocus(proposal_order[0])}} >
+            {"Show Me"}
+          </RisingDiv>
+      </div>) || 
+      /* No remaining proposals. Apply case. */
+      (are_correct_next && 
+      <div style={styles.action_dialog_inner}>
+        <div style={styles.action_dialog_back}/>
+        <a>{pre_text+context+"to go to next state?"}</a>      
+        <RisingDiv style={{...styles.action_dialog_button,   
+                      backgroundColor : colors.demo}} 
+          onClick={()=>{confirmFeedback()}} >
+          {"Apply"}
+        </RisingDiv>
+      </div>) ||
+      /* No remaining proposals. But no correct. */
+      ( 
+      <div style={styles.action_dialog_inner}>
+        <div style={styles.action_dialog_back}/>
+        <a>{"No staged actions are marked correct. If this is a valid state demonstrate a correct next action. "}</a>      
+      </div>)
+      }    
     </div>
   )
 }
@@ -689,7 +760,7 @@ function DemonstrateMenu({}){
 
   return (
     <div style={styles.demo_menu}>
-      <ActionNumberIndicator style={{position:'absolute', top: -26, right:0}}/>
+      <ActionDialog />
       <div style={styles.demo_menu_fields}>
         
         <div style={styles.demo_menu_title}>
@@ -795,7 +866,7 @@ function AgentActionMenu({}){
 
   return (
     <div style={{...styles.agent_action_menu, borderColor: border_color}}>
-      <ActionNumberIndicator style={{position:'absolute', top: -26, right:0}}/>
+      <ActionDialog />
       <div style={styles.agent_action_menu_fields}>
         <div style={styles.agent_action_menu_title}>
           <Icon size={styles.agent_action_menu_title.fontSize} kind={kind}/>
@@ -1003,10 +1074,10 @@ function ProblemMenu({}){
   // let [intr, setInterface] = useState("")
   // let [question, setQuestion] = useState("")
   return (
-    <div style={styles.problem_menu}>
+    <div style={{...styles.problem_menu, overflow: "hidden"}}>
 
       {/* Interface Menu */}
-      <div style={{... styles.submenu, height: "30%"}}>
+      <div style={{... styles.submenu}}>
         <div style={styles.submenu_title_area}>
           <header style={styles.submenu_title}>Interface</header>
           <MenuButton>
@@ -1027,7 +1098,7 @@ function ProblemMenu({}){
       </div>
 
       {/* Question Menu */}
-      <div style={{... styles.submenu, height: "70%"}}> 
+      <div style={{... styles.submenu, overflow: "hidden"}}> 
 
         {/* Question Menu - Title Area */}
         <div style={styles.submenu_title_area}>
@@ -2265,6 +2336,53 @@ const styles = {
     borderBottomWidth: 1,
     borderColor: 'lightgrey',
     // backgroundColor : 'blue',
+  },
+
+  action_counter : {
+    fontSize: 12, 
+    fontFamily: 'monospace',
+     color : "eef",// "#445",
+    fontWeight : 'bold',
+     borderRadius : 5,
+     padding: 3,
+     paddingRight: 6,
+     paddingLeft: 6
+  },
+
+  action_dialog : {
+    position : "absolute",
+    top : -68, 
+    height : 68,
+    width: "102%", 
+    left : "-1%",
+    borderRadius : 5,
+    backgroundColor : 'rgba(200,200,220,.4)',
+    userSelect : "none",
+    fontWeight: "bold"
+  },
+
+  action_dialog_back: {
+    margin : 10,
+    width : 20, 
+    height : 20
+  },
+  action_dialog_inner: {
+    display : "flex", 
+    justifyContent : "space-between",
+    alignItems : "center"
+  },
+
+  action_dialog_button : {
+    display : "flex",
+    alignItems : "center",
+    justifyContent: "center",
+    width : 80,
+    height : 30,
+    margin: 10,
+    marginTop: 4, 
+    borderRadius: 8, 
+    fontSize: 16,
+     fontWeight: "bold",
   },
 
 

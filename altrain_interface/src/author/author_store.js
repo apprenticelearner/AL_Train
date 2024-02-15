@@ -165,6 +165,11 @@ const useAuthorStore = create((set,get) => ({
   skill_apps : {},
   sel_skill_app_uids : {},
 
+  // Action dialog data structures
+  proposal_order : [],
+  proposal_index : -1,
+  action_dialog_history : [],
+
   // Skill Applications for tutor performed actions that set start state.
   // start_skill_apps : {},
 
@@ -953,7 +958,8 @@ const useAuthorStore = create((set,get) => ({
   },
 
   setFocus: (skill_app_uid, do_confirm=false) => { 
-    let {graph_actions, setTutorState, curr_state_uid, mode, skill_apps} = get()
+    let {graph_actions, setTutorState,
+        curr_state_uid, mode, skill_apps, proposal_order} = get()
 
     let skill_app, state_uid;
     if(mode == "start_state"){
@@ -965,9 +971,12 @@ const useAuthorStore = create((set,get) => ({
     }
     
     console.log("Set Focus", skill_app)
-    
 
-    set({focus_sel : skill_app?.selection ?? "", focus_uid : skill_app_uid ?? ""})
+    // let proposal_index = proposal_order.indexOf(skill_app_uid)
+    
+    set({focus_sel : skill_app?.selection ?? "",
+         focus_uid : skill_app_uid ?? "",})
+         //proposal_index})
     if(state_uid && curr_state_uid != state_uid){
       setTutorState(state_uid, do_confirm)  
     }
@@ -1175,12 +1184,17 @@ const useAuthorStore = create((set,get) => ({
   },
 
   focusFirstIfFocusMissing : () => {
-    let {graph_states, setFocus, curr_state_uid, focus_uid} = get()
-    let out_sa_uids = graph_states[curr_state_uid]?.out_skill_app_uids || []
-    if(!out_sa_uids.includes(focus_uid)){
-      let first_uid = out_sa_uids?.[0];
-      setFocus(first_uid)  
+    let {graph_states, setFocus, curr_state_uid, focus_uid, proposal_order} = get()
+    if(proposal_order?.length){
+      setFocus(proposal_order[0])
+    }else{
+      let out_sa_uids = graph_states[curr_state_uid]?.out_skill_app_uids || []
+      if(!out_sa_uids.includes(focus_uid)){
+        let first_uid = out_sa_uids?.[0];
+        setFocus(first_uid)  
+      }  
     }
+    
   },
 
   setTutorState : async (state, do_confirm=false) => {
@@ -1251,6 +1265,7 @@ const useAuthorStore = create((set,get) => ({
 
     set({mode : "arg_foci"})
     pushCursor('arg_foci')
+    
     // console.log("CURSOR", stage_view_ref.current)
     // stage_view_ref.current.cursor = 'none'
     // document.
@@ -1457,12 +1472,69 @@ const useAuthorStore = create((set,get) => ({
     
   },
 
+  updateProposalOrder : () => {
+    // Order proposed actions by their uncertainty level 
+    let {skill_apps, focus_uid} = get()
+    let proposal_skill_apps = Object.values(skill_apps)
+    .filter((sa) => !sa?.is_demo && (sa?.reward ?? 0) == 0)
+    .sort((sa0,sa1) => (sa0?.when_pred ?? 0)-(sa1?.when_pred ?? 0))
+
+    console.log("proposal_skill_apps", proposal_skill_apps)
+    
+    set({proposal_order: proposal_skill_apps.map((sa)=>sa.uid)})
+  },
+
+  applyActionDialogFeedback : (reward) =>{
+    let {focus_uid, skill_apps, setReward, setFocus,
+         proposal_order, action_dialog_history} = get()
+    // Shouldn't be callable unless the user is look
+    // if(focus_uid != proposal_order[proposal_index]){
+    //   console.log("REJECTED", proposal_order, proposal_index)
+    //   return
+    // }
+    let skill_app = skill_apps[focus_uid]
+
+    // setReward updates the proposal_order
+    setReward(skill_app, reward)
+
+    ;({proposal_order} = get());
+    if(proposal_order.length > 0){
+      console.log("THEISM")
+      setFocus(proposal_order[0])
+    }else{
+
+      let correct_skills = Object.values(skill_apps).filter((sa)=>(sa?.reward ?? 0) > 0)
+      console.log("THATMS", correct_skills)
+      if(correct_skills.length > 0){
+        setFocus(correct_skills[0].uid)
+      }
+    }
+    set({action_dialog_history : [...action_dialog_history, focus_uid]})
+  },
+
+  popActionDialogHistory: () => {
+    let {setFocus, action_dialog_history} = get()
+    if(action_dialog_history.length > 0){
+      setFocus(action_dialog_history.pop())
+      set({action_dialog_history})
+    }
+  },
+
+  focusNextProposal : () =>{
+
+  },
+
+  focusPreviousProposal : () =>{
+    
+  },
+
   showStateSkillApps: (state_uid) =>{
     let {graph_actions : actions, graph_states : states, setSkillApps} = get()
-    let curr_out_uids = states[state_uid]?.out_skill_app_uids??[]
+    let curr_out_uids = states[state_uid]?.out_skill_app_uids ?? []
     let new_skill_apps = curr_out_uids.map((a_uid) => actions[a_uid].skill_app)
     console.log("new_skill_apps", new_skill_apps)
-    setSkillApps(new_skill_apps)    
+    setSkillApps(new_skill_apps)
+    
     return new_skill_apps
   },
 
@@ -1968,6 +2040,7 @@ const useAuthorStore = create((set,get) => ({
          sel_skill_app_uids : {},
          only_count : 0,
          stage_undo_stack: [],
+         action_dialog_history : [],
          tutor_state : {},
          start_state : {},
          done_popup_open : false,
@@ -2005,8 +2078,11 @@ const useAuthorStore = create((set,get) => ({
         skill_apps: _skill_apps,
         sel_skill_app_uids: skill_apps_by_sel,
         only_count : only_count,
+        action_dialog_history : [],
         ...staged,
     })
+    let {updateProposalOrder} = get()
+    updateProposalOrder()
   },
 
   
@@ -2014,7 +2090,8 @@ const useAuthorStore = create((set,get) => ({
   /*** Skill Applications (Modifying) ***/
 
   setReward : (skill_app, reward) => {
-    let {staged_uid, setOnly, modifySkillApp, undoStaged, graph_actions} = get()
+    let {staged_uid, setOnly, modifySkillApp,
+         undoStaged, graph_actions, updateProposalOrder} = get()
     let old_reward = skill_app.reward
     skill_app = modifySkillApp(skill_app, {reward}, true)
 
@@ -2035,6 +2112,7 @@ const useAuthorStore = create((set,get) => ({
     if(!staged_uid && reward > 0){
       set({staged_uid : skill_app.uid})
     }
+    updateProposalOrder()
     return skill_app    
   },
 

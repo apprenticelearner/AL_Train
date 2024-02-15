@@ -101,6 +101,50 @@ let RemoveButton = memo(({skill_app}) => {
 // console.log("foci_bg_color", foci_bg_color)
 // console.log("foci_cand_bg_color", foci_cand_bg_color)
 
+function MultipleActionsIndicator({style, show_app, skill_app, skill_app_uids}){
+  //let [skill_app_uids] = useAuthorStoreChange([`@sel_skill_app_uids.${sel}`])
+  let {skill_apps} = authorStore()
+  let state_kind = (
+    (skill_app_uids.some((uid) => (skill_apps[uid]?.reward ?? 0) > 0) && "some_correct") ||
+    (skill_app_uids.some((uid) => (skill_apps[uid]?.reward ?? 0) < 0) && "some_incorrect") ||
+    'no_feedback'
+  )
+  console.log("MultipleActionsIndicator", state_kind, skill_app_uids,
+    skill_app_uids.some((uid) => (skill_apps[uid]?.reward ?? 0) > 0),
+    skill_app_uids.some((uid) => (skill_apps[uid]?.reward ?? 0) < 0),
+  )
+  let left_text = (
+    (show_app && <a>{skill_app_uids.indexOf(skill_app.uid)+1}</a>) || 
+    (state_kind == 'some_correct' && 
+      <div style={{width : 6, height : 6, position: "relative"}}>
+        <a style={{position: "absolute", top: -5,
+                color : colors.correct, fontWeight: 'bold', fontSize:12}}>
+          {'✔'}
+        </a> 
+      </div> ) ||
+    (state_kind == 'some_incorrect' && 
+      <a style={{position: "absolute", color : colors.incorrect, fontWeight: 'bold', fontSize:12, margin:-2}}>{'✖'}</a>) ||
+    <a>{"-"}</a>
+  )
+
+  let borderColor = (
+    (state_kind == 'some_correct' && colors.correct) || 
+    (state_kind == 'some_incorrect' && colors.incorrect) || 
+    colors.default
+  )
+
+  return (
+    <div style={{position: "absolute", 
+            display : "flex", alignItems: "center", 
+            backgroundColor: "white", pointerEvents:'auto', 
+            borderStyle: "solid", borderWidth: 1, borderColor: borderColor,
+            fontSize: 7, fontFamily: 'Monospace', color: "grey", borderRadius:5, boxShadow: gen_shadow(4),
+            userSelect: "none", ...style,  padding:2}}>
+          <a>{"("}</a><a>{left_text}</a><a>{`/${skill_app_uids.length})`}</a>
+    </div>
+  )
+}
+
 function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacity=.4, ...props}){
     let {setHover, setHoverSel, setFocus, toggleReward, toggleFoci, getFociIndexInfo} = authorStore()
     let [[skill_app, hasStaged], groupHasFocus, hasHover, skill_app_uids,
@@ -265,14 +309,15 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         // If toggling foci prevent default so elem doesn't take focus
         (foci_cand && ((e) => {
           toggleFoci(sel); 
+          document.activeElement.blur(); // Blur any text boxes
           setHover("")
-          e.preventDefault(); //Prevents highlighting
+          e.preventDefault(); //Prevents focus + highlighting
         })) ||
         (skill_app && !groupHasFocus && mode != 'start_state' && 
           ((e) => {
           
           setFocus(skill_app?.uid); 
-          e.preventDefault(); //Prevents highlighting
+          e.preventDefault(); //Prevents focus + highlighting
         })) ||
         props.onClick
       )}
@@ -286,13 +331,14 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
 
         {/* Multiple Action Indicator like (1/2) */}
         {mode != 'start_state' &&
-         skill_app_uids?.length > (show_all_apps ? 1 : 0) && 
-        <div style={{position: "absolute", backgroundColor: "white", pointerEvents:'auto',
-            fontSize: 7, fontFamily: 'Monospace', color: "grey", borderRadius:5, boxShadow: gen_shadow(4),
-            userSelect: "none", top: -4-(groupHasFocus && 1),
-            left: -8-hbw, padding:2}}>
-          {`(${(show_app && skill_app_uids.indexOf(skill_app.uid)+1) || "-"}/${skill_app_uids.length})`}
-        </div>}
+         skill_app_uids?.length > (show_all_apps ? 1 : 0) &&
+         <MultipleActionsIndicator 
+          {...{show_app, skill_app, skill_app_uids}}
+          style={{
+            top: -4-(groupHasFocus && 1),
+            left: -8-hbw
+          }}/>
+        }
 
         {/* Next Icon */}
         {(hasStaged) &&
@@ -465,13 +511,13 @@ function TextFieldOverlay({sel, elem}) {
   let mindim = Math.min(elem.width, elem.height)
   let maxdim = Math.max(elem.width, elem.height)
 
-  let fontSize = Math.floor(Math.max( (mindim+2) / (fL+(L-fL)*.6) ,16)) // Min font 
+  let fontSize = Math.floor(Math.max( (mindim+2) / (fL+(L-fL)*.5) ,16)) // Min font 
   // let 
   // let pred_n_lines = Math.floor(L/2+1)
   let pred_n_lines = Math.ceil(L / ((elem.width+2) / fontSize) )
   // let fontSize = Math.min(mindim, maxdim/pred_n_lines) *.75
   let pad_top = pred_n_lines == 1 && Math.floor(Math.max(0,(elem.height-fontSize)))
-  console.log("P!", pred_n_lines, L / (elem.width / fontSize) , fontSize, pad_top, (elem.height*1.1-fontSize))
+  // console.log("P!", pred_n_lines, L / (elem.width / fontSize) , fontSize, pad_top, (elem.height*1.1-fontSize))
   
   //(!groupHasFocus) ||
   let focus_locked = (mode != "start_state" && elem.locked || in_done_state)
