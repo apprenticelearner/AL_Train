@@ -386,6 +386,11 @@ const FxContent = ({ label, value, data={}, explicit,...rest}, {context}) => {
 
   let highlighted_eq = makeHighlightedEquation(func, head_vals, true)
 
+  let button_action = skill_app?.action_type?.includes("Button") ?? false;
+  if(button_action){
+    highlighted_eq = "press"
+  }
+
   let is_menu = context == "menu"
   let is_value = context == "value"
   
@@ -577,8 +582,8 @@ function KeyIcon({style, key_style, side_style, text, children, shadow=0,...rest
 
 
 function NavigationKeys({show_yes=false, show_apply=true}){
-  let [next_down, prev_down, apply_down, n_skill_apps] = 
-    useAuthorStoreChange(["@next_down", "@prev_down", "@apply_down", "@skill_apps.length"])
+  let [next_down, prev_down, apply_down, skill_apps] = 
+    useAuthorStoreChange(["@next_down", "@prev_down", "@apply_down", "@skill_apps"])
   let {focusPrev, focusNext, confirmFeedback} = authorStore()
 
   let next_bg = (next_down && 'lightgrey') || "white" 
@@ -590,8 +595,11 @@ function NavigationKeys({show_yes=false, show_apply=true}){
                         <a style={{fontWeight: "bold"}}>{"Yes "}</a>
                       </div>) ||
                       <a style={{fontWeight: "bold"}}>{"Apply "}</a>
+  
+  let n_skill_apps = Object.values(skill_apps).length
+  console.log(n_skill_apps)
   return (
-    <div style={{position : 'absolute', width: "100%", height: "100%", pointerEvents: "none"}}>
+    <div style={{position : 'absolute', width: "100%", height: "100%", pointerEvents: "none", zIndex: 9}}>
         {show_apply && 
           <RisingDiv style={{display:"flex", justifyContent:"center", userSelect: 'none',
                 position: 'absolute', bottom: -26, width:"100%", color: '#445',
@@ -753,10 +761,10 @@ function DemonstrateMenu({}){
   let kind = "demo" + ((skill_app.reward > 0) ? "_correct" : "_incorrect") + (skill_app?.only ? "_only" : "")
   // console.log("KIND", kind)
   let button_action = skill_app.action_type.includes("Button");
-  let allow_edit = !button_action
   if(button_action){
     demo_text = "press"
   }
+  let allow_edit = !button_action
 
   return (
     <div style={styles.demo_menu}>
@@ -809,7 +817,7 @@ function RewardKeys({skill_app}){
     let neg_bord_w = (incorr && 3) || 2
 
     return (
-      <div style={{display: 'flex', flexDirection : "column", margin: 10, alignItems: "end"}}>
+      <div style={{display: 'flex', flexDirection : "column", margin: 10, alignItems: "end", zIndex: 10}}>
         <RisingDiv style={{position: 'relative', margin: 6, color: '#445'}}
           hover_scale={1.1}
           onMouseDown={()=>{setAuthorStore({pos_rew_down:true});}}
@@ -862,6 +870,7 @@ function AgentActionMenu({}){
   if((skill_app?.reward ?? 0) != 0){
     kind = ((skill_app.reward > 0) ? "correct" : "incorrect") + (skill_app?.only ? "_only" : "")
   }
+
 
 
   return (

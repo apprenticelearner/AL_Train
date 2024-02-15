@@ -124,7 +124,7 @@ function MultipleActionsIndicator({style, show_app, skill_app, skill_app_uids}){
       </div> ) ||
     (state_kind == 'some_incorrect' && 
       <a style={{position: "absolute", color : colors.incorrect, fontWeight: 'bold', fontSize:12, margin:-2}}>{'✖'}</a>) ||
-    <a>{"-"}</a>
+      <a>{"-"}</a>
   )
 
   let borderColor = (
@@ -140,7 +140,7 @@ function MultipleActionsIndicator({style, show_app, skill_app, skill_app_uids}){
             borderStyle: "solid", borderWidth: 1, borderColor: borderColor,
             fontSize: 7, fontFamily: 'Monospace', color: "grey", borderRadius:5, boxShadow: gen_shadow(4),
             userSelect: "none", ...style,  padding:2}}>
-          <a>{"("}</a><a>{left_text}</a><a>{`/${skill_app_uids.length})`}</a>
+          <a>{"("}</a>{left_text}<a>{`/${skill_app_uids.length})`}</a>
     </div>
   )
 }

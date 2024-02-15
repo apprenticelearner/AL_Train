@@ -236,6 +236,7 @@ const useAuthorStore = create((set,get) => ({
 
   //Settings
   show_all_apps : false,
+  unfocus_on_click_away : false,
 
   /*** Project ***/
   loadProject(prob_configs){
@@ -1265,7 +1266,7 @@ const useAuthorStore = create((set,get) => ({
 
     set({mode : "arg_foci"})
     pushCursor('arg_foci')
-    
+
     // console.log("CURSOR", stage_view_ref.current)
     // stage_view_ref.current.cursor = 'none'
     // document.
@@ -1665,7 +1666,7 @@ const useAuthorStore = create((set,get) => ({
 
   clickAway : () => { 
     let {mode, confirmStartState, beginSetArgFoci,
-     confirmArgFoci, setFocus, setMode} = get()
+     confirmArgFoci, setFocus, setMode, unfocus_on_click_away} = get()
     // let focus_is_demo = store.skill_apps?.[store.focus_uid]?.is_demo ?? false
 
 
@@ -1685,8 +1686,11 @@ const useAuthorStore = create((set,get) => ({
         confirmArgFoci()
         return
       }
-      set({hover_uid : "", hover_sel : ""})
-      setFocus(null)
+      if(unfocus_on_click_away){
+        set({hover_uid : "", hover_sel : ""})
+        setFocus(null)  
+      }
+      
     }//else if(mode == "train" && focus_is_demo){
     //  beginSetArgFoci()
     //}
