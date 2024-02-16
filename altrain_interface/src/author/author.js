@@ -597,7 +597,6 @@ function NavigationKeys({show_yes=false, show_apply=true}){
                       <a style={{fontWeight: "bold"}}>{"Apply "}</a>
   
   let n_skill_apps = Object.values(skill_apps).length
-  console.log(n_skill_apps)
   return (
     <div style={{position : 'absolute', width: "100%", height: "100%", pointerEvents: "none", zIndex: 9}}>
         {show_apply && 
@@ -1829,7 +1828,7 @@ export default function AuthoringInterface({props}) {
                 left:window.screen.width*.3,
                 top:window.screen.height*.3,
                 width:window.screen.width*.8,
-                height:window.screen.height*.8,
+                height:window.screen.height*1.4,
               }}>
               <Suspense fallback={fallback_page}>        
                 <Tutor style={{...styles.tutor, width: sw*tv_pw, height:sh*tv_ph}}
