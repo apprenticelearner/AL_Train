@@ -320,14 +320,18 @@ const Edge = ({skill_app_uid}) =>{
     let [x,y] = [a.x-s.x, a.y-s.y]
 
     let reward = (skill_app?.reward ?? 0)
+    
     let is_demo = skill_app.is_demo || false
     let confirmed = skill_app?.confirmed ?? false
-    let undef = reward == 0 
+    let undef = !skill_app?.is_demo && reward == 0 
+    let removed = skill_app?.is_demo && reward == 0 
     let correct = reward > 0 
     let incorrect = reward < 0 || (reward == 0 && isExternalHasOnly)
     let isImplicit = isExternalHasOnly && reward == 0;
     let hasOnly = skill_app.only
     let sel = skill_app.selection
+
+    console.log("REWARD!!!", reward, reward==null, removed)
 
     // Make the shadow slighly blue for better overlap visibility
     let shadow_colors = {red:0, green: 20, blue: 60}
@@ -336,10 +340,11 @@ const Edge = ({skill_app_uid}) =>{
                  (hasHover && gen_shadow(12,'drop',shadow_colors)) ||
                  gen_shadow(8,'drop', shadow_colors)
 
-    let stroke_color =  (is_demo && colors.demo) ||
+    let stroke_color =  ((removed || incorrect) && colors.incorrect) || 
+                        (is_demo && colors.demo) ||
                         (correct && colors.correct) || 
-                        (incorrect && colors.incorrect) || 
                         colors.default
+
 
     let edge_stroke_width = (hasHover && hasFocus && 13) ||
                        (hasFocus && 12) || 
@@ -438,6 +443,24 @@ const Edge = ({skill_app_uid}) =>{
                     >
                     {`${Math.floor(Number.parseFloat(skill_app?.when_pred*100))}%`}
                     </text>
+                }
+
+                {/* Selected Pointer */}
+                {hasFocus &&
+                    <circle
+                        className='edge-pointer'
+                        cx={-6}
+                        cy={0}
+                        //cy={-3}
+                        r={4}
+
+                        //width={actionWidth} height={actionHeight}
+                        //strokeWidth={4}
+                        //stroke={"black"}
+                        fill={"rgba(0,0,0,.5)"}
+                    >
+                    {`${Math.floor(Number.parseFloat(skill_app?.when_pred*100))}%`}
+                    </circle>
                 }
             </g>
         </g>)

@@ -62,7 +62,7 @@ let PopUpConfirmButton = memo(({sel, skill_app}) => {
 })
 
 let RemoveButton = memo(({skill_app}) => {
-  let {removeSkillApp} = authorStore();
+  let {removeSkillApp, setReward} = authorStore();
   let rd_props = {
     hover_scale : 1.1,
     default_scale : 1,
@@ -70,6 +70,7 @@ let RemoveButton = memo(({skill_app}) => {
     default_elevation : 6
   }
   let [hasHover, setHover] = useState(false)
+
 
   return (<RisingDiv
       hoverCallback={(e)=>{setHover(true)}}
@@ -82,7 +83,12 @@ let RemoveButton = memo(({skill_app}) => {
       //{...rd_props}
       onMouseDown={(e)=>{
           e.stopPropagation()
-          removeSkillApp?.(skill_app);
+          if(skill_app?.confirmed){
+            setReward(skill_app, null)
+          }else{
+            removeSkillApp?.(skill_app);
+          }
+
           }}
         >{"✕"}
 
@@ -373,7 +379,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         {children}
 
         {/* Pop-up Confirm Button */}
-        {(mode != "start_state" && groupHasFocus && !incorrect) && 
+        {false && (mode != "start_state" && groupHasFocus && !incorrect) && 
           <PopUpConfirmButton sel={sel} skill_app={skill_app}/>
         }
 
@@ -671,7 +677,8 @@ function ButtonOverlay({
     {show_app &&
       <div style={{
         borderRadius:100, overflow: 'clip',
-        ...(groupHasFocus && {backgroundColor: color})
+        translate: "50% 10%",
+        ...(groupHasFocus && {backgroundColor: color, opacity: .5})
         }}> 
         <img 
           style ={{...styles.button_image,

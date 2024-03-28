@@ -40,6 +40,13 @@ code {
 /*  stroke-width: 4px;*/
   rx: 4px;
 }
+
+.edge-pointer {
+/*  fill: black;*/
+/*  stroke-width: 4px;*/
+  rx: 4px;
+}
+
 .edge-hit-box {
   fill: transparent;
 }

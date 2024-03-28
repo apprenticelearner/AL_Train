@@ -24,15 +24,30 @@
 	    // "function_set" : ["OnesDigit","TensDigit","Add","Add3", "Multiply"],
 	    // "feature_set" : ["Equals"],
 	    "feature_set" : [],
-	    "extra_features" : ["SkillCandidates","Match"],
+	    "extra_features" : ["RemoveAll", "SkillCandidates","Match"],
 	    "find_neighbors" : true, 
-	    "when_args": {"encode_relative" : true, "one_hot" : true, "check_sanity" : false},
+	    "when_args": {
+	    	"encode_relative" : true, 
+	    	"check_sanity" : false
+	    },
+
+	    // Process Learning
+	    "when_args": {
+            "encode_relative" : true,
+            "check_sanity" : false
+        },
+
+        "process_learner": "htnlearner",
+        "track_rollout_preseqs" : true,
+        "action_filter_args" : {"thresholds": [0.3, 0, -0.5, -0.75]},
+
+        // "implicit_reward_kinds" : ["unordered_groups"]
       },
       "stay_active" : true,
   },
   "author" : {
   	"study_index" : 1,
-  	"completeness_profile" : "gt-carryZ-3.txt",
+  	"completeness_profile" : "gt-nocarryZ-3.txt",
   	"interfaces" : [
   		{"HTML": "MultiColumnArithmetic/HTML/MultiColumnArithmetic.html"},
   		//{"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},

@@ -755,18 +755,24 @@ function DemonstrateMenu({}){
   let [skill_app, arg_foci_mode] = useAuthorStoreChange([
         getFocusOrHover(), "@mode=='arg_foci'"])
 
+  let reward = skill_app?.reward ?? 0
   let demo_text = skill_app?.inputs?.value ?? skill_app?.input ?? ""
   // console.log(demo_text)
-  let kind = "demo" + ((skill_app.reward > 0) ? "_correct" : "_incorrect") + (skill_app?.only ? "_only" : "")
+  let kind = "demo" + ((reward > 0) ? "_correct" : "_incorrect") + (skill_app?.only ? "_only" : "")
   // console.log("KIND", kind)
   let button_action = skill_app.action_type.includes("Button");
   if(button_action){
-    demo_text = "press"
+    demo_text = "press " + (skill_app?.selection ?? "??")
   }
   let allow_edit = !button_action
 
+  let border_color = (reward > 0 && colors.demo) ||
+                     (reward <= 0 && colors.incorrect) ||
+                     colors.default
+
+
   return (
-    <div style={styles.demo_menu}>
+    <div style={{...styles.demo_menu, borderColor: border_color}}>
       <ActionDialog />
       <div style={styles.demo_menu_fields}>
         
@@ -780,7 +786,7 @@ function DemonstrateMenu({}){
           <textarea 
             className="scrollable" style={{
               ...styles.editable_value, ...styles.value_input,
-              ...(!allow_edit && {color: "rgba(100,100,100,.2)", userSelect : "none"})
+              ...(!allow_edit && {color: "rgba(100,100,100,.3)", userSelect : "none"})
               }}
             value={demo_text}
             onChange={(e)=>{setInputs(skill_app, {value : e.target.value})}}

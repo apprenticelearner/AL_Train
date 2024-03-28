@@ -1397,17 +1397,10 @@ const useAuthorStore = create((set,get) => ({
     return [states, actions]
   },
 
-  updateAgentRollout : async (merge=false) => {
-    console.log("Fetch Next Actions")
-    
-    let {agentPromise, mergeGraphChanges, recalcGraphConnections, showStateSkillApps,
-        questions, curr_interface, curr_question, start_state, network_layer, agent_uid} = get()
+  updateStartStateUID : async () =>{
+    let {network_layer, agent_uid,
+        questions, curr_interface, curr_question, start_state} = get()
 
-    //Make sure the agent exists before we query it for actions 
-    set({awaiting_rollout: true})
-    await agentPromise
-
-    // Ensure that we know the state_uid of the start state
     let start_state_uid = questions?.[curr_interface]?.[curr_question]?.start_state_uid
     if(!start_state_uid){
         let {modifyQuestion} = get()
@@ -1416,6 +1409,30 @@ const useAuthorStore = create((set,get) => ({
     }
     console.log("SS UID", start_state_uid)
     set({start_state_uid})
+    return start_state_uid
+  },
+
+  updateAgentRollout : async (merge=false) => {
+    console.log("Fetch Next Actions")
+    
+    let {agentPromise, mergeGraphChanges, recalcGraphConnections, showStateSkillApps,
+        updateStartStateUID, network_layer, agent_uid, start_state} = get()
+
+    //Make sure the agent exists before we query it for actions 
+    set({awaiting_rollout: true})
+    await agentPromise
+
+    // Ensure that we know the state_uid of the start state
+
+    let start_state_uid = await updateStartStateUID();
+    // let start_state_uid = questions?.[curr_interface]?.[curr_question]?.start_state_uid
+    // if(!start_state_uid){
+    //     let {modifyQuestion} = get()
+    //     start_state_uid = await network_layer.get_state_uid(agent_uid, start_state);  
+    //     modifyQuestion(curr_interface, curr_question, {start_state_uid})
+    // }
+    // console.log("SS UID", start_state_uid)
+    // set({start_state_uid})
 
     let {tutor_state, setSkillApps, graph_states, in_done_state} = get()
 
@@ -1431,7 +1448,7 @@ const useAuthorStore = create((set,get) => ({
     //   console.log("CURR STATE UID COMPUTED:", curr_state_uid);    
     // }
 
-    let rollout = await network_layer.act_rollout(agent_uid, start_state)
+    let rollout = await network_layer.act_rollout(agent_uid, start_state, {is_start: true})
 
     console.log("ROLLOUT RETURN", rollout);
     let {states, actions} = rollout
@@ -1543,7 +1560,7 @@ const useAuthorStore = create((set,get) => ({
     let {network_layer, mode, skill_apps, curr_state_uid, tutor_state, agent_uid,  tutor,
         confirmArgFoci, updateAgentRollout, updateSkills, saveProject, focus_uid, staged_uid,
         graph_states, graph_actions, beginSetStartState, modifySkillApp, setReward, 
-        setTutorState} = get()
+        setTutorState, start_state_uid} = get()
 
     // Should not be able to confirm feedback in start_state mode
     if(mode == "start_state"){
@@ -1552,9 +1569,9 @@ const useAuthorStore = create((set,get) => ({
     if(mode == 'arg_foci'){
       confirmArgFoci()
     }
-    console.log("CONFIRM FEEDBACK")
+    console.log("CONFIRM FEEDBACK", yes_focus)
 
-    if(yes_focus){
+    if(false && yes_focus){
       let skill_app = skill_apps[focus_uid]
       if(skill_app && (skill_app?.reward ?? 0) == 0){
         setReward(skill_app, 1);
@@ -1566,8 +1583,11 @@ const useAuthorStore = create((set,get) => ({
     let training_set = [] 
     let states = {[curr_state_uid]: tutor_state} 
     for (let [key, skill_app] of Object.entries(skill_apps)){
-      if((skill_app?.reward ?? 0) != 0){
-        training_set.push({state: curr_state_uid, ...skill_app})
+      let rew = skill_app?.reward
+      console.log("REWREW", rew, skill_app?.confirmed)
+      if(skill_app?.confirmed || (rew || 0) != 0){
+        training_set.push({state: curr_state_uid, ...skill_app,
+           is_start: start_state_uid == curr_state_uid})
         if(skill_app?.has_changed || !skill_app?.confirmed){
           do_train = true
         }
