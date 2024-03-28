@@ -1760,7 +1760,7 @@ export default function AuthoringInterface({props}) {
                   ...(study_index==1 && styles.header_button_selected)}}
                   path='/privacy-policy' onClick={() => {
                   clearProject()
-                  location.replace('http://ai2t.site/build/index.html?training=/author_mc.json&agent_url=http://ai2t.site/agent')
+                  location.replace('http://ai2t.online/build/index.html?training=/author_mc.json&agent_url=http://ai2t.online/agent')
                   return null;
               }}>
               1
@@ -1770,7 +1770,7 @@ export default function AuthoringInterface({props}) {
                   ...(study_index==2 && styles.header_button_selected)}}
                   path='/privacy-policy' onClick={() => {
                   clearProject()
-                  location.replace('http://ai2t.site/build/index.html?training=/author_fractions.json&agent_url=http://ai2t.site/agent')
+                  location.replace('http://ai2t.online/build/index.html?training=/author_fractions.json&agent_url=http://ai2t.online/agent')
                   return null;
               }}>
               2
