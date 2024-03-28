@@ -330,9 +330,11 @@ const useAuthorStore = create((set,get) => ({
       console.log("RESOLVE AGENT PROMISE", agent_uid)
       resolve(agent_uid)
     })
+    console.log("REQUIRED", author?.required_problems, author?.completeness_profile)
 
     set({mode: 'train', agentPromise,
         completeness_profile: author?.completeness_profile,
+        required_problems: author?.required_problems,
         study_index : author?.study_index ?? 0,
         prob_configs,
     })

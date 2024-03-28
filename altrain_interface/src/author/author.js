@@ -1700,7 +1700,7 @@ export default function AuthoringInterface({props}) {
     ['@training_config','@training_file', '@tutor_class', 'network_layer'])
   let [transaction_count, large_window, study_index] = useAuthorStoreChange(["@transaction_count", "@window_size=='large'", "@study_index"])
   let {addSkillApp, removeSkillApp,  setSkillApps, setStaged, onKeyDown, onKeyUp, setCenterContentRef,
-      incTransactionCount, setConfig, setTutor, resizeWindow, clearProject} = authorStore()
+      incTransactionCount, setConfig, setTutor, resizeWindow, clearProject, required_problems} = authorStore()
 
   let Tutor = tutor_class
 
@@ -1853,6 +1853,20 @@ export default function AuthoringInterface({props}) {
           <div style={styles.right_tools}> 
             <AgentArea/>
             <SkillArea/>
+
+            {required_problems && 
+              <div style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+                <a style={{fontWeight: "bold", margin: 4}}>Target Problems</a>
+                <div style={{display: "flex", flexDirection: "column"}}>
+                {required_problems.map((prob, index) =>(
+                  <a key={index} style={{margin: 4}}>{`${index+1}. ${prob}`}</a>
+                ))}
+                </div>
+                <a style={{fontWeight: "bold", margin: 4}}>
+                  {"...Then come up with new problems until you think the AI can solve any 3-digit by 3-digit problem"}
+                </a>
+              </div>
+            }
             <StagedFeedbackArea/>
             <div style={styles.stopper}/>
           </div>

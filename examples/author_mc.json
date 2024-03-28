@@ -48,6 +48,14 @@
   "author" : {
   	"study_index" : 1,
   	"completeness_profile" : "gt-nocarryZ-3.txt",
+  	"required_problems" : [
+  		"574+698",
+	    "248+315",
+	    "394+452",
+	    "252+533",
+	    "334+943",
+	    "189+543",
+  	],
   	"interfaces" : [
   		{"HTML": "MultiColumnArithmetic/HTML/MultiColumnArithmetic.html"},
   		//{"HTML": "FractionArithmetic/HTML/FractionArithmetic.html"},
