@@ -61,7 +61,7 @@ const ScrollableStage = React.forwardRef(({children, style, stage_style}, ref) =
       let {pushCursor} = authorStore()
       pushCursor("move")
       // stage_view_ref.current.style.cursor = "move"
-      // console.log()
+      console.log()
     }
   }
   const handleMouseUp = (e) => {

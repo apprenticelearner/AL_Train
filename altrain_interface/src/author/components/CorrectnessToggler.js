@@ -83,14 +83,20 @@ const togglerMouseEvents = {
 
 
 
-export let SmallCorrectnessToggler = ({style, correct, incorrect, onPress, onOnly, text_color,...props}) =>{
+export let SmallCorrectnessToggler = (props) =>{
+  let {style, correct, incorrect,
+       onPress, onOnly, text_color,
+       orientation="vertical"} = props
+
+
+
 	const [state_correct,setCorrect] = useState(props.correct || false)
 	const [state_incorrect,setIncorrect] = useState(props.incorrect || false)
 	const [only,setOnly] = useState(props.only || false)
 	const [is_hover, setIsHover] = useState(false)
 
-	correct = correct | state_correct
-	incorrect = incorrect | state_incorrect
+	correct = correct ?? state_correct
+	incorrect = incorrect ?? state_incorrect
 	// const [is_pressed, setIsPressed] = useState(false)
 	const undef = !correct && !incorrect;
 
@@ -106,6 +112,16 @@ export let SmallCorrectnessToggler = ({style, correct, incorrect, onPress, onOnl
 		setIncorrect(corr)
 		setOnly(false)
 	}
+
+  let touch_area_style, flex_dir;
+  if(orientation == "vertical"){
+    touch_area_style = {width : "110%", height : "60%"}
+    flex_dir = "column"
+  }else{
+    touch_area_style = {width : "60%", height : "110%"}
+    flex_dir = "row-reverse"
+  }
+
   let force_reward = null
   if(!correct && !incorrect){
     force_reward = (is_hover == "top" && 1) ||
@@ -113,13 +129,13 @@ export let SmallCorrectnessToggler = ({style, correct, incorrect, onPress, onOnl
                    null
   }
   
-  let left_size = (force_reward < 0 && 16) ||
-                  (!force_reward && 10) ||
-                  7
+  let left_size = (force_reward < 0 && "1em") ||
+                  (!force_reward && ".7em") ||
+                  ".55em"
 
-  let right_size = (force_reward > 0 && 16) ||
-                  (!force_reward && 10) ||
-                  7
+  let right_size = (force_reward > 0 && "1em") ||
+                  (!force_reward && ".7em") ||
+                  ".55em"
 
 
   let font_color = (!undef && is_hover && correct && colors.incorrect) ||
@@ -132,10 +148,11 @@ export let SmallCorrectnessToggler = ({style, correct, incorrect, onPress, onOnl
 	let text =  (((is_hover && incorrect) || (!is_hover && correct)) && "✔") || 
               (((is_hover && correct) || (!is_hover && incorrect)) && "✖") ||
               (
-               <div style={{display:"flex", flexDirection: 'column', alignItems : "center"}}>
-                <a style={{margin: 1, textAlign:'center',
+               <div style={{display:"flex", flexDirection: flex_dir, alignItems : "center",
+                            width: "100%", height: "100%", justifyContent: "stretch", alignItems: "stretch"}}>
+                 <a style={{display:"flex", flex:1 , margin: 1, alignItems:'center', justifyContent: "center",
                       fontSize: right_size, color: top_color}}>{"✔"}</a>
-                 <a style={{margin: 1, textAlign:'center',
+                 <a style={{display:"flex", flex: 1, margin: 1, alignItems:'center', justifyContent: "center",
                       fontSize: left_size, color: bottom_color}}>{"✖"}</a>
                </div>
               )
@@ -144,17 +161,19 @@ export let SmallCorrectnessToggler = ({style, correct, incorrect, onPress, onOnl
   let font_size = (undef && !force_reward && 10) || 14
 
 
-	let bg_color = (is_hover && 'rgb(220, 220, 220)') || 
+	let bg_color = (is_hover && colors.button_default) || 
                  (correct && colors.correct) || 
 	               (incorrect && colors.incorrect) ||
-	               'rgb(220, 220, 220)'
+	               colors.button_default
 
+  console.log("RERENDER TOGGLER", is_hover, correct, incorrect, bg_color)  
+  
 	// console.log("<<", style)
 	// let text = inner_text={((correct  || undef)
 	return (
 		<div 
       onMouseLeave={()=>setIsHover(false)}
-      style = {{width:30, position:'absolute',  ...style}}>
+      style = {{overflow:"visible", position: "relative", ...style}}>
 			<CorrectnessTogglerKnob
           inner_text={text}
           text_color={font_color}
@@ -163,24 +182,35 @@ export let SmallCorrectnessToggler = ({style, correct, incorrect, onPress, onOnl
           force_show_other={false}
           is_small={true}
           style={{
+          position: "absolute",
           ...styles.feedback_button,
+          height : "90%", width : "90%", padding : "5%",
+          borderRadius : style?.borderRadius ?? "10%",
           ...{backgroundColor : bg_color}
           }}
           // ...{fontSize: font_size},
           // ...(incorrect && styles.incorrect_selected),
           // ...(correct && styles.correct_selected)}}
 			/>
-      <div 
-        style={styles.touch_area_top}
-        onClick={(e)=>{e.stopPropagation();onPress?.(force_reward);setIsHover(false)}}
-        onMouseEnter={()=>{setIsHover('top');}}
-      />
-			<div 
-        style={styles.touch_area_bottom}
-        onClick={(e)=>{e.stopPropagation();onPress?.(force_reward);setIsHover(false)}}
-        onMouseEnter={()=>{setIsHover('bottom');}}
-        
-      />
+      {/* Invisible Touch Areas */}
+      <div style={{position : "absolute", display: "flex", flexDirection: flex_dir,
+                   width: "100%", height : "100%"}}>
+        <div 
+          style={{...touch_area_style,
+                  // backgroundColor: 'rgba(0,0,255,.2)',
+                 }}
+          onClick={(e)=>{e.stopPropagation();onPress?.(force_reward);setIsHover(false)}}
+          onMouseEnter={()=>{setIsHover('top');}}
+        />
+  			<div 
+          style={{...touch_area_style,
+                  // backgroundColor: 'rgba(0,255,0,.2)',
+                }}
+          onClick={(e)=>{e.stopPropagation();onPress?.(force_reward);setIsHover(false)}}
+          onMouseEnter={()=>{setIsHover('bottom');}}
+          
+        />
+      </div>
 	       
 		</div>
 	)
@@ -396,23 +426,23 @@ const styles = {
   },
 
   touch_area_top: {
-		width:28,
-    height:22,
-    position:'absolute',
-    alignItems:"center",
-    top: -10,
-    left: -2,
-    // backgroundColor: 'rgba(0,255,0,.2)',	
+		width:"100%",
+    height:"50%",
+    // position:'absolute',
+    // alignItems:"center",
+    // top: -10,
+    // left: -2,
+    backgroundColor: 'rgba(0,255,0,.2)',	
   },
   touch_area_bottom: {
-    width:28,
-    height:20,
+    width:"100%",
+    height:"50%",
     // right : 15,
-    position: 'absolute',
-    alignItems: "center",
-    top:  12,
-    left: -2,
-    // backgroundColor: 'rgba(0,0,255,.2)',  
+    // position: 'absolute',
+    // alignItems: "center",
+    // top:  12,
+    // left: -2,
+    backgroundColor: 'rgba(0,0,255,.2)',  
   },
   only_bubble: {
   	position : "absolute",

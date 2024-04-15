@@ -61,8 +61,23 @@ let PopUpConfirmButton = memo(({sel, skill_app}) => {
   )
 })
 
-let RemoveButton = memo(({skill_app}) => {
-  let {removeSkillApp, setReward} = authorStore();
+
+const getHasRemove = (skill_app_uid) => [(s) =>{
+    let skill_app = s?.skill_apps[skill_app_uid]
+    return !!skill_app?.remove || !!skill_app?.removed
+    },
+    (o,n) => o == n
+  ]
+
+export let RemoveButton = memo(({skill_app_uid, style}) => {
+  
+  let {removeSkillApp, setReward, setRemove, skill_apps} = authorStore();
+  let skill_app = skill_apps?.[skill_app_uid];
+
+  let [hasRemove] = useAuthorStoreChange([getHasRemove(skill_app_uid)])
+
+  
+
   let rd_props = {
     hover_scale : 1.1,
     default_scale : 1,
@@ -71,29 +86,33 @@ let RemoveButton = memo(({skill_app}) => {
   }
   let [hasHover, setHover] = useState(false)
 
+  // console.log("REMOVE BUTTON!", skill_app_uid.slice(0,5), hasRemove)
+  let inner_text = (hasRemove && "↶") || "✕"
+  let hover_text = (hasRemove && "restore") || "remove"
 
   return (<RisingDiv
       hoverCallback={(e)=>{setHover(true)}}
       unhoverCallback={(e)=>{setHover(false)}}
-      scale={(hasHover && 1.1) || 1}
-      elevation={(hasHover && 10) || 6}
+      {...rd_props}
+      //scale={(hasHover && 1.1) || 1}
+      //elevation={(hasHover && 10) || 6}
       //onMouseEnter={(e)=>{console.log("OVER:", e)}}
       //onMouseLeave={(e)=>{console.log("LEAVE:", e)}}
-      style={styles.remove_button}
+      style={{...styles.remove_button,...style}}
       //{...rd_props}
       onMouseDown={(e)=>{
           e.stopPropagation()
           if(skill_app?.confirmed){
-            setReward(skill_app, null)
+            setRemove(skill_app, !skill_app?.remove)
           }else{
             removeSkillApp?.(skill_app);
           }
 
           }}
-        >{"✕"}
+        >{inner_text}
 
       {hasHover && 
-        <div style={styles.popup_button_text}>remove</div>
+        <div style={styles.popup_button_text}>{hover_text}</div>
       }
       </RisingDiv>    
   )
@@ -107,7 +126,7 @@ let RemoveButton = memo(({skill_app}) => {
 // console.log("foci_bg_color", foci_bg_color)
 // console.log("foci_cand_bg_color", foci_cand_bg_color)
 
-function MultipleActionsIndicator({style, show_app, skill_app, skill_app_uids}){
+function MultipleActionsIndicator({style, show_app, skill_app, skill_app_uids, hasFocus}){
   //let [skill_app_uids] = useAuthorStoreChange([`@sel_skill_app_uids.${sel}`])
   let {skill_apps} = authorStore()
   let state_kind = (
@@ -139,6 +158,8 @@ function MultipleActionsIndicator({style, show_app, skill_app, skill_app_uids}){
     colors.default
   )
 
+
+
   return (
     <div style={{position: "absolute", 
             display : "flex", alignItems: "center", 
@@ -153,9 +174,10 @@ function MultipleActionsIndicator({style, show_app, skill_app, skill_app_uids}){
 
 function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacity=.4, ...props}){
     let {setHover, setHoverSel, setFocus, toggleReward, toggleFoci, getFociIndexInfo} = authorStore()
-    let [[skill_app, hasStaged], groupHasFocus, hasHover, skill_app_uids,
+
+    let [[skill_app, hasStaged], hasVis, groupHasFocus, hasHover, skill_app_uids,
           mode, isExternalHasOnly, elem_locked, in_done_state] = useAuthorStoreChange(
-      [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@hover_sel==${sel}`, `@sel_skill_app_uids.${sel}`,
+      [getOverlaySkillApp(sel), getHasSelVis(sel), `@focus_sel==${sel}`, `@hover_sel==${sel}`, `@sel_skill_app_uids.${sel}`,
        "@mode", "@only_count!=0", `@tutor_state.${sel}.locked`, '@in_done_state'],
     )
     // console.log("OVERLAY BOUNDS", sel, skill_app)
@@ -165,14 +187,14 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
       return
     }
 
-    let [[foci_index, foci_explicit, foci_hover],
+    let [[foci_index, foci_explicit, foci_just_hover],
          hasSkillAppFocus, foci_mode, show_all_apps] = useAuthorStoreChange(
         [getFociIndexInfo(sel),
          `@focus_uid==${skill_app?.uid}`,  "@mode=='arg_foci'", '@show_all_apps']
     )
 
     let show_app = skill_app && 
-                  (hasHover || groupHasFocus || show_all_apps || mode=="start_state")
+                  (hasVis || show_all_apps || mode=="start_state")
 
     let first_uid = skill_app_uids?.[0] || ""
     
@@ -194,7 +216,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
       foci_color = where_colors[foci_index % where_colors.length]
     }
 
-    if(!foci_explicit || foci_hover){
+    if(!foci_explicit || foci_just_hover){
       foci_color = Color(foci_color).lighten(.25).hexa()
     }
 
@@ -243,17 +265,17 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
                           clear_bg_color
 
     let borderColor = ((hasSkillAppFocus || mode == 'start_state') && color) || 
-                      ((is_foci || foci_hover) && foci_color) ||
+                      ((is_foci || foci_just_hover) && foci_color) ||
                       (arg_hover && color) ||
                       (foci_cand && 'transparent') ||
                       (elem_locked && colors.locked) || 
-                      (groupHasFocus && color) ||
+                      (hasVis && color) ||
                       color
 
 
 
     let borderWidth = (arg_hover && foci_color && 4) ||
-                      ((is_foci || groupHasFocus) && 5) ||
+                      ((is_foci || hasVis) && 5) ||
                       (arg_hover && 4) ||
                       ((hasHover) && 4) ||
                       
@@ -276,11 +298,12 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
                       //borderWidth: 4,
                       //boxShadow: "10px 5px 5px red"}
 
-    // console.log("::", sel, skill_app?.uid, color)
+    
     let cursor_kind = (foci_cand && 'none') ||
                       (elem_locked && 'default') ||
                       (skill_app && !groupHasFocus && 'pointer') || 
                       'auto'
+    console.log("::", foci_cand, elem_locked, groupHasFocus, cursor_kind, style)
     let transp_ptr_evts = (mode == "start_state"  && 'none') ||
                           (groupHasFocus && 'none') ||
                           (!skill_app && 'none') ||
@@ -306,6 +329,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         cursor:  cursor_kind,
         ...(show_app && {boxShadow: "4px 6px 4px rgba(0,20,60,0.6)"}),
         ...style,
+        zIndex : (hasVis && 10) || 1
         // opacity : (foci_cand && .4) || 1
       }}
 
@@ -339,11 +363,26 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         {mode != 'start_state' &&
          skill_app_uids?.length > (show_all_apps ? 1 : 0) &&
          <MultipleActionsIndicator 
-          {...{show_app, skill_app, skill_app_uids}}
+          {...{show_app, skill_app, skill_app_uids, hasFocus:groupHasFocus}}
           style={{
-            top: -4-(groupHasFocus && 1),
+            top: -4-(hasVis && 1),
             left: -8-hbw
           }}/>
+        }
+
+        {/* Focus Indicator */}
+        {groupHasFocus && mode != 'start_state' &&
+          <div style={{position: "absolute", //'rgba(20,20,60,.6)',
+                      backgroundColor: color,
+                      borderColor: "white",//'rgba(150, 80, 220, 1.0)', //'rgba(90,90,120, .25)',
+                      borderWidth : 3,
+                      borderStyle : 'solid',
+                      left: -8, top: rect.height/2-4, borderRadius: 10, 
+
+                      width : 5, height: 5,
+                       // fontSize:20, fontWeight: "bold", color:color
+                       }}>
+          </div>
         }
 
         {/* Next Icon */}
@@ -384,10 +423,14 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
         }
 
         {/*Remove Button*/}
-        {(mode != "start_state" && groupHasFocus && 
-          ( (is_demo && <RemoveButton skill_app={skill_app}/>) ||
+        {(mode != "start_state" && hasVis && groupHasFocus && 
+          ( (is_demo && 
+            <RemoveButton skill_app_uid={skill_app?.uid} 
+              style={{position : 'absolute', right:-14, top:-12}}/>
+            ) ||
             <SmallCorrectnessToggler 
               style={{...styles.toggler_small}}
+              orientation={"vertical"}
               text_color={(isImplicit && 'white') || 'black'}
               correct={correct}
               incorrect={incorrect}
@@ -446,6 +489,18 @@ const getOverlaySkillApp = (sel) =>{
     }]
 }
 
+const getHasSelVis = (sel) => [(s) =>{
+    let {focus_sel, hover_sel} = s     
+    let hasFocus = focus_sel==sel
+    let selHasHover = hover_sel==sel
+    let hoverHasApps = false
+    if(hover_sel){
+      hoverHasApps = (s.sel_skill_app_uids?.[hover_sel]?.length ?? 0) > 0;
+    }
+    let otherHover = hoverHasApps && !selHasHover;
+    return selHasHover || (hasFocus && !otherHover)
+    },
+    (o,n) => o == n]
 // const getOverlayIsLocked = (sel) =>{
 
 // }
@@ -479,16 +534,16 @@ function TextFieldOverlay({sel, elem}) {
   // True if has focus and empty
   const [empty_focus, setEmptyFocus] = useState(false);
 
-  let [[skill_app, hasStaged], groupHasFocus, isExternalHasOnly,
-    mode, has_focus, in_done_state, show_all_apps, hasHover] = useAuthorStoreChange(
-    [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@only_count!=0`, "@mode",
-    `@input_focus==${sel}`, '@in_done_state', '@show_all_apps', `@hover_sel==${sel}`,],
+  let [[skill_app, hasStaged], hasVis, groupHasFocus, isExternalHasOnly,
+    mode, has_focus, in_done_state, show_all_apps, hasHover, ] = useAuthorStoreChange(
+    [getOverlaySkillApp(sel), getHasSelVis(sel), `@focus_sel==${sel}`, `@only_count!=0`, "@mode",
+    `@input_focus==${sel}`, '@in_done_state', '@show_all_apps', `@hover_sel==${sel}`],
   )
   let {setInputFocus, addSkillApp, removeSkillApp, setInputs, setFocus, beginSetArgFoci, confirmArgFoci} = authorStore()
   // let empty_focus = (!skill_app?.input && has_focus)
   // console.log(not_empty.current, skill_app)
-
-  let show_app = skill_app && (hasHover || groupHasFocus || show_all_apps)
+  console.log("SEL", sel)
+  let show_app = skill_app && (hasVis || show_all_apps)
 
 
   // let {color} = skillAppExtractProps(skill_app, isExternalHasOnly)
@@ -499,7 +554,7 @@ function TextFieldOverlay({sel, elem}) {
     // color = "teal"
     fontColor = 'black'
   }else{
-    fontColor = ((groupHasFocus || !input) && 'black') || 'grey'
+    fontColor = ((hasVis || !input) && 'black') || 'grey'
   }
 
   if(show_app && !empty_focus && skill_app){
@@ -646,28 +701,28 @@ function ButtonOverlay({
     sel, elem,
   }) {
 
-  let [[skill_app,hasStaged], groupHasFocus,  isExternalHasOnly, in_done_state, hasHover, show_all_apps] = useAuthorStoreChange( 
-    [getOverlaySkillApp(sel), `@focus_sel==${sel}`, `@only_count!=0`, '@in_done_state', `@hover_sel==${sel}`, '@show_all_apps']
+  let [[skill_app,hasStaged], hasVis, groupHasFocus,  isExternalHasOnly, in_done_state, hasHover, show_all_apps] = useAuthorStoreChange( 
+    [getOverlaySkillApp(sel), getHasSelVis(sel), `@focus_sel==${sel}`, `@only_count!=0`, '@in_done_state', `@hover_sel==${sel}`, '@show_all_apps']
   )
   let {addSkillApp, removeSkillApp, setFocus} = authorStore()
 
   // console.log("skill_app", skill_app)
   let {correct, incorrect, isDemo, color, input} = skillAppExtractProps(skill_app, isExternalHasOnly)
 
-  color = (groupHasFocus && color) ||
+  color = (hasVis && color) ||
           (elem.locked && colors.locked) || 
           colors.default
 
-  let click_locked = skill_app || in_done_state;
+  let new_demo_locked = skill_app || in_done_state;
 
-  let show_app = skill_app && (hasHover || groupHasFocus || show_all_apps)
+  let show_app = skill_app && (hasVis || show_all_apps)
 
   return (
     <OverlayBounds {...{sel, elem, color}}
-      style={{cursor : click_locked  ? 'auto' : 'pointer'}}
+      //style={{...(groupHasFocus && {cursor : 'auto'})}}
       onClick={(e)=>{
         // console.log("BUTTON")
-        if(!click_locked){
+        if(!new_demo_locked){
           let new_skill_app = newDemo(sel, "PressButton", -1)
           addSkillApp(new_skill_app)  
           setFocus(new_skill_app.uid)
@@ -678,11 +733,11 @@ function ButtonOverlay({
       <div style={{
         borderRadius:100, overflow: 'clip',
         translate: "50% 10%",
-        ...(groupHasFocus && {backgroundColor: color, opacity: .5})
+        ...(hasVis && {backgroundColor: color, opacity: .5})
         }}> 
         <img 
           style ={{...styles.button_image,
-            ...(!groupHasFocus && {opacity: .5})}}
+            ...(!hasVis && {opacity: .5})}}
           src={images.tap}
           alt={"tap"}
         />
@@ -838,9 +893,9 @@ const styles = {
     display : "flex",
     alignItems : 'center',
     justifyContent : 'center',
-    position : 'absolute',
-    right:-14,
-    top:-12,
+    userSelect : "none",
+    position:'relative',
+    
     padding : "2px 2px 2px 2px",
     margin : 2,
     // opacity : .2,
@@ -873,14 +928,18 @@ const styles = {
   },
 
   toggler_small: {
-    width: 18,
-    height: 26,
+    position:'absolute', 
+    width: 20,
+    height: 30,
     right: -12,
     top: -12,
+    fontSize : 14,
+    borderRadius : 6,
     position:'absolute',
     display:"flex",
     justifyContent : "center",
     alignItems : "center",
+
   },
 
 

@@ -9,7 +9,7 @@ import RisingDiv from "./components/RisingDiv.js"
 import {CorrectnessToggler, SmallCorrectnessToggler} from "./components/CorrectnessToggler.js"
 import {SkillAppCardLayer, SkillAppGroup, DownChevron} from "./components/SkillAppCard.js"
 import {FeedbackCounters} from "./components/icons.js"
-import {StateOverlayLayer} from "./components/StateOverlay.js"
+import {StateOverlayLayer, RemoveButton} from "./components/StateOverlay.js"
 import {Icon} from "./components/icons.js"
 import {Graph} from "./graph.js"
 import ScrollableStage from "./stage.js"
@@ -69,7 +69,7 @@ let button_defaults_props = {
 
 function getFocusOrHover(){
   return [(s)=>{
-    let skill_app = s.skill_apps[s.focus_uid] || s.skill_apps[s.hover_uid]
+    let skill_app = s.skill_apps[s.hover_uid] || s.skill_apps[s.focus_uid]
     return skill_app
   },
   (o,n) =>{
@@ -316,7 +316,7 @@ const fxDropDownStyles = {
   menu : (styles) => ({...styles,paddingRight : 0}),
 };
 
-const makeHighlightedEquation = (func, values=null, use_values=false) => {
+const makeHighlightedEquation = (func, values=null, use_values=false, use_colors=true) => {
   let {minimal_str="??", vars=[]} = func  
   vars = vars.map(({alias})=>alias)
 
@@ -326,20 +326,26 @@ const makeHighlightedEquation = (func, values=null, use_values=false) => {
 
   let vals_or_vars = (use_values && values) ||
                       vars.map((x)=>x.toUpperCase())
-  // console.log(func, values)
 
+  let textArray = minimal_str.split(regex);
+  textArray = textArray.filter((x)=>!!x)
 
-  const textArray = minimal_str.split(regex);
+  // console.log("TEXT ARRAY", textArray)
+  if(textArray.length == 1 && vars.indexOf(textArray[0]) == 0){
+    textArray = ["copy(", textArray[0], ")"]
+  }
+
   let output = []
   let i = 0;
   for (let str of textArray){
     if(str){
       let index = vars.indexOf(str)
       if(index != -1){
+        let color = (use_colors && where_colors[index]) || 'black'
         output.push(
           <span 
             key={`${str}_${i}`}
-            style={{color:  where_colors[index], fontWeight: 'bold'}}
+            style={{color:  color, fontWeight: 'bold'}}
           >{vals_or_vars[index]}</span>)
       }else{
         output.push(str)
@@ -369,12 +375,13 @@ const FxOption = (props) =>{
   )
 }
 
-const FxContent = ({ label, value, data={}, explicit,...rest}, {context}) => {
+const FxContent = ({ label, value, data={}, explicit, style, use_colors=true, show_const=true, ...rest}, {context}) => {
   // console.log("CONTENT ", label, data, rest)
 
   let {skills, focus_uid, skill_apps} = authorStore()
-  let skill_app = skill_apps?.[focus_uid];
+  
   let {func, skill_uid, uid, head_vals=null, matches=[]} = data;
+  let skill_app = skill_apps?.[uid];
   let skill = skills?.[skill_uid||uid||skill_app?.skill_uid];
 
   let selected_expl = skill_app?.explanation_selected
@@ -384,12 +391,17 @@ const FxContent = ({ label, value, data={}, explicit,...rest}, {context}) => {
 
   let is_const = (func?.vars?.length == 0) ?? true
 
-  let highlighted_eq = makeHighlightedEquation(func, head_vals, true)
-
+  let highlighted_eq;
   let button_action = skill_app?.action_type?.includes("Button") ?? false;
   if(button_action){
-    highlighted_eq = "press"
+    highlighted_eq = [<a>{"press "}</a>,
+                      <a style={{fontWeight:"bold"}}>{skill_app?.selection ?? "??"}</a>
+                     ]
+  }else{
+    highlighted_eq = makeHighlightedEquation(func, head_vals, true, use_colors)
   }
+
+
 
   let is_menu = context == "menu"
   let is_value = context == "value"
@@ -400,11 +412,11 @@ const FxContent = ({ label, value, data={}, explicit,...rest}, {context}) => {
 
 
   return (
-    <div style={styles.fx_option}>
+    <div style={{...styles.fx_option, ...style}}>
 
       {/* Dot area */}
       {(is_menu || is_value) &&       
-        <div style={{ display : "flex", alignSelf: "center", justifyContent: "center", color: "dodgerblue", fontSize : 20, width : dot_width}}>
+        <div style={{ display : "flex", alignSelf: "center", justifyContent: "center", color: "dodgerblue", width : dot_width}}>
             <a style={{position:'relative', left: dot_offset, fontSize:".45em"}}>
               {explicit ? "⬤" : "◯"}
             </a>
@@ -412,13 +424,13 @@ const FxContent = ({ label, value, data={}, explicit,...rest}, {context}) => {
       }
 
       {/* Equation */}
-      <div style={{fontFamily : "Arial", color: "rbg(20,20,20)", fontSize: 20, opacity: opacity}}>
+      <div style={{fontFamily : "Arial", color: "rbg(20,20,20)", fontSize: "1em", opacity: opacity}}>
         {highlighted_eq}
       </div>
       
       {/* Constant */}
-      <div style={{ marginLeft: "auto", color: "#ccc", fontSize : 12}}>
-        {(is_const && 'constant') ||
+      <div style={{ marginLeft: "auto", color: "#ccc", fontSize : ".6em"}}>
+        {(show_const && is_const && 'constant') ||
           matches.join(", ")
         }
       </div>
@@ -658,6 +670,310 @@ function NavigationKeys({show_yes=false, show_apply=true}){
       </div>
   )
 }
+
+const evalKind = (skill_app) => {
+  let correct = skill_app?.reward > 0 ?? false;
+  let incorrect = (skill_app?.reward < 0 ?? false)
+  
+  let kind = (correct && "correct") || 
+             (incorrect && "incorrect") ||
+             "undef"
+  if(kind != "undef" && skill_app?.is_demo){
+    kind = "demo_" + kind + (skill_app?.only ? "_only" : "");
+  }
+  if(kind != "undef" && skill_app?.only){
+    kind = kind + "_only"
+  }
+  return kind
+} 
+
+const getInput = (skill_app_uid) => [(s) =>{
+    let skill_app = s?.skill_apps[skill_app_uid];
+    return skill_app?.inputs.value ?? skill_app?.input ?? ""
+    },
+    (o,n) => o == n
+  ]
+
+const getReward = (skill_app_uid) => [(s) =>{
+    let skill_app = s?.skill_apps[skill_app_uid];
+    return skill_app?.reward ?? 0
+    },
+    (o,n) => o == n
+  ]
+
+const getRemoved = (skill_app_uid) => [(s) =>{
+    let skill_app = s?.skill_apps[skill_app_uid];
+    return !!skill_app?.remove || !!skill_app?.removed
+    },
+    (o,n) => o == n
+  ]
+
+const getHasVis = (skill_app_uid) => [(s) =>{
+    let {focus_uid, hover_uid} = s     
+    let hasFocus = focus_uid == skill_app_uid
+    let hasHover = hover_uid == skill_app_uid
+    let otherHover = hover_uid && !hasHover
+    return hasHover || (hasFocus && !otherHover)
+    },
+    (o,n) => o == n
+  ]
+
+/* Action List */ 
+const ActionListItem = memo(({style, skill_app_uid}) => {
+  let {skills, setFocus, setHover, toggleReward, skill_apps} = authorStore()
+  let uid = skill_app_uid;
+  
+  let [hasVis, input, reward, removed, hasFocus, hasHover] = useAuthorStoreChange(
+      [getHasVis(uid), getInput(uid), getReward(uid), getRemoved(uid), `@focus_uid==${uid}`, `@hover_uid==${uid}`, ]
+  )
+
+  let skill_app = skill_apps?.[uid];
+  console.log("PLOOP", uid.slice(0,5), "rem", removed, "vis", hasVis)
+  // console.log("RERENDER ITEM")
+
+  let scale = (hasHover && 1.05) ||
+              // (hasVis && 1.03) || 
+              1.0;
+  let elevation = (hasHover && 8) ||
+                  (hasVis && 6) ||
+                  2;
+  // console.log(scale, elevation)
+  // let input = skill_app?.inputs.value ?? skill_app?.input ?? ""
+  let fx = skill_app?.explanation_selected
+
+  let {func, skill_uid, head_vals=null, matches=[]} = skill_app;
+  let skill = skills?.[skill_uid||uid||skill_app?.skill_uid];
+  func = func || skill?.how?.func || {}
+
+  // let fxC
+  // let highlighted_eq = makeHighlightedEquation(func, head_vals, true, hasVis)
+
+  let button_action = skill_app?.action_type?.includes("Button") ?? false;
+  // if(button_action){
+  //   highlighted_eq = [<a>{"press "}</a>,
+  //                     <a style={{fontWeight:"bold"}}>{skill_app?.selection ?? "??"}</a>
+  //                    ]
+  // }
+
+  
+  let correct = reward > 0 ?? false;
+  let incorrect = (reward < 0 ?? false)
+  let kind = evalKind(skill_app)
+  
+
+  let color = (skill_app?.is_demo && colors.demo) || 
+              (correct && colors.correct) ||
+              (incorrect && colors.incorrect) ||
+              (colors.default)
+
+  let certainty = (skill_app?.certainty ?? 
+                     skill_app?.when_pred)
+  
+  // let borderColor = color
+  if(!hasFocus){
+    color = Color(color).lighten(.5).hexa()
+  }
+
+  let borderWidth = (hasHover && 4) ||
+                    (hasVis && 4) ||
+                    (removed && 4) ||
+                    2
+  let borderLeftWidth = (hasFocus && 9) ||
+                         4
+
+  let inner_padding = 9-Math.floor(borderLeftWidth);
+
+
+  return (
+    <div style={{
+        height: styles.action_list_item.height,
+        padding: 6,
+        display: "flex",
+        alignItems : "center",
+        backgroundColor : (hasVis && 'rgba(250,250,255,.70)'),
+        cursor : (hasFocus && "auto") || "pointer",
+        }}
+        onClick={(e)=>{setFocus(uid)}}
+        onMouseEnter={(e)=>{setHover(uid)}}
+        onMouseLeave={(e)=>{setHover("")}}
+        >
+
+      {/* Certainty or Icon */ }
+      <div style={{width: 26, fontSize: 14, marginLeft:-2,
+          opacity : (removed && .5) || 1 }}>
+        {(kind == "undef" &&
+          <div>
+            {`${Math.floor(Number.parseFloat(certainty*100))}%`}
+          </div>
+          ) ||
+          <Icon style={{marginLeft:1}} size={22} kind={kind}/>
+        }
+      </div>
+
+      {/* Item Card */ }
+      <div style={{
+        ...styles.action_list_item,
+        position: "relative",
+        borderTopWidth: borderWidth,
+        borderBottomWidth: borderWidth,
+        borderRightWidth: borderWidth,
+        borderLeftWidth: borderLeftWidth,
+        borderColor: color,
+        backgroundColor : (removed && 'rgba(200,200,200, 0.0)') || 'white',
+        borderStyle : (removed && 'double double double solid') || 'solid',
+        opacity : (removed && .5) || 1,
+        display: 'flex',
+        flexDirection : 'row',
+        alignItems : 'center',
+        // justifyContent : 'space-between',
+        userSelect : 'none',
+        marginLeft : 9,
+        paddingLeft: inner_padding,
+
+        // paddingLeft: 5-Math.floor(borderLeftWidth),
+        // marginTop: marginVert,
+        // marginBottom: marginVert,
+
+        }}
+        
+      >
+        {button_action && (
+          <FxContent
+            style={{fontSize:16, marginLeft: 6, maxWidth: "30%"}}
+            data={skill_app}
+            use_colors={hasVis}
+            show_const={false}
+            />
+          ) || [
+            <div key={"value"} style={{marginLeft: 6, maxWidth: "30%", 
+              fontWeight:"bold", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
+              {input}
+            </div>,
+            <div key={"equation"} style={{display: 'flex', alignItems: 'center', marginLeft:5, flexDirection: "row"}}>
+              <a>{'='}</a>
+              <FxContent 
+                style={{fontSize:16}}data={skill_app}
+                use_colors={hasVis}
+                show_const={false}
+              />
+            </div>
+          ]
+        }
+        {/* Focus Indicator */}
+        {hasFocus && 
+          <div style={{position: "absolute", //'rgba(20,20,60,.6)',
+                      backgroundColor: color,
+                      borderColor: "white",//'rgba(150, 80, 220, 1.0)', //'rgba(90,90,120, .25)',
+                      borderWidth : 3,
+                      borderStyle : 'solid',
+                      left: -inner_padding-10,  borderRadius: 10, 
+                      width : 6, height: 6,
+                       // fontSize:20, fontWeight: "bold", color:color
+                       }}/>
+        }
+        
+      </div>
+      <div style={{display: "flex", flexDirection: "row",
+          width: 60, height:"100%", alignItems: "center",
+          // backgroundColor :"blue"
+          }}> 
+
+        {/* Correctness Toggler and Remove Button */}
+        <div style={{display: "flex", width: 44, height: "100%", 
+                  marginLeft: 6, justifyContent :"center"
+        }}>
+        {(skill_app?.is_demo && 
+          <RemoveButton skill_app_uid={skill_app?.uid}
+            style={{width: 18, height:18, cursor: "pointer"}}
+          />)  ||
+          <SmallCorrectnessToggler
+            //style={{...styles.toggler_small}}
+            //text_color={(isImplicit && 'white') || 'black'}
+            style={{width : 56, height : "90%", fontSize : 24, borderRadius : 6, cursor: "pointer"}}
+            orientation={"horizontal"}
+            correct={correct}
+            incorrect={incorrect}
+            onPress={(force_reward) => toggleReward(skill_app, force_reward)}
+          />
+        }
+        </div>
+
+        
+        {/*
+        <RisingDiv style={{width: 30, height: 30, backgroundColor :"red",
+                     marginLeft:4, borderRadius: 5}}>
+        </RisingDiv>
+        <RisingDiv style={{width: 30, height: 30, backgroundColor :"green",
+                     marginLeft:4, borderRadius: 5}}>
+        </RisingDiv>
+        <RisingDiv style={{width: 40, height: 30, backgroundColor :"cyan",
+                     marginLeft:"auto", borderRadius: 5}}>
+        </RisingDiv>
+        */}
+
+      </div>
+    </div>
+  ) 
+})
+
+let ActionIndexIndicator = () =>{
+  let {getUIDIndex} = authorStore()
+
+  // NOTE: Rerenderings on @skill_apps is inefficient but this is a simple
+  //   component
+  let [focus_uid, skill_apps] = useAuthorStoreChange(
+      ["@focus_uid", "@skill_apps"])
+  let index = getUIDIndex(focus_uid)+1
+  let L = Object.keys(skill_apps).length
+  return (
+    <div style={styles.action_counter}>
+      {`Action #(${index || "-"}/${L})`}
+    </div>
+  )
+}
+
+let ActionList = memo(({style}) =>{
+  let {setActionListRef} = authorStore()
+  let [skill_apps, focus_uid, curr_state_uid] = useAuthorStoreChange(
+      ["@skill_apps", "@focus_uid", "@curr_state_uid"]
+  )
+
+  /* Scrolling stuff */
+  let action_list_ref = useRef(null)
+  useEffect(() =>{
+    setActionListRef(action_list_ref)
+  },[])
+  
+  console.log("RERENDER LIST")
+
+  return (
+      <div style={{...styles.action_list,
+                   overflow: "hidden",
+                   backgroundColor: 'rgba(200,200,220,.4)',
+                   borderRadius : 5,}}>
+        <ActionIndexIndicator skill_apps={skill_apps}/>
+        <div className='scrollable' style={{
+            ...styles.action_list_content,
+            backgroundColor : 'rgba(0,0,0,0)',
+
+          }}
+          ref={action_list_ref}
+        >
+          {skill_apps && Object.keys(skill_apps).map((sa_uid)=>{
+            let sa = skill_apps?.[sa_uid];
+            return (sa && <ActionListItem
+                      skill_app_uid={sa?.uid}
+                      id={sa?.uid}
+                      key={"skill_app:"+sa?.uid}
+                    >
+                      <a style={{alignSelf: "center"}}>{(name || x)}</a>
+                    </ActionListItem>)
+            })
+          }
+        </div>
+      </div>
+  ) 
+})
 
 
 function ActionDialog({style}){
@@ -902,6 +1218,159 @@ function AgentActionMenu({}){
   )
 }
 
+let ActionMenuApplyButton = memo(({skill_app}) => {
+  let {setStaged, setReward, confirmFeedback} = authorStore();
+  let rd_props = {
+    hover_scale : 1.05,
+    default_scale : 1,
+    hover_elevation : 8,
+    default_elevation : 6
+  }
+  let is_undef = (skill_app?.reward ?? 0) == 0
+
+  //let [hasHover, setHover] = useState(false)
+
+  return (<RisingDiv
+      //hoverCallback={(e)=>{setHover(true)}}
+      //unhoverCallback={(e)=>{setHover(false)}}
+      onClick={()=>{setStaged(skill_app); confirmFeedback(false,true)}}
+      //scale={(hasHover && 1.1) || 1}
+      //elevation={(hasHover && 10) || 6}
+      {...rd_props}
+      //onMouseEnter={(e)=>{console.log("OVER:", e)}}
+      //onMouseLeave={(e)=>{console.log("LEAVE:", e)}}
+      style={{position: "absolute", display: "flex", flexDirection:'row', alignItems:'center', 
+               top: -12, right: -7, padding: 6, paddingBottom:1, paddingTop:1, borderRadius: 5,  
+               backgroundColor: 'rgb(230,230,230)',
+               // color: (is_undef && hasHover && colors.correct) || 'black',
+               fontWeight:'bold', fontSize:16, cursor: "pointer"}}
+      //{...rd_props}
+  > 
+    <a style={{margin: 1, pointerEvents:'none'}}>{"Apply Action"}</a>
+    <img style={{width:14, height:14, margin: 1, marginLeft:2, pointerEvents:'none'}} 
+         src={images.next}
+
+       />
+  </RisingDiv>
+  )
+})
+
+
+function SmallDemoMenu({skill_app}){
+  let {setMode, addSkillApp, removeSkillApp, setInputs} = authorStore()
+  let [hasFocus, arg_foci_mode] = useAuthorStoreChange([focusHasVis(), "@mode=='arg_foci'"])
+
+  let reward = skill_app?.reward ?? 0
+  let demo_text = skill_app?.inputs?.value ?? skill_app?.input ?? ""
+  // console.log(demo_text)
+  let kind = "demo" + ((reward > 0) ? "_correct" : "_incorrect") + (skill_app?.only ? "_only" : "")
+  // console.log("KIND", kind)
+  let button_action = skill_app.action_type.includes("Button");
+  let allow_edit = !button_action
+
+  let border_color = (reward > 0 && colors.demo) ||
+                     (reward <= 0 && colors.incorrect) ||
+                     colors.default
+
+
+  return (
+    <div style={{...styles.demo_menu, 
+          borderColor: border_color,
+          opacity : (hasFocus && 1) || .6}}>
+      <div style={styles.demo_menu_fields}>
+        
+        {/*<div style={styles.demo_menu_title}>
+          <Icon size={styles.demo_menu_title.fontSize} kind={kind}
+                />
+          <a style={{marginLeft: 12, fontWeight: "bold"}}>{"Demonstration"}</a>
+        </div>
+        */}
+        <div style={styles.value_group}>
+          <div style={styles.label}>{"Value"}</div>
+          <textarea 
+            className="scrollable" style={{
+              ...styles.editable_value, ...styles.value_input,
+              ...(!allow_edit && {color: "rgba(100,100,100,.3)", userSelect : "none"})
+              }}
+            value={demo_text}
+            onChange={(e)=>{setInputs(skill_app, {value : e.target.value})}}
+            readOnly={!allow_edit}
+
+          />
+          <div style={styles.right_space}/>
+
+        </div>
+        {!button_action && <FxRow/>}
+        {!button_action && <ArgsRow/>}
+        {/*!button_action && <FxHelpRow/>*/}
+        {/* Apply Button */}
+        <ActionMenuApplyButton skill_app={skill_app}/>
+      </div>
+      {/*<NavigationKeys/>*/}
+    </div>
+  )
+}
+
+function SmallAgentActionMenu({skill_app}){
+  let [hasFocus] = useAuthorStoreChange([focusHasVis()])
+
+  let reward = skill_app?.reward ?? 0
+  let border_color = (reward > 0 && colors.correct) ||
+                     (reward < 0 && colors.incorrect) ||
+                     colors.default
+
+  let kind = 'undef'
+  if((skill_app?.reward ?? 0) != 0){
+    kind = ((skill_app.reward > 0) ? "correct" : "incorrect") + (skill_app?.only ? "_only" : "")
+  }
+
+  let button_action = skill_app.action_type.includes("Button");
+
+
+  return (
+    <div style={{...styles.agent_action_menu, 
+        borderColor: border_color,
+        opacity : (hasFocus && 1) || .6}}>
+      <div style={styles.agent_action_menu_fields}>
+        
+        <div style={styles.value_group}>
+          <div style={styles.label}>{`ƒ(𝑥)`}</div>
+          <FxContent
+            data={skill_app}
+          />
+          <div style={styles.right_space}/>
+        </div>
+        {/*<RewardKeys skill_app={skill_app}/>*/}
+      </div>
+      <ActionMenuApplyButton skill_app={skill_app}/>
+      {/*<NavigationKeys 
+        show_yes={kind == 'undef'}
+        show_apply={kind != "incorrect"}/>
+      */}
+    </div>
+  )
+}
+
+function ActionArea({}){
+  let [skill_app, any_focus] = useAuthorStoreChange([getFocusOrHover(), "@focus_uid!=''",])
+  return (
+    <div style={styles.action_area}>
+      <ActionList/>  
+
+      <div style={{height : 190, width : "100%"}}>
+        {skill_app && (
+          (skill_app?.is_demo &&
+            <SmallDemoMenu skill_app={skill_app}/>) ||
+          (any_focus && 
+            <SmallAgentActionMenu skill_app={skill_app}/>
+          )
+        )}
+      </div>
+    </div>
+  )
+
+}
+
 
 function Tab({name}){
   let [selected, setCurrentTab] = useAuthorStoreChange(
@@ -927,6 +1396,19 @@ function focusIsDemo(){
   return [(s)=>{
     let skill_app = s.skill_apps?.[s.focus_uid];
     return skill_app?.is_demo ?? false
+  },
+  (o,n) =>{
+    return o == n
+  }
+  ]
+}
+
+function focusHasVis(){
+  return [(s)=>{
+    if(s.focus_uid && s.hover_uid){
+      return s.focus_uid == s.hover_uid
+    }
+    return !!s.focus_uid 
   },
   (o,n) =>{
     return o == n
@@ -1448,25 +1930,19 @@ function Cursor() {
 }
 
 function PopupLayer({children}) {
-  let {focus_uid} = authorStore()
-  let [is_demo, any_focus, mode] = useAuthorStoreChange([focusIsDemo(), "@focus_uid!=''", "@mode"])
+  let [mode] = useAuthorStoreChange(["@mode"])
   
   // console.log("any_focus", any_focus, focus_uid)
   return (
     <div style={{...styles.popup_layer}}>
-
+      
       {(mode==="start_state" &&
         <ContinueButton/>) ||
        // (mode==="arg_foci" &&
        //  <ContinueButton/>) ||
-        
-        (is_demo &&
-          <DemonstrateMenu/>) ||
-        (any_focus && 
-          <AgentActionMenu/>
-        )
+        <ActionArea/>
       }
-      <Prompt/> 
+      {/*<Prompt/> */}
     </div>
   )
 }
@@ -2260,17 +2736,65 @@ const styles = {
     bottom: -26,
   },
 
-  demo_menu :{
+  action_list_item : {
+    // position : 'absolute',
+    height: 30,
+    width : "90%",
+    // backgroundColor : "green",
+    // borderStyle : 'solid',
+    // margin:5,
+    // marginRight:2,
+    // marginLeft:30,
+    borderRadius : 10,
+  },
+  action_list_content: {
+    position: 'relative',
+    // display : 'flex',
+    flexDirection : 'column',
+    width : "100%",
+    // paddingTop: 40,
+    paddingBottom: 30,
+    overflowY : 'scroll',
+    overflowX : 'hidden',
+    height: 120,
+  },
+  action_list : {
     position : 'relative',
     display : 'flex',
-    flexDirection : 'row',
+    flexDirection : 'column',
+    // minWidth: "42%",
+    // maxWidth:"90%",
+    // minHeight:"30%",
+    // maxHeight:"40%",
+    // height: 200,
+    // bottom : 100,
+
+    
+    overflow : 'hidden',
+    pointerEvents : 'auto',
+    // alignItems: 'center', 
+  },
+
+  action_area: {
+    position: 'absolute',
+    display : 'flex',
+    flexDirection : 'column',
     minWidth: "42%",
     maxWidth:"90%",
     minHeight:"30%",
     maxHeight:"40%",
+
+    // top : 120,
+    marginBottom : 30,
+  },
+
+  demo_menu :{
+    position : 'relative',
+    display : 'flex',
+    flexDirection : 'row',
+  
     alignItems: 'center', 
     
-    marginBottom : 30,
     backgroundColor : 'white',
     border: '4px solid',
     borderColor: colors.demo,
@@ -2317,19 +2841,19 @@ const styles = {
     position : 'relative',
     display : 'flex',
     flexDirection : 'row',
-    minWidth: "40%",
-    maxWidth: "90%",
-    height:"24%",
+    // minWidth: "40%",
+    // maxWidth: "90%",
+    // height:"24%",
     // maxHeight:"30%",
     alignItems: 'center', 
     
-    marginBottom : 30,
+    // marginBottom : 30,
     backgroundColor : 'white',
     border: '4px solid',
     borderColor: colors.default,
     borderRadius: 10,
     pointerEvents: "auto",
-    boxShadow : gen_shadow(14),
+    // boxShadow : gen_shadow(14),
 
     // Make not in center
     // alignSelf: 'start', 
@@ -2374,7 +2898,8 @@ const styles = {
      borderRadius : 5,
      padding: 3,
      paddingRight: 6,
-     paddingLeft: 6
+     paddingLeft: 6,
+     userSelect : "none",
   },
 
   action_dialog : {
@@ -2703,6 +3228,7 @@ const styles = {
     display : 'flex',
     flexDirection : 'row',
     alignItems : 'end',
+    fontSize: 20,
     
 
     padding : 3,

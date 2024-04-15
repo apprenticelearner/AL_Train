@@ -22,6 +22,8 @@ export const colors = {
   menu_section : 'white', 
   menu_highlight : 'rgb(229,244,255)',
   menu_hover_bounds : 'rgb(229,244,255)',
+
+  button_default : 'rgb(220, 220, 220)',
 }
 
 

@@ -14,6 +14,8 @@ import {Oval} from "react-loader-spinner";
 import RisingDiv from "./components/RisingDiv.js"
 import Slider, { createSliderWithTooltip } from 'rc-slider';
 import ReactSlider from 'react-slider';
+import Color from "color"
+console.log("COLOR", Color('black').alpha(.5))
 
 // import {LoadSpinner} from "./spinner.js"
 
@@ -94,7 +96,7 @@ function gen_curve_path(a, states, relative=false) {
     let d = states?.[next_state_uid] ?? {x: a.x, y: a.x+actionWidth+rightActionMargin/2} ;
 
     // Adjust s_x, s_y so they emerge radially
-    let n_out = s?.out_skill_app_uids?.length || 0 
+    let n_out = s?.n_visible_out || 0 
     let out_arc_total = Math.min(Math.PI, n_out * (Math.PI/8))
     let out_arc_len = out_arc_total/n_out
     let out_angle = (a.out_index * out_arc_len) - out_arc_total / 2 + out_arc_len / 2
@@ -103,7 +105,7 @@ function gen_curve_path(a, states, relative=false) {
     // console.log("S", s.uid, ":", a.out_index, out_angle * (180/Math.PI))
 
     // Adjust d_x, d_y so they are arranged top to bottom
-    let n_in = d?.in_skill_app_uids?.length || 0 
+    let n_in = d?.n_visible_in || 0 
     let in_height_total = nodeHeight//Math.min(nodeHeight, n_in * (nodeHeight/6))
     let in_end_spacing = in_height_total/n_in
     let in_offsetY = ((a?.in_index || 0) * in_end_spacing) - in_height_total / 2 + in_end_spacing / 2
@@ -147,10 +149,12 @@ export function organizeByDepth(states){
 }
 
 export function layoutGraphNodesEdges(states, actions, tutor){    
+
     let objs_by_depth = organizeByDepth(states)
 
     // Establish the general layout of nodes and edges
     let prev_depthY_center = 0
+    let eff_depth = 0
     for(let [depth, depth_objs] of objs_by_depth){
         let depth_maxY = 0
         let prev_s_obj;
@@ -164,7 +168,9 @@ export function layoutGraphNodesEdges(states, actions, tutor){
             //  input action with non-negative reward
             let has_non_negative = (depth == 0)
             for(let in_uid of s_obj?.in_skill_app_uids ?? []){
-                let a_obj = actions[in_uid]
+                let a_obj = actions?.[in_uid];
+                if(!a_obj?.visible) continue;
+
                 avg_in_y += a_obj.y
                 n++
                 if(a_obj.is_connected && (a_obj?.skill_app?.reward ?? 0) >= 0){
@@ -172,6 +178,7 @@ export function layoutGraphNodesEdges(states, actions, tutor){
                 } 
             }
             s_obj.is_connected = has_non_negative
+            s_obj.eff_depth = eff_depth
 
             avg_in_y /= Math.max(n,1) 
             return [avg_in_y, s_obj]
@@ -180,9 +187,9 @@ export function layoutGraphNodesEdges(states, actions, tutor){
         // Make an initial layout of nodes for this depth and it's immediate downstream actions
         for(let [avg_in_y, s_obj] of sorted_objs){
             // Ignore if not connected.
-            // if(s_obj?.is_connected == false) continue;
+            if(s_obj?.is_connected == false) continue;
 
-            let edge_index = 0
+            
             let out_skill_app_uids = s_obj?.out_skill_app_uids ?? []
             
             // Sort actions by the position of the interface element 
@@ -190,7 +197,7 @@ export function layoutGraphNodesEdges(states, actions, tutor){
             let sorted_actions = []
             for(let out_uid of out_skill_app_uids){
                 let a_obj = actions?.[out_uid];
-                if(!a_obj) continue;
+                if(!a_obj?.visible) continue;
 
                 let sel = a_obj?.skill_app?.selection
                 if(sel){
@@ -203,12 +210,13 @@ export function layoutGraphNodesEdges(states, actions, tutor){
             }
             sorted_actions = sorted_actions.sort(([ra, a], [rb, b])=>(ra.y-rb.y)+.05*(ra.x-rb.x))
             
-            let a_obj;
+            let a_obj; 
+            let edge_index = 0;
             for(let [pos, out_uid] of sorted_actions){
                 a_obj = actions?.[out_uid];
-                if(!a_obj) continue;
+                if(!a_obj?.visible) continue;
 
-                a_obj.x = Math.max(s_obj.depth, 0) * depthSpacing + (nodeWidth / 2) + leftActionMargin
+                a_obj.x = Math.max(s_obj.eff_depth, 0) * depthSpacing + (nodeWidth / 2) + leftActionMargin
                 a_obj.y = depth_maxY + (edge_index * vertActionSpacing)
                 a_obj.color = 'grey' //"hsl(" + Math.random() * 360 + ",100%,50%)"
                 a_obj.edge_index = edge_index
@@ -221,7 +229,7 @@ export function layoutGraphNodesEdges(states, actions, tutor){
             let new_maxY = 0;
             new_maxY = edge_index > 0 ? a_obj.y : depth_maxY
             
-            s_obj.x = parseInt(s_obj.depth * depthSpacing);
+            s_obj.x = parseInt(s_obj.eff_depth * depthSpacing);
             s_obj.y = parseInt((depth_maxY+new_maxY)/2);
             // console.log("S", s_obj.uid, s_obj.y)
 
@@ -235,6 +243,7 @@ export function layoutGraphNodesEdges(states, actions, tutor){
 
         // Adjust the y values for this depth so that it is centered around the previous depth 
         //  Also calculate the bounds of the state node and it's outgoing edges
+        // let center_diffY = prev_depthY_center - (depth_maxY / 2) 
         let center_diffY = prev_depthY_center - (depth_maxY / 2) 
         
         for(let [avg_in_y, s_obj] of sorted_objs){
@@ -246,7 +255,7 @@ export function layoutGraphNodesEdges(states, actions, tutor){
             let out_skill_app_uids = s_obj?.out_skill_app_uids ?? []
             for(let out_uid of out_skill_app_uids){
                 let a_obj = actions?.[out_uid];
-                if(!a_obj) continue;
+                if(!a_obj?.visible) continue;
 
                 a_obj.y += center_diffY
                 if(a_obj.y+actionHeight > maxY){
@@ -257,39 +266,45 @@ export function layoutGraphNodesEdges(states, actions, tutor){
             s_obj.maxX = maxX; s_obj.maxY = maxY
         }
         prev_depthY_center = (depth_maxY / 2) + center_diffY
+        eff_depth += 1
     }
+    
 
     let graphBounds = {minX:0, minY:0, maxX:0, maxY:0}
 
     // Set in_index and out_index for each edge to minimize rendering
     //  overlap between edges.
     for(let [uid, s_obj] of Object.entries(states)){
-        let srted;
+        // let srted;
 
         // Update graph X Bounds
         if(s_obj.x < graphBounds.minX){graphBounds.minX = s_obj.x}
         if(s_obj.x+nodeWidth > graphBounds.maxX){graphBounds.maxX = s_obj.x+nodeWidth}
 
         // Sort + Set Out Indices 
-        srted = (s_obj?.out_skill_app_uids ?? [])
-        .reduce((lst, a_uid)=>{let a = actions?.[a_uid]; if(a) lst.push(a); return lst},[])
-        .sort((a0_obj, a1_obj) => a0_obj.y-a1_obj.y)
+        let out_srted = (s_obj?.out_skill_app_uids ?? [])
+         .reduce((lst, a_uid)=>{let a = actions?.[a_uid]; if(a?.visible) lst.push(a); return lst},[])
+         .sort((a0_obj, a1_obj) => a0_obj.y-a1_obj.y)
 
-        for(let [index, a_obj] of srted.entries()){
+        for(let [index, a_obj] of out_srted.entries()){
             a_obj.out_index = index
 
             // Update graph Y bounds
             if(a_obj.y < graphBounds.minY){graphBounds.minY = a_obj.y}        
             if(a_obj.y > graphBounds.maxY){graphBounds.maxY = a_obj.y}        
         }
+        s_obj.n_visible_out = out_srted.length
 
         // Sort + Set In Indices
-        srted = (s_obj?.in_skill_app_uids ?? []).map((a_uid)=>actions[a_uid])
-        .sort((a0_obj, a1_obj) => a0_obj.y-a1_obj.y)
+        let in_srted = (s_obj?.in_skill_app_uids ?? [])
+         .reduce((lst, a_uid)=>{let a = actions?.[a_uid]; if(a?.visible) lst.push(a); return lst},[])
+         .sort((a0_obj, a1_obj) => a0_obj.y-a1_obj.y)
 
-        for(let [index, a_obj] of srted.entries()){
+        for(let [index, a_obj] of in_srted.entries()){
+            // if(!a_obj?.visible) continue;
             a_obj.in_index = index
         }
+        s_obj.n_visible_in = in_srted.length
     }
     return graphBounds  
 }
@@ -303,16 +318,28 @@ const getExternalHasOnly = (skill_app_uid) => [(s) =>{
     },
     (o,n) => o == n]
 
+const getHasVis = (skill_app_uid) => [(s) =>{
+    let {focus_uid, hover_uid} = s     
+    let hasFocus = focus_uid==skill_app_uid
+    let hasHover = hover_uid==skill_app_uid
+    let otherHover = hover_uid && !hasHover
+    return hasHover || (hasFocus && !otherHover)
+    },
+    (o,n) => o == n]
 
 const Edge = ({skill_app_uid}) =>{
     let uid = skill_app_uid;
     let {graph_states:states, graph_actions:actions, setHover, setFocus} = authorStore()
 
 
-    let [a, hasFocus, hasHover, hasStaged, isExternalHasOnly] = useAuthorStoreChange(
+    let [a, hasFocus, hasHover, hasStaged, hasVis, isExternalHasOnly] = useAuthorStoreChange(
       [`@graph_actions.${uid}`, `@focus_uid==${uid}`, `@hover_uid==${uid}`,
-       `@staged_uid==${uid}`, getExternalHasOnly(skill_app_uid)]
+       `@staged_uid==${uid}`, getHasVis(skill_app_uid), getExternalHasOnly(skill_app_uid)]
     )
+
+    if(!a?.visible){
+        return null
+    }
     let skill_app = a.skill_app
     let s = states[a.state_uid]
 
@@ -331,7 +358,7 @@ const Edge = ({skill_app_uid}) =>{
     let hasOnly = skill_app.only
     let sel = skill_app.selection
 
-    console.log("REWARD!!!", reward, reward==null, removed)
+    console.log("REWARD!!!", hasVis, uid.slice(0,5))
 
     // Make the shadow slighly blue for better overlap visibility
     let shadow_colors = {red:0, green: 20, blue: 60}
@@ -345,6 +372,9 @@ const Edge = ({skill_app_uid}) =>{
                         (correct && colors.correct) || 
                         colors.default
 
+    if(!hasFocus){
+        stroke_color = Color(stroke_color).alpha(.85).hexa()
+    }
 
     let edge_stroke_width = (hasHover && hasFocus && 13) ||
                        (hasFocus && 12) || 
@@ -356,7 +386,7 @@ const Edge = ({skill_app_uid}) =>{
                     (hasHover && 1.2) || 
                     1;
 
-    let box_stroke_width = (hasFocus && 6)||
+    let box_stroke_width = (hasFocus && 7)||
                             3;
 
     let markerEnd = (hasStaged && "url(#double_arrow)") ||
@@ -366,13 +396,16 @@ const Edge = ({skill_app_uid}) =>{
     let action_content;
 
     if(skill_app.action_type.toLowerCase().includes("button")){
-      action_content = <image style={{x: 2, y:-14, width: 24, height : 24}} href={images.tap}/>
+      action_content = <image 
+        className='edge-content'
+        style={{x: 2, y:-14, width: 24, height : 24}} 
+        href={images.tap}/>
     }else{
         let text = skill_app?.input ?? skill_app?.inputs?.value ?? ""
         action_content =(
             <text
                 className='edge-text'
-                x={6}
+                x={8}
                 fontSize={24}
                 alignmentBaseline={"central"}
             >
@@ -383,7 +416,8 @@ const Edge = ({skill_app_uid}) =>{
 
     
 
-    
+    let certainty = (skill_app?.certainty ?? 
+                     skill_app?.when_pred)
 
     // console.log("RERENDER EDGE", text, isExternalHasOnly, incorrect)
 
@@ -393,6 +427,8 @@ const Edge = ({skill_app_uid}) =>{
             filter={shadow}
             onMouseEnter={()=>{setHover(skill_app_uid)}}
             onMouseLeave={()=>{setHover("")}}
+            opacity={(hasFocus && 1) || .8}
+            cursor={(hasFocus && "auto") || "pointer"}
             //Note: onMouseDown is handled at the graph level because d3.zoom consumes
             >
 
@@ -432,8 +468,9 @@ const Edge = ({skill_app_uid}) =>{
                 {/* Text/Image in action card */}
                 {action_content}
 
+
                 {/* Action Certainty Prediction */}
-                {!skill_app?.reward && skill_app?.when_pred &&
+                {!skill_app?.reward && certainty != null &&
                     <text
                         className='edge-text'
                         x={6}
@@ -441,26 +478,21 @@ const Edge = ({skill_app_uid}) =>{
                         fontSize={12}
                         alignmentBaseline={"central"}
                     >
-                    {`${Math.floor(Number.parseFloat(skill_app?.when_pred*100))}%`}
+                    {`${Math.floor(Number.parseFloat(certainty*100))}%`}
                     </text>
                 }
 
-                {/* Selected Pointer */}
+                {/* Focus Indicator */}
                 {hasFocus &&
                     <circle
-                        className='edge-pointer'
-                        cx={-6}
+                        //className='edge-pointer'
+                        cx={0}
                         cy={0}
-                        //cy={-3}
                         r={4}
-
-                        //width={actionWidth} height={actionHeight}
-                        //strokeWidth={4}
-                        //stroke={"black"}
-                        fill={"rgba(0,0,0,.5)"}
-                    >
-                    {`${Math.floor(Number.parseFloat(skill_app?.when_pred*100))}%`}
-                    </circle>
+                        fill={stroke_color}
+                        stroke={"white"}
+                        strokeWidth={2.75}
+                    />
                 }
             </g>
         </g>)
@@ -477,7 +509,7 @@ const getTargetEdgeUID = (e) => {
     let target = e?.target
     if(target.classList?.[0]?.includes("edge")){
         do{
-            let class_name = target.classList?.[0]
+            let class_name = target.classList?.[0];
             if(!class_name?.includes("edge")){
                 break
             }
@@ -499,7 +531,7 @@ const getTargetNodeUID = (e) => {
     let target = e.target
     if(target.classList?.[0]?.includes("node")){
         do{
-            let class_name = target.classList?.[0]
+            let class_name = target.classList?.[0];
             if(!class_name?.includes("node")){
                 break
             }
@@ -547,8 +579,11 @@ const Node = ({state_uid}) =>{
     let scale =  ((hasFocus || hasHover) && 1.05) || 
                   1;
 
-    let stroke_width = (hasFocus && 6) || 
+    let stroke_width = (hasFocus && 7) || 
                         3;
+
+    let stroke_color = ((hasHover || hasFocus) && colors.default) || 
+                       Color(colors.default).lighten(.4).hexa()
 
     return (
         <g
@@ -556,16 +591,19 @@ const Node = ({state_uid}) =>{
         onMouseLeave={()=>{setHoverTutorState({uid:""});}}
         className="node"
         state_uid={state_uid}
+        cursor={(hasFocus && "auto") || "pointer"}
+        //{(!hasFocus && /*  */...)}
         >
             <path 
                 className="node-path"
                 d={gen_node_path(s)}
                 fill={'lightgrey'}
                 strokeWidth={stroke_width}
-                stroke={colors.default}
+                stroke={stroke_color}
                 filter={shadow}
                 transform={`scale(${scale})`}
             />
+            
             {hasStaged && 
                 <image 
                     className="node-next-icon"
@@ -577,6 +615,18 @@ const Node = ({state_uid}) =>{
                     opacity={.3}
                     transform={`scale(${scale})`}
                     />
+            }
+            {/* Focus Indicator */}
+            {hasFocus &&
+                <circle
+                    //className='edge-pointer'
+                    cx={parseInt(-(nodeWidth+stroke_width)*.5+2)}
+                    cy={0}
+                    r={4.25}
+                    fill={stroke_color}
+                    stroke={'lightgrey'}
+                    strokeWidth={3}
+                />
             }
             <text 
                 className="node-text"
@@ -596,10 +646,12 @@ const NodeGroup = ({state_uid}) =>{
 
     let s = states[state_uid]
     // console.log("S", s, state_uid)
-    let out_actions = (s?.out_skill_app_uids??[]).map((uid)=>actions[uid])
+    let out_actions = (s?.out_skill_app_uids??[])
+        .reduce((lst, a_uid)=>{let a = actions?.[a_uid]; if(a?.visible) lst.push(a); return lst},[])
     
     let out_edges = []
     for(let action of out_actions){
+
         // console.log("action", action)
         out_edges.push(<Edge
             skill_app_uid={action.uid}
@@ -666,6 +718,9 @@ const Defs = (svg) =>{
                    'M -10,-8 L 0 ,0 L -10,8'}
             />
         </marker>
+        <clipPath id="cut-left">
+            <rect x="-4" y="-6" width="100%" height="100%" />
+        </clipPath>
 
     </defs>
     )
@@ -916,13 +971,14 @@ export class Graph extends React.Component {
         //
         window.addEventListener('mouseup', (e)=>{
             this.is_dragging=false
+            this.mouse_down=false
             if(this.svgGRef.current){
                 this.svgRef.current.style.cursor = "auto"
             }
         })
         window.addEventListener('mousemove', (e)=>{
             // console.log(e)
-            if(!this.svgRef.current || !this.is_dragging) return;
+            if(!this.svgRef.current || !this.mouse_down) return;
             
             let [dx, dy] = [e.clientX-this.prev_drag_pos[0], e.clientY-this.prev_drag_pos[1]]
 
@@ -932,6 +988,9 @@ export class Graph extends React.Component {
             this.zoomTransform.y += dy*1.7 // scroll fast
 
             this.applyZoomTransform()
+
+            this.is_dragging = true
+
         })
     }
 
@@ -974,7 +1033,7 @@ export class Graph extends React.Component {
     handleMouseDown = (e) => {
         console.log("MOUSE DOWN", e)
         this.didZoom = false
-        this.is_dragging = true
+        this.mouse_down = true
         this.prev_drag_pos = [e.clientX, e.clientY]
         if(this.svgRef.current){
             this.svgRef.current.style.cursor = "move"    
@@ -987,26 +1046,34 @@ export class Graph extends React.Component {
     //     this.is_dragging = false
     // }
     handleMouseUp = (e) => {
-        console.log("MOUSE UP")
+        console.log("MOUSE UP", e)
+        let was_dragging = this.is_dragging
         this.is_dragging = false
+        this.mouse_down = false
         // If the click target is not the background then ignore d3
-        if(!this.didZoom && 
-           !(e.target == this.svgRef.current || e.target == this.svgGRef.current)){
+        if(was_dragging){
+            return
+        }
+        if(e.target == this.svgRef.current || e.target == this.svgGRef.current){
+            let {clickAway} = authorStore()
+            clickAway()    
+        }else if(!this.didZoom){
+            // If the target is part of a node...
+            let node_uid = getTargetNodeUID(e)
+            if(node_uid){
+                console.log("CLICK NODE", node_uid)
+                let {setTutorState, setFocus} = authorStore()
+                setTutorState(node_uid, true, false)
+                setFocus("")
+            }
 
             // If target is part of edge which has been annotated by a skill_app_uid
             //  then focus on the associated skill_app
             let edge_uid = getTargetEdgeUID(e)
             if(edge_uid){
+                console.log("CLICK EDGE", edge_uid)
                 let {setFocus} = authorStore()
                 setFocus(edge_uid, true)
-            }
-
-            // If the target is part of a node...
-            let node_uid = getTargetNodeUID(e)
-            // console.log("CLICK NODE", node_uid)
-            if(node_uid){
-                let {setTutorState} = authorStore()
-                setTutorState(node_uid, true)
             }
             // ...
 
@@ -1127,11 +1194,17 @@ export class Graph extends React.Component {
         const width = this.viewWidth;
         const height = this.viewHeight;
         const [[x0, y0], [x1, y1]] = bounds
+
+        // Don't ever zoom to an undefined box
+        if(!(x1-x0) || !(y1-y0)){
+            console.log("BAD ZOOM BOUNDS", bounds)
+            return
+        }
         console.log("Coords:", `${x0} ${x1}, ${y0} ${y1}`)
 
         // Zoom out if too close but don't zoom in
         let curr_k = this.scale_anim.get()
-        let scale_div = Math.max((x1 - x0) / width, (y1 - y0) / height)
+        let scale_div = Math.max((x1 - x0) / width, (y1 - y0) / height) || 1
 
         let k_min = 0.4 / scale_div
         k_min = Math.min(this.kMin, k_min)

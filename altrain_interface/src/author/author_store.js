@@ -236,7 +236,9 @@ const useAuthorStore = create((set,get) => ({
 
   //Settings
   show_all_apps : false,
-  unfocus_on_click_away : false,
+  unfocus_on_click_away : true,
+  show_uncertain : false,
+  show_negative : false,
 
   /*** Project ***/
   loadProject(prob_configs){
@@ -553,16 +555,19 @@ const useAuthorStore = create((set,get) => ({
   },  
 
   setGraphZoom: (graph_zoom, from_slider=false) => {
+    if(graph_zoom == null){
+      throw Error("Bad graph zoom.")
+    }
+
     let {graph} = get()
     if(graph && from_slider){
       // console.log(graph)
       let [kMin, kMax] = [graph.kMin, graph.kMax]
       let k = kMin+(graph_zoom/100)*(kMax-kMin)
+      console.log(">>", kMin, kMax, graph_zoom)
       graph.zoomTransform.k = k
       graph.scale_anim.set(k)
-      console.log(graph_zoom,k)
-    }else{
-      console.log("SET GZ", graph_zoom)
+      // console.log(graph_zoom,k)
     }
 
     set({graph_zoom})
@@ -579,6 +584,8 @@ const useAuthorStore = create((set,get) => ({
     console.log("SET CURSOR", stage_cursor_elem)
     set({stage_cursor_elem})
   },
+
+  setActionListRef : (action_list_ref) => set({action_list_ref}),
 
   /*** Problem Controls */
 
@@ -777,9 +784,34 @@ const useAuthorStore = create((set,get) => ({
 
   /*** Train Controls ***/
 
+  isNegative : (a_obj) =>{
+    return  (a_obj?.skill_app?.confirmed ?? false) &&
+            ((a_obj?.skill_app?.reward ?? 0) < 0)
+  },
+
+  isUncertain : (a_obj) =>{
+    return (a_obj?.skill_app?.cert_diff ?? 0) >= .4
+  },
+
+  markActionVisibility : (states, actions) =>{
+    let {show_negative, show_uncertain,
+         isNegative, isUncertain} = get();
+    for (let a_obj of Object.values(actions)) {
+        let visible = true
+        if((!show_negative && isNegative(a_obj)) || 
+           (!show_uncertain && isUncertain(a_obj))
+        ){
+          visible = false
+        }        
+        a_obj.visible = visible
+        console.log("ACTION VISIBLE", (!isNegative(a_obj)), (isUncertain(a_obj)), a_obj.visible)
+    }
+  },
+
   updateGraphConnections : async (skill_app) =>{
     // Add demo skill_app to the graph  
-    let {graph_states, graph_actions, network_layer, agentPromise, tutor, tutor_state} = get()
+    let {graph_states, graph_actions, network_layer, agentPromise,
+          tutor_state, updateGraph} = get()
     
     let skill_app_uid = skill_app.uid
     let prev_next_state_uid = graph_actions?.[skill_app_uid]?.next_state_uid
@@ -793,6 +825,7 @@ const useAuthorStore = create((set,get) => ({
     let agent_uid = await agentPromise
     let {next_state: next_state, state_uid: curr_state_uid, next_state_uid : next_state_uid} = 
       await network_layer.predict_next_state(agent_uid, tutor_state, sai);
+    set({curr_state_uid})
 
     console.log("UP G:", skill_app_uid, next_state_uid, prev_next_state_uid)
     if(next_state_uid != prev_next_state_uid){
@@ -801,7 +834,7 @@ const useAuthorStore = create((set,get) => ({
       graph_states = {...graph_states}
       graph_actions = {...graph_actions}
       
-      // TODO NOTE: Is it save to assume the depth here?
+      // TODO NOTE: Is it safe to assume the depth here?
       let curr_s_obj = graph_states?.[curr_state_uid] ?? {uid : curr_state_uid, depth : 0, depth_index : 0};
       if(!graph_states?.[next_state_uid]){
         graph_states[next_state_uid] = {
@@ -839,10 +872,26 @@ const useAuthorStore = create((set,get) => ({
           delete graph_states[prev_next_state_uid]
         }
       }
-      let graph_bounds = layoutGraphNodesEdges(graph_states, graph_actions, tutor)
-      set({graph_states, graph_actions, curr_state_uid, graph_bounds})
+      updateGraph(graph_states, graph_actions)
+      // markActionVisibility(graph_states, graph_actions)
+      // let graph_bounds = layoutGraphNodesEdges(graph_states, graph_actions, tutor)
+      // set({graph_states, graph_actions, curr_state_uid, graph_bounds})
     }
     // }
+  },
+
+  updateGraph : (graph_states=null, graph_actions=null) =>{
+    let now = window.performance.now()
+    let update_time = `${Date.now()}-${now}`
+    let {tutor, markActionVisibility} = get() 
+    if(!graph_states || !graph_actions){
+      ({graph_states, graph_actions} = get());
+    }
+    markActionVisibility(graph_states, graph_actions)
+    let graph_bounds = layoutGraphNodesEdges(graph_states, graph_actions, tutor)
+    set({graph_states, graph_actions, graph_bounds,
+         graph_prev_update_time : update_time})
+    console.log("Update Graph Data Time:", window.performance.now()-now)
   },
 
   updateExplanations : ({skill_app, skill_explanations, func_explanations}) => {
@@ -961,7 +1010,7 @@ const useAuthorStore = create((set,get) => ({
   },
 
   setFocus: (skill_app_uid, do_confirm=false) => { 
-    let {graph_actions, setTutorState,
+    let {graph_actions, setTutorState, action_list_ref, getUIDIndex,
         curr_state_uid, mode, skill_apps, proposal_order} = get()
 
     let skill_app, state_uid;
@@ -976,64 +1025,99 @@ const useAuthorStore = create((set,get) => ({
     console.log("Set Focus", skill_app)
 
     // let proposal_index = proposal_order.indexOf(skill_app_uid)
+
+    if(state_uid && curr_state_uid != state_uid){
+      setTutorState(state_uid, do_confirm, false)  
+    }
     
     set({focus_sel : skill_app?.selection ?? "",
-         focus_uid : skill_app_uid ?? "",})
-         //proposal_index})
-    if(state_uid && curr_state_uid != state_uid){
-      setTutorState(state_uid, do_confirm)  
+         focus_uid : skill_app_uid ?? "",
+         // Override hover, ensures that if setting focus with
+         //  keyboard, hasVis goes to the new focus.
+         hover_sel : "", 
+         hover_uid : ""
+       })
+
+    if(action_list_ref.current){
+      let index = getUIDIndex(skill_app_uid)
+      if(index != -1){
+        let top = action_list_ref.current.children[index]?.top ?? 0
+        action_list_ref.current.scrollTo({top: top, behavior: 'smooth'});
+      }
+      console.log()
+      
+      //action_list_ref.current.scrollTop = 0
     }
   },
 
   getUIDIndex: (uid) => {
     let {graph_actions, skill_apps} = get()
-    if(graph_actions){
-      let a_obj = graph_actions?.[uid];
-      if(a_obj?.edge_index != null){
-        return a_obj?.edge_index
-      }
-      
-    }
+    // if(graph_actions){
+    //   let a_obj = graph_actions?.[uid];
+    //   if(a_obj?.edge_index != null){
+    //     return a_obj?.edge_index
+    //   }
+    // }
     let uid_lst = Object.keys(skill_apps)
     return uid_lst.indexOf(uid)
   },
 
   getIndexUID: (index) => {
     let {graph_actions, graph_states, curr_state_uid, skill_apps} = get()
-    if(graph_actions){
-      let out_sa_uids = graph_states[curr_state_uid]?.out_skill_app_uids || []
-      for (let uid of out_sa_uids) {
-        let a_obj = graph_actions[uid]
-        if(a_obj?.edge_index == index){
-          return uid
-        }
-      }
-    }
+    // if(graph_actions){
+    //   let out_sa_uids = graph_states[curr_state_uid]?.out_skill_app_uids || []
+    //   for (let uid of out_sa_uids) {
+    //     let a_obj = graph_actions[uid]
+    //     if(a_obj?.edge_index == index){
+    //       return uid
+    //     }
+    //   }
+    // }
     let uid_lst = Object.keys(skill_apps)
     return uid_lst[index]
   },
 
 
-  focusPrev: () =>{
+  focusPrev: (loop=false) =>{
     console.log("PREV")
     let {getUIDIndex, getIndexUID, skill_apps, focus_uid, setFocus} = get()
+    let uid_lst = Object.keys(skill_apps);
     if(focus_uid){
-      let uid_lst = Object.keys(skill_apps);
       let index = getUIDIndex(focus_uid)-1;
-      if(index < 0) index = uid_lst.length+index
+      if(index < 0){
+        if(loop){
+          index = uid_lst.length+index  
+        }else{
+          index = 0
+        }
+      }
       let uid = getIndexUID(index);
       setFocus(uid);
+    }else if(uid_lst.length > 0){
+      setFocus(uid_lst[0])
     }
   },
 
-  focusNext: () =>{
+  focusNext: (loop=false) =>{
     console.log("NEXT")
     let {getUIDIndex, getIndexUID, skill_apps, focus_uid, setFocus} = get()
+    let uid_lst = Object.keys(skill_apps);
     if(focus_uid){
       let index = getUIDIndex(focus_uid)+1;
-      index = index%Object.keys(skill_apps).length;
+      // console.log(index)
+      if(index < 0) index = 0;
+      if(index >= uid_lst.length){
+        if(loop){
+          index = index%uid_lst.length;  
+        }else{
+          index = uid_lst.length-1
+        }
+        
+      } 
       let uid = getIndexUID(index);
       setFocus(uid)
+    }else if(uid_lst.length > 0){
+      setFocus(uid_lst[0])
     }
   },
 
@@ -1200,9 +1284,9 @@ const useAuthorStore = create((set,get) => ({
     
   },
 
-  setTutorState : async (state, do_confirm=false) => {
+  setTutorState : async (state, do_confirm=false, auto_focus=true) => {
     let {graph, graph_states, tutor, showStateSkillApps, focusFirstIfFocusMissing,
-        confirmFeedback} = get()
+        confirmFeedback, setFocus} = get()
 
     // If state is actually state_uid then grab the states
     let state_uid;
@@ -1232,8 +1316,9 @@ const useAuthorStore = create((set,get) => ({
         graph.zoom_to(state_uid)
       },0)  
     }
-
-    focusFirstIfFocusMissing()
+    if(auto_focus){
+      focusFirstIfFocusMissing()  
+    }
   },
 
   goToStartState : async () =>{
@@ -1364,17 +1449,21 @@ const useAuthorStore = create((set,get) => ({
   recalcGraphConnections : (states, actions) =>{
     // console.log("HERE0")
     // Reset the in/out skills_app_uids
-    for (let [uid, s_obj] of Object.entries(states)){
-      s_obj.in_skill_app_uids = []
-      s_obj.out_skill_app_uids = []  
-    }
-    
-     // Re populate the in_skill_app_uids and out_skill_app_uids for each state
-    for (let [uid, a] of Object.entries(actions)){
-      let s_obj = states[a?.state_uid];
-      s_obj.out_skill_app_uids.push(uid)
-      let ns_obj = states[a?.next_state_uid];
-      ns_obj.in_skill_app_uids.push(uid)
+    // Note: This step was moved to being the agent's 
+    //  responsibility, should probably remove
+    if(false){ 
+      for (let [uid, s_obj] of Object.entries(states)){
+        s_obj.in_skill_app_uids = []
+        s_obj.out_skill_app_uids = []  
+      }
+      
+       // Re populate the in_skill_app_uids and out_skill_app_uids for each state
+      for (let [uid, a] of Object.entries(actions)){
+        let s_obj = states[a?.state_uid];
+        s_obj.out_skill_app_uids.push(uid)
+        let ns_obj = states[a?.next_state_uid];
+        ns_obj.in_skill_app_uids.push(uid)
+      }
     }
     // console.log("HERE2")
     // Prune any states that have no upstream actions (plus those states' out actions)
@@ -1418,7 +1507,7 @@ const useAuthorStore = create((set,get) => ({
     console.log("Fetch Next Actions")
     
     let {agentPromise, mergeGraphChanges, recalcGraphConnections, showStateSkillApps,
-        updateStartStateUID, network_layer, agent_uid, start_state} = get()
+        updateStartStateUID, network_layer, agent_uid, start_state, updateGraph} = get()
 
     //Make sure the agent exists before we query it for actions 
     set({awaiting_rollout: true})
@@ -1454,7 +1543,7 @@ const useAuthorStore = create((set,get) => ({
 
     console.log("ROLLOUT RETURN", rollout);
     let {states, actions} = rollout
-    let update_time = `${Date.now()}-${window.performance.now()}`
+    
 
     // if(merge){
     //   console.log("MERGE");
@@ -1462,11 +1551,13 @@ const useAuthorStore = create((set,get) => ({
     // }
     let {tutor} = get()
     ;([states, actions] = recalcGraphConnections(states, actions));
-    let graph_bounds = layoutGraphNodesEdges(states, actions, tutor)
+
+    updateGraph(states, actions)
+    // markActionVisibility(states, actions)
+    // let graph_bounds = layoutGraphNodesEdges(states, actions, tutor)
 
     console.log("START SET", states, actions);
-    set({graph_states: states, graph_actions: actions, graph_bounds,
-        graph_prev_update_time : update_time, awaiting_rollout: false})
+    set({awaiting_rollout: false})
     
     // console.log("Connected", states, actions);
 
@@ -1538,14 +1629,6 @@ const useAuthorStore = create((set,get) => ({
       setFocus(action_dialog_history.pop())
       set({action_dialog_history})
     }
-  },
-
-  focusNextProposal : () =>{
-
-  },
-
-  focusPreviousProposal : () =>{
-    
   },
 
   showStateSkillApps: (state_uid) =>{
@@ -1726,11 +1809,10 @@ const useAuthorStore = create((set,get) => ({
 
   getFociIndexInfo : (elem_id) => [
     (s) => {
-      let skill_app = s.skill_apps?.[s.focus_uid];
-      let hover = false
+      let skill_app = s.skill_apps?.[s.hover_uid];
+      let just_hover = !!skill_app && (s.focus_uid != s.hover_uid)
       if(!skill_app){
-        skill_app = s.skill_apps?.[s.hover_uid];   
-        hover = !!skill_app
+        skill_app = s.skill_apps?.[s.focus_uid];
       }
       let {arg_foci, foci_explicit} = s.extractArgFoci(skill_app)
 
@@ -1740,7 +1822,7 @@ const useAuthorStore = create((set,get) => ({
       
       if(arg_foci && elem_id){
         let index = arg_foci.indexOf(elem_id)
-        return [index, foci_explicit, hover && (index != -1)]
+        return [index, foci_explicit, just_hover && (index != -1)]
       }
       return [-1, true, false]
     },
@@ -1795,8 +1877,8 @@ const useAuthorStore = create((set,get) => ({
     }
     let cls = e.target.className
     if(e.target == document.body || cls == "SkillAppGroup"){
-      if(focus_uid){
-        if(e.code == "KeyW" || e.key == "ArrowUp"){
+      // if(focus_uid){
+        if(e.code == "KeyD" || e.key == "ArrowRight"){
           let skill_app = graph_actions?.[focus_uid]?.skill_app
           if(e.shiftKey){
             skill_app = setOnly(skill_app, !(skill_app?.only ?? false))
@@ -1804,20 +1886,20 @@ const useAuthorStore = create((set,get) => ({
           setReward(skill_app, 1)
           e.preventDefault()
           set({"pos_rew_down" : true})
-        }else if(e.code == "KeyS" || e.key == "ArrowDown"){
+        }else if(e.code == "KeyA" || e.key == "ArrowLeft"){
           setReward(graph_actions?.[focus_uid]?.skill_app, -1)
           e.preventDefault()
           set({"neg_rew_down" : true})
-        }else if(e.code == "KeyA" || e.key == "ArrowLeft"){
+        }else if(e.code == "KeyW" || e.key == "ArrowUp"){
           focusPrev()
           e.preventDefault()
           set({"prev_down" : true})
-        }else if(e.code == "KeyD" || e.key == "ArrowRight"){
+        }else if(e.code == "KeyS" || e.key == "ArrowDown"){
           focusNext()
           e.preventDefault()
           set({"next_down" : true})
         }
-      }
+      // }
     }
   },
 
@@ -2195,6 +2277,12 @@ const useAuthorStore = create((set,get) => ({
       set({only_count : only_count})
     }
     return skill_app 
+  },
+
+  setRemove : (skill_app, value) => {
+    let {modifySkillApp} = get()
+    skill_app = modifySkillApp(skill_app, {remove: value}, true);
+    return skill_app
   },
 
   genCompletenessProfile : async () => {

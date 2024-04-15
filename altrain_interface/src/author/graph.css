@@ -13,9 +13,7 @@ code {
 }
 
 .node circle {
-  fill: #fff;
-  stroke: steelblue;
-  stroke-width: 3px;
+  
 }
 
 .node-text {
@@ -55,6 +53,10 @@ code {
   user-select : none;
   font-family : Geneva;
   font-weight: bold;
+}
+
+.edge-content {
+  user-select : none
 }
 
 .edge {

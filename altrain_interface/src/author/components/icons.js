@@ -39,6 +39,7 @@ export const Icon = ({style, size, kind}) => {
         width : size, height: size *.8,
         justifyContent : 'center',
         alignItems : 'center',
+        userSelect: "none",
         ...(is_only && {border : `1px solid ${color}`, borderRadius : 50}),
         ...style
       }}
