@@ -242,10 +242,23 @@ const useAuthorStore = create((set,get) => ({
 
   /*** Project ***/
   loadProject(prob_configs){
+    let interfaces, questions, agents;
     let project = JSON.parse(window.localStorage.getItem("project"))
+
+    // Check to see if local storage is corrupted 
+    console.log("CHECK CORRUPT", project)
+    if(project){
+      ({interfaces=null, questions=null, agents=null} = project);
+
+      if(!interfaces || !questions || !agents){
+        project = null  
+        window.localStorage.clear()
+      }
+    }
+
     if(!project){
-      let interfaces = {}
-      let questions = {}
+      interfaces = {}
+      questions = {}
       for (let prob_config of prob_configs){
         let intr_name = prob_config?.['name'] ?? baseFile(prob_config['HTML'])
         if(interfaces[intr_name]){
@@ -590,9 +603,12 @@ const useAuthorStore = create((set,get) => ({
   /*** Problem Controls */
 
   setInterface: async (intr_name) => {
-    let {interfaces, questions, loadProblem, setQuestion, beginSetStartState, clearInterface} = get()
+    let {interfaces, questions={}, loadProblem, setQuestion, beginSetStartState, clearInterface} = get()
     let prob_config = interfaces[intr_name]
-    let q_items = Object.keys(questions[intr_name])
+    let q_items = [];
+    if(questions?.[intr_name]){
+      q_items = Object.keys(questions[intr_name])
+    }
     
     let no_qs = (q_items?.length ?? 0) == 0
     set({curr_interface: intr_name})
@@ -1032,22 +1048,32 @@ const useAuthorStore = create((set,get) => ({
     
     set({focus_sel : skill_app?.selection ?? "",
          focus_uid : skill_app_uid ?? "",
-         // Override hover, ensures that if setting focus with
-         //  keyboard, hasVis goes to the new focus.
-         hover_sel : "", 
-         hover_uid : ""
        })
 
-    if(action_list_ref.current){
+    let lst_elem = action_list_ref.current
+    if(lst_elem){
       let index = getUIDIndex(skill_app_uid)
       if(index != -1){
-        let top = action_list_ref.current.children[index]?.top ?? 0
-        action_list_ref.current.scrollTo({top: top, behavior: 'smooth'});
+        let focus_elem = lst_elem.children[index]
+        let focus_top = focus_elem?.offsetTop ?? 0
+        let focus_height = focus_elem?.clientHeight ?? 0
+        let scrollTop = lst_elem?.scrollTop ?? 0
+        let viewHeight = lst_elem?.clientHeight ?? 0
+
+        let up_scroll = Math.max(scrollTop-focus_top+20,0)
+        let down_scroll = Math.max(focus_top+focus_height-(scrollTop+viewHeight)+20,0)
+        let delta = -up_scroll || down_scroll || 0
+        action_list_ref.current.scrollTo({top: scrollTop+delta, behavior: 'smooth'});
       }
-      console.log()
       
       //action_list_ref.current.scrollTop = 0
     }
+    // Override hover, ensures that if setting focus with
+    //  keyboard, hasVis goes to the new focus.
+    set({
+       hover_sel : "", 
+       hover_uid : ""
+    })
   },
 
   getUIDIndex: (uid) => {
@@ -1849,7 +1875,7 @@ const useAuthorStore = create((set,get) => ({
 
   onKeyDown : (e) => {
     console.log("OUTER KEY DOWN", e.key, e)
-    let {mode, focus_uid, focusNext, focusPrev, graph_actions, setReward, setOnly} = get()
+    let {mode, hover_uid, focus_uid, focusNext, focusPrev, graph_actions, setReward, setOnly} = get()
 
     if(e.code == "Space" && !(e.target?.type?.includes("text") ?? false) ){
       let {setStaged, confirmFeedback} = get()
@@ -1879,7 +1905,8 @@ const useAuthorStore = create((set,get) => ({
     if(e.target == document.body || cls == "SkillAppGroup"){
       // if(focus_uid){
         if(e.code == "KeyD" || e.key == "ArrowRight"){
-          let skill_app = graph_actions?.[focus_uid]?.skill_app
+          let vis_uid = hover_uid || focus_uid // Modify what user is looking at
+          let skill_app = graph_actions?.[vis_uid]?.skill_app
           if(e.shiftKey){
             skill_app = setOnly(skill_app, !(skill_app?.only ?? false))
           }
@@ -1887,7 +1914,8 @@ const useAuthorStore = create((set,get) => ({
           e.preventDefault()
           set({"pos_rew_down" : true})
         }else if(e.code == "KeyA" || e.key == "ArrowLeft"){
-          setReward(graph_actions?.[focus_uid]?.skill_app, -1)
+          let vis_uid = hover_uid || focus_uid 
+          setReward(graph_actions?.[vis_uid]?.skill_app, -1)
           e.preventDefault()
           set({"neg_rew_down" : true})
         }else if(e.code == "KeyW" || e.key == "ArrowUp"){

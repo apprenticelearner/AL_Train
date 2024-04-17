@@ -358,7 +358,7 @@ const Edge = ({skill_app_uid}) =>{
     let hasOnly = skill_app.only
     let sel = skill_app.selection
 
-    console.log("REWARD!!!", hasVis, uid.slice(0,5))
+    // console.log("REWARD!!!", hasVis, uid.slice(0,5))
 
     // Make the shadow slighly blue for better overlap visibility
     let shadow_colors = {red:0, green: 20, blue: 60}

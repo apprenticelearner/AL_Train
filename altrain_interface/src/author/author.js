@@ -375,33 +375,54 @@ const FxOption = (props) =>{
   )
 }
 
-const FxContent = ({ label, value, data={}, explicit, style, use_colors=true, show_const=true, ...rest}, {context}) => {
+const extractFuncFromData = (data) =>{
+    let {skills, skill_apps} = authorStore()
+    let {func, skill_uid, uid, head_vals=null, matches=[]} = data;
+    let skill_app = skill_apps?.[uid];
+    let skill = skills?.[skill_uid||uid||skill_app?.skill_uid];
+    func = func || skill?.how?.func
+    return {func, head_vals, skill_app, matches}
+}
+
+const FxContent = (props, {context}) => {
+  let {label, value, data={}, explicit,
+        style, use_colors=true, show_const=true,
+        show_expl=false,
+         ...rest} = props;
   // console.log("CONTENT ", label, data, rest)
 
-  let {skills, focus_uid, skill_apps} = authorStore()
-  
-  let {func, skill_uid, uid, head_vals=null, matches=[]} = data;
-  let skill_app = skill_apps?.[uid];
-  let skill = skills?.[skill_uid||uid||skill_app?.skill_uid];
+  let {func, head_vals, skill_app, matches} = extractFuncFromData(data)  
+
+  let button_action = skill_app?.action_type?.includes("Button") ?? false;
+
+  // If show_expl=true then show the current selected explanation 
+  if(show_expl && !button_action && !func){
+    console.log("NO FUNC", skill_app)
+    let expl_data = skill_app?.explanation_selected?.data ?? 
+                    skill_app?.explanation_options?.[0]?.options?.[0]?.data ?? 
+                    skill_app?.explanation_options?.[1]?.options?.[0]?.data 
+    if(expl_data){
+      ({func, head_vals, skill_app, matches} = extractFuncFromData(expl_data));
+    }
+    console.log("NOW", expl_data, func, head_vals)
+  }
+  func = func || {}  
 
   let selected_expl = skill_app?.explanation_selected
   explicit = explicit || (selected_expl?.explicit && selected_expl?.value == value) || false
 
-  func = func || skill?.how?.func || {}
-
   let is_const = (func?.vars?.length == 0) ?? true
 
   let highlighted_eq;
-  let button_action = skill_app?.action_type?.includes("Button") ?? false;
+  
   if(button_action){
-    highlighted_eq = [<a>{"press "}</a>,
+    highlighted_eq = (<>
+                      <a>{"press "}</a>
                       <a style={{fontWeight:"bold"}}>{skill_app?.selection ?? "??"}</a>
-                     ]
+                     </>)
   }else{
     highlighted_eq = makeHighlightedEquation(func, head_vals, true, use_colors)
   }
-
-
 
   let is_menu = context == "menu"
   let is_value = context == "value"
@@ -783,6 +804,10 @@ const ActionListItem = memo(({style, skill_app_uid}) => {
 
   let inner_padding = 9-Math.floor(borderLeftWidth);
 
+  let card_background = (removed && 'rgba(200,200,200, 0.0)') ||
+                        (!hasVis && 'rgba(240,240,240, .8)') ||
+                        'white'
+
 
   return (
     <div style={{
@@ -819,7 +844,7 @@ const ActionListItem = memo(({style, skill_app_uid}) => {
         borderRightWidth: borderWidth,
         borderLeftWidth: borderLeftWidth,
         borderColor: color,
-        backgroundColor : (removed && 'rgba(200,200,200, 0.0)') || 'white',
+        backgroundColor : card_background,
         borderStyle : (removed && 'double double double solid') || 'solid',
         opacity : (removed && .5) || 1,
         display: 'flex',
@@ -843,6 +868,7 @@ const ActionListItem = memo(({style, skill_app_uid}) => {
             data={skill_app}
             use_colors={hasVis}
             show_const={false}
+            show_expl={true}
             />
           ) || [
             <div key={"value"} style={{marginLeft: 6, maxWidth: "30%", 
@@ -855,6 +881,7 @@ const ActionListItem = memo(({style, skill_app_uid}) => {
                 style={{fontSize:16}}data={skill_app}
                 use_colors={hasVis}
                 show_const={false}
+                show_expl={true}
               />
             </div>
           ]
@@ -1001,10 +1028,14 @@ function ActionDialog({style}){
   let is_correct = (skill_app?.reward ?? 0) > 0
 
   let pre_text = (!skill_app?.confirmed && skill_app?.is_demo && 
-                  "Ensure f(x) explanation is correct. ") ||
+                  (<>
+                    {"Ensure "}
+                    <b>{"f(x) "}</b>
+                    {"explanation is correct. "}
+                  </>)) ||
                  (!skill_app?.confirmed && 
                   "Feedback looks good. ") ||
-                  ""
+                  "Demonstrate any other actions for this step. "
   let context = (is_correct && "Apply this action ") || 
                 ("Apply one of the correct actions ") 
 
@@ -1012,9 +1043,7 @@ function ActionDialog({style}){
     
     <div style={{...styles.action_dialog,
                   ...style}}>
-      <div style={styles.action_counter}>
-        {`Action #(${index}/${L})`}
-      </div>
+      
       {/* Proposal Yes / No case */}
       {(is_proposal && 
       <div style={styles.action_dialog_inner}>
@@ -1022,14 +1051,14 @@ function ActionDialog({style}){
         <a>{"Is this action correct?"}</a>      
         <div style={{display: "flex", flexDirection : "row"}}>
           <RisingDiv style={{...styles.action_dialog_button, 
-              marginRight:2, backgroundColor : colors.correct}} 
-            onClick={()=>{applyActionDialogFeedback(1)}} >
-            {"Yes"}
-          </RisingDiv>
-          <RisingDiv style={{...styles.action_dialog_button, 
               marginLeft:2, backgroundColor : colors.incorrect}} 
             onClick={()=>{applyActionDialogFeedback(-1)}}>
             {"No"}
+          </RisingDiv>
+          <RisingDiv style={{...styles.action_dialog_button, 
+              marginRight:2, backgroundColor : colors.correct}} 
+            onClick={()=>{applyActionDialogFeedback(1)}} >
+            {"Yes"}
           </RisingDiv>
         </div>
       </div>) || 
@@ -1041,27 +1070,37 @@ function ActionDialog({style}){
           <RisingDiv style={{...styles.action_dialog_button, 
                       backgroundColor : colors.demo}} 
             onClick={()=>{setFocus(proposal_order[0])}} >
-            {"Show Me"}
+            {"View"}
           </RisingDiv>
       </div>) || 
       /* No remaining proposals. Apply case. */
       (are_correct_next && 
       <div style={styles.action_dialog_inner}>
         <div style={styles.action_dialog_back}/>
-        <a>{pre_text+context+"to go to next state?"}</a>      
-        <RisingDiv style={{...styles.action_dialog_button,   
-                      backgroundColor : colors.demo}} 
-          onClick={()=>{confirmFeedback()}} >
-          {"Apply"}
-        </RisingDiv>
+        <a>
+          {pre_text}
+          <b>{"Move On "}</b>{"to apply actions."}
+        </a>
       </div>) ||
       /* No remaining proposals. But no correct. */
       ( 
       <div style={styles.action_dialog_inner}>
         <div style={styles.action_dialog_back}/>
-        <a>{"No staged actions are marked correct. If this is a valid state demonstrate a correct next action. "}</a>      
+        <a>
+          {((L > 0) && "No proposed actions are marked correct.") ||
+            "No actions proposed by agent. "}
+          <b>{"Demonstrate a correct next action."}</b>
+        </a>
       </div>)
       }    
+
+    {are_correct_next && 
+      <RisingDiv style={styles.move_on_button}
+        onClick={()=>{confirmFeedback()}}>
+          <a style={{pointerEvents:'none'}}>{"Move On"}</a>
+          <a style={{pointerEvents:'none', fontSize : "0.7em"}}>{"(space bar)"}</a>
+      </RisingDiv>
+    }
     </div>
   )
 }
@@ -1075,11 +1114,12 @@ function DemonstrateMenu({}){
   let demo_text = skill_app?.inputs?.value ?? skill_app?.input ?? ""
   // console.log(demo_text)
   let kind = "demo" + ((reward > 0) ? "_correct" : "_incorrect") + (skill_app?.only ? "_only" : "")
-  // console.log("KIND", kind)
+  
   let button_action = skill_app.action_type.includes("Button");
   if(button_action){
     demo_text = "press " + (skill_app?.selection ?? "??")
   }
+  
   let allow_edit = !button_action
 
   let border_color = (reward > 0 && colors.demo) ||
@@ -1239,15 +1279,19 @@ let ActionMenuApplyButton = memo(({skill_app}) => {
       {...rd_props}
       //onMouseEnter={(e)=>{console.log("OVER:", e)}}
       //onMouseLeave={(e)=>{console.log("LEAVE:", e)}}
-      style={{position: "absolute", display: "flex", flexDirection:'row', alignItems:'center', 
+      style={{position: "absolute", display: "flex", flexDirection:'column',
+               justifyContent:'center', alignItems: "center",
                top: -12, right: -7, padding: 6, paddingBottom:1, paddingTop:1, borderRadius: 5,  
                backgroundColor: 'rgb(230,230,230)',
+               width : 80,
                // color: (is_undef && hasHover && colors.correct) || 'black',
-               fontWeight:'bold', fontSize:16, cursor: "pointer"}}
+               fontWeight:'bold', fontSize:12, cursor: "pointer"}}
       //{...rd_props}
   > 
-    <a style={{margin: 1, pointerEvents:'none'}}>{"Apply Action"}</a>
-    <img style={{width:14, height:14, margin: 1, marginLeft:2, pointerEvents:'none'}} 
+    <a style={{flex:1, margin: 1, pointerEvents:'none', alignText: "center"}}>{"Apply Single"}</a>
+    <a style={{flex:1, margin: 1, pointerEvents:'none', alignText: "center"}}>{"Action"}</a>
+    <img style={{position : "absolute", bottom : 2, right : 2,
+          width:14, height:14, margin: 1, marginLeft:2, pointerEvents:'none'}} 
          src={images.next}
 
        />
@@ -1262,10 +1306,14 @@ function SmallDemoMenu({skill_app}){
 
   let reward = skill_app?.reward ?? 0
   let demo_text = skill_app?.inputs?.value ?? skill_app?.input ?? ""
+
+  let button_action = skill_app.action_type.includes("Button");
+  if(button_action){
+    demo_text = "press " + (skill_app?.selection ?? "??")
+  }
   // console.log(demo_text)
   let kind = "demo" + ((reward > 0) ? "_correct" : "_incorrect") + (skill_app?.only ? "_only" : "")
   // console.log("KIND", kind)
-  let button_action = skill_app.action_type.includes("Button");
   let allow_edit = !button_action
 
   let border_color = (reward > 0 && colors.demo) ||
@@ -1355,8 +1403,9 @@ function ActionArea({}){
   let [skill_app, any_focus] = useAuthorStoreChange([getFocusOrHover(), "@focus_uid!=''",])
   return (
     <div style={styles.action_area}>
+      <ActionDialog/>
       <ActionList/>  
-
+      
       <div style={{height : 190, width : "100%"}}>
         {skill_app && (
           (skill_app?.is_demo &&
@@ -1366,6 +1415,8 @@ function ActionArea({}){
           )
         )}
       </div>
+    
+      
     </div>
   )
 
@@ -1921,7 +1972,7 @@ function Cursor() {
     ptr = <ArgFociPointer use_text={false} use_indicator={true} style={{
       width : 24, height :24, transform: 'translate(-50%, -50%)', pointerEvents: "none"}}/>
   }
-  console.log("RENDER CURSOR", cursor, ptr)
+  // console.log("RENDER CURSOR", cursor, ptr)
   return (<div style={{position:'absolute', pointerEvents: "none", zIndex:100}} 
             ref={setStageCursorElem}>
             {ptr}
@@ -2893,33 +2944,67 @@ const styles = {
   action_counter : {
     fontSize: 12, 
     fontFamily: 'monospace',
-     color : "eef",// "#445",
+    color : "eef",// "#445",
     fontWeight : 'bold',
+    borderRadius : 5,
+    padding: 3,
+    paddingRight: 6,
+    paddingLeft: 6,
+    userSelect : "none",
+  },
+
+  move_on_button : {
+     display: "flex",
+     flexDirection : "column",
+     justifyContent : "center",
+     alignItems : "center",
+     minWidth : 80,
+     maxWidth : 120,
+     margin : 8,
+     marginTop : "auto",
+     fontSize: 16, 
+     fontWeight : 'bold',
      borderRadius : 5,
      padding: 3,
-     paddingRight: 6,
-     paddingLeft: 6,
-     userSelect : "none",
+     backgroundColor : 'dodgerblue',
   },
 
   action_dialog : {
     position : "absolute",
-    top : -68, 
-    height : 68,
-    width: "102%", 
-    left : "-1%",
+
+    display: 'flex',
+    flexDirection : 'column',
+    // justifyContent : "center",
+    // alignItems : "center",
+    flexGrow : 0,
+    flexShrink : 1,
+
+    top : 0, 
+    left : "100%", 
+    // margin : 8,
+    marginLeft : 10,
+    minWidth : "40%",
+    maxWidth : "80%",
+    zIndex : 4,
+    pointerEvents: 'auto',
+    minHeight : 170,
+    maxHeight : "100%",
+    // width: "102%", 
+    // left : "-1%",
     borderRadius : 5,
     backgroundColor : 'rgba(200,200,220,.4)',
     userSelect : "none",
-    fontWeight: "bold"
+    // fontWeight: "bold"
   },
 
   action_dialog_back: {
-    margin : 10,
+    margin : 0,
     width : 20, 
     height : 20
   },
   action_dialog_inner: {
+    flexDirection : "column",
+    margin : 8,
     display : "flex", 
     justifyContent : "space-between",
     alignItems : "center"

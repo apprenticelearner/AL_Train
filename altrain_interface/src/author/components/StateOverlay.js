@@ -18,8 +18,6 @@ const images = {
 };
 
 
-
-
 let PopUpConfirmButton = memo(({sel, skill_app}) => {
   let {setStaged, setReward, confirmFeedback} = authorStore();
   let rd_props = {
@@ -203,7 +201,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
     let is_foci = (foci_index!==-1) && (mode=="train" || foci_explicit)
     let correct = (skill_app?.reward ?? 0) > 0
     let incorrect = (skill_app?.reward ?? 0) < 0
-    let isImplicit = isExternalHasOnly && reward == 0;
+    let isImplicit = isExternalHasOnly && (skill_app?.reward ?? 0) == 0;
     let is_demo = skill_app?.is_demo || false
 
     let foci_color = null
@@ -278,7 +276,6 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
                       ((is_foci || hasVis) && 5) ||
                       (arg_hover && 4) ||
                       ((hasHover) && 4) ||
-                      
                       (foci_cand && 3) ||
                       (elem_locked && 3) || 
                       3
@@ -303,7 +300,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
                       (elem_locked && 'default') ||
                       (skill_app && !groupHasFocus && 'pointer') || 
                       'auto'
-    console.log("::", foci_cand, elem_locked, groupHasFocus, cursor_kind, style)
+    // console.log("::", foci_cand, elem_locked, groupHasFocus, cursor_kind, style)
     let transp_ptr_evts = (mode == "start_state"  && 'none') ||
                           (groupHasFocus && 'none') ||
                           (!skill_app && 'none') ||
@@ -542,7 +539,7 @@ function TextFieldOverlay({sel, elem}) {
   let {setInputFocus, addSkillApp, removeSkillApp, setInputs, setFocus, beginSetArgFoci, confirmArgFoci} = authorStore()
   // let empty_focus = (!skill_app?.input && has_focus)
   // console.log(not_empty.current, skill_app)
-  console.log("SEL", sel)
+  // console.log("SEL", sel)
   let show_app = skill_app && (hasVis || show_all_apps)
 
 

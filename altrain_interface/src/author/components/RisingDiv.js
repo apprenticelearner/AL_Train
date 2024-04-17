@@ -42,14 +42,16 @@ let RisingDiv = ({children, style, innerRef, hoverCallback, unhoverCallback, hov
                             console.log("UnHover", e, scale.current); }}
       //whileHover={{ zIndex: 100,...hover_style,  transition: { duration: 0 },}}
       style={{
-          ...style,
-          // willChange : 'filter, scale',
-          ...(shadow_kind=='drop' && {filter :shadow} || {boxShadow :shadow}),
-          scale : scale_anim,
+        ...style,
+        // willChange : 'filter, scale',
+        ...(shadow_kind=='drop' && {filter :shadow} || {boxShadow :shadow}),
+        scale : scale_anim,
       }}
         {...props}
-        >
+      >
+      
       {children}
+      
     </motion.div>
   )
 }
