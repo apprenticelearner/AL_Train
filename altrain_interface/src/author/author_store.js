@@ -824,10 +824,12 @@ const useAuthorStore = create((set,get) => ({
     }
   },
 
-  updateGraphConnections : async (skill_app) =>{
-    // Add demo skill_app to the graph  
-    let {graph_states, graph_actions, network_layer, agentPromise,
-          tutor_state, updateGraph} = get()
+  insertIntoGraph : async (skill_app, graph_states=null, graph_actions=null, do_update=true) =>{
+    // Add single skill_app to the graph (like a demo)
+    if(graph_states == null){
+      ({graph_states, graph_actions} = get());
+    }
+    let {network_layer, agentPromise, tutor_state, updateGraph, removeFromGraph} = get()
     
     let skill_app_uid = skill_app.uid
     let prev_next_state_uid = graph_actions?.[skill_app_uid]?.next_state_uid
@@ -836,8 +838,6 @@ const useAuthorStore = create((set,get) => ({
     let {selection, action_type, inputs, ...rest} = skill_app
     let sai = {selection, action_type, inputs}
 
-
-    // console.log("DO PRED", sai)
     let agent_uid = await agentPromise
     let {next_state: next_state, state_uid: curr_state_uid, next_state_uid : next_state_uid} = 
       await network_layer.predict_next_state(agent_uid, tutor_state, sai);
@@ -845,12 +845,13 @@ const useAuthorStore = create((set,get) => ({
 
     console.log("UP G:", skill_app_uid, next_state_uid, prev_next_state_uid)
     if(next_state_uid != prev_next_state_uid){
-    
-      // console.log("RESP", next_state_uid)
-      graph_states = {...graph_states}
-      graph_actions = {...graph_actions}
+
+      // Copy states + actions and remove old
+      ({graph_states, graph_actions} = removeFromGraph(
+          skill_app, {...graph_states}, {...graph_actions}, false)
+      );
       
-      // TODO NOTE: Is it safe to assume the depth here?
+      // Add next_state if missing
       let curr_s_obj = graph_states?.[curr_state_uid] ?? {uid : curr_state_uid, depth : 0, depth_index : 0};
       if(!graph_states?.[next_state_uid]){
         graph_states[next_state_uid] = {
@@ -860,40 +861,56 @@ const useAuthorStore = create((set,get) => ({
           depth_index : curr_s_obj?.out_skill_app_uids?.length ?? 0,
         }
       }
-      let next_s_obj = graph_states[next_state_uid]
-
+      
+      // Add the action
       graph_actions[skill_app_uid] = {
         uid: skill_app_uid,
         state_uid:  curr_state_uid,
         next_state_uid:  next_state_uid,
         skill_app : skill_app,
       }
+
       // If current state out doesn't have this action then add it
       if(!curr_s_obj?.out_skill_app_uids?.includes(skill_app_uid)){
         curr_s_obj.out_skill_app_uids = [skill_app_uid, ...curr_s_obj?.out_skill_app_uids ?? []]  
       }
 
       // If next state in doesn't have this action then add it
+      let next_s_obj = graph_states[next_state_uid]
       if(!next_s_obj?.in_skill_app_uids?.includes(skill_app_uid)){
         next_s_obj.in_skill_app_uids = [skill_app_uid, ...next_s_obj?.in_skill_app_uids ?? []]  
       }
       
-      // If the previous next state has this action as an input then remove it. 
-      let prev_next_s_obj = graph_states[prev_next_state_uid]
-      if(prev_next_s_obj){
-        prev_next_s_obj.in_skill_app_uids = prev_next_s_obj?.in_skill_app_uids?.filter((x) => x != skill_app_uid)
-        // If it no longer has any inputs then remove it
-        console.log("WHOOP", prev_next_s_obj.in_skill_app_uids)
-        if(!prev_next_s_obj.in_skill_app_uids || prev_next_s_obj.in_skill_app_uids.length == 0){
-          delete graph_states[prev_next_state_uid]
-        }
+      if(do_update){
+        updateGraph(graph_states, graph_actions)  
       }
-      updateGraph(graph_states, graph_actions)
-      // markActionVisibility(graph_states, graph_actions)
-      // let graph_bounds = layoutGraphNodesEdges(graph_states, graph_actions, tutor)
-      // set({graph_states, graph_actions, curr_state_uid, graph_bounds})
     }
-    // }
+    return {graph_states, graph_actions}
+  },
+
+  removeFromGraph(skill_app, graph_states=null, graph_actions=null, do_update=true){
+    let {updateGraph} = get()
+    if(graph_states == null){
+      ({graph_states, graph_actions} = get());
+    }
+    
+    let skill_app_uid = skill_app.uid
+    let next_state_uid = graph_actions?.[skill_app_uid]?.next_state_uid    
+    
+    // If next_state has this action as an input then remove it. 
+    let next_s_obj = graph_states?.[next_state_uid];
+    if(next_s_obj){
+      next_s_obj.in_skill_app_uids = next_s_obj?.in_skill_app_uids?.filter((x) => x != skill_app_uid)
+      // If next_state no longer has any inputs then remove it
+      if(!next_s_obj.in_skill_app_uids || next_s_obj.in_skill_app_uids.length == 0){
+        delete graph_states[next_state_uid];
+      }
+    }
+    delete graph_actions[skill_app_uid];
+    if(do_update){
+      updateGraph(graph_states, graph_actions)  
+    }
+    return {graph_states, graph_actions}
   },
 
   updateGraph : (graph_states=null, graph_actions=null) =>{
@@ -1472,7 +1489,7 @@ const useAuthorStore = create((set,get) => ({
     return [new_graph_states, new_graph_actions]
   },
 
-  recalcGraphConnections : (states, actions) =>{
+  cleanGraphConnections : (states, actions) =>{
     // console.log("HERE0")
     // Reset the in/out skills_app_uids
     // Note: This step was moved to being the agent's 
@@ -1532,7 +1549,7 @@ const useAuthorStore = create((set,get) => ({
   updateAgentRollout : async (merge=false) => {
     console.log("Fetch Next Actions")
     
-    let {agentPromise, mergeGraphChanges, recalcGraphConnections, showStateSkillApps,
+    let {agentPromise, mergeGraphChanges, cleanGraphConnections, showStateSkillApps,
         updateStartStateUID, network_layer, agent_uid, start_state, updateGraph} = get()
 
     //Make sure the agent exists before we query it for actions 
@@ -1576,7 +1593,7 @@ const useAuthorStore = create((set,get) => ({
     //   ([states, actions] = mergeGraphChanges(states, actions, update_time))
     // }
     let {tutor} = get()
-    ;([states, actions] = recalcGraphConnections(states, actions));
+    ;([states, actions] = cleanGraphConnections(states, actions));
 
     updateGraph(states, actions)
     // markActionVisibility(states, actions)
@@ -1636,12 +1653,12 @@ const useAuthorStore = create((set,get) => ({
 
     ;({proposal_order} = get());
     if(proposal_order.length > 0){
-      console.log("THEISM")
+      // console.log("THEISM")
       setFocus(proposal_order[0])
     }else{
 
       let correct_skills = Object.values(skill_apps).filter((sa)=>(sa?.reward ?? 0) > 0)
-      console.log("THATMS", correct_skills)
+      // console.log("THATMS", correct_skills)
       if(correct_skills.length > 0){
         setFocus(correct_skills[0].uid)
       }
@@ -1667,7 +1684,7 @@ const useAuthorStore = create((set,get) => ({
     return new_skill_apps
   },
 
-  confirmFeedback : async (apply_focus=true, apply_staged=true, yes_focus=false) => {
+  confirmFeedback : async (apply_focus=true, apply_staged=true) => {
     let {network_layer, mode, skill_apps, curr_state_uid, tutor_state, agent_uid,  tutor,
         confirmArgFoci, updateAgentRollout, updateSkills, saveProject, focus_uid, staged_uid,
         graph_states, graph_actions, beginSetStartState, modifySkillApp, setReward, 
@@ -1680,16 +1697,9 @@ const useAuthorStore = create((set,get) => ({
     if(mode == 'arg_foci'){
       confirmArgFoci()
     }
-    console.log("CONFIRM FEEDBACK", yes_focus)
+    // console.log("CONFIRM FEEDBACK")
 
-    if(false && yes_focus){
-      let skill_app = skill_apps[focus_uid]
-      if(skill_app && (skill_app?.reward ?? 0) == 0){
-        setReward(skill_app, 1);
-        ({skill_apps} = get());
-      }
-    }
-
+    // Make training set
     let do_train = false
     let training_set = [] 
     let states = {[curr_state_uid]: tutor_state} 
@@ -1705,8 +1715,8 @@ const useAuthorStore = create((set,get) => ({
       }
     }
 
+    // Send training set (non-blocking w/ promise)
     console.log("DO TRAIN", do_train, training_set)
-
     let train_promise = null
     if(do_train){
       train_promise = network_layer.train_all(agent_uid, training_set, states)
@@ -1765,19 +1775,7 @@ const useAuthorStore = create((set,get) => ({
       // console.log("CURR STATE", curr_state_uid)
       setTutorState(curr_state_uid, false)
     }
-    
 
-    // if(apply_focus || apply_staged){
-    //   tutor_state = tutor.getState()
-    //   set({tutor_state})  
-    // }
-    
-    // if(do_train){
-      
-    // }
-
-    
-    
   },
 
   updateSkills : async () => {
@@ -2034,7 +2032,7 @@ const useAuthorStore = create((set,get) => ({
 
   addSkillApp: (skill_app) => { 
     let {sel_skill_app_uids, skill_apps, only_count, staged_uid,
-        graph_actions, curr_state_uid, updateGraphConnections, explainDemo} = get()
+        graph_actions, curr_state_uid, insertIntoGraph, explainDemo} = get()
     let sel = skill_app.selection
     let store_changes = {
       sel_skill_app_uids : {
@@ -2065,7 +2063,7 @@ const useAuthorStore = create((set,get) => ({
 
     set(store_changes)
     if(!skill_app?.tutor_performed){
-      updateGraphConnections(skill_app)
+      insertIntoGraph(skill_app)
     }
 
     if(skill_app.is_demo){
@@ -2112,7 +2110,7 @@ const useAuthorStore = create((set,get) => ({
   removeSkillApp: (skill_app) => {
     if(!skill_app) return;
     let {skill_apps, sel_skill_app_uids, only_count, focus_uid, hover_uid, staged_uid,
-        graph_states, graph_actions, setFocus} = get()
+        graph_states, graph_actions, setFocus, removeFromGraph} = get()
     let sel = skill_app.selection
     
     // Remove From SkillApps
@@ -2128,33 +2126,34 @@ const useAuthorStore = create((set,get) => ({
       staged_uid: skill_app.uid == staged_uid ? "" : staged_uid,
     })
 
-    // If in graph remove from graph
-    let a_obj = graph_actions[skill_app.uid]
-    if(a_obj){
-      let s_obj = graph_states[a_obj.state_uid]
-      let next_s_obj = graph_states[a_obj.next_state_uid]
-      s_obj = {...s_obj,
-        out_skill_app_uids :  (s_obj?.out_skill_app_uids ?? []).filter((x)=>x!=skill_app.uid)
-      }
-      if(s_obj.out_skill_app_uids.length == 0){
-        delete s_obj.out_skill_app_uids
-      }
-      next_s_obj = {...next_s_obj,
-        in_skill_app_uids : (next_s_obj?.in_skill_app_uids ?? []).filter((x)=>x!=skill_app.uid)
-      }
+    removeFromGraph(skill_app)
+    // // If in graph remove from graph
+    // let a_obj = graph_actions[skill_app.uid]
+    // if(a_obj){
+    //   let s_obj = graph_states[a_obj.state_uid]
+    //   let next_s_obj = graph_states[a_obj.next_state_uid]
+    //   s_obj = {...s_obj,
+    //     out_skill_app_uids :  (s_obj?.out_skill_app_uids ?? []).filter((x)=>x!=skill_app.uid)
+    //   }
+    //   if(s_obj.out_skill_app_uids.length == 0){
+    //     delete s_obj.out_skill_app_uids
+    //   }
+    //   next_s_obj = {...next_s_obj,
+    //     in_skill_app_uids : (next_s_obj?.in_skill_app_uids ?? []).filter((x)=>x!=skill_app.uid)
+    //   }
 
-      graph_states = {...graph_states,
-        [a_obj.state_uid] : s_obj,
-        [a_obj.next_state_uid] : next_s_obj
-      }
-      graph_actions = {...graph_actions}
-      delete graph_actions[skill_app.uid]
-      if(next_s_obj.in_skill_app_uids.length == 0){
-        delete graph_states[a_obj.next_state_uid]
-      }
+    //   graph_states = {...graph_states,
+    //     [a_obj.state_uid] : s_obj,
+    //     [a_obj.next_state_uid] : next_s_obj
+    //   }
+    //   graph_actions = {...graph_actions}
+    //   delete graph_actions[skill_app.uid]
+    //   if(next_s_obj.in_skill_app_uids.length == 0){
+    //     delete graph_states[a_obj.next_state_uid]
+    //   }
 
-      set({graph_states, graph_actions})
-    }
+    //   set({graph_states, graph_actions})
+    // }
 
     // After removal focus on a different skill app 
     console.log("REMOVE", focus_uid, skill_app.uid, focus_uid == skill_app.uid)
@@ -2273,10 +2272,15 @@ const useAuthorStore = create((set,get) => ({
   },
 
   setInputs : async (skill_app, inputs) => {
-    let {modifySkillApp, updateGraphConnections, explainDemo} = get()
+    let {modifySkillApp, insertIntoGraph, removeFromGraph, explainDemo} = get()
     modifySkillApp(skill_app, {'inputs' : inputs}, true)
     let {skill_apps} = get();
-    await updateGraphConnections(skill_apps[skill_app.uid])
+    if(inputs?.['value']){
+      await insertIntoGraph(skill_apps[skill_app.uid])  
+    }else{
+      await removeFromGraph(skill_apps[skill_app.uid])  
+    }
+    
     skill_app = skill_apps[skill_app.uid]
 
     explainDemo(skill_app)    
