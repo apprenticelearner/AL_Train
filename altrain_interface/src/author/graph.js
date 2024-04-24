@@ -91,9 +91,18 @@ function gen_double_chevron(s) {
 
 
 function gen_curve_path(a, states, relative=false) {
-    let {state_uid, next_state_uid} = a
+    let {state_uid, vis_next_state_uid, next_state_uid} = a
+    // let n_uid = vis_next_state_uid ?? next_state_uid
     let s = states[state_uid]
-    let d = states?.[next_state_uid] ?? {x: a.x, y: a.x+actionWidth+rightActionMargin/2} ;
+    let d = states?.[vis_next_state_uid] ?? 
+            states?.[next_state_uid] ?? 
+            {x: a.x, y: a.x+actionWidth+rightActionMargin/2} ;
+
+    if(isNaN(s.x) || isNaN(s.y) || isNaN(d.x) || isNaN(d.y) || !vis_next_state_uid){
+        console.log("BAD EDGE", a, s, d)
+    }else{
+        console.log("GOOD EDGE", a, s, d)
+    }
 
     // Adjust s_x, s_y so they emerge radially
     let n_out = s?.n_visible_out || 0 
@@ -148,18 +157,116 @@ export function organizeByDepth(states){
     return ascending_depth
 }
 
-export function layoutGraphNodesEdges(states, actions, tutor){    
+export function layoutVisInOuts(objs_by_depth, states, actions,
+        unordered_groups, collapse_unordered){
+    // Annotate states and actions vis_ins, and vis_outs which are like
+    // in_skill_app_uids and out_skill_app_uids but handle state skipping
+    // from unordered groups.
 
+    
+    // If collapse_unordered=false then just copy ins/outs
+    if(!collapse_unordered){
+        for(let [s_uid, s_obj] of Object.entries(states)){
+            s_obj.vis_ins = s_obj.in_skill_app_uids
+            s_obj.vis_outs = s_obj.out_skill_app_uids
+        }
+        return objs_by_depth
+    }
+
+    // Reset all vis_ins, vis_outs
+    for(let [s_uid, s_obj] of Object.entries(states)){
+        s_obj.vis_ins = []
+        s_obj.vis_outs = []
+        s_obj.is_connected = false
+    }
+
+    // Sweep through the graph by depth
+    let new_objs_by_depth = []
+    let eff_depth = 0
+    for(let [depth, depth_objs] of objs_by_depth){
+        let new_depth_objs = [] 
+        for (let s_obj of depth_objs){
+            
+
+            // Don't expand nodes with no vis_in
+            if(depth > 0 && s_obj.vis_ins.length == 0){
+                s_obj.is_connected = false
+                console.log("SKIP", s_obj.uid, depth, s_obj.vis_ins.length)
+                continue
+            }
+
+            s_obj.is_connected = true
+            console.log("BLAAH", eff_depth, s_obj.vis_ins.length, s_obj.uid, depth > 0 && s_obj.vis_ins.length == 0)
+            
+
+            for(let a_uid of s_obj?.out_skill_app_uids ?? []){
+                let a_obj = actions?.[a_uid];
+                if(!a_obj?.visible){
+                    continue
+                }
+                let sa = a_obj?.skill_app
+                
+                // console.log("!>>", !sa?.internal_unordered)
+                // Add non initial unordered group actions to vis_out
+                // if(!sa?.internal_unordered){
+                    s_obj.vis_outs.push(a_uid)
+                    // Next state is end_state_uid of unordered group
+                    let vis_next_s_obj;
+                    let vis_next_uid;
+                    if(sa?.initial_unordered){
+                        let u_obj = unordered_groups?.[sa?.unordered_group];
+                        if(u_obj){
+                            let {end_state_uid} = unordered_groups?.[sa?.unordered_group];
+                            vis_next_uid = end_state_uid
+                            vis_next_s_obj = states?.[end_state_uid];
+                            console.log(">>", sa?.unordered_group, unordered_groups?.[sa?.unordered_group], end_state_uid)
+                        }//else{
+                            // console.log(">>", sa?.unordered_group, unordered_groups, unordered_groups?.[sa?.unordered_group], end_state_uid)
+                        // }
+                        
+                    }
+                    // Use out if get end_state_uid failed or is a normal action.
+                    if(!vis_next_s_obj){
+                        vis_next_uid = a_obj?.next_state_uid
+                        vis_next_s_obj = states[a_obj?.next_state_uid]
+                        console.log("->>", a_obj?.next_state_uid)
+                    }
+                    a_obj.vis_next_state_uid = vis_next_uid
+                    //
+                    vis_next_s_obj?.vis_ins?.push(a_uid)
+                // }
+            }
+            new_depth_objs.push(s_obj)
+        }
+        if(new_depth_objs.length > 0){
+            new_objs_by_depth.push([eff_depth, new_depth_objs])    
+            eff_depth += 1
+        }
+    }
+
+    // for(let [s_uid, s_obj] of Object.entries(states)){
+    //     s_obj.vis_ins = s_obj.in_skill_app_uids
+    //     s_obj.vis_outs = s_obj.out_skill_app_uids
+    // }
+    return new_objs_by_depth
+}
+
+export function layoutGraphNodesEdges(states, actions, tutor, unordered_groups,
+        collapse_unordered=true){    
     let objs_by_depth = organizeByDepth(states)
+    objs_by_depth = layoutVisInOuts(objs_by_depth, states, actions,
+        unordered_groups, collapse_unordered)
 
     // Establish the general layout of nodes and edges
     let prev_depthY_center = 0
     let eff_depth = 0
     for(let [depth, depth_objs] of objs_by_depth){
+        // console.log("}}", depth, depth_objs.map((x)=>x.uid))
+
         let depth_maxY = 0
         let prev_s_obj;
 
-        // Sort state nodes by the average y of their upstream inputs.
+        // Sort state nodes by the average y of their inputs.
         let sorted_objs = depth_objs.map((s_obj) =>{
             let avg_in_y = 0
             let n = 0
@@ -167,7 +274,7 @@ export function layoutGraphNodesEdges(states, actions, tutor){
             // Also mark each state as is_connected iff it has a connected
             //  input action with non-negative reward
             let has_non_negative = (depth == 0)
-            for(let in_uid of s_obj?.in_skill_app_uids ?? []){
+            for(let in_uid of s_obj?.vis_ins ?? []){
                 let a_obj = actions?.[in_uid];
                 if(!a_obj?.visible) continue;
 
@@ -190,7 +297,7 @@ export function layoutGraphNodesEdges(states, actions, tutor){
             if(s_obj?.is_connected == false) continue;
 
             
-            let out_skill_app_uids = s_obj?.out_skill_app_uids ?? []
+            let out_skill_app_uids = s_obj?.vis_outs ?? []
             
             // Sort actions by the position of the interface element 
             //  they act on (i.e. top-down, left-right).
@@ -208,7 +315,7 @@ export function layoutGraphNodesEdges(states, actions, tutor){
                     sorted_actions.push([[0,0], out_uid])
                 }
             }
-            sorted_actions = sorted_actions.sort(([ra, a], [rb, b])=>(ra.y-rb.y)+.05*(ra.x-rb.x))
+            //sorted_actions = sorted_actions.sort(([ra, a], [rb, b])=>(ra.y-rb.y)+.05*(ra.x-rb.x))
             
             let a_obj; 
             let edge_index = 0;
@@ -252,8 +359,8 @@ export function layoutGraphNodesEdges(states, actions, tutor){
             let [minX, minY] = [s_obj.x-nodeWidth/2, s_obj.y-nodeHeight/2]
             let [maxX, maxY] = [s_obj.x+depthSpacing, s_obj.y+nodeHeight/2]
 
-            let out_skill_app_uids = s_obj?.out_skill_app_uids ?? []
-            for(let out_uid of out_skill_app_uids){
+            let vis_outs = s_obj?.vis_outs ?? []
+            for(let out_uid of vis_outs){
                 let a_obj = actions?.[out_uid];
                 if(!a_obj?.visible) continue;
 
@@ -282,7 +389,7 @@ export function layoutGraphNodesEdges(states, actions, tutor){
         if(s_obj.x+nodeWidth > graphBounds.maxX){graphBounds.maxX = s_obj.x+nodeWidth}
 
         // Sort + Set Out Indices 
-        let out_srted = (s_obj?.out_skill_app_uids ?? [])
+        let out_srted = (s_obj?.vis_outs ?? [])
          .reduce((lst, a_uid)=>{let a = actions?.[a_uid]; if(a?.visible) lst.push(a); return lst},[])
          .sort((a0_obj, a1_obj) => a0_obj.y-a1_obj.y)
 
@@ -296,7 +403,7 @@ export function layoutGraphNodesEdges(states, actions, tutor){
         s_obj.n_visible_out = out_srted.length
 
         // Sort + Set In Indices
-        let in_srted = (s_obj?.in_skill_app_uids ?? [])
+        let in_srted = (s_obj?.vis_ins ?? [])
          .reduce((lst, a_uid)=>{let a = actions?.[a_uid]; if(a?.visible) lst.push(a); return lst},[])
          .sort((a0_obj, a1_obj) => a0_obj.y-a1_obj.y)
 
@@ -337,11 +444,13 @@ const Edge = ({skill_app_uid}) =>{
        `@staged_uid==${uid}`, getHasVis(skill_app_uid), getExternalHasOnly(skill_app_uid)]
     )
 
-    if(!a?.visible){
+    
+    let skill_app = a?.skill_app
+    let s = states[a?.state_uid]
+
+    if(!a || !s || !a?.visible){
         return null
     }
-    let skill_app = a.skill_app
-    let s = states[a.state_uid]
 
     // Let x, y be relative to the node group for this edge
     let [x,y] = [a.x-s.x, a.y-s.y]
@@ -556,7 +665,9 @@ const getTargetNodeUID = (e) => {
 const nodeHasStaged = (state_uid) => [
     (s) => {
         let staged_action = s?.graph_actions[s?.staged_uid]
-        return staged_action?.next_state_uid == state_uid
+        let n_uid = staged_action?.vis_next_state_uid ??
+                    staged_action?.next_state_uid
+        return n_uid == state_uid
     },
     (o,n) => o == n
 ]
@@ -640,7 +751,7 @@ const Node = ({state_uid}) =>{
         )
 }
 
-const NodeGroup = ({state_uid}) =>{
+const NodeGroup = ({state_uid, unordered_groups={}}) =>{
     let {graph_states:states, graph_actions:actions, current_state_uid=1} = authorStore()
     let [hasFocus, hasHover] =  useAuthorStoreChange([`@curr_state_uid==${state_uid}`, `@hover_state_uid==${state_uid}`])
 
@@ -659,7 +770,24 @@ const NodeGroup = ({state_uid}) =>{
         />)
     }
 
-    let opacity= (hasFocus && 1.0) || .5
+    let opacity = (hasFocus && 1.0) || .5
+
+    let ugroups = [];
+    for(let [grp_uid, u_obj] of Object.entries(unordered_groups)){
+        if(u_obj?.skill_app_uids.filter(
+            (a_uid) => actions?.[a_uid]?.visible).length > 0
+        ){
+        // console.log(u_obj)
+            ugroups.push(
+                <UnorderedGroup
+                    key={grp_uid}
+                    u_obj={u_obj}
+                />    
+            )
+        }
+    }
+    
+        
 
     return (<g className="node-group"
                transform={`translate(${s.x}, ${s.y})`}
@@ -672,10 +800,65 @@ const NodeGroup = ({state_uid}) =>{
                     state_uid={state_uid}
                     key={"N_"+state_uid}
                 />
+                {ugroups}
                 
             </g>)
 }
 
+
+// ---------------------------------------
+// : Group Rendering
+const UnorderedGroup = ({u_obj, relative=true}) =>{
+    let {start_state_uid, skill_app_uids} = u_obj
+    let {graph_states:states, graph_actions:actions} = authorStore()
+
+    let s = states[start_state_uid]
+    let [graph_prev_update_time, _] = useAuthorStoreChange([
+        "@graph_prev_update_time", `@focus_uid`,
+    ])
+    console.log("RENDER GROUP", u_obj)
+
+    let minX=Infinity, maxX=-Infinity;
+    let minY=Infinity, maxY=-Infinity;
+    for(let a_uid of skill_app_uids){
+        let a = actions?.[a_uid];
+
+        // console.log(a?.skill_app?.inputs?.value, a_uid.slice(0,5), [a?.x, a?.y], minY, a?.y < minY)
+        if(a?.x < minX){minX = a?.x}
+        if(a?.x > maxX){maxX = a?.x}
+        if(a?.y < minY){minY = a?.y}
+        if(a?.y > maxY){maxY = a?.y}
+    }
+    let margin = 14;
+    minX -= margin;
+    maxX += actionWidth+margin*2;
+    minY -= actionHeight/2+margin+4;
+    maxY += actionHeight/2+margin;
+    if(relative){
+        minX -= s.x; maxX -= s.x
+        minY -= s.y; maxY -= s.y
+    }
+
+    console.log("UnorderedGroup", skill_app_uids.map((a_uid)=> actions?.[a_uid]), minX, maxX, minY, maxY)
+    return (
+        <g className="unordered-group"
+           transform={`translate(${minX}, ${minY})`}
+           pointerEvents={"none"}
+            >
+            <text x={4} y={-4} fill={'grey'} fontSize={10}>
+                {"unordered group"}
+            </text>
+            <rect x={0} y={0} 
+                  width={maxX-minX} height={maxY-minY}
+                  fill={'transparent'}
+                  stroke={'grey'}
+                  strokeDasharray={4}
+                  rx={5}
+                  ry={5}
+            />
+        </g>
+    )
+}
 
 // ---------------------------------------
 // : Graph Rendering
@@ -753,9 +936,33 @@ const GraphContent = ({contentRef, stageRef, svgRef, anims, setGraphBounds}) =>{
                     </text>
                 </g>)
     }else{
-        let {graph_states:states, graph_actions:actions, tutor, graph_bounds} = authorStore()
+        let {graph_states:states, graph_actions:actions,
+            tutor, graph_bounds, unordered_groups={}} = authorStore()
 
-        console.log("UPDATE_GRAPH", states, actions, graph_bounds)
+        let groups = []
+
+        let unordered_groups_by_state = {}
+        for(let [grp_uid, u_obj] of Object.entries(unordered_groups)) {
+            let {start_state_uid} = u_obj
+            let s_grps = unordered_groups_by_state?.[start_state_uid] ?? {};
+            s_grps[grp_uid] = u_obj;
+            unordered_groups_by_state[start_state_uid] = s_grps;
+            // console.log("VIS FILTER", u_obj?.skill_app_uids.filter((a_uid) => actions?.[a_uid]?.visible))
+            // if(u_obj?.skill_app_uids.filter(
+            //     (a_uid) => actions?.[a_uid]?.visible).length > 0
+            // ){
+            //     groups.push(
+            //         <UnorderedGroup
+            //             key={grp_uid}
+            //             u_obj={u_obj}
+            //         />
+            //     )    
+            // }
+            
+        }
+        
+
+        console.log("UPDATE_GRAPH", states, actions, graph_bounds, unordered_groups)
         if(graph_bounds == null){
             graph_bounds = {minX:0, minY:0, maxX:0, maxY:0}
         }
@@ -764,11 +971,13 @@ const GraphContent = ({contentRef, stageRef, svgRef, anims, setGraphBounds}) =>{
 
         let node_containers = []
         for(let [state_uid, s_obj] of Object.entries(states)) {
-            // console.log("<<", state_uid.slice(3,6), s_obj.is_connected)
+            
             if(s_obj?.is_connected != false){
+                // console.log("UGRP", unordered_groups_by_state?.[state_uid])
                 node_containers.push(
                     <NodeGroup state_uid={state_uid}
                         key={state_uid}
+                        unordered_groups={unordered_groups_by_state?.[state_uid]}
                     />
                 )    
             }
@@ -778,6 +987,7 @@ const GraphContent = ({contentRef, stageRef, svgRef, anims, setGraphBounds}) =>{
             ref={contentRef}
             >
             {node_containers}
+            {groups}
             {/*<circle x={0} y={0} id="circle-indicator" r="10" fill="green"/>*/}
             </motion.g>)
     }

@@ -397,14 +397,14 @@ const FxContent = (props, {context}) => {
 
   // If show_expl=true then show the current selected explanation 
   if(show_expl && !button_action && !func){
-    console.log("NO FUNC", skill_app)
+    // console.log("NO FUNC", skill_app)
     let expl_data = skill_app?.explanation_selected?.data ?? 
                     skill_app?.explanation_options?.[0]?.options?.[0]?.data ?? 
                     skill_app?.explanation_options?.[1]?.options?.[0]?.data 
     if(expl_data){
       ({func, head_vals, skill_app, matches} = extractFuncFromData(expl_data));
     }
-    console.log("NOW", expl_data, func, head_vals)
+    // console.log("NOW", expl_data, func, head_vals)
   }
   func = func || {}  
 
@@ -749,7 +749,7 @@ const ActionListItem = memo(({style, skill_app_uid}) => {
   )
 
   let skill_app = skill_apps?.[uid];
-  console.log("PLOOP", uid.slice(0,5), "rem", removed, "vis", hasVis)
+  // console.log("PLOOP", uid.slice(0,5), "rem", removed, "vis", hasVis)
   // console.log("RERENDER ITEM")
 
   let scale = (hasHover && 1.05) ||
@@ -765,6 +765,8 @@ const ActionListItem = memo(({style, skill_app_uid}) => {
   let {func, skill_uid, head_vals=null, matches=[]} = skill_app;
   let skill = skills?.[skill_uid||uid||skill_app?.skill_uid];
   func = func || skill?.how?.func || {}
+
+  let is_const = (func?.vars?.length == 0) ?? true
 
   // let fxC
   // let highlighted_eq = makeHighlightedEquation(func, head_vals, true, hasVis)
@@ -808,6 +810,7 @@ const ActionListItem = memo(({style, skill_app_uid}) => {
                         (!hasVis && 'rgba(240,240,240, .8)') ||
                         'white'
 
+  let in_process = skill_app?.in_process
 
   return (
     <div style={{
@@ -870,11 +873,12 @@ const ActionListItem = memo(({style, skill_app_uid}) => {
             show_const={false}
             show_expl={true}
             />
-          ) || [
+          ) || <>
             <div key={"value"} style={{marginLeft: 6, maxWidth: "30%", 
               fontWeight:"bold", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
               {input}
-            </div>,
+            </div>
+            {!is_const && 
             <div key={"equation"} style={{display: 'flex', alignItems: 'center', marginLeft:5, flexDirection: "row"}}>
               <a>{'='}</a>
               <FxContent 
@@ -884,7 +888,8 @@ const ActionListItem = memo(({style, skill_app_uid}) => {
                 show_expl={true}
               />
             </div>
-          ]
+            }
+          </>
         }
         {/* Focus Indicator */}
         {hasFocus && 
@@ -897,6 +902,19 @@ const ActionListItem = memo(({style, skill_app_uid}) => {
                       width : 6, height: 6,
                        // fontSize:20, fontWeight: "bold", color:color
                        }}/>
+        }
+        {/* In Process Indicator */}
+        {in_process &&
+          <div style={{position: "absolute", //'rgba(20,20,60,.6)',
+                      right: 4,//,  borderRadius: 10, 
+                      bottom: 0,
+                      fontSize : 10,
+                      color: "lightgrey",
+                      // width : 6, height: 6,
+                       // fontSize:20, fontWeight: "bold", color:color
+                       }}>
+            {"ip"}
+          </div>
         }
         
       </div>
@@ -971,7 +989,7 @@ let ActionList = memo(({style}) =>{
     setActionListRef(action_list_ref)
   },[])
   
-  console.log("RERENDER LIST")
+  // console.log("RERENDER LIST")
 
   return (
       <div style={{...styles.action_list,
@@ -1005,8 +1023,8 @@ let ActionList = memo(({style}) =>{
 
 function ActionDialog({style}){
   let {getUIDIndex, applyActionDialogFeedback, setFocus, confirmFeedback} = authorStore()
-  let [focus_uid, skill_apps, proposal_order] = useAuthorStoreChange(
-      ["@focus_uid", "@skill_apps", "@proposal_order"]
+  let [focus_uid, skill_apps, proposal_order, in_done_state] = useAuthorStoreChange(
+      ["@focus_uid", "@skill_apps", "@proposal_order", '@in_done_state']
   )
   let skill_app = skill_apps[focus_uid];
   let index = getUIDIndex(focus_uid)+1
@@ -1043,9 +1061,16 @@ function ActionDialog({style}){
     
     <div style={{...styles.action_dialog,
                   ...style}}>
-      
-      {/* Proposal Yes / No case */}
-      {(is_proposal && 
+      {
+      /* Done case */
+      (in_done_state && 
+      <div style={styles.action_dialog_inner}>
+        <div style={styles.action_dialog_back}/>
+        <a>{"Problem Done."}</a>      
+      </div>) || 
+
+      /* Proposal Yes / No case */
+      (is_proposal && 
       <div style={styles.action_dialog_inner}>
         <div style={styles.action_dialog_back}/>
         <a>{"Is this action correct?"}</a>      
@@ -1087,7 +1112,7 @@ function ActionDialog({style}){
       <div style={styles.action_dialog_inner}>
         <div style={styles.action_dialog_back}/>
         <a>
-          {((L > 0) && "No proposed actions are marked correct.") ||
+          {((L > 0) && "No proposed actions are marked correct. ") ||
             "No actions proposed by agent. "}
           <b>{"Demonstrate a correct next action."}</b>
         </a>
@@ -1097,8 +1122,10 @@ function ActionDialog({style}){
     {are_correct_next && 
       <RisingDiv style={styles.move_on_button}
         onClick={()=>{confirmFeedback()}}>
-          <a style={{pointerEvents:'none'}}>{"Move On"}</a>
-          <a style={{pointerEvents:'none', fontSize : "0.7em"}}>{"(space bar)"}</a>
+          <div style={{pointerEvents:'none', flexDirection: "column", justifyContent:"center", display : "flex"}}>
+            <a style={{ontSize : "1.0em"}}>{"Move On"}</a>
+            <a style={{fontSize : "0.7em"}}>{"(space bar)"}</a>
+          </div>
       </RisingDiv>
     }
     </div>
@@ -1273,7 +1300,7 @@ let ActionMenuApplyButton = memo(({skill_app}) => {
   return (<RisingDiv
       //hoverCallback={(e)=>{setHover(true)}}
       //unhoverCallback={(e)=>{setHover(false)}}
-      onClick={()=>{setStaged(skill_app); confirmFeedback(false,true)}}
+      onClick={()=>{setStaged(skill_app); confirmFeedback(false,true, false)}}
       //scale={(hasHover && 1.1) || 1}
       //elevation={(hasHover && 10) || 6}
       {...rd_props}
@@ -2958,6 +2985,7 @@ const styles = {
      flexDirection : "column",
      justifyContent : "center",
      alignItems : "center",
+     pointerEvents : 'auto',
      minWidth : 80,
      maxWidth : 120,
      margin : 8,

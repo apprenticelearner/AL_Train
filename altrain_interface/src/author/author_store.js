@@ -814,8 +814,8 @@ const useAuthorStore = create((set,get) => ({
          isNegative, isUncertain} = get();
     for (let a_obj of Object.values(actions)) {
         let visible = true
-        if((!show_negative && isNegative(a_obj)) || 
-           (!show_uncertain && isUncertain(a_obj))
+        if((!show_negative && isNegative(a_obj)) //|| 
+           //(!show_uncertain && isUncertain(a_obj))
         ){
           visible = false
         }        
@@ -913,15 +913,15 @@ const useAuthorStore = create((set,get) => ({
     return {graph_states, graph_actions}
   },
 
-  updateGraph : (graph_states=null, graph_actions=null) =>{
+  updateGraph : (graph_states=null, graph_actions=null, unordered_groups=null) =>{
     let now = window.performance.now()
     let update_time = `${Date.now()}-${now}`
     let {tutor, markActionVisibility} = get() 
     if(!graph_states || !graph_actions){
-      ({graph_states, graph_actions} = get());
+      ({graph_states, graph_actions, unordered_groups} = get());
     }
     markActionVisibility(graph_states, graph_actions)
-    let graph_bounds = layoutGraphNodesEdges(graph_states, graph_actions, tutor)
+    let graph_bounds = layoutGraphNodesEdges(graph_states, graph_actions, tutor, unordered_groups)
     set({graph_states, graph_actions, graph_bounds,
          graph_prev_update_time : update_time})
     console.log("Update Graph Data Time:", window.performance.now()-now)
@@ -1043,8 +1043,13 @@ const useAuthorStore = create((set,get) => ({
   },
 
   setFocus: (skill_app_uid, do_confirm=false) => { 
-    let {graph_actions, setTutorState, action_list_ref, getUIDIndex,
-        curr_state_uid, mode, skill_apps, proposal_order} = get()
+    let {graph_actions, setTutorState, action_list_ref, getUIDIndex, confirmArgFoci,
+        curr_state_uid, mode, skill_apps, proposal_order, focus_uid} = get()
+
+    let curr_skill_app = skill_apps?.[focus_uid];
+    if(focus_uid != skill_app_uid && mode=='arg_foci'){
+      confirmArgFoci()
+    }
 
     let skill_app, state_uid;
     if(mode == "start_state"){
@@ -1091,6 +1096,9 @@ const useAuthorStore = create((set,get) => ({
        hover_sel : "", 
        hover_uid : ""
     })
+    // if(mode == "arg_foci"){
+    //   set({'mode' : "train"})
+    // }
   },
 
   getUIDIndex: (uid) => {
@@ -1233,12 +1241,12 @@ const useAuthorStore = create((set,get) => ({
   },
 
   setHoverSel: (sel) => { 
-    console.log("setHoverSel", sel)
+    // console.log("setHoverSel", sel)
     set({hover_sel : sel})
   },
 
   setHoverArgFoci: (arg) => { 
-    console.log("setHoverArgFoci", arg)
+    // console.log("setHoverArgFoci", arg)
     set({hover_arg_foci : arg})
   },
 
@@ -1489,7 +1497,7 @@ const useAuthorStore = create((set,get) => ({
     return [new_graph_states, new_graph_actions]
   },
 
-  cleanGraphConnections : (states, actions) =>{
+  cleanGraphConnections : (states, actions, unordered_groups) =>{
     // console.log("HERE0")
     // Reset the in/out skills_app_uids
     // Note: This step was moved to being the agent's 
@@ -1508,6 +1516,35 @@ const useAuthorStore = create((set,get) => ({
         ns_obj.in_skill_app_uids.push(uid)
       }
     }
+
+    // Sort out_skill_app_uids so actions of same unordered group are adjacent 
+    // console.log("BLEEEE", unordered_groups)
+    for (let [u_uid, u_obj] of Object.entries(unordered_groups)){
+      let {skill_app_uids, start_state_uid, end_state_uid} = u_obj;
+      let s_obj = states[start_state_uid]
+      let grouped_outs = {}
+      let no_grp_outs = []
+      // console.log("BEFORE", s_obj.out_skill_app_uids.map((x)=>x.slice(0,5)))
+      for (let a_uid of s_obj.out_skill_app_uids){
+        let a_obj = actions?.[a_uid];
+        // console.log(a_obj)
+        let grp_uid = a_obj?.skill_app?.unordered_group;
+        if(grp_uid){
+          let arr = grouped_outs?.[grp_uid] || []
+          arr.push(a_uid)  
+          grouped_outs[grp_uid] = arr
+        }else{
+          no_grp_outs.push(a_uid)  
+        }
+      }
+      // console.log(grouped_outs)
+      let out_skill_app_uids = Object.values(grouped_outs).reduce(
+        (acc, arr) => acc.concat(arr)
+        , []).concat(no_grp_outs)
+      s_obj.out_skill_app_uids = out_skill_app_uids
+      // console.log("AFTER", s_obj.out_skill_app_uids.map((x)=>x.slice(0,5)))
+    }
+
     // console.log("HERE2")
     // Prune any states that have no upstream actions (plus those states' out actions)
     let states_by_depth = organizeByDepth(states)
@@ -1528,7 +1565,7 @@ const useAuthorStore = create((set,get) => ({
       }
     }
     // console.log("HERE3", states, actions)
-    return [states, actions]
+    return [states, actions, unordered_groups]
   },
 
   updateStartStateUID : async () =>{
@@ -1582,10 +1619,13 @@ const useAuthorStore = create((set,get) => ({
     //   console.log("CURR STATE UID COMPUTED:", curr_state_uid);    
     // }
 
-    let rollout = await network_layer.act_rollout(agent_uid, start_state, {is_start: true})
+    let rollout = await network_layer.act_rollout(agent_uid, start_state, 
+      {is_start: true, 
+      // hard_cert_thresh: .3
+    })
 
     console.log("ROLLOUT RETURN", rollout);
-    let {states, actions} = rollout
+    let {states, actions, unordered_groups} = rollout
     
 
     // if(merge){
@@ -1593,14 +1633,14 @@ const useAuthorStore = create((set,get) => ({
     //   ([states, actions] = mergeGraphChanges(states, actions, update_time))
     // }
     let {tutor} = get()
-    ;([states, actions] = cleanGraphConnections(states, actions));
+    ;([states, actions, unordered_groups] = cleanGraphConnections(states, actions, unordered_groups));
 
-    updateGraph(states, actions)
+    updateGraph(states, actions, unordered_groups)
     // markActionVisibility(states, actions)
     // let graph_bounds = layoutGraphNodesEdges(states, actions, tutor)
 
     console.log("START SET", states, actions);
-    set({awaiting_rollout: false})
+    set({awaiting_rollout: false, unordered_groups})
     
     // console.log("Connected", states, actions);
 
@@ -1627,11 +1667,14 @@ const useAuthorStore = create((set,get) => ({
   },
 
   updateProposalOrder : () => {
-    // Order proposed actions by their uncertainty level 
+    
     let {skill_apps, focus_uid} = get()
     let proposal_skill_apps = Object.values(skill_apps)
     .filter((sa) => !sa?.is_demo && (sa?.reward ?? 0) == 0)
-    .sort((sa0,sa1) => (sa0?.when_pred ?? 0)-(sa1?.when_pred ?? 0))
+    // Order proposed actions by their uncertainty level 
+    //.sort((sa0,sa1) => (sa0?.when_pred ?? 0)-(sa1?.when_pred ?? 0))
+    // Order proposed actions current reward level 
+    .sort((sa0,sa1) => (sa0?.reward ?? 0)-(sa1?.reward ?? 0))
 
     console.log("proposal_skill_apps", proposal_skill_apps)
     
@@ -1684,7 +1727,7 @@ const useAuthorStore = create((set,get) => ({
     return new_skill_apps
   },
 
-  confirmFeedback : async (apply_focus=true, apply_staged=true) => {
+  confirmFeedback : async (apply_focus=true, apply_staged=true, apply_group=true) => {
     let {network_layer, mode, skill_apps, curr_state_uid, tutor_state, agent_uid,  tutor,
         confirmArgFoci, updateAgentRollout, updateSkills, saveProject, focus_uid, staged_uid,
         graph_states, graph_actions, beginSetStartState, modifySkillApp, setReward, 
@@ -1705,7 +1748,7 @@ const useAuthorStore = create((set,get) => ({
     let states = {[curr_state_uid]: tutor_state} 
     for (let [key, skill_app] of Object.entries(skill_apps)){
       let rew = skill_app?.reward
-      console.log("REWREW", rew, skill_app?.confirmed)
+      // console.log("REWREW", rew, skill_app?.confirmed)
       if(skill_app?.confirmed || (rew || 0) != 0){
         training_set.push({state: curr_state_uid, ...skill_app,
            is_start: start_state_uid == curr_state_uid})
@@ -1731,8 +1774,9 @@ const useAuthorStore = create((set,get) => ({
     saveProject()
 
     // Apply the staged action
+    let apply_uid, next_state_uid, apply_sai;
     if(apply_focus || apply_staged){
-      let apply_uid = (apply_focus && focus_uid) || staged_uid
+      apply_uid = (apply_focus && focus_uid) || staged_uid
       let skill_app = skill_apps[apply_uid]
       
       if(apply_uid == focus_uid && (skill_app?.reward ?? 0) <= 0){
@@ -1740,11 +1784,15 @@ const useAuthorStore = create((set,get) => ({
         skill_app = skill_apps[apply_uid]
       }
 
-      if(!skill_app){
-        return
-      } 
+      // Keep the sai of the applied app
+      if(skill_app){
+        let {selection, action_type, inputs} = skill_app
+        apply_sai = {selection, action_type, inputs}  
+      }else{
+          skill_app
+      }
 
-      // console.log("SKILL AAAAAP", skill_app)
+      console.log("APPLY UID", apply_uid)
 
 
       set({focus_uid : "", hover_uid : "", staged_uid : "", 
@@ -1753,14 +1801,20 @@ const useAuthorStore = create((set,get) => ({
 
 
       // Immediately try to enter the tutor state
-      let next_state_uid = graph_actions?.[apply_uid]?.next_state_uid
+      next_state_uid = (
+        // If apply_group=true enter state w/ group_next_state_uid which
+        //   is the state after applying full unordered group 
+        (apply_group && graph_actions?.[apply_uid]?.group_next_state_uid) ||
+        // Otherwise enter the state immediately after the action.
+        graph_actions?.[apply_uid]?.next_state_uid
+      )
       if(next_state_uid){
         // console.log("NEXT STATE", next_state_uid)
         await setTutorState(next_state_uid, false)
         // console.log("AFTER")
       }
     }
-
+    console.log("APPLY UID 2", apply_uid)
 
     // If applying this action would train the agent
     //  then wait for the agent to update and then 
@@ -1771,9 +1825,36 @@ const useAuthorStore = create((set,get) => ({
       await updateSkills();
       await updateAgentRollout(false);
 
-      ({curr_state_uid} = get());
-      // console.log("CURR STATE", curr_state_uid)
-      setTutorState(curr_state_uid, false)
+      // Recover the app that was applied using apply_sai
+      //  we might not know its uid be cause demos make up
+      //  a random uid when first initialized
+      let orig_state = curr_state_uid;
+      ({curr_state_uid, graph_actions, graph_states} = get());
+      let applied_action = graph_actions?.[apply_uid];
+      if(!applied_action && apply_uid && apply_sai){
+        let uids = graph_states?.[orig_state]?.out_skill_app_uids ?? [];
+        console.log("%%%", uids)
+        for(let uid of uids){
+          console.log(uid, graph_actions?.[uid], apply_sai)
+          let act = graph_actions?.[uid];
+          let app = act?.skill_app
+          if(app.selection == apply_sai.selection && 
+             app.action_type == apply_sai.action_type && 
+             app.inputs?.['value'] == apply_sai.inputs?.['value']){
+            applied_action = act
+          }
+        }
+      }
+      console.log(applied_action);
+      if(applied_action){
+          next_state_uid = (
+            (apply_group && applied_action?.group_next_state_uid) ||
+            applied_action?.next_state_uid
+        )  
+      }
+
+      console.log("SET TUTOR STATE", next_state_uid || curr_state_uid, apply_uid, next_state_uid, curr_state_uid)
+      setTutorState(next_state_uid || curr_state_uid, false)
     }
 
   },
@@ -1875,7 +1956,11 @@ const useAuthorStore = create((set,get) => ({
     console.log("OUTER KEY DOWN", e.key, e)
     let {mode, hover_uid, focus_uid, focusNext, focusPrev, graph_actions, setReward, setOnly} = get()
 
-    if(e.code == "Space" && !(e.target?.type?.includes("text") ?? false) ){
+    if(e.code == "Space"
+        // NOTE: Without this condition "Move On" Swallows spaces
+        //   disallowing spaces in demos  
+        //&& !(e.target?.type?.includes("text") ?? false) ){
+      ){
       let {setStaged, confirmFeedback} = get()
       if(mode == "start_state" && !input_focus){
         if(!focus_uid){
@@ -2024,15 +2109,83 @@ const useAuthorStore = create((set,get) => ({
     return {arg_foci, foci_explicit, var_names}
   },
 
-  // getHoverSkillApp : (name) => get((store) => { 
-  //   return store?.skill_apps?.[store.hover_uid]
-  // }),
+  updateGroupNextState : async () =>{
+
+    console.log("UPDATE GRP A")
+    let {skill_apps, agentPromise, network_layer, tutor_state} = get();
+
+    console.log("UPDATE GRP B", skill_apps)
+
+    // Clear group_next_state_uid for all
+    let are_internal_unord = false
+    
+    for(let [uid,sa] of Object.entries(skill_apps)){
+      if(sa?.interal_unordered){
+        are_internal_unord = true  
+      }
+    }
+    // set({graph_actions})
+
+    console.log("UPDATE GRP B", are_internal_unord)
+
+    // Find the subset of actions which would be part of 
+    //  an unordered group
+    let n_pos = 0
+    let pos_sas = {}
+    for(let [uid,sa] of Object.entries(skill_apps)){
+      let rew = sa?.reward ?? 0;
+      if(rew > 0 || (rew == 0 && sa?.initial_unordered)){
+        pos_sas[uid] = sa  
+        n_pos += 1
+      }
+    }
+
+    console.log("UPDATE GRP C", pos_sas)
+
+    // If the state is inside an unordered group of actions
+    //  or there is just one viable action then no group_next_state
+    if(n_pos <= 1 || are_internal_unord){
+      console.log("UPDATE GRP FAIL", pos_sas, are_internal_unord)
+      return
+    }
+
+    // Covert to SAIs
+    let sais = Object.values(pos_sas).map((sa) =>{
+      let {selection, action_type, inputs} = sa
+      return {selection, action_type, inputs}
+    })
+
+    console.log("UPDATE GRP REQUEST", sais)
+    // Request to agent to get UID of state after applying sais
+    let agent_uid = await agentPromise
+    let {next_state_uid : group_next_state_uid} = 
+      await network_layer.predict_next_state(agent_uid, tutor_state, sais);
+
+    console.log("UPDATE GRP RECIEVE", group_next_state_uid)
+
+    // Assign group_next_state_uid
+    let {graph_actions} = get()
+    graph_actions = {...graph_actions}
+    for(let [uid, sa] of Object.entries(skill_apps)){
+      let is_pos = pos_sas?.[uid] ?? false
+      graph_actions[uid] = {
+        ...graph_actions[uid],
+        group_next_state_uid : (is_pos && group_next_state_uid) || null
+      }        
+    }
+    set({graph_actions})
+
+    console.log("GRP NXT STATE UID:", Object.entries(skill_apps).map(
+      ([uid, sa]) => `${uid.slice(0,5)} -> ${graph_actions[uid]?.group_next_state_uid?.slice(0,5)}`)
+    )
+  },
 
   /*** Skill Application (Adding & Removing)  ***/
 
   addSkillApp: (skill_app) => { 
     let {sel_skill_app_uids, skill_apps, only_count, staged_uid,
-        graph_actions, curr_state_uid, insertIntoGraph, explainDemo} = get()
+        graph_actions, curr_state_uid, insertIntoGraph, explainDemo,
+        mode, updateGroupNextState} = get()
     let sel = skill_app.selection
     let store_changes = {
       sel_skill_app_uids : {
@@ -2070,6 +2223,9 @@ const useAuthorStore = create((set,get) => ({
       explainDemo(skill_app)
     }
 
+    // if(mode != "start_state"){
+    //   updateGroupNextState()  
+    // }
   },
 
   modifySkillApp : (skill_app, changes, train_relevant=true) => {
@@ -2162,6 +2318,10 @@ const useAuthorStore = create((set,get) => ({
       let nxt_apps = sel_skill_app_uids?.[sel] || Object.keys(skill_apps)
       setFocus(nxt_apps?.[0] ?? null)  
     }
+
+    // if(mode != "start_state"){
+    //   updateGroupNextState()  
+    // }
   },
 
   clearInterface : (clear_tutor=true) => {
@@ -2273,6 +2433,7 @@ const useAuthorStore = create((set,get) => ({
 
   setInputs : async (skill_app, inputs) => {
     let {modifySkillApp, insertIntoGraph, removeFromGraph, explainDemo} = get()
+
     modifySkillApp(skill_app, {'inputs' : inputs}, true)
     let {skill_apps} = get();
     if(inputs?.['value']){

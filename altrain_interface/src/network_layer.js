@@ -165,7 +165,7 @@ export default class NetworkLayer {
   }
 
   predict_next_state(agent_uid, state, sai, rest={}) {
-    let data = {agent_uid, state, ...sai, ...rest}
+    let data = {agent_uid, state, sai, ...rest}
     console.log("PREDICT NEXT STATE DATA", data)
     return send_post(this.agent_url + "/predict_next_state/", data)
   }

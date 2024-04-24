@@ -39,7 +39,7 @@
         "track_rollout_preseqs" : true,
         "action_filter_args" : {"thresholds": [0.3, 0, -0.5, -0.75]},
 
-        // "implicit_reward_kinds" : ["unordered_groups"]
+        "implicit_reward_kinds" : ["unordered_groups"]
       },
       "stay_active" : true,
   },
