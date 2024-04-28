@@ -434,14 +434,24 @@ const getHasVis = (skill_app_uid) => [(s) =>{
     },
     (o,n) => o == n]
 
+const getRemoved = (skill_app_uid) => [(s) =>{
+    let skill_app = s?.skill_apps[skill_app_uid];
+    return !!skill_app?.remove || !!skill_app?.removed
+    },
+    (o,n) => o == n
+  ]
+
 const Edge = ({skill_app_uid}) =>{
     let uid = skill_app_uid;
     let {graph_states:states, graph_actions:actions, setHover, setFocus} = authorStore()
 
 
-    let [a, hasFocus, hasHover, hasStaged, hasVis, isExternalHasOnly] = useAuthorStoreChange(
-      [`@graph_actions.${uid}`, `@focus_uid==${uid}`, `@hover_uid==${uid}`,
-       `@staged_uid==${uid}`, getHasVis(skill_app_uid), getExternalHasOnly(skill_app_uid)]
+    let [a, hasFocus, hasHover,
+        hasStaged, hasVis, isExternalHasOnly,
+        removed] = useAuthorStoreChange(
+        [`@graph_actions.${uid}`, `@focus_uid==${uid}`, `@hover_uid==${uid}`,
+         `@staged_uid==${uid}`, getHasVis(uid), getExternalHasOnly(uid),
+          getRemoved(uid)]
     )
 
     
@@ -460,7 +470,7 @@ const Edge = ({skill_app_uid}) =>{
     let is_demo = skill_app.is_demo || false
     let confirmed = skill_app?.confirmed ?? false
     let undef = !skill_app?.is_demo && reward == 0 
-    let removed = skill_app?.is_demo && reward == 0 
+    // let removed = skill_app?.removed 
     let correct = reward > 0 
     let incorrect = reward < 0 || (reward == 0 && isExternalHasOnly)
     let isImplicit = isExternalHasOnly && reward == 0;
@@ -476,7 +486,7 @@ const Edge = ({skill_app_uid}) =>{
                  (hasHover && gen_shadow(12,'drop',shadow_colors)) ||
                  gen_shadow(8,'drop', shadow_colors)
 
-    let stroke_color =  ((removed || incorrect) && colors.incorrect) || 
+    let stroke_color =  (incorrect && colors.incorrect) || 
                         (is_demo && colors.demo) ||
                         (correct && colors.correct) || 
                         colors.default
@@ -536,7 +546,7 @@ const Edge = ({skill_app_uid}) =>{
             filter={shadow}
             onMouseEnter={()=>{setHover(skill_app_uid)}}
             onMouseLeave={()=>{setHover("")}}
-            opacity={(hasFocus && 1) || .8}
+            opacity={(removed && .5) || (hasFocus && 1) || .8}
             cursor={(hasFocus && "auto") || "pointer"}
             //Note: onMouseDown is handled at the graph level because d3.zoom consumes
             >
@@ -601,6 +611,16 @@ const Edge = ({skill_app_uid}) =>{
                         fill={stroke_color}
                         stroke={"white"}
                         strokeWidth={2.75}
+                    />
+                }
+
+                {/* Cross out */}
+                {removed &&
+                    <rect
+                        x={0}
+                        width={actionWidth}
+                        height={2}
+                        fill={"red"}
                     />
                 }
             </g>

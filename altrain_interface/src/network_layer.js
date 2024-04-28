@@ -213,9 +213,9 @@ export default class NetworkLayer {
     });
   }
 
-  write_file(file, data) {
+  write_file(path, data) {
     var data = {
-      file: file,
+      path: path,
       data: data
     };
     return fetch_retry(this.host_url, {

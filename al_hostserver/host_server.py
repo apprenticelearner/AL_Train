@@ -651,9 +651,11 @@ def do_GET(path):
         return send_from_directory(os.getcwd(),path)#app.send_static_file(path)
 
 def do_WRITE():
-    write_data = request.get_data()
-    with open(write_data['path'],'w') as f:
+    write_data = json.loads(request.get_data())
+    with open(write_data['path'],'w+') as f:
+        print("DATA", write_data)
         f.write(write_data['data'])
+    return ""
 
 
 do_switch = {"PRINT":do_PRINT,
@@ -674,7 +676,7 @@ do_switch = {"PRINT":do_PRINT,
 def handle_root(path):
     if(FETCH_ABOVE_ROOT): path = path.replace("!u","..")
     func = do_switch.get(request.method,None)
-    # print("METHOD: %s" % request.method)
+    print("METHOD: %s" % request.method)
     if(func is not None):
         if(request.method == "GET"):
             return func(path)

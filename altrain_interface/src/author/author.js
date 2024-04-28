@@ -916,6 +916,12 @@ const ActionListItem = memo(({style, skill_app_uid}) => {
             {"ip"}
           </div>
         }
+        {/* Cross out */}
+        {removed && 
+          <div style={{
+            position: "absolute", left: "0", top: "50%",
+            width : "96%", height: 2, backgroundColor:"red", borderWidth: 1}}/>
+        }
         
       </div>
       <div style={{display: "flex", flexDirection: "row",
@@ -938,7 +944,7 @@ const ActionListItem = memo(({style, skill_app_uid}) => {
             orientation={"horizontal"}
             correct={correct}
             incorrect={incorrect}
-            onPress={(force_reward) => toggleReward(skill_app, force_reward)}
+            onPress={(force_reward) => toggleReward(skill_app, force_reward, {source: "action_list"})}
           />
         }
         </div>

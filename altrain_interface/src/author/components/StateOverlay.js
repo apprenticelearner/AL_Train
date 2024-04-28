@@ -431,7 +431,7 @@ function OverlayBounds({style, children, sel, elem, bg_opacity=0, bg_foci_opacit
               text_color={(isImplicit && 'white') || 'black'}
               correct={correct}
               incorrect={incorrect}
-              onPress={(force_reward) => toggleReward(skill_app, force_reward)}
+              onPress={(force_reward) => toggleReward(skill_app, force_reward, {source: "overlay_toggler"})}
             />
           )
         )}

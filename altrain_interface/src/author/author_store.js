@@ -240,6 +240,15 @@ const useAuthorStore = create((set,get) => ({
   show_uncertain : false,
   show_negative : false,
 
+  //Interaction Log
+  interaction_log : [],
+
+  logInteraction : (kind, data) => {
+    let {interaction_log} = get()
+    console.log("LOG:", kind, data)
+    interaction_log.push({kind: kind, ...data})
+  },
+
   /*** Project ***/
   loadProject(prob_configs){
     let interfaces, questions, agents;
@@ -1293,7 +1302,7 @@ const useAuthorStore = create((set,get) => ({
     if(!okay){
       console.log("STACK EXHAUSTED")
       for(let skill_app of Object.values(skill_apps)){
-        if((skill_app?.reward ?? 0) > 0){
+        if((skill_app?.reward ?? 0) > 0 && !skill_app?.removed && !skill_app?.remove){
           console.log("+++", skill_app.inputs)
           changes = {staged_uid: skill_app.uid, staged_sel:skill_app.selection, stage_undo_stack:[]}
           break
@@ -1692,7 +1701,7 @@ const useAuthorStore = create((set,get) => ({
     let skill_app = skill_apps[focus_uid]
 
     // setReward updates the proposal_order
-    setReward(skill_app, reward)
+    setReward(skill_app, reward, {source:"action_dialog"})
 
     ;({proposal_order} = get());
     if(proposal_order.length > 0){
@@ -1731,7 +1740,7 @@ const useAuthorStore = create((set,get) => ({
     let {network_layer, mode, skill_apps, curr_state_uid, tutor_state, agent_uid,  tutor,
         confirmArgFoci, updateAgentRollout, updateSkills, saveProject, focus_uid, staged_uid,
         graph_states, graph_actions, beginSetStartState, modifySkillApp, setReward, 
-        setTutorState, start_state_uid} = get()
+        setTutorState, start_state_uid, logInteraction} = get()
 
     // Should not be able to confirm feedback in start_state mode
     if(mode == "start_state"){
@@ -1757,6 +1766,8 @@ const useAuthorStore = create((set,get) => ({
         }
       }
     }
+
+    logInteraction("CONFIRM_FEEDBACK", {training_set})
 
     // Send training set (non-blocking w/ promise)
     console.log("DO TRAIN", do_train, training_set)
@@ -1833,9 +1844,9 @@ const useAuthorStore = create((set,get) => ({
       let applied_action = graph_actions?.[apply_uid];
       if(!applied_action && apply_uid && apply_sai){
         let uids = graph_states?.[orig_state]?.out_skill_app_uids ?? [];
-        console.log("%%%", uids)
+        // console.log("%%%", uids)
         for(let uid of uids){
-          console.log(uid, graph_actions?.[uid], apply_sai)
+          // console.log(uid, graph_actions?.[uid], apply_sai)
           let act = graph_actions?.[uid];
           let app = act?.skill_app
           if(app.selection == apply_sai.selection && 
@@ -1845,7 +1856,7 @@ const useAuthorStore = create((set,get) => ({
           }
         }
       }
-      console.log(applied_action);
+      // console.log(applied_action);
       if(applied_action){
           next_state_uid = (
             (apply_group && applied_action?.group_next_state_uid) ||
@@ -1853,7 +1864,7 @@ const useAuthorStore = create((set,get) => ({
         )  
       }
 
-      console.log("SET TUTOR STATE", next_state_uid || curr_state_uid, apply_uid, next_state_uid, curr_state_uid)
+      // console.log("SET TUTOR STATE", next_state_uid || curr_state_uid, apply_uid, next_state_uid, curr_state_uid)
       setTutorState(next_state_uid || curr_state_uid, false)
     }
 
@@ -1993,12 +2004,12 @@ const useAuthorStore = create((set,get) => ({
           if(e.shiftKey){
             skill_app = setOnly(skill_app, !(skill_app?.only ?? false))
           }
-          setReward(skill_app, 1)
+          setReward(skill_app, 1, {source: "keyboard"})
           e.preventDefault()
           set({"pos_rew_down" : true})
         }else if(e.code == "KeyA" || e.key == "ArrowLeft"){
           let vis_uid = hover_uid || focus_uid 
-          setReward(graph_actions?.[vis_uid]?.skill_app, -1)
+          setReward(graph_actions?.[vis_uid]?.skill_app, -1, {source: "keyboard"})
           e.preventDefault()
           set({"neg_rew_down" : true})
         }else if(e.code == "KeyW" || e.key == "ArrowUp"){
@@ -2108,7 +2119,7 @@ const useAuthorStore = create((set,get) => ({
     // console.log("::: EXPL", var_names)
     return {arg_foci, foci_explicit, var_names}
   },
-
+/*
   updateGroupNextState : async () =>{
 
     console.log("UPDATE GRP A")
@@ -2179,7 +2190,7 @@ const useAuthorStore = create((set,get) => ({
       ([uid, sa]) => `${uid.slice(0,5)} -> ${graph_actions[uid]?.group_next_state_uid?.slice(0,5)}`)
     )
   },
-
+*/
   /*** Skill Application (Adding & Removing)  ***/
 
   addSkillApp: (skill_app) => { 
@@ -2360,7 +2371,7 @@ const useAuthorStore = create((set,get) => ({
       _skill_apps[sa.uid] = sa
 
       //Ensure that we stage a skill app if it came with reward > 0
-      if(staged.staged_uid == "" && sa.reward > 0){
+      if(staged.staged_uid == "" && sa.reward > 0 && !sa?.removed && !sa?.remove){
         staged.staged_uid = sa.uid
         staged.staged_sel = sa.sel
       }
@@ -2384,10 +2395,13 @@ const useAuthorStore = create((set,get) => ({
 
   /*** Skill Applications (Modifying) ***/
 
-  setReward : (skill_app, reward) => {
+  setReward : (skill_app, reward, {source=null}={}) => {
     let {staged_uid, setOnly, modifySkillApp,
-         undoStaged, graph_actions, updateProposalOrder} = get()
+         undoStaged, graph_actions, updateProposalOrder,
+         logInteraction} = get()
     let old_reward = skill_app.reward
+
+    logInteraction("SET_REWARD", {uid:skill_app?.uid, reward, source})
     skill_app = modifySkillApp(skill_app, {reward}, true)
 
     // console.log("SET REW", store.skill_apps[skill_app.uid])
@@ -2404,14 +2418,14 @@ const useAuthorStore = create((set,get) => ({
     }
     ({staged_uid} = get());
 
-    if(!staged_uid && reward > 0){
+    if(!staged_uid && reward > 0 && !skill_app?.removed && !skill_app?.remove){
       set({staged_uid : skill_app.uid})
     }
     updateProposalOrder()
     return skill_app    
   },
 
-  toggleReward : (skill_app, force_reward=null) => {
+  toggleReward : (skill_app, force_reward=null, {source=null}={}) => {
     let {setReward} = get()
     if(force_reward > 0){
       setReward(skill_app, 1)
@@ -2473,8 +2487,15 @@ const useAuthorStore = create((set,get) => ({
   },
 
   setRemove : (skill_app, value) => {
-    let {modifySkillApp} = get()
+    let {modifySkillApp, logInteraction, staged_uid, undoStaged} = get()
+    logInteraction("SET_REMOVE", {uid:skill_app?.uid, value})
     skill_app = modifySkillApp(skill_app, {remove: value}, true);
+
+    console.log("SET REMOVE", skill_app.uid, staged_uid)
+    if(value == true && skill_app.uid == staged_uid ||
+       value == false && !staged_uid){
+      undoStaged()
+    }
     return skill_app
   },
 
@@ -2497,8 +2518,13 @@ const useAuthorStore = create((set,get) => ({
   },
 
   evalCompleteness : async (profile) => {
-    let {network_layer, agent_uid} = get();
+    let {network_layer, agent_uid, interaction_log} = get();
     network_layer.eval_completeness(agent_uid, profile)
+
+    let log_json = JSON.stringify(interaction_log)
+    let date = new Date(Date.now())     
+    let file_path = `log/log-${date.toISOString()}.json`
+    network_layer.write_file(file_path, log_json)
   }
 
 }));
