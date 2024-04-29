@@ -2779,7 +2779,7 @@ const styles = {
     justifyContent : "end",
     alignItems : "center",
     position: "absolute",
-    zIndex : 4,
+    zIndex : 5,
     margin: 0,
     left: 350,
     right: 200,
@@ -2867,7 +2867,7 @@ const styles = {
     maxWidth:"90%",
     minHeight:"30%",
     maxHeight:"40%",
-
+    zIndex : 20,
     // top : 120,
     marginBottom : 30,
   },
