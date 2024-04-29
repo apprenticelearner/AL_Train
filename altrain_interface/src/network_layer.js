@@ -136,7 +136,6 @@ export default class NetworkLayer {
     resp.then(() =>{
       console.log("act_rollout duration: ", (window.performance.now()-t0).toFixed(4), "ms")  
     })
-    
     return resp
   }
 
@@ -147,15 +146,29 @@ export default class NetworkLayer {
   }
 
   train_all(agent_uid, training_set, states, rest={}) {
+    let t0 = window.performance.now()//new Date();
+
     let data = {agent_uid, training_set, states, ...rest}
     console.log("TRAIN ALL DATA", data)
-    return send_post(this.agent_url + "/train_all/", data)
+
+    let resp = send_post(this.agent_url + "/train_all/", data)
+    resp.then(() =>{
+      console.log("train_all duration: ", (window.performance.now()-t0).toFixed(4), "ms")  
+    })
+    return resp
   }
 
   explain_demo(agent_uid, state, sai, rest={}) {
+    let t0 = window.performance.now()//new Date();
+
     let data = {agent_uid, state, ...sai, ...rest}
     console.log("EXPLAIN DEMO DATA", data)
-    return send_post(this.agent_url + "/explain_demo/", data)
+
+    let resp = send_post(this.agent_url + "/explain_demo/", data)
+    resp.then(() =>{
+      console.log("explain_demo duration: ", (window.performance.now()-t0).toFixed(4), "ms")  
+    })
+    return resp
   }
 
   get_state_uid(agent_uid, state, rest={}) {
