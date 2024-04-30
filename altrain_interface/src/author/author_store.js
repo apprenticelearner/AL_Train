@@ -8,6 +8,8 @@ import {organizeByDepth, layoutGraphNodesEdges} from "./graph.js"
 let {states:debug_graph_states, actions:debug_graph_actions} = graph_data
 const GRAPH_DEBUG_MODE = false
 
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
 const test_state = {
   "A" : {
     id: "A",
@@ -1006,9 +1008,10 @@ const useAuthorStore = create((set,get) => ({
     // Queue this skill_app instance as the next to be explained
     set({pending_explains: {...pending_explains, [skill_app_uid] : {...pending_expl, next: skill_app}}})
     
-    // Wait on the agent existing and on any pending explanations.
+    
     await agentPromise;
-    await pending_expl?.['promise'];
+    // Don't wait on the agent existing explanation promise.
+    // await pending_expl?.['promise'];
     
     // If the skill_app queued as next is this one exactly... 
     ({pending_explains} = get());
@@ -1020,22 +1023,32 @@ const useAuthorStore = create((set,get) => ({
       let explain_promise = new Promise( async (resolve, reject) => {
         let {skill_explanations, func_explanations} = 
           await network_layer.explain_demo(agent_uid, tutor_state, sai, rest);
+        // await sleep(1000);
         resolve({skill_explanations, func_explanations})
       })
 
+      // console.log("SET PROMISE", time)
+      let time = performance.now()
+
       // Set the request as the current promise, clearing 'next'.
-      set({pending_explains: {...pending_explains, [skill_app_uid] : {promise : explain_promise}}})
+      set({pending_explains: {...pending_explains, [skill_app_uid] : {promise : explain_promise, time: time}}})
 
       // When the promise has resolved update the explanation in the interface
       explain_promise.then(({skill_explanations, func_explanations}) =>{
-        updateExplanations({skill_app, skill_explanations, func_explanations})
+        ({pending_explains} =  get());
+        // console.log("SAME PROMISE", pending_explains?.[skill_app_uid]?.time === time)
+        if(pending_explains?.[skill_app_uid]?.time === time){
+          updateExplanations({skill_app, skill_explanations, func_explanations})  
+        }        
       }).catch((e)=>{
         console.error(e)
       }).finally((e) => {
         // When resolved or failed remove the promise reference
         ({pending_explains} = get());
-        delete pending_explains[skill_app_uid]
-        set({pending_explains: {...pending_explains}})        
+        if(pending_explains?.[skill_app_uid]?.time === time){
+          delete pending_explains[skill_app_uid]
+          set({pending_explains: {...pending_explains}})        
+        }
       })
     }
   },
