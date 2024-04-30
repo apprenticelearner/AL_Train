@@ -976,10 +976,14 @@ const useAuthorStore = create((set,get) => ({
 
     let explanation_selected = {...defaultOption, explicit : false}
 
+    // let {skill_apps} get()
+    // let curr_skill_app_inst = skill_apps?.[skill_app?.uid];
+    // if(skill_app.arg_foci?.length == curr_skill_app_inst?.arg_foci?.length){
     modifySkillApp(skill_app, {
       explanation_options, explanation_time,
       explanation_selected, awaiting_explanation : false
-    }, false)
+    }, false)  
+    // }
   },
 
 /*

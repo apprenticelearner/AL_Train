@@ -676,7 +676,7 @@ do_switch = {"PRINT":do_PRINT,
 def handle_root(path):
     if(FETCH_ABOVE_ROOT): path = path.replace("!u","..")
     func = do_switch.get(request.method,None)
-    print("METHOD: %s" % request.method)
+    # print("METHOD: %s" % request.method)
     if(func is not None):
         if(request.method == "GET"):
             return func(path)
